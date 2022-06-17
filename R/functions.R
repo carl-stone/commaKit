@@ -30,7 +30,7 @@ annotateMethylSites <- function(methyl_df, meta_df, location) {
 # Input a file like AvWT which has a column 'start' (position of methylated site)
 # Other metadata columns do not matter
 annotateTSS <- function(methyl_df, meta_df, location, size) {
-  meta_df <- meta_df %>% 
+  meta_df <- meta_df %>%
     filter(Type == 'Transcription-Units')
   for (position in methyl_df[[location]]) {
     if (nrow(meta_df[(meta_df$Strand == '+' &
@@ -65,12 +65,12 @@ annotateTSS <- function(methyl_df, meta_df, location, size) {
 }
 
 # Define function to calculate variance by coverage
-# Input df, 
+# Input df,
 # Outputs dataframe with 2 columns, coverage and variance
 # Calculate variance of change in evolved methylation sites by coverage
 # Generate df with coverage (min to max) and variance at that coverage
 # Determine which coverages are (and are not) present in dataset
-var_by_coverage <- function(dataset) {
+varByCoverage <- function(dataset) {
   f_all_coverage <- rep(NA, max(dataset$Coverage_Sample))
   for (cov in 1:max(dataset$Coverage_Sample)) {
     if (cov %in% dataset$Coverage_Sample) {
@@ -102,7 +102,7 @@ var_by_coverage <- function(dataset) {
 # Function to calculate sequencing depth across non-overlapping windows of arbitrary size
 # Input dataframe, column with position, column with coverages, and window size
 # Returns df with right position of each window and average depth within window
-calculate_methyl_site_depth <- function(df, position_col, cov_col, w_size, calc_log2 = FALSE) {
+calculateMethylSiteDepth <- function(df, position_col, cov_col, w_size, calc_log2 = FALSE) {
   out_df <- tibble(position = integer(),
                    coverage = double())
   for (i in 1:ceiling(max(df[[position_col]])/w_size)) {
@@ -117,7 +117,7 @@ calculate_methyl_site_depth <- function(df, position_col, cov_col, w_size, calc_
 
 # Calculate rolling mean of methylation values to show whole chromosome at once
 # Default using MG1655 genome which is 4641652 long, but can put in other genome size
-methylRollingMean <- function(df, position_col, methyl_col, w_size, genome_size=4641652) {
+methylRollingMean <- function(df, position_col, methyl_col, w_size, genome_size=4641652, verbose = FALSE) {
   tstart <- Sys.time()
   out_df <- tibble(position = integer(),
                    mean_methyl = double())
@@ -129,12 +129,12 @@ methylRollingMean <- function(df, position_col, methyl_col, w_size, genome_size=
   out_df <- tibble(position = as.numeric(rep(NA, nsites)),
                    mean_methyl = as.double(rep(NA, nsites)))
   for (i in 1:nsites) {
-    if(i %% 1000 == 0) {
+    if(i %% 1000 == 0 & verbose) {
       print(i)
     }
     out_df[[i,'position']] <- df[[i,'position']]
     out_df[[i,'mean_methyl']] <- mean(dplyr::filter(df, position>=df[[i,'position']]&position<=(df[[i,'position']]+w_size))[['methyl']])
   }
-  print(Sys.time()-tstart)
+  if (verbose) print(Sys.time()-tstart)
   return(out_df)
 }
