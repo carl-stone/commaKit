@@ -20,7 +20,7 @@ Dataframe methyl_df with columns added for genomic features present in each meth
 Takes a dataframe with a numeric vector for methylated sites of interest (for example, all adenines within GATC sites) and a dataframe with the genomic locations of features of interest (like Promoters, Sigma factor binding sites, genes, etc.) and determines which features (can be more than one) are present at each methylation site.
 }
 \examples{
-df <- read.table(file="./data/WT_6mA_Mg.txt", header = T, sep = '\t')
-meta <- read.table('./all_site_annotations.txt', header = T, sep = '\t')
+df <- methyl_df
+meta <- genome_sites
 df_annotated <- annotateMethylSites(df, meta, location='Position')
 }
