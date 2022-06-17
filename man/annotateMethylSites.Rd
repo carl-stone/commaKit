@@ -3,6 +3,9 @@
 \name{annotateMethylSites}
 \alias{annotateMethylSites}
 \title{Annotate methylation sites}
+\usage{
+annotateMethylSites(methyl_df, meta_df, location)
+}
 \arguments{
 \item{methyl_df}{A dataframe with a column listing every methylated site of interest, for example adenines within GATC sites.}
 
@@ -17,5 +20,7 @@ Dataframe methyl_df with columns added for genomic features present in each meth
 Takes a dataframe with a numeric vector for methylated sites of interest (for example, all adenines within GATC sites) and a dataframe with the genomic locations of features of interest (like Promoters, Sigma factor binding sites, genes, etc.) and determines which features (can be more than one) are present at each methylation site.
 }
 \examples{
-annotated_methylation_sites_df <- annotateMethylSites(methyl_sites, genome_sites, location = 'Position')
+df <- read.table(file="./data/WT_6mA_Mg.txt", header = T, sep = '\t')
+meta <- read.table('./all_site_annotations.txt', header = T, sep = '\t')
+df_annotated <- annotateMethylSites(df, meta, location='Position')
 }

@@ -12,8 +12,10 @@
 #' @name annotateMethylSites
 #'
 #' @examples
-#' annotated_methylation_sites_df <- annotateMethylSites(methyl_sites, genome_sites, location = 'Position')
-function(methyl_df, meta_df, location) {
+#' df <- read.table(file="./data/WT_6mA_Mg.txt", header = T, sep = '\t')
+#' meta <- read.table('./all_site_annotations.txt', header = T, sep = '\t')
+#' df_annotated <- annotateMethylSites(df, meta, location='Position')
+annotateMethylSites <- function(methyl_df, meta_df, location) {
   for (position in methyl_df[[location]]) {
     if (nrow(meta_df[meta_df$Left <= position &
                      meta_df$Right >= position,]) == 0){
