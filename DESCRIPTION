@@ -3,7 +3,7 @@ Title: Comparison of Microbial Methylated Adenines
 Version: 0.0.0.9000
 Authors@R: 
     person("Carl", "Stone", , "carl.j.stone@vanderbilt.edu", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+           comment = c(ORCID = "0000-0003-0232-5223"))
 Description: Comparative adenine methylomics between bacterial samples. This package can take methylated adenine calls from nanopore sequencing as input, then characterize methylation throughout the genome, identify differentially methylated sites between samples, and compare full adenine methylomes between samples.
 License: MIT + file LICENSE
 Encoding: UTF-8
