@@ -1,4 +1,4 @@
-function(methyl_df, meta_df, location, size) {
+annotateTSS <- function(methyl_df, meta_df, location, size) {
   meta_df <- meta_df %>%
     filter(Type == 'Transcription-Units')
   for (position in methyl_df[[location]]) {

@@ -1,4 +1,4 @@
-function(df, position_col, cov_col, w_size, calc_log2 = FALSE) {
+calculateMethylSiteDepth <- function(df, position_col, cov_col, w_size, calc_log2 = FALSE) {
   out_df <- tibble(position = integer(),
                    coverage = double())
   for (i in 1:ceiling(max(df[[position_col]])/w_size)) {

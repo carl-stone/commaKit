@@ -1,4 +1,4 @@
-function(dataset) {
+varByCoverage <- function(dataset) {
   f_all_coverage <- rep(NA, max(dataset$Coverage_Sample))
   for (cov in 1:max(dataset$Coverage_Sample)) {
     if (cov %in% dataset$Coverage_Sample) {
