@@ -1,4 +1,4 @@
-annotateTSS <- function(methyl_df, meta_df, location, size) {
+annotateTSS <- function(methyl_df, meta_df, location, size, long = TRUE) {
   meta_df <- meta_df %>%
     filter(Type == 'Transcription-Units')
   for (position in methyl_df[[location]]) {
@@ -30,5 +30,15 @@ annotateTSS <- function(methyl_df, meta_df, location, size) {
       methyl_df[methyl_df[[location]] == position, paste0('RelPos_-',i)] <- AntisenseTU_at_position[i,'Right']-position
     }
   }
-  return(methyl_df)
+  if (long) {
+    methyl_df <- methyl_df %>% pivot_longer(cols = starts_with('RelPos'),
+                                            names_to = 'TSS_strand',
+                                            names_pattern = 'RelPos_(.)[0-9]*',
+                                            values_to = 'RelPos')
+    methyl_df <- methyl_df %>% distinct(Position, RelPos, .keep_all = TRUE)
+    methyl_df <- methyl_df %>% filter(!is.na(RelPos))
+    return(methyl_df)
+  } else {
+    return(methyl_df)
+  }
 }
