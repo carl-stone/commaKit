@@ -19,7 +19,7 @@ Depends:
 LazyData: true
 Imports: 
     methylKit,
-    dplyr,
     forcats,
     ggplot2,
-    tidyr
+    tidyr,
+    dplyr

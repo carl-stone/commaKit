@@ -25,7 +25,9 @@ devtools::install_github("carl-stone/CoMMA")
 
 ``` r
 library(CoMMA)
-library(tidyverse)
+library(cowplot)
+library(RColorBrewer)
+library(tidyverse, quietly = TRUE)
 #> ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
 #> ✔ ggplot2 3.4.0      ✔ purrr   0.3.5 
 #> ✔ tibble  3.1.8      ✔ dplyr   1.0.10
@@ -34,8 +36,6 @@ library(tidyverse)
 #> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 #> ✖ dplyr::filter() masks stats::filter()
 #> ✖ dplyr::lag()    masks stats::lag()
-library(cowplot)
-## basic example code
 ```
 
 ### WT methylome characterization
@@ -49,9 +49,9 @@ beta values is extremely left-skewed.
 
 ``` r
 WT_dist <- all_samples_long %>% 
-  filter(sample == 'WT1' |
-           sample == 'WT2' |
-           sample == 'WT3') %>% 
+  dplyr::filter(sample == 'WT1' |
+                sample == 'WT2' |
+                sample == 'WT3') %>% 
   ggplot(aes(x = beta,
              color = sample)) +
   geom_density() +
@@ -60,8 +60,8 @@ WT_dist <- all_samples_long %>%
   scale_color_brewer(palette = 'Dark2')
 WT_ecdf <- all_samples_long %>% 
   filter(sample == 'WT1' |
-           sample == 'WT2' |
-           sample == 'WT3') %>% 
+         sample == 'WT2' |
+         sample == 'WT3') %>% 
   ggplot(aes(x = beta,
              color = sample)) +
   stat_ecdf() +
@@ -78,18 +78,17 @@ This saturation holds across the genome, though there are a few
 significant dips. The genome-wide median (red line) beta value is 96.6%.
 
 ``` r
-beta_x_position <- WT_average %>%
-  group_by(Position) %>% 
+WT_average %>%
   ggplot(aes(x = Position, y = beta*100)) + 
   geom_point(size = 1) +
   theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
   scale_x_continuous(expand = expansion(mult = c(0.01, 0.01))) +
   geom_hline(yintercept = median(WT_average$beta*100),
              color = "red") +
   labs(x = "Genome position",
        y = "Percent methylated reads")
-
-beta_x_position
 ```
 
 <img src="man/figures/README-beta_x_position_S1-1.png" width="100%" />
@@ -111,6 +110,8 @@ sliding_window_methylation %>%
   ggplot(aes(x = position, y = med_methyl*100)) + 
   geom_point(size = 1) +
   theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
   scale_x_continuous(expand = expansion(mult = c(0.01, 0.01))) +
   geom_hline(yintercept = median(sliding_window_methylation$med_methyl*100,
                                  na.rm = T),
@@ -162,8 +163,8 @@ want in your favorite organism.
 
 ``` r
 WT_average_annotated <- annotateMethylSites(methyl_df = WT_average,
-                                             meta_df = genome_sites,
-                                             location = 'Position')
+                                            meta_df = genome_sites,
+                                            location = 'Position')
 WT_average_annotated_long <-  WT_average_annotated %>% 
   dplyr::select(!'Transcription-Units') %>% 
   pivot_longer(cols = Genes:'Origin-of-Replication',
@@ -171,3 +172,75 @@ WT_average_annotated_long <-  WT_average_annotated %>%
                values_to = 'feature_name') %>% 
   drop_na()
 ```
+
+With all of the sites annotated, here are some notable differences in
+methylation between features.
+
+First, there is lower methylation in intergenic GATC sites compared to
+genic sites.
+
+``` r
+genic_df <- WT_average_annotated %>% 
+  filter(!is.na(Genes)) %>% 
+  dplyr::select(Position, beta)
+intergenic_df <- WT_average_annotated %>% 
+  filter(is.na(Genes)) %>% 
+  dplyr::select(Position, beta)
+genic_df$gi <- "genic"
+intergenic_df$gi <- "intergenic"
+genic_intergenic_df <- bind_rows(genic_df, intergenic_df)
+
+# Calculate genome_median for comparison
+genome_median <- median(WT_average$beta*100)
+genic_intergenic_df %>% 
+  ggplot(aes(x = gi,
+             y = beta*100,
+             fill = gi)) +
+  geom_boxplot(notch = TRUE) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  labs(x = 'Genic/Intergenic',
+       y = "Percent methylated reads") +
+  scale_y_continuous(breaks = seq(0, 100, 20),
+                     limits = c(0,100)) +
+  geom_hline(yintercept = genome_median,
+             linetype = 'dashed') +
+  scale_fill_brewer(palette = "Pastel1")
+```
+
+<img src="man/figures/README-genic_intergenic-1.png" width="100%" />
+
+DNA binding sites are another area of decreased methylation, likely due
+to competition between Dam methyltransferase and proteins binding at
+each motif. There are many such DNA binding proteins in *E. coli*, and
+here we highlight a few with large regulons and GATC sites in many of
+their binding sites.
+
+``` r
+WT_average_annotated_long %>%
+  dplyr::filter(feature_type == 'DNA-Binding-Sites') %>% 
+  tidyr::separate(feature_name, sep = ' ', c('feature_name', NA)) %>% 
+  dplyr::filter(feature_name == 'CRP-cAMP' |
+                feature_name == 'Fnr' |
+                feature_name == 'Nac' |
+                feature_name == 'Fis' |
+                feature_name == 'Cra' |
+                feature_name == 'IHF' |
+                feature_name == 'Lrp') %>% 
+  dplyr::mutate(feature_name = forcats::fct_recode(feature_name, 'CRP' = 'CRP-cAMP')) %>% 
+  ggplot(aes(x = feature_name, y = beta*100,  fill = feature_name)) +
+  geom_boxplot() +
+  theme_classic() +
+  labs(x = 'DNA Binding Factors',
+       y = "Percent methylated reads") +
+  scale_y_continuous(limits = c(0,100)) +
+  theme(legend.position = "none") +
+  geom_hline(yintercept = genome_median,
+             linetype = 'dashed') +
+  scale_fill_brewer(palette = "Pastel1")
+```
+
+<img src="man/figures/README-dbs_plot-1.png" width="100%" />
+
+Similar code can be used to visualize other genomic features like
+cryptic prophages, IS elements, etc.

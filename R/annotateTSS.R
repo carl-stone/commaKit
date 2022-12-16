@@ -14,7 +14,7 @@
 annotateTSS <-
   function(methyl_df, meta_df, location, size, long = TRUE) {
     meta_df <- meta_df %>%
-      filter(Type == 'Transcription-Units')
+      dplyr::filter(Type == 'Transcription-Units')
     for (position in methyl_df[[location]]) {
       if (nrow(meta_df[(
         meta_df$Strand == '+' &
@@ -60,7 +60,7 @@ annotateTSS <-
         )
       methyl_df <-
         methyl_df %>% distinct(Position, RelPos, .keep_all = TRUE)
-      methyl_df <- methyl_df %>% filter(!is.na(RelPos))
+      methyl_df <- methyl_df %>% dplyr::filter(!is.na(RelPos))
       return(methyl_df)
     } else {
       return(methyl_df)
