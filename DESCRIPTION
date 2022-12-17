@@ -15,7 +15,7 @@ Suggests:
     tidyverse
 Config/testthat/edition: 3
 Depends: 
-    R (>= 2.10)
+    R (>= 3.5.0)
 LazyData: true
 Imports: 
     methylKit,
