@@ -66,6 +66,11 @@ NULL
         error = function(e) stop("Failed to read modkit BED file '", file, "': ", e$message)
     )
 
+    if (nrow(raw) == 0L) {
+        message("Note: modkit BED file '", file, "' contains no data rows")
+        return(.emptyModkitResult())
+    }
+
     if (ncol(raw) < 15L) {
         stop(
             "modkit BED file '", file, "' has ", ncol(raw), " columns; ",
@@ -76,11 +81,6 @@ NULL
     # Use only the first 15 columns
     raw <- raw[, seq_len(15L), drop = FALSE]
     colnames(raw) <- .MODKIT_COLS
-
-    if (nrow(raw) == 0L) {
-        message("Note: modkit BED file '", file, "' contains no data rows")
-        return(.emptyModkitResult())
-    }
 
     # ── Map mod_code → mod_type ─────────────────────────────────────────────
     raw$mod_code <- as.character(raw$mod_code)
