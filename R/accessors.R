@@ -1,6 +1,8 @@
 #' @importFrom methods setGeneric setMethod
 #' @importFrom SummarizedExperiment assay rowData colData
 #' @importFrom BiocGenerics annotation
+#' @importFrom IRanges coverage
+#' @importFrom GenomeInfoDb genome
 NULL
 
 # ─── methylation() ───────────────────────────────────────────────────────────
@@ -55,11 +57,8 @@ setMethod("methylation", "commaData", function(object) {
 #' summary(as.vector(cov))
 #'
 #' @export
-setGeneric("coverage", function(object, ...) standardGeneric("coverage"))
-
-#' @rdname coverage
-setMethod("coverage", "commaData", function(object, ...) {
-    assay(object, "coverage")
+setMethod("coverage", "commaData", function(x, shift = 0L, width = NULL, weight = 1L, ...) {
+    assay(x, "coverage")
 })
 
 # ─── sampleInfo() ────────────────────────────────────────────────────────────
@@ -159,11 +158,8 @@ setMethod("modTypes", "commaData", function(object) {
 #' genome(comma_example_data)
 #'
 #' @export
-setGeneric("genome", function(object, ...) standardGeneric("genome"))
-
-#' @rdname genome
-setMethod("genome", "commaData", function(object, ...) {
-    object@genomeInfo
+setMethod("genome", "commaData", function(x) {
+    x@genomeInfo
 })
 
 # ─── annotation() ────────────────────────────────────────────────────────────

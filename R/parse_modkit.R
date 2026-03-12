@@ -63,8 +63,18 @@ NULL
             comment.char    = "#",
             fill            = TRUE
         ),
-        error = function(e) stop("Failed to read modkit BED file '", file, "': ", e$message)
+        error = function(e) {
+            if (grepl("no lines available in input", e$message, fixed = TRUE)) {
+                return(NULL)  # empty file
+            }
+            stop("Failed to read modkit BED file '", file, "': ", e$message)
+        }
     )
+
+    if (is.null(raw) || nrow(raw) == 0L) {
+        message("Note: modkit BED file '", file, "' contains no data rows")
+        return(.emptyModkitResult())
+    }
 
     if (ncol(raw) < 15L) {
         stop(
@@ -76,11 +86,6 @@ NULL
     # Use only the first 15 columns
     raw <- raw[, seq_len(15L), drop = FALSE]
     colnames(raw) <- .MODKIT_COLS
-
-    if (nrow(raw) == 0L) {
-        message("Note: modkit BED file '", file, "' contains no data rows")
-        return(.emptyModkitResult())
-    }
 
     # ── Map mod_code → mod_type ─────────────────────────────────────────────
     raw$mod_code <- as.character(raw$mod_code)
