@@ -24,6 +24,25 @@ Suggests:
     knitr,
     rmarkdown
 Config/testthat/edition: 3
+Collate:
+    'commaData_class.R'
+    'commaData_constructor.R'
+    'accessors.R'
+    'annotateMethylSites.R'
+    'annotateTSS.R'
+    'annotateTTS.R'
+    'calculateMethylSiteDepth.R'
+    'comma_example_data.R'
+    'find_motif_sites.R'
+    'genome_utils.R'
+    'load_annotation.R'
+    'methylRollingMean.R'
+    'methylRollingMedian.R'
+    'parse_dorado.R'
+    'parse_megalodon.R'
+    'parse_modkit.R'
+    'varByCoverage.R'
+    'writeBED.R'
 Depends:
     R (>= 4.1.0)
 LazyData: true
@@ -34,7 +53,6 @@ Imports:
     S4Vectors,
     SummarizedExperiment,
     Rsamtools,
-    methylKit,
     zoo,
     ggplot2,
     dplyr,

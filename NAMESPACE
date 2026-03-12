@@ -42,7 +42,9 @@ importFrom(GenomicRanges, sort)
 importFrom(GenomicRanges, strand)
 importFrom(GenomicRanges, "strand<-")
 
+importFrom(GenomeInfoDb, genome)
 importFrom(IRanges, IRanges)
+importFrom(IRanges, coverage)
 
 importFrom(S4Vectors, DataFrame)
 

@@ -63,10 +63,15 @@ NULL
             comment.char    = "#",
             fill            = TRUE
         ),
-        error = function(e) stop("Failed to read modkit BED file '", file, "': ", e$message)
+        error = function(e) {
+            if (grepl("no lines available in input", e$message, fixed = TRUE)) {
+                return(NULL)  # empty file
+            }
+            stop("Failed to read modkit BED file '", file, "': ", e$message)
+        }
     )
 
-    if (nrow(raw) == 0L) {
+    if (is.null(raw) || nrow(raw) == 0L) {
         message("Note: modkit BED file '", file, "' contains no data rows")
         return(.emptyModkitResult())
     }
