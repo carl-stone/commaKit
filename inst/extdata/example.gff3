@@ -1,0 +1,12 @@
+##gff-version 3
+##sequence-region chr_sim 1 100000
+chr_sim	comma	gene	1	500	.	+	.	ID=gene001;Name=geneA;gene_biotype=protein_coding
+chr_sim	comma	CDS	1	500	.	+	0	ID=cds001;Name=geneA_CDS;Parent=gene001
+chr_sim	comma	gene	600	1200	.	+	.	ID=gene002;Name=geneB;gene_biotype=protein_coding
+chr_sim	comma	CDS	600	1200	.	+	0	ID=cds002;Name=geneB_CDS;Parent=gene002
+chr_sim	comma	gene	1400	2000	.	-	.	ID=gene003;Name=geneC;gene_biotype=protein_coding
+chr_sim	comma	CDS	1400	2000	.	-	0	ID=cds003;Name=geneC_CDS;Parent=gene003
+chr_sim	comma	gene	2500	3500	.	+	.	ID=gene004;Name=geneD;gene_biotype=rRNA
+chr_sim	comma	rRNA	2500	3500	.	+	.	ID=rrna001;Name=geneD_rRNA;Parent=gene004
+chr_sim	comma	gene	4000	5000	.	-	.	ID=gene005;Name=geneE;gene_biotype=tRNA
+chr_sim	comma	tRNA	4000	5000	.	-	.	ID=trna001;Name=geneE_tRNA;Parent=gene005
