@@ -1,6 +1,6 @@
 Package: comma
 Title: Comparative Methylomics for Microbial Analysis
-Version: 0.3.0
+Version: 0.4.0
 Authors@R:
     person("Carl", "Stone", , "carl.j.stone@vanderbilt.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-0232-5223"))
@@ -19,6 +19,7 @@ biocViews: Sequencing, Epigenetics, Coverage, DifferentialMethylation,
 Suggests:
     BSgenome,
     Biostrings,
+    methylKit,
     rtracklayer,
     testthat (>= 3.0.0),
     knitr,
@@ -29,15 +30,20 @@ Collate:
     'commaData_constructor.R'
     'accessors.R'
     'annotateSites.R'
+    'beta_binomial.R'
     'comma_example_data.R'
     'coverage_analysis.R'
+    'diffMethyl.R'
     'find_motif_sites.R'
     'genome_utils.R'
     'load_annotation.R'
+    'methylkit_wrapper.R'
     'methylome_summary.R'
+    'multiple_testing.R'
     'parse_dorado.R'
     'parse_megalodon.R'
     'parse_modkit.R'
+    'results_methods.R'
     'sliding_window.R'
     'writeBED.R'
 Depends:

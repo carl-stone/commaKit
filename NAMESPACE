@@ -17,6 +17,9 @@ export(coverageDepth)
 export(varianceByDepth)
 export(writeBED)
 
+# Phase 4 exports
+export(diffMethyl)
+
 # ── Exported S4 generics and methods ─────────────────────────────────────────
 exportMethods(
   "show",
@@ -29,7 +32,9 @@ exportMethods(
   "annotation",
   "motifSites",
   "subset",
-  "["
+  "[",
+  "results",
+  "filterResults"
 )
 
 # ── Imports: Bioconductor core ────────────────────────────────────────────────
@@ -57,6 +62,7 @@ importFrom(IRanges, splitAsList)
 importFrom(S4Vectors, CharacterList)
 importFrom(S4Vectors, DataFrame)
 importFrom(S4Vectors, IntegerList)
+importFrom(S4Vectors, metadata)
 importFrom(S4Vectors, queryHits)
 importFrom(S4Vectors, subjectHits)
 
@@ -64,6 +70,7 @@ importClassesFrom(SummarizedExperiment, SummarizedExperiment)
 importFrom(SummarizedExperiment, SummarizedExperiment)
 importFrom(SummarizedExperiment, assay)
 importFrom(SummarizedExperiment, assayNames)
+importFrom(SummarizedExperiment, assays)
 importFrom(SummarizedExperiment, rowData)
 importFrom(SummarizedExperiment, "rowData<-")
 importFrom(SummarizedExperiment, colData)
@@ -78,6 +85,12 @@ importFrom(methods, setMethod)
 importFrom(methods, setValidity)
 importFrom(methods, validObject)
 importFrom(methods, show)
+
+# ── Imports: stats (base R) ───────────────────────────────────────────────────
+importFrom(stats, coef)
+importFrom(stats, glm)
+importFrom(stats, p.adjust)
+importFrom(stats, quasibinomial)
 
 # ── Imports: other ────────────────────────────────────────────────────────────
 importFrom(dplyr, filter)

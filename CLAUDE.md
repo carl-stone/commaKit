@@ -9,17 +9,17 @@
 **Package name:** `comma` (was `CoMMA`; rename complete in package internals)
 **Full name:** Comparative Methylomics for Microbial Analysis
 **Author:** Carl Stone, Vanderbilt University (carl.j.stone@vanderbilt.edu)
-**Current version:** 0.3.0
+**Current version:** 0.4.0
 **License:** MIT
 **Target:** Bioconductor submission at v1.0.0
 
-`comma` is an R package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It characterizes genome-wide methylation patterns, annotates methylation sites relative to genomic features, and identifies differentially methylated sites between conditions. Phases 1–3 of the architectural refactor are complete — see `comma_pm.md` for the full design specification and roadmap.
+`comma` is an R package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It characterizes genome-wide methylation patterns, annotates methylation sites relative to genomic features, and identifies differentially methylated sites between conditions. Phases 1–4 of the architectural refactor are complete — see `comma_pm.md` for the full design specification and roadmap.
 
 ---
 
 ## 2. Current Repository State
 
-### What exists now (v0.3.0 — Phases 1, 2 & 3 complete)
+### What exists now (v0.4.0 — Phases 1, 2, 3 & 4 complete)
 
 ```
 CoMMA/
@@ -28,7 +28,7 @@ CoMMA/
 │   ├── commaData_constructor.R  # ✅ commaData() constructor (~270 lines)
 │   ├── accessors.R              # ✅ methylation(), coverage(), sampleInfo(), etc. (~150 lines)
 │   ├── parse_modkit.R           # ✅ PRIMARY input format parser (~175 lines)
-│   ├── parse_dorado.R           # ⚠️ STUB: errors with helpful message; deferred
+│   ├── parse_dorado.R           # ✅ Phase 4: full Dorado BAM parser with MM/ML tags (~220 lines)
 │   ├── parse_megalodon.R        # ✅ backward compatibility parser
 │   ├── load_annotation.R        # ✅ GFF3/BED → GRanges (~143 lines)
 │   ├── find_motif_sites.R       # ✅ FASTA + motif regex → GRanges (~130 lines)
@@ -38,7 +38,12 @@ CoMMA/
 │   ├── sliding_window.R         # ✅ Phase 3: generalized slidingWindow() (~168 lines)
 │   ├── methylome_summary.R      # ✅ Phase 3: per-sample QC stats (~106 lines)
 │   ├── coverage_analysis.R      # ✅ Phase 3: coverageDepth() + varianceByDepth() (~205 lines)
-│   └── writeBED.R               # ✅ Phase 3: rewritten, fully generalized (~191 lines)
+│   ├── writeBED.R               # ✅ Phase 3: rewritten, fully generalized (~191 lines)
+│   ├── diffMethyl.R             # ✅ Phase 4: main differential methylation interface (~220 lines)
+│   ├── beta_binomial.R          # ✅ Phase 4: quasibinomial GLM per-site engine (~165 lines)
+│   ├── methylkit_wrapper.R      # ✅ Phase 4: methylKit alternative method wrapper (~165 lines)
+│   ├── multiple_testing.R       # ✅ Phase 4: BH/FDR correction utility (~30 lines)
+│   └── results_methods.R        # ✅ Phase 4: results() + filterResults() S4 methods (~140 lines)
 ├── data/
 │   └── comma_example_data.rda   # ✅ synthetic commaData (300 sites, 3 samples, chr_sim 100kb)
 ├── data-raw/
@@ -52,7 +57,7 @@ CoMMA/
 ├── tests/testthat/
 │   ├── helper-fixtures.R              # ✅ shared test fixtures (minimal 10kb genome, 3 sites)
 │   ├── test-commaData.R               # ✅ ~20 tests: S4 class, validity, constructor, show()
-│   ├── test-parsers.R                 # ✅ ~15 tests: .parseModkit(), .parseDorado() stub, coverage filter
+│   ├── test-parsers.R                 # ✅ ~15 tests: .parseModkit(), .parseDorado() (now full impl), coverage filter
 │   ├── test-accessors.R               # ✅ ~20 tests: all accessor methods, subsetting
 │   ├── test-genome_utils.R            # ✅ tests for .validateGenomeInfo(), .circularIndex(), .makeSeqinfo()
 │   ├── test-load_annotation.R         # ✅ tests for loadAnnotation() GFF3/BED parsing
@@ -61,14 +66,17 @@ CoMMA/
 │   ├── test-annotateSites.R           # ✅ ~20 tests for annotateSites() (overlap/proximity/metagene)
 │   ├── test-slidingWindow.R           # ✅ ~15 tests for slidingWindow()
 │   ├── test-methylomeSummary.R        # ✅ ~10 tests for methylomeSummary()
-│   └── test-coverageAnalysis.R        # ✅ ~8 tests for coverageDepth() and varianceByDepth()
+│   ├── test-coverageAnalysis.R        # ✅ ~8 tests for coverageDepth() and varianceByDepth()
+│   ├── test-diffMethyl.R              # ✅ Phase 4: ~25 tests for diffMethyl()
+│   ├── test-results.R                 # ✅ Phase 4: ~15 tests for results() and filterResults()
+│   └── test-parse_dorado.R            # ✅ Phase 4: ~10 tests for .parseDorado() helpers
 ├── man/                          # Roxygen2-generated docs (all current)
 ├── .github/workflows/
 │   ├── r.yml                     # rcmdcheck on push/PR (R 3.6.3 + 4.1.1, macOS-latest)
 │   └── render-rmarkdown.yaml     # auto-renders .Rmd on push
-├── DESCRIPTION                   # v0.3.0; 12 Imports, 6 Suggests; R >= 4.1.0
-├── NAMESPACE                     # commaData class + all Phase 1–3 exports
-├── NEWS.md                       # v0.3.0, v0.2.0, and v0.1.0 entries
+├── DESCRIPTION                   # v0.4.0; 12 Imports, 7 Suggests; R >= 4.1.0
+├── NAMESPACE                     # commaData class + all Phase 1–4 exports
+├── NEWS.md                       # v0.4.0, v0.3.0, v0.2.0, and v0.1.0 entries
 ├── README.md / README.Rmd        # ✅ Updated for v0.3.0 with Phase 1/2/3 examples
 ├── CLAUDE.md                     # ← THIS FILE (AI assistant guide)
 └── comma_pm.md                   # ← PROJECT MANAGEMENT DOCUMENT (read this)
@@ -115,12 +123,20 @@ The following functions were **removed** (use their replacements):
 | `calculateMethylSiteDepth()` | `coverageDepth()` |
 | `varByCoverage()` | `varianceByDepth()` |
 
-### Remaining issues (to fix in Phase 4+)
+### Added in v0.4.0 (Phase 4)
 
-1. **Dorado parser** — `parse_dorado.R` is still a stub; implement full BAM parser using `Rsamtools`
-2. **No vignettes** — required for Bioconductor submission; planned for Phase 5
-3. **No `diffMethyl()`** — core differential methylation analysis; Phase 4 priority
-4. **No visualization functions** — all `plot_*()` functions are Phase 5
+- **`diffMethyl()`** — main differential methylation function (modeled on DESeq2's `DESeq()`); accepts `commaData` + formula; returns enriched `commaData` with `dm_pvalue`, `dm_padj`, `dm_delta_beta`, `dm_mean_beta_<cond>` in `rowData`; supports `method = "beta_binomial"` (default, no extra deps) and `method = "methylkit"` (requires methylKit)
+- **`results()`** — S4 method to extract diff methylation table as tidy `data.frame`
+- **`filterResults()`** — S4 method to filter results by padj and delta_beta thresholds
+- **`.parseDorado()`** — full Dorado BAM parser replacing the stub; reads MM/ML tags via `Rsamtools::scanBam()`, CIGAR-decodes read positions, aggregates to per-site beta values; handles 6mA, 5mC, and 4mC in one BAM
+- **`beta_binomial.R`** — internal per-site quasibinomial GLM engine
+- **`methylkit_wrapper.R`** — internal methylKit dispatch wrapper
+- **`multiple_testing.R`** — internal BH/FDR correction utility
+
+### Remaining issues (to fix in Phase 5)
+
+1. **No vignettes** — required for Bioconductor submission; planned for Phase 5
+2. **No visualization functions** — all `plot_*()` functions are Phase 5
 
 ---
 
@@ -169,7 +185,7 @@ R/
 ├── commaData_constructor.R   # ✅ commaData() constructor
 ├── accessors.R               # ✅ methylation(), coverage(), sampleInfo(), etc.
 ├── parse_modkit.R            # ✅ PRIMARY input format
-├── parse_dorado.R            # ⚠️ Stub only — deferred to Phase 4
+├── parse_dorado.R            # ✅ Phase 4: full Dorado BAM parser (MM/ML tags)
 ├── parse_megalodon.R         # ✅ Backward compatibility
 ├── load_annotation.R         # ✅ GFF3/BED → GRanges
 ├── find_motif_sites.R        # ✅ FASTA + motif regex → GRanges
@@ -179,11 +195,11 @@ R/
 ├── methylome_summary.R       # ✅ Phase 3: per-sample QC stats
 ├── coverage_analysis.R       # ✅ Phase 3: depth windowing, variance
 ├── writeBED.R                # ✅ Phase 3: generalized BED export
-├── diffMethyl.R              # ⏳ Phase 4: main differential methylation interface
-├── beta_binomial.R           # ⏳ Phase 4: beta-binomial model
-├── methylkit_wrapper.R       # ⏳ Phase 4: methylKit as alternative method
-├── multiple_testing.R        # ⏳ Phase 4: BH / q-value correction
-├── results_methods.R         # ⏳ Phase 4: results(), filterResults()
+├── diffMethyl.R              # ✅ Phase 4: main differential methylation interface
+├── beta_binomial.R           # ✅ Phase 4: quasibinomial GLM per-site engine
+├── methylkit_wrapper.R       # ✅ Phase 4: methylKit as alternative method
+├── multiple_testing.R        # ✅ Phase 4: BH / q-value correction
+├── results_methods.R         # ✅ Phase 4: results(), filterResults()
 ├── plot_distribution.R       # ⏳ Phase 5
 ├── plot_genome_track.R       # ⏳ Phase 5
 ├── plot_metagene.R           # ⏳ Phase 5
@@ -220,8 +236,8 @@ See `comma_pm.md` Section 4 for full task lists. Work sequentially — each phas
 | 1 — Data Infrastructure | 0.2.0 | `commaData` S4 class + modkit parser + constructor | ✅ Complete |
 | 2 — Genome Generalization | 0.2.0 | Remove all hardcoded MG1655 assumptions | ✅ Complete |
 | 3 — Refactor Functions | 0.3.0 | Vectorized annotation, sliding window, coverage analysis, cleanup | ✅ Complete |
-| 4 — Differential Methylation | 0.4.0 | `diffMethyl()` with beta-binomial model | ⏳ Next |
-| 5 — Visualization & Release | 0.5.0 | All `plot_*()` functions, real tests, vignettes | ⏳ Pending |
+| 4 — Differential Methylation | 0.4.0 | `diffMethyl()` with beta-binomial model | ✅ Complete |
+| 5 — Visualization & Release | 0.5.0 | All `plot_*()` functions, real tests, vignettes | ⏳ Next |
 | Bioconductor submission | 1.0.0 | `BiocCheck` passing, full docs | ⏳ Pending |
 
 **Phases 1, 2, and 3 are complete.** Phase 4 is the current priority. Do not skip ahead to Phase 5.
@@ -437,7 +453,7 @@ All Phase 3 cleanup tasks are complete:
 | `all_site_annotations_60p.txt` (root) | Deleted — legacy data file | ✅ Done |
 | `data/*.rda` (MG1655 files) | Removed — replaced by `comma_example_data` | ✅ Done |
 | `writeBED.R` | Rewritten — generalized, no hardcoded paths | ✅ Done |
-| `parse_dorado.R` stub | Intentional stub — full implementation deferred to Phase 4 | ⚠️ Deferred |
+| `parse_dorado.R` stub | Replaced with full Dorado BAM parser (MM/ML tags) in Phase 4 | ✅ Done |
 
 ---
 
@@ -501,7 +517,7 @@ devtools::document()     # Rebuild docs from roxygen2
 BiocCheck::BiocCheck()   # Bioconductor-specific checks (Phase 5)
 ```
 
-### Currently exported API (v0.3.0)
+### Currently exported API (v0.4.0)
 
 ```r
 # S4 class (Phase 1)
@@ -532,67 +548,44 @@ methylomeSummary(object, mod_type)            # per-sample QC stats → tidy dat
 coverageDepth(object, window, method, ...)    # windowed sequencing depth → tidy data.frame
 varianceByDepth(object, coverage_bins)        # methylation variance by depth → tidy data.frame
 writeBED(object, file, sample, ...)           # write BED9 output file
+
+# Differential methylation (Phase 4)
+diffMethyl(object, formula, method, mod_type, min_coverage, p_adjust_method)
+                                              # → commaData with dm_* results in rowData
+results(object, mod_type)                     # → tidy data.frame of diff methylation results
+filterResults(object, padj, delta_beta, ...)  # → filtered data.frame
 ```
 
 ---
 
-## 16. Phase 4 Implementation Guide (Next Phase)
+## 16. Phase 5 Implementation Guide (Next Phase)
 
-This section provides a focused roadmap for the next developer to pick up.
+Phase 4 is complete. This section describes Phase 5.
 
-### Goal: Differential Methylation (v0.4.0)
+### Goal: Visualization, Tests, Vignettes, and Bioconductor Release (v0.5.0)
 
-The central Phase 4 deliverable is `diffMethyl()` — a function that identifies statistically significant differences in methylation between conditions. Modeled conceptually on DESeq2's `DESeq()`, but adapted for beta-distributed methylation data.
+Phase 5 completes the user-facing experience and prepares for Bioconductor submission.
 
-### Priority order for Phase 4
+### Priority order for Phase 5
 
-1. **`diffMethyl.R`** — main user-facing interface
-   - Signature: `diffMethyl(object, formula, method = c("beta_binomial", "methylkit"), min_coverage, ...)`
-   - Dispatches to the appropriate statistical backend
-   - Returns an updated `commaData` with test results stored (e.g., in `rowData` or `metadata`)
-   - Test file: `tests/testthat/test-diffMethyl.R` (create new)
+1. **Visualization functions** — all `plot_*()` functions return `ggplot` objects:
+   - `plot_methylation_distribution(object, mod_type, per_sample)` — beta density/ECDF per sample
+   - `plot_genome_track(object, chromosome, start, end, mod_type)` — genome browser style
+   - `plot_volcano(results_df, delta_beta_threshold, padj_threshold)` — volcano plot
+   - `plot_heatmap(object, result_df, n_sites)` — heatmap of top diff sites
+   - `plot_metagene(object, feature, mod_type, window)` — metagene plot
+   - `plot_pca(object, mod_type, color_by)` — PCA on methylation profiles
+   - `plot_coverage(object, per_sample)` — coverage distribution QC
 
-2. **`beta_binomial.R`** — primary statistical model
-   - Beta-binomial regression is appropriate because methylation counts (n_mod / coverage) follow a beta-binomial distribution
-   - Input: `methylation` (beta values) + `coverage` matrices + `colData`
-   - Output: per-site p-values, effect sizes (Δβ), adjusted p-values
-   - Internal function; not exported directly
+2. **Vignettes** — required for Bioconductor:
+   - "Getting Started with comma" — end-to-end workflow using `comma_example_data`
+   - "Working with Multiple Modification Types" — 6mA + 5mC joint analysis
 
-3. **`methylkit_wrapper.R`** — alternative method using methylKit
-   - Wraps `methylKit::calculateDiffMeth()` to accept/return `commaData`
-   - Requires adding `methylKit` to `Suggests` in DESCRIPTION
-   - Internal function; not exported directly
+3. **Package-level documentation** — `?comma` page explaining overall workflow
 
-4. **`multiple_testing.R`** — FDR correction
-   - Apply Benjamini-Hochberg correction (and optionally q-value)
-   - Simple utility; can be internal or exported depending on need
-
-5. **`results_methods.R`** — results extraction
-   - `results(object)` — extract differential methylation results as a tidy `data.frame`
-   - `filterResults(object, padj, delta_beta)` — filter by statistical thresholds
-   - Both should be exported
-
-6. **Dorado BAM parser** — implement full `parse_dorado.R`
-   - Read MM/ML tags from BAM files using `Rsamtools`
-   - Convert per-read to per-site beta values (similar to Megalodon parser logic)
-   - Must handle multiple mod types in a single BAM
-
-### Key design decisions for Phase 4
-
-- **Model**: Beta-binomial is preferred over a simple t-test on beta values because it properly accounts for the count nature of the data (n_mod out of coverage total). Consider `betareg` or a custom implementation.
-- **Multiple mod types**: `diffMethyl()` should handle each `mod_type` independently by default, or accept a `mod_type` filter
-- **Formula interface**: Allow `formula = ~ condition` or more complex designs like `~ condition + replicate`
-- **Output format**: Results should live in `rowData` of the returned `commaData`, and `results()` should extract them to a data.frame
-
-### Phase 4 design constraints
-
-All new functions must:
-- Accept `commaData` as primary input
-- Return either an updated `commaData` or a tidy `data.frame`
-- Not hardcode any organism-specific values
-- Document every exported function with full roxygen2
+4. **Bioconductor submission prep** — `BiocCheck::BiocCheck()`, `R CMD check --as-cran`
 
 ---
 
-*Last updated: March 2026 (v0.3.0 — Phases 1, 2 & 3 complete; Phase 4 is next priority)*
+*Last updated: March 2026 (v0.4.0 — Phases 1, 2, 3 & 4 complete; Phase 5 is next priority)*
 *See `comma_pm.md` for complete design rationale and implementation details.*

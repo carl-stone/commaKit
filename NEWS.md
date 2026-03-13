@@ -1,3 +1,42 @@
+# comma 0.4.0
+
+## Major new features
+
+* **`diffMethyl()`** — the core differential methylation function. Accepts a
+  `commaData` object and a design formula, tests each methylation site for
+  differential methylation between conditions, and returns the object enriched
+  with per-site statistics in `rowData`. Supports two statistical backends:
+  - `method = "beta_binomial"` (default): per-site quasibinomial GLM via base
+    R `stats::glm()`. No extra packages required.
+  - `method = "methylkit"`: wraps `methylKit::calculateDiffMeth()` for users
+    who prefer the methylKit pipeline. Requires `methylKit` to be installed.
+
+  New `rowData` columns: `dm_pvalue`, `dm_padj` (Benjamini-Hochberg by
+  default), `dm_delta_beta` (effect size: treatment minus control mean beta),
+  and one `dm_mean_beta_<condition>` column per condition level. Analysis
+  parameters are stored in `metadata(object)$diffMethyl_params`.
+
+* **`results()`** — S4 method to extract differential methylation results from
+  a `commaData` object as a tidy `data.frame`. Supports optional `mod_type`
+  filtering.
+
+* **`filterResults()`** — S4 method to filter the results table by adjusted
+  p-value (`padj`) and absolute effect size (`delta_beta`) thresholds.
+
+* **`.parseDorado()` — full Dorado BAM parser** replacing the previous stub.
+  Reads MM/ML base modification tags from Dorado-aligned BAM files using
+  `Rsamtools::scanBam()`, parses modification positions from CIGAR-decoded read
+  coordinates, and aggregates per-read calls into per-site beta values.
+  Supports 6mA, 5mC, and 4mC in the same BAM file. Invoked automatically by
+  `commaData(..., caller = "dorado")`.
+
+## Dependency changes
+
+* **Added** `methylKit` to `Suggests`. Required only for
+  `diffMethyl(..., method = "methylkit")`.
+
+---
+
 # comma 0.3.0
 
 ## Major new features
