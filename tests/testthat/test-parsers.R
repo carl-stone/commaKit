@@ -189,16 +189,19 @@ test_that(".parseModkit() parses the bundled example file without error", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# .parseDorado() — stub error
+# .parseDorado() — input validation (Phase 4: full implementation)
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that(".parseDorado() stops with informative message", {
+test_that(".parseDorado() stops with informative error for missing file", {
     expect_error(
-        comma:::.parseDorado("any.bam", "s1"),
-        regexp = "not yet implemented"
+        comma:::.parseDorado("/nonexistent/path/to.bam", "s1"),
+        regexp = "not found"
     )
+})
+
+test_that(".parseDorado() stops with informative error for non-character file", {
     expect_error(
-        comma:::.parseDorado("any.bam", "s1"),
-        regexp = "modkit"
+        comma:::.parseDorado(123L, "s1"),
+        regexp = "single character string"
     )
 })
