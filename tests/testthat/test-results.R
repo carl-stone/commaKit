@@ -169,3 +169,28 @@ test_that("filterResults: no NA in dm_delta_beta of returned rows", {
     sig <- filterResults(dm, padj = 1, delta_beta = 0)
     expect_true(!any(is.na(sig$dm_delta_beta)))
 })
+
+test_that("filterResults: delta_beta=0 threshold retains more sites than delta_beta=0.5", {
+    dm      <- .make_tested_object()
+    sig_d0  <- filterResults(dm, padj = 1, delta_beta = 0)
+    sig_d05 <- filterResults(dm, padj = 1, delta_beta = 0.5)
+    expect_gte(nrow(sig_d0), nrow(sig_d05))
+})
+
+test_that("filterResults: both thresholds applied simultaneously (AND logic)", {
+    dm <- .make_tested_object()
+    padj_thresh <- 0.5
+    db_thresh   <- 0.1
+    sig <- filterResults(dm, padj = padj_thresh, delta_beta = db_thresh)
+    if (nrow(sig) > 0) {
+        expect_true(all(sig$dm_padj       <= padj_thresh))
+        expect_true(all(abs(sig$dm_delta_beta) >= db_thresh))
+    }
+})
+
+test_that("filterResults: padj=0 returns an empty data frame", {
+    dm  <- .make_tested_object()
+    sig <- filterResults(dm, padj = 0, delta_beta = 0)
+    expect_equal(nrow(sig), 0L)
+    expect_s3_class(sig, "data.frame")
+})

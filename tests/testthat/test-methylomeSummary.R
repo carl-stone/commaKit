@@ -101,3 +101,23 @@ test_that("methylomeSummary: error on unknown mod_type", {
     data(comma_example_data)
     expect_error(methylomeSummary(comma_example_data, mod_type = "9mX"), "not found in object")
 })
+
+test_that("methylomeSummary: all-NA sample gives NA mean_beta and median_beta, not error", {
+    data(comma_example_data)
+    methyl <- methylation(comma_example_data)
+    methyl[, "ctrl_1"] <- NA_real_
+    se_mod <- SummarizedExperiment::SummarizedExperiment(
+        assays  = list(methylation = methyl,
+                       coverage    = coverage(comma_example_data)),
+        rowData = SummarizedExperiment::rowData(comma_example_data),
+        colData = SummarizedExperiment::colData(comma_example_data)
+    )
+    obj_mod <- new("commaData", se_mod,
+                   genomeInfo = comma_example_data@genomeInfo,
+                   annotation = comma_example_data@annotation,
+                   motifSites = comma_example_data@motifSites)
+    result    <- methylomeSummary(obj_mod)
+    ctrl1_row <- result[result$sample_name == "ctrl_1", ]
+    expect_true(is.na(ctrl1_row$mean_beta))
+    expect_true(is.na(ctrl1_row$median_beta))
+})
