@@ -65,11 +65,12 @@ CoMMA/
 │   ├── test-parse_megalodon.R         # ✅ tests for .parseMegalodon()
 │   ├── test-annotateSites.R           # ✅ ~20 tests for annotateSites() (overlap/proximity/metagene)
 │   ├── test-slidingWindow.R           # ✅ ~15 tests for slidingWindow()
-│   ├── test-methylomeSummary.R        # ✅ ~10 tests for methylomeSummary()
+│   ├── test-methylomeSummary.R        # ✅ ~11 tests for methylomeSummary() (incl. all-NA sample)
 │   ├── test-coverageAnalysis.R        # ✅ ~8 tests for coverageDepth() and varianceByDepth()
-│   ├── test-diffMethyl.R              # ✅ Phase 4: ~25 tests for diffMethyl()
-│   ├── test-results.R                 # ✅ Phase 4: ~15 tests for results() and filterResults()
-│   └── test-parse_dorado.R            # ✅ Phase 4: ~10 tests for .parseDorado() helpers
+│   ├── test-writeBED.R                # ✅ ~20 tests for writeBED() (file creation, BED format, RGB, errors)
+│   ├── test-diffMethyl.R              # ✅ Phase 4: ~30 tests for diffMethyl(), .betaBinomialTest(), .applyMultipleTesting()
+│   ├── test-results.R                 # ✅ Phase 4: ~23 tests for results() and filterResults() (incl. boundary cases)
+│   └── test-parse_dorado.R            # ✅ Phase 4: ~21 tests for .cigarToRefPos(), .parseMmTag(), .parseDorado()
 ├── man/                          # Roxygen2-generated docs (all current)
 ├── .github/workflows/
 │   ├── r.yml                     # rcmdcheck on push/PR (R 3.6.3 + 4.1.1, macOS-latest)
@@ -240,7 +241,7 @@ See `comma_pm.md` Section 4 for full task lists. Work sequentially — each phas
 | 5 — Visualization & Release | 0.5.0 | All `plot_*()` functions, real tests, vignettes | ⏳ Next |
 | Bioconductor submission | 1.0.0 | `BiocCheck` passing, full docs | ⏳ Pending |
 
-**Phases 1, 2, and 3 are complete.** Phase 4 is the current priority. Do not skip ahead to Phase 5.
+**Phases 1, 2, 3, and 4 are complete.** Phase 5 is the current priority.
 
 ---
 
@@ -373,11 +374,12 @@ Also available: `tests/testthat/helper-fixtures.R` — minimal shared fixtures (
 | `test-parse_megalodon.R` | .parseMegalodon aggregation, mod_type requirement | ~5 |
 | `test-annotateSites.R` | overlap/proximity/metagene modes, edge cases | ~20 |
 | `test-slidingWindow.R` | stat modes, circular wrap, genome-size inference | ~15 |
-| `test-methylomeSummary.R` | per-sample stats, mod_type filtering | ~10 |
+| `test-methylomeSummary.R` | per-sample stats, mod_type filtering, all-NA sample column | ~11 |
 | `test-coverageAnalysis.R` | coverageDepth() windowing, varianceByDepth() bins | ~8 |
-| `test-diffMethyl.R` | diffMethyl() basic, statistical correctness, mod_type/min_coverage/p_adjust, errors | ~22 |
-| `test-results.R` | results() and filterResults(): output shape, filtering, thresholds, errors | ~19 |
-| `test-parse_dorado.R` | .cigarToRefPos(), .parseMmTag() delta encoding, .parseDorado() error handling | ~13 |
+| `test-writeBED.R` | file creation, return value, track header, 9-col BED, coordinate conversion, score, all 5 RGB color bands, NA exclusion, mod_type filtering, error handling | ~20 |
+| `test-diffMethyl.R` | diffMethyl() basic, statistical correctness, mod_type/min_coverage/p_adjust, errors, .applyMultipleTesting() contract (BH/none/NA/bonferroni), .betaBinomialTest() edge cases | ~30 |
+| `test-results.R` | results() and filterResults(): output shape, filtering, thresholds, boundary conditions (delta_beta=0, padj=0, AND combination), errors | ~23 |
+| `test-parse_dorado.R` | .cigarToRefPos() (H/S clips, N skips, mixed), .parseMmTag() (5mC, multi-mod, ML boundary values 127/255 and 128/255), .parseDorado() error handling | ~21 |
 
 ### Required coverage
 
@@ -593,5 +595,5 @@ Phase 5 completes the user-facing experience and prepares for Bioconductor submi
 
 ---
 
-*Last updated: March 2026 (v0.4.0 — Phases 1, 2, 3 & 4 complete; Phase 5 is next priority)*
+*Last updated: March 2026 (v0.4.0 — Phases 1, 2, 3 & 4 complete; Phase 5 is current priority; test suite now covers all exported functions including writeBED)*
 *See `comma_pm.md` for complete design rationale and implementation details.*
