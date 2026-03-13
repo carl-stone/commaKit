@@ -229,3 +229,90 @@ test_that("diffMethyl: works with comma_example_data", {
         diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
     )
 })
+
+# ─── methylKit method ─────────────────────────────────────────────────────────
+
+test_that("diffMethyl: method='methylkit' errors with informative message if methylKit absent", {
+    skip_if(requireNamespace("methylKit", quietly = TRUE),
+            "methylKit is installed; skipping absent-package test")
+    obj <- .make_dm_data()
+    expect_error(
+        diffMethyl(obj, formula = ~ condition, method = "methylkit"),
+        "methylKit"
+    )
+})
+
+# ─── .applyMultipleTesting() direct tests ────────────────────────────────────
+
+test_that("applyMultipleTesting: BH correction returns values in [0, 1]", {
+    pvals <- c(0.01, 0.05, 0.1, 0.5, 0.9)
+    padj  <- comma:::.applyMultipleTesting(pvals, method = "BH")
+    expect_true(all(padj >= 0 & padj <= 1))
+})
+
+test_that("applyMultipleTesting: method='none' returns original p-values unchanged", {
+    pvals <- c(0.01, 0.05, 0.1, 0.5, 0.9)
+    padj  <- comma:::.applyMultipleTesting(pvals, method = "none")
+    expect_equal(padj, pvals)
+})
+
+test_that("applyMultipleTesting: NA values pass through as NA", {
+    pvals <- c(0.01, NA_real_, 0.1)
+    padj  <- comma:::.applyMultipleTesting(pvals, method = "BH")
+    expect_true(is.na(padj[2]))
+})
+
+test_that("applyMultipleTesting: output length equals input length", {
+    pvals <- c(0.001, 0.01, 0.05, 0.1)
+    padj  <- comma:::.applyMultipleTesting(pvals, method = "BH")
+    expect_equal(length(padj), length(pvals))
+})
+
+test_that("applyMultipleTesting: bonferroni method accepted without error", {
+    pvals <- c(0.01, 0.05, 0.1)
+    expect_no_error(comma:::.applyMultipleTesting(pvals, method = "bonferroni"))
+})
+
+# ─── .betaBinomialTest() edge cases (via diffMethyl) ─────────────────────────
+
+test_that("diffMethyl: site with single condition after NA removal gets NA p-value", {
+    # Set all treatment sample methylation to NA → only 'control' group present
+    # for every site → GLM cannot be fitted → all p-values NA
+    obj    <- .make_dm_data(n_sites = 5L, n_ctrl = 2L, n_treat = 1L)
+    methyl <- SummarizedExperiment::assay(obj, "methylation")
+    methyl[, "treat_1"] <- NA_real_
+    SummarizedExperiment::assay(obj, "methylation") <- methyl
+    dm  <- diffMethyl(obj, formula = ~ condition)
+    rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
+    expect_true(all(is.na(rd$dm_pvalue)))
+})
+
+test_that("diffMethyl: perfect separation (ctrl=0, treat=1) does not crash", {
+    # Perfect separation may cause GLM non-convergence; result should be
+    # NA or a valid p-value — never an error or NaN outside [0,1].
+    obj    <- .make_dm_data(n_sites = 5L)
+    methyl <- SummarizedExperiment::assay(obj, "methylation")
+    methyl[, "ctrl_1"]  <- 0.0
+    methyl[, "ctrl_2"]  <- 0.0
+    methyl[, "treat_1"] <- 1.0
+    SummarizedExperiment::assay(obj, "methylation") <- methyl
+    # suppress the expected GLM non-convergence warnings
+    dm <- expect_no_error(suppressWarnings(diffMethyl(obj, formula = ~ condition)))
+    rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+    pv <- rd$dm_pvalue
+    expect_true(all(is.na(pv) | (pv >= 0 & pv <= 1)))
+})
+
+test_that("diffMethyl: site with zero coverage in all samples gets NA p-value", {
+    obj    <- .make_dm_data(n_sites = 3L)
+    # Zero out coverage for the first site across all samples
+    cov    <- SummarizedExperiment::assay(obj, "coverage")
+    cov[1L, ] <- 0L
+    SummarizedExperiment::assay(obj, "coverage") <- cov
+    methyl <- SummarizedExperiment::assay(obj, "methylation")
+    methyl[1L, ] <- NA_real_
+    SummarizedExperiment::assay(obj, "methylation") <- methyl
+    dm <- diffMethyl(obj, formula = ~ condition)
+    rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+    expect_true(is.na(rd$dm_pvalue[1]))
+})
