@@ -1,6 +1,6 @@
 Package: comma
 Title: Comparative Methylomics for Microbial Analysis
-Version: 0.2.0
+Version: 0.3.0
 Authors@R:
     person("Carl", "Stone", , "carl.j.stone@vanderbilt.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-0232-5223"))
@@ -28,20 +28,17 @@ Collate:
     'commaData_class.R'
     'commaData_constructor.R'
     'accessors.R'
-    'annotateMethylSites.R'
-    'annotateTSS.R'
-    'annotateTTS.R'
-    'calculateMethylSiteDepth.R'
+    'annotateSites.R'
     'comma_example_data.R'
+    'coverage_analysis.R'
     'find_motif_sites.R'
     'genome_utils.R'
     'load_annotation.R'
-    'methylRollingMean.R'
-    'methylRollingMedian.R'
+    'methylome_summary.R'
     'parse_dorado.R'
     'parse_megalodon.R'
     'parse_modkit.R'
-    'varByCoverage.R'
+    'sliding_window.R'
     'writeBED.R'
 Depends:
     R (>= 4.1.0)
@@ -49,6 +46,7 @@ LazyData: true
 Imports:
     BiocGenerics,
     GenomicRanges,
+    GenomeInfoDb,
     IRanges,
     S4Vectors,
     SummarizedExperiment,

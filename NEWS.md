@@ -1,3 +1,77 @@
+# comma 0.3.0
+
+## Major new features
+
+* **`annotateSites()`** — new vectorized annotation function that replaces
+  `annotateMethylSites()`, `annotateTSS()`, and `annotateTTS()`. Accepts a
+  `commaData` object and uses `GenomicRanges::findOverlaps()` internally —
+  no nested for-loops. Supports three annotation modes:
+  - `type = "overlap"`: assigns feature type and name to each site;
+    non-overlapping sites are labelled `"intergenic"`.
+  - `type = "proximity"`: reports the nearest feature, its distance (in bp),
+    and a signed relative position relative to the feature's TSS.
+  - `type = "metagene"`: reports a fractional position (0–1) within the
+    overlapping feature, strand-aware.
+  Returns an updated `commaData` with new columns in `rowData`.
+
+* **`slidingWindow()`** — new generalised sliding window function that
+  replaces `methylRollingMedian()` and `methylRollingMean()`. Accepts a
+  `commaData` object; genome size is always read from `genome(object)` — no
+  hardcoded values. Supports `stat = "median"` or `stat = "mean"`, per-sample
+  output, `mod_type` filtering, and circular genome wrap-around. Returns a
+  tidy `data.frame`.
+
+* **`methylomeSummary()`** — new function that computes per-sample summary
+  statistics (mean/median/SD of beta values, fraction methylated, mean/median
+  coverage). Returns a tidy `data.frame` suitable for `ggplot2` or tabular
+  reporting. Supports `mod_type` filtering.
+
+* **`coverageDepth()`** — new function that bins the genome into
+  non-overlapping windows and computes mean or median sequencing depth per
+  window per sample. Replaces `calculateMethylSiteDepth()`. Returns a tidy
+  `data.frame`.
+
+* **`varianceByDepth()`** — new function that computes per-sample methylation
+  variance as a function of sequencing depth. Replaces `varByCoverage()`.
+  Accepts a `commaData` object; no hardcoded column names. Returns a tidy
+  `data.frame`.
+
+* **`writeBED()`** — rewritten from scratch. Accepts a `commaData` object,
+  an output path, and a sample name. Removes all hardcoded developer paths
+  and chromosome names. Writes a standard BED9 file with an optional
+  blue-to-red `itemRGB` methylation scale.
+
+## Breaking changes
+
+* **`annotateMethylSites()`**, **`annotateTSS()`**, and **`annotateTTS()`**
+  have been removed. Use `annotateSites()` instead.
+
+* **`methylRollingMedian()`** and **`methylRollingMean()`** have been
+  removed. Use `slidingWindow()` instead.
+
+* **`calculateMethylSiteDepth()`** and **`varByCoverage()`** have been
+  removed (they were not exported). Use `coverageDepth()` and
+  `varianceByDepth()` instead.
+
+## Package changes
+
+* Root-level clutter removed: `functions.R`, `testscript.R`,
+  `WT_6mA_Mg.txt`, `WT_6mA_all_callers.txt`, `all_site_annotations.txt`,
+  and `all_site_annotations_60p.txt` have been deleted.
+
+* `methylKitGATC.R` (historical analysis script) moved to
+  `inst/scripts/methylKitGATC_historical.R` with a descriptive header
+  comment. It is not part of the package.
+
+* Version bumped to `0.3.0`.
+
+## Dependency changes
+
+* **Added** `GenomeInfoDb` to `Imports` (was transitively available but is
+  now explicitly declared).
+
+---
+
 # comma 0.2.0
 
 ## Major new features
