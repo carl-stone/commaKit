@@ -1,3 +1,24 @@
+# =============================================================================
+# methylKitGATC_historical.R
+#
+# HISTORICAL REFERENCE ONLY — not part of the comma package.
+#
+# This is the original analysis script used by Carl Stone (Vanderbilt
+# University) for the 2022 E. coli K-12 MG1655 methylation manuscript. It
+# implements multi-sample differential methylation using methylKit, Euler
+# diagram visualisation, and sigma factor binding site analysis.
+#
+# The core logic in this script has been incorporated into the comma package
+# in a generalised, organism-agnostic form across the following modules:
+#   - R/annotateSites.R       (replaces nested-loop annotation)
+#   - R/sliding_window.R      (replaces methylRollingMedian/Mean)
+#   - R/methylome_summary.R   (QC and distribution stats)
+#   - R/coverage_analysis.R   (depth windowing and variance analysis)
+#
+# The script uses hardcoded Box Drive paths and is not runnable outside the
+# original developer's environment. It is preserved here for reference only.
+# =============================================================================
+
 # Adapting methylKit to our data
 # Made copy of AllSamples.6mA.Megalodon.Split_By_Strand.Header.noblanks.txt for the analysis
 # Renamed it to mgAllSamples.txt for simplicity
