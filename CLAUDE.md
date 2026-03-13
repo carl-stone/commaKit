@@ -6,20 +6,20 @@
 
 ## 1. Project Overview
 
-**Package name:** `comma` (was `CoMMA`; rename is pending)
+**Package name:** `comma` (was `CoMMA`; rename complete in package internals)
 **Full name:** Comparative Methylomics for Microbial Analysis
 **Author:** Carl Stone, Vanderbilt University (carl.j.stone@vanderbilt.edu)
-**Current version:** 0.2.0
+**Current version:** 0.3.0
 **License:** MIT
 **Target:** Bioconductor submission at v1.0.0
 
-`comma` is an R package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It characterizes genome-wide methylation patterns, annotates methylation sites relative to genomic features, and identifies differentially methylated sites between conditions. Phases 1 and 2 of the architectural refactor are complete — see `comma_pm.md` for the full design specification and roadmap.
+`comma` is an R package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It characterizes genome-wide methylation patterns, annotates methylation sites relative to genomic features, and identifies differentially methylated sites between conditions. Phases 1–3 of the architectural refactor are complete — see `comma_pm.md` for the full design specification and roadmap.
 
 ---
 
 ## 2. Current Repository State
 
-### What exists now (v0.2.0 — Phases 1 & 2 complete)
+### What exists now (v0.3.0 — Phases 1, 2 & 3 complete)
 
 ```
 CoMMA/
@@ -34,14 +34,11 @@ CoMMA/
 │   ├── find_motif_sites.R       # ✅ FASTA + motif regex → GRanges (~130 lines)
 │   ├── genome_utils.R           # ✅ genome validation, circular arithmetic (~104 lines)
 │   ├── comma_example_data.R     # ✅ roxygen docs for synthetic dataset
-│   ├── annotateMethylSites.R    # ⚠️ LEGACY: nested loops (O(n×m)); pending Phase 3
-│   ├── annotateTSS.R            # ⚠️ LEGACY: TSS annotation; pending Phase 3
-│   ├── annotateTTS.R            # ⚠️ LEGACY: not exported; pending Phase 3
-│   ├── methylRollingMedian.R    # ⚠️ LEGACY: hardcoded genome_size default; pending Phase 3
-│   ├── methylRollingMean.R      # ⚠️ LEGACY: not exported; pending Phase 3
-│   ├── calculateMethylSiteDepth.R # ⚠️ LEGACY: not exported; pending Phase 3
-│   ├── varByCoverage.R          # ⚠️ LEGACY: not exported; pending Phase 3
-│   └── writeBED.R               # ⚠️ BROKEN: hardcoded developer paths; pending Phase 3
+│   ├── annotateSites.R          # ✅ Phase 3: vectorized annotation using findOverlaps() (~252 lines)
+│   ├── sliding_window.R         # ✅ Phase 3: generalized slidingWindow() (~168 lines)
+│   ├── methylome_summary.R      # ✅ Phase 3: per-sample QC stats (~106 lines)
+│   ├── coverage_analysis.R      # ✅ Phase 3: coverageDepth() + varianceByDepth() (~205 lines)
+│   └── writeBED.R               # ✅ Phase 3: rewritten, fully generalized (~191 lines)
 ├── data/
 │   └── comma_example_data.rda   # ✅ synthetic commaData (300 sites, 3 samples, chr_sim 100kb)
 ├── data-raw/
@@ -50,43 +47,38 @@ CoMMA/
 │   ├── extdata/
 │   │   ├── example_modkit.bed   # ✅ 20-site modkit pileup example (chr_sim, mixed 6mA+5mC)
 │   │   └── example.gff3         # ✅ 5-gene GFF3 annotation (chr_sim)
-│   └── scripts/                 # (empty — reserved for Phase 3; methylKitGATC.R moves here)
+│   └── scripts/
+│       └── methylKitGATC_historical.R  # ✅ Moved from root in Phase 3 (historical reference)
 ├── tests/testthat/
-│   ├── helper-fixtures.R           # ✅ shared test fixtures (minimal 10kb genome, 3 sites)
-│   ├── test-commaData.R            # ✅ ~20 tests: S4 class, validity, constructor, show()
-│   ├── test-parsers.R              # ✅ ~15 tests: .parseModkit(), .parseDorado() stub, coverage filter
-│   ├── test-accessors.R            # ✅ ~20 tests: all accessor methods, subsetting
-│   ├── test-genome_utils.R         # ✅ tests for .validateGenomeInfo(), .circularIndex(), .makeSeqinfo()
-│   ├── test-load_annotation.R      # ✅ tests for loadAnnotation() GFF3/BED parsing
-│   ├── test-find_motif_sites.R     # ✅ tests for findMotifSites()
-│   ├── test-annotateMethylSites.R  # ⚠️ LIMITED: some real tests but legacy function has poor coverage
-│   ├── test-annotateTSS.R          # ✅ tests for legacy annotateTSS()
-│   ├── test-annotateTTS.R          # ✅ tests for legacy annotateTTS()
-│   ├── test-methylRollingMedian.R  # ✅ tests for legacy methylRollingMedian()
-│   ├── test-methylRollingMean.R    # ✅ tests for legacy methylRollingMean()
-│   ├── test-calculateMethylSiteDepth.R # ✅ tests for legacy calculateMethylSiteDepth()
-│   ├── test-varByCoverage.R        # ✅ tests for legacy varByCoverage()
-│   └── test-parse_megalodon.R      # ✅ tests for .parseMegalodon()
-├── man/                         # Roxygen2-generated docs
+│   ├── helper-fixtures.R              # ✅ shared test fixtures (minimal 10kb genome, 3 sites)
+│   ├── test-commaData.R               # ✅ ~20 tests: S4 class, validity, constructor, show()
+│   ├── test-parsers.R                 # ✅ ~15 tests: .parseModkit(), .parseDorado() stub, coverage filter
+│   ├── test-accessors.R               # ✅ ~20 tests: all accessor methods, subsetting
+│   ├── test-genome_utils.R            # ✅ tests for .validateGenomeInfo(), .circularIndex(), .makeSeqinfo()
+│   ├── test-load_annotation.R         # ✅ tests for loadAnnotation() GFF3/BED parsing
+│   ├── test-find_motif_sites.R        # ✅ tests for findMotifSites()
+│   ├── test-parse_megalodon.R         # ✅ tests for .parseMegalodon()
+│   ├── test-annotateSites.R           # ✅ ~20 tests for annotateSites() (overlap/proximity/metagene)
+│   ├── test-slidingWindow.R           # ✅ ~15 tests for slidingWindow()
+│   ├── test-methylomeSummary.R        # ✅ ~10 tests for methylomeSummary()
+│   └── test-coverageAnalysis.R        # ✅ ~8 tests for coverageDepth() and varianceByDepth()
+├── man/                          # Roxygen2-generated docs (all current)
 ├── .github/workflows/
-│   ├── r.yml                    # rcmdcheck on push/PR (R 3.6.3 + 4.1.1, macOS-latest)
-│   └── render-rmarkdown.yaml    # auto-renders .Rmd on push
-├── DESCRIPTION                  # v0.2.0; 11 Imports, 6 Suggests; R >= 4.1.0
-├── NAMESPACE                    # commaData class + all accessors exported
-├── NEWS.md                      # v0.2.0 and v0.1.0 entries
-├── README.md / README.Rmd       # ⚠️ Still shows v0.1.0 legacy examples; needs update
-├── CLAUDE.md                    # ← THIS FILE (AI assistant guide)
-├── comma_pm.md                  # ← PROJECT MANAGEMENT DOCUMENT (read this)
-├── functions.R                  # Root-level scratchpad — NOT part of package; delete in Phase 3
-├── methylKitGATC.R              # 513-line historical script — NOT packaged; move in Phase 3
-├── testscript.R                 # Root-level scratch — NOT part of package; delete in Phase 3
-├── WT_6mA_Mg.txt                # Legacy data file — NOT packaged
-├── WT_6mA_all_callers.txt       # Legacy data file — NOT packaged
-├── all_site_annotations.txt     # Legacy data file — NOT packaged
-└── all_site_annotations_60p.txt # Legacy data file — NOT packaged
+│   ├── r.yml                     # rcmdcheck on push/PR (R 3.6.3 + 4.1.1, macOS-latest)
+│   └── render-rmarkdown.yaml     # auto-renders .Rmd on push
+├── DESCRIPTION                   # v0.3.0; 12 Imports, 6 Suggests; R >= 4.1.0
+├── NAMESPACE                     # commaData class + all Phase 1–3 exports
+├── NEWS.md                       # v0.3.0, v0.2.0, and v0.1.0 entries
+├── README.md / README.Rmd        # ✅ Updated for v0.3.0 with Phase 1/2/3 examples
+├── CLAUDE.md                     # ← THIS FILE (AI assistant guide)
+└── comma_pm.md                   # ← PROJECT MANAGEMENT DOCUMENT (read this)
 ```
 
-### Implemented in v0.2.0
+**Note:** All root-level legacy files have been removed or moved in Phase 3:
+- Deleted: `functions.R`, `testscript.R`, `WT_6mA_Mg.txt`, `WT_6mA_all_callers.txt`, `all_site_annotations.txt`, `all_site_annotations_60p.txt`
+- Moved: `methylKitGATC.R` → `inst/scripts/methylKitGATC_historical.R`
+
+### Implemented in v0.2.0 (Phase 1 & 2)
 
 - **`commaData` S4 class** — extends `SummarizedExperiment`; slots: `genomeInfo`, `annotation`, `motifSites`; full `validity()` and `show()` methods
 - **`commaData()` constructor** — dispatches to parser by `caller` arg; merges multi-sample matrices using site key (`chrom:position:strand:mod_type`); applies `min_coverage` thresholding
@@ -99,15 +91,36 @@ CoMMA/
 - **Genome utilities** — `.validateGenomeInfo()`, `.circularIndex()`, `.makeSeqinfo()`
 - **`comma_example_data`** — synthetic commaData: 300 sites (200×6mA, 100×5mC), 3 samples, chr_sim (100 kb), differential ground truth in `rowData$is_diff`
 - **Example files** — `inst/extdata/example_modkit.bed` (20 sites: 10×6mA, 5×5mC) and `inst/extdata/example.gff3` (5 genes on chr_sim)
-- **Tests** — ~80+ real tests across 14 test files covering all exported functions and most legacy functions
 
-### Remaining legacy issues (to fix in Phase 3+)
+### Added in v0.3.0 (Phase 3)
 
-1. **O(n×m) annotation** — `annotateMethylSites()` and `annotateTSS()` still use nested R for-loops; will be replaced by `annotateSites()` using `GenomicRanges::findOverlaps()`
-2. **Hardcoded genome size** — `methylRollingMedian()` default `genome_size = 4641652` (MG1655); will be replaced with `commaData@genomeInfo`
-3. **Hardcoded paths** — `writeBED.R` references developer's local filesystem paths; will be replaced with generalized version
-4. **Root-level clutter** — `functions.R`, `testscript.R`, `methylKitGATC.R`, `WT_6mA_*.txt`, `all_site_annotations*.txt` remain at root; scripts to be deleted/moved in Phase 3
-5. **README outdated** — still shows v0.1.0 legacy function examples; needs update for Phase 1 API
+- **`annotateSites()`** — vectorized annotation using `GenomicRanges::findOverlaps()`; three modes (overlap, proximity, metagene); replaces deleted `annotateMethylSites()`, `annotateTSS()`, `annotateTTS()`
+- **`slidingWindow()`** — generalized genome-wide smoothing; stat = "median" | "mean"; genome size always from `genomeInfo`, never hardcoded; uses `zoo::rollapply()`; replaces deleted `methylRollingMedian()`, `methylRollingMean()`
+- **`methylomeSummary()`** — per-sample distribution stats (mean/median/SD beta, n_sites, frac_methylated, coverage stats); returns tidy data.frame for ggplot2
+- **`coverageDepth()`** — windowed sequencing depth across genome; optional log2 transform; replaces `calculateMethylSiteDepth()`
+- **`varianceByDepth()`** — methylation variance stratified by coverage level; replaces `varByCoverage()`
+- **`writeBED()`** — fully rewritten; accepts `commaData`, output path, sample name; writes BED9 format with itemRGB methylation scale; no hardcoded paths
+
+### Breaking changes in v0.3.0
+
+The following functions were **removed** (use their replacements):
+
+| Removed | Replacement |
+|---|---|
+| `annotateMethylSites()` | `annotateSites(type = "overlap")` |
+| `annotateTSS()` | `annotateSites(type = "proximity")` |
+| `annotateTTS()` | `annotateSites(type = "proximity")` |
+| `methylRollingMedian()` | `slidingWindow(stat = "median")` |
+| `methylRollingMean()` | `slidingWindow(stat = "mean")` |
+| `calculateMethylSiteDepth()` | `coverageDepth()` |
+| `varByCoverage()` | `varianceByDepth()` |
+
+### Remaining issues (to fix in Phase 4+)
+
+1. **Dorado parser** — `parse_dorado.R` is still a stub; implement full BAM parser using `Rsamtools`
+2. **No vignettes** — required for Bioconductor submission; planned for Phase 5
+3. **No `diffMethyl()`** — core differential methylation analysis; Phase 4 priority
+4. **No visualization functions** — all `plot_*()` functions are Phase 5
 
 ---
 
@@ -148,7 +161,7 @@ commaData(
 )
 ```
 
-### Target file structure (✅ = exists, ⏳ = pending)
+### Target file structure (✅ = exists, ⚠️ = partial, ⏳ = pending)
 
 ```
 R/
@@ -156,15 +169,16 @@ R/
 ├── commaData_constructor.R   # ✅ commaData() constructor
 ├── accessors.R               # ✅ methylation(), coverage(), sampleInfo(), etc.
 ├── parse_modkit.R            # ✅ PRIMARY input format
-├── parse_dorado.R            # ⚠️ Stub only — deferred
+├── parse_dorado.R            # ⚠️ Stub only — deferred to Phase 4
 ├── parse_megalodon.R         # ✅ Backward compatibility
 ├── load_annotation.R         # ✅ GFF3/BED → GRanges
 ├── find_motif_sites.R        # ✅ FASTA + motif regex → GRanges
 ├── genome_utils.R            # ✅ Circular arithmetic, seqinfo helpers
-├── annotateSites.R           # ⏳ Phase 3: replaces annotateMethylSites/TSS/TTS
-├── sliding_window.R          # ⏳ Phase 3: generalized methylRollingMedian/Mean
-├── methylome_summary.R       # ⏳ Phase 3: distribution stats, per-sample QC
-├── coverage_analysis.R       # ⏳ Phase 3: depth windowing, variance by coverage
+├── annotateSites.R           # ✅ Phase 3: vectorized annotation
+├── sliding_window.R          # ✅ Phase 3: generalized smoothing
+├── methylome_summary.R       # ✅ Phase 3: per-sample QC stats
+├── coverage_analysis.R       # ✅ Phase 3: depth windowing, variance
+├── writeBED.R                # ✅ Phase 3: generalized BED export
 ├── diffMethyl.R              # ⏳ Phase 4: main differential methylation interface
 ├── beta_binomial.R           # ⏳ Phase 4: beta-binomial model
 ├── methylkit_wrapper.R       # ⏳ Phase 4: methylKit as alternative method
@@ -205,12 +219,12 @@ See `comma_pm.md` Section 4 for full task lists. Work sequentially — each phas
 |---|---|---|---|
 | 1 — Data Infrastructure | 0.2.0 | `commaData` S4 class + modkit parser + constructor | ✅ Complete |
 | 2 — Genome Generalization | 0.2.0 | Remove all hardcoded MG1655 assumptions | ✅ Complete |
-| 3 — Refactor Functions | 0.3.0 | Vectorized annotation with `GenomicRanges::findOverlaps()` | ⏳ Next |
-| 4 — Differential Methylation | 0.4.0 | `diffMethyl()` with beta-binomial model | ⏳ Pending |
+| 3 — Refactor Functions | 0.3.0 | Vectorized annotation, sliding window, coverage analysis, cleanup | ✅ Complete |
+| 4 — Differential Methylation | 0.4.0 | `diffMethyl()` with beta-binomial model | ⏳ Next |
 | 5 — Visualization & Release | 0.5.0 | All `plot_*()` functions, real tests, vignettes | ⏳ Pending |
 | Bioconductor submission | 1.0.0 | `BiocCheck` passing, full docs | ⏳ Pending |
 
-**Phases 1 and 2 are complete.** Phase 3 is the current priority. Do not skip ahead to Phase 4 or 5.
+**Phases 1, 2, and 3 are complete.** Phase 4 is the current priority. Do not skip ahead to Phase 5.
 
 ---
 
@@ -218,7 +232,7 @@ See `comma_pm.md` Section 4 for full task lists. Work sequentially — each phas
 
 ### Always
 
-- Every exported function must accept a `commaData` object as its primary input (after Phase 1)
+- Every exported function must accept a `commaData` object as its primary input
 - Use `GenomicRanges::findOverlaps()` for any genomic interval overlap — never nested for-loops
 - Return tidy dataframes (or updated `commaData`) suitable for direct use with ggplot2
 - All `plot_*()` functions return a `ggplot` object, not a rendered image
@@ -252,17 +266,17 @@ Any function that touches genomic positions must be vectorized:
 
 | Package | Purpose |
 |---|---|
-| `GenomicRanges` | Core genomic interval arithmetic; replaces for-loop annotation |
+| `GenomicRanges` | Core genomic interval arithmetic; `findOverlaps()` for annotation |
+| `GenomeInfoDb` | Chromosome/genome metadata management |
 | `SummarizedExperiment` | Base class infrastructure for `commaData` |
 | `IRanges` | Range operations (via GenomicRanges) |
 | `S4Vectors` | DataFrame and other S4 infrastructure used by SummarizedExperiment |
-| `Rsamtools` | BAM file parsing for Dorado input |
-| `methylKit` | Differential methylation (alternative method) |
-| `zoo` | Rolling window operations |
-| `ggplot2` | All visualization |
+| `BiocGenerics` | Bioconductor generic methods |
+| `Rsamtools` | BAM file parsing for Dorado input (stub; full parser Phase 4) |
+| `zoo` | Rolling window operations in `slidingWindow()` |
+| `ggplot2` | All visualization (Phase 5) |
 | `dplyr` | Data manipulation |
 | `tidyr` | Data reshaping |
-| `BiocGenerics` | Bioconductor generic methods |
 | `methods` | S4 class system (base R, but must be declared) |
 
 ### Soft dependencies (`Suggests` in DESCRIPTION — all currently declared)
@@ -276,7 +290,7 @@ Any function that touches genomic positions must be vectorized:
 | `knitr` | R markdown processing for vignettes |
 | `rmarkdown` | Vignette rendering |
 
-> **Note:** `ComplexHeatmap` and `ggrepel` are in the future plan but not yet declared in DESCRIPTION. Add them when Phase 5 visualization functions are implemented.
+> **Note:** `ComplexHeatmap` and `ggrepel` are in the future plan but not yet declared in DESCRIPTION. Add them when Phase 5 visualization functions are implemented. `methylKit` is planned as a Suggests for the Phase 4 methylKit wrapper but is not yet declared — add it then.
 
 ---
 
@@ -300,11 +314,11 @@ Coordinates are **0-based** — the parser converts to 1-based by computing `pos
 
 ### Dorado BAM
 
-MM/ML tags in BAM format. Lower priority than modkit (parse after modkit parser is stable). Use `Rsamtools` for reading. Currently a stub that errors with a helpful message.
+MM/ML tags in BAM format. Currently a stub (`parse_dorado.R`) that errors with a helpful message recommending `modkit pileup`. Full implementation is Phase 4. Use `Rsamtools` for reading.
 
 ### Megalodon (backward compatibility)
 
-Legacy format from earlier analysis. See `methylKitGATC.R` for the parsing logic that was used historically. `mod_type` must be provided explicitly (cannot be inferred from file).
+Legacy format from earlier analysis. See `inst/scripts/methylKitGATC_historical.R` for historical parsing context. `mod_type` must be provided explicitly (cannot be inferred from file).
 
 ---
 
@@ -337,13 +351,10 @@ Also available: `tests/testthat/helper-fixtures.R` — minimal shared fixtures (
 | `test-load_annotation.R` | GFF3/BED parsing, feature_type filtering | ~5 |
 | `test-find_motif_sites.R` | Motif search, both strands, palindromic motifs | ~5 |
 | `test-parse_megalodon.R` | .parseMegalodon aggregation, mod_type requirement | ~5 |
-| `test-annotateMethylSites.R` | Legacy annotateMethylSites() | Limited |
-| `test-annotateTSS.R` | Legacy annotateTSS() | ~5 |
-| `test-annotateTTS.R` | Legacy annotateTTS() | ~5 |
-| `test-methylRollingMedian.R` | Legacy methylRollingMedian() | ~5 |
-| `test-methylRollingMean.R` | Legacy methylRollingMean() | ~5 |
-| `test-calculateMethylSiteDepth.R` | Legacy calculateMethylSiteDepth() | ~5 |
-| `test-varByCoverage.R` | Legacy varByCoverage() | ~5 |
+| `test-annotateSites.R` | overlap/proximity/metagene modes, edge cases | ~20 |
+| `test-slidingWindow.R` | stat modes, circular wrap, genome-size inference | ~15 |
+| `test-methylomeSummary.R` | per-sample stats, mod_type filtering | ~10 |
+| `test-coverageAnalysis.R` | coverageDepth() windowing, varianceByDepth() bins | ~8 |
 
 ### Required coverage
 
@@ -391,7 +402,7 @@ Stub documentation (`"A dataframe."`, `"A string."`) is not acceptable.
 
 ### Package-level documentation
 
-Write a `?comma` package documentation page explaining the overall workflow.
+Write a `?comma` package documentation page explaining the overall workflow. This is a Bioconductor requirement — planned for Phase 5.
 
 ---
 
@@ -410,22 +421,22 @@ The package targets Bioconductor submission at v1.0.0. Follow these requirements
 
 ---
 
-## 12. What to Discard / Move
+## 12. What Has Been Cleaned Up
 
-When implementing Phase 3:
+All Phase 3 cleanup tasks are complete:
 
 | File | Action | Status |
 |---|---|---|
-| `functions.R` (root) | Delete — superseded by `R/` implementations | ⏳ Pending |
-| `testscript.R` (root) | Delete — not needed | ⏳ Pending |
-| `methylKitGATC.R` (root) | Move to `inst/scripts/methylKitGATC_historical.R` with a header comment | ⏳ Pending |
-| `WT_6mA_Mg.txt` (root) | Delete — legacy data file, not packaged | ⏳ Pending |
-| `WT_6mA_all_callers.txt` (root) | Delete — legacy data file, not packaged | ⏳ Pending |
-| `all_site_annotations.txt` (root) | Delete — legacy data file, not packaged | ⏳ Pending |
-| `all_site_annotations_60p.txt` (root) | Delete — legacy data file, not packaged | ⏳ Pending |
-| `data/*.rda` (all 9 MG1655 files) | ✅ Already removed — replaced by `comma_example_data` | ✅ Done |
-| `writeBED.R` | Replace with generalized, path-safe version or defer to post-1.0 | ⏳ Pending |
-| `parse_dorado.R` stub | Implement full Dorado BAM parser (Phase 3+) | ⏳ Pending |
+| `functions.R` (root) | Deleted — superseded by `R/` implementations | ✅ Done |
+| `testscript.R` (root) | Deleted — not needed | ✅ Done |
+| `methylKitGATC.R` (root) | Moved to `inst/scripts/methylKitGATC_historical.R` | ✅ Done |
+| `WT_6mA_Mg.txt` (root) | Deleted — legacy data file | ✅ Done |
+| `WT_6mA_all_callers.txt` (root) | Deleted — legacy data file | ✅ Done |
+| `all_site_annotations.txt` (root) | Deleted — legacy data file | ✅ Done |
+| `all_site_annotations_60p.txt` (root) | Deleted — legacy data file | ✅ Done |
+| `data/*.rda` (MG1655 files) | Removed — replaced by `comma_example_data` | ✅ Done |
+| `writeBED.R` | Rewritten — generalized, no hardcoded paths | ✅ Done |
+| `parse_dorado.R` stub | Intentional stub — full implementation deferred to Phase 4 | ⚠️ Deferred |
 
 ---
 
@@ -433,9 +444,9 @@ When implementing Phase 3:
 
 ### Branches
 
-- Development: `claude/add-claude-documentation-ExuRR` (current working branch)
 - Stable: `master` — do not push here directly; work through PRs
-- Tagged: `0.2.0` — snapshot of the Phase 1+2 complete state
+- Tagged: `0.2.0` — snapshot of Phase 1+2 complete state
+- Development branches follow `claude/<description>-<id>` naming pattern for AI-initiated work
 
 ### Commit style
 
@@ -444,6 +455,7 @@ Use descriptive, imperative commit messages:
 Add commaData S4 class definition and show() method
 Fix circular genome arithmetic to use genomeInfo slot
 Replace nested for-loops in annotateSites with findOverlaps
+Implement Phase 3 (v0.3.0): vectorized annotation, sliding window, coverage analysis
 ```
 
 ### CI/CD
@@ -488,7 +500,7 @@ devtools::document()     # Rebuild docs from roxygen2
 BiocCheck::BiocCheck()   # Bioconductor-specific checks (Phase 5)
 ```
 
-### Currently exported API (v0.2.0)
+### Currently exported API (v0.3.0)
 
 ```r
 # S4 class (Phase 1)
@@ -512,55 +524,74 @@ subset(object, ...)      # subset by mod_type, condition, chrom
 loadAnnotation(file, feature_types)   # GFF3/BED → GRanges
 findMotifSites(genome, motif)         # genome + motif → GRanges
 
-# Legacy functions — still exported but pending Phase 3 replacement
-annotateMethylSites(methyl_df, meta_df, location)  # → replace with annotateSites()
-annotateTSS(methyl_df, tss_df, window, location)   # → replace with annotateSites()
-methylRollingMedian(methyl_df, window, mode)        # → generalize in Phase 3
+# Analysis functions (Phase 3)
+annotateSites(object, features, type, ...)    # vectorized annotation; type = "overlap"|"proximity"|"metagene"
+slidingWindow(object, window, stat, ...)      # genome-wide smoothing; stat = "median"|"mean"
+methylomeSummary(object, mod_type)            # per-sample QC stats → tidy data.frame
+coverageDepth(object, window, method, ...)    # windowed sequencing depth → tidy data.frame
+varianceByDepth(object, coverage_bins)        # methylation variance by depth → tidy data.frame
+writeBED(object, file, sample, ...)           # write BED9 output file
 ```
 
 ---
 
-## 16. Phase 3 Implementation Guide (Next Phase)
+## 16. Phase 4 Implementation Guide (Next Phase)
 
 This section provides a focused roadmap for the next developer to pick up.
 
-### Priority order for Phase 3 (v0.3.0)
+### Goal: Differential Methylation (v0.4.0)
 
-1. **`annotateSites()`** — the highest-value change
-   - Replaces `annotateMethylSites()` and `annotateTSS()` / `annotateTTS()`
-   - Accepts a `commaData` object + GRanges annotation
-   - Uses `GenomicRanges::findOverlaps()` — no for-loops
-   - Returns updated `commaData` with annotation columns added to `rowData`, or a tidy `data.frame`
-   - Test file: `tests/testthat/test-annotateSites.R` (create new)
+The central Phase 4 deliverable is `diffMethyl()` — a function that identifies statistically significant differences in methylation between conditions. Modeled conceptually on DESeq2's `DESeq()`, but adapted for beta-distributed methylation data.
 
-2. **`sliding_window.R`** — generalize `methylRollingMedian()` / `methylRollingMean()`
-   - New function signature: `slidingWindow(object, window, stat = c("median", "mean"))`
-   - Accept genome size from `object@genomeInfo`, never hardcode
-   - Use `zoo::rollapply()` for the window computation
-   - Remove the old functions from NAMESPACE after replacement
+### Priority order for Phase 4
 
-3. **`methylome_summary.R`** — new function(s)
-   - Per-sample distribution stats (mean beta, fraction methylated, etc.)
-   - Accepts `commaData`, returns tidy `data.frame` for ggplot2 use
+1. **`diffMethyl.R`** — main user-facing interface
+   - Signature: `diffMethyl(object, formula, method = c("beta_binomial", "methylkit"), min_coverage, ...)`
+   - Dispatches to the appropriate statistical backend
+   - Returns an updated `commaData` with test results stored (e.g., in `rowData` or `metadata`)
+   - Test file: `tests/testthat/test-diffMethyl.R` (create new)
 
-4. **`coverage_analysis.R`** — generalize `calculateMethylSiteDepth()` / `varByCoverage()`
-   - Accept `commaData` object; remove hardcoded column name assumptions
+2. **`beta_binomial.R`** — primary statistical model
+   - Beta-binomial regression is appropriate because methylation counts (n_mod / coverage) follow a beta-binomial distribution
+   - Input: `methylation` (beta values) + `coverage` matrices + `colData`
+   - Output: per-site p-values, effect sizes (Δβ), adjusted p-values
+   - Internal function; not exported directly
 
-5. **Root-level cleanup**
-   - Delete `functions.R`, `testscript.R`, legacy `.txt` data files
-   - Move `methylKitGATC.R` → `inst/scripts/methylKitGATC_historical.R`
+3. **`methylkit_wrapper.R`** — alternative method using methylKit
+   - Wraps `methylKit::calculateDiffMeth()` to accept/return `commaData`
+   - Requires adding `methylKit` to `Suggests` in DESCRIPTION
+   - Internal function; not exported directly
 
-6. **README update** — add Phase 1 example workflow (commaData construction, accessor usage)
+4. **`multiple_testing.R`** — FDR correction
+   - Apply Benjamini-Hochberg correction (and optionally q-value)
+   - Simple utility; can be internal or exported depending on need
 
-### Key design constraint for Phase 3 functions
+5. **`results_methods.R`** — results extraction
+   - `results(object)` — extract differential methylation results as a tidy `data.frame`
+   - `filterResults(object, padj, delta_beta)` — filter by statistical thresholds
+   - Both should be exported
+
+6. **Dorado BAM parser** — implement full `parse_dorado.R`
+   - Read MM/ML tags from BAM files using `Rsamtools`
+   - Convert per-read to per-site beta values (similar to Megalodon parser logic)
+   - Must handle multiple mod types in a single BAM
+
+### Key design decisions for Phase 4
+
+- **Model**: Beta-binomial is preferred over a simple t-test on beta values because it properly accounts for the count nature of the data (n_mod out of coverage total). Consider `betareg` or a custom implementation.
+- **Multiple mod types**: `diffMethyl()` should handle each `mod_type` independently by default, or accept a `mod_type` filter
+- **Formula interface**: Allow `formula = ~ condition` or more complex designs like `~ condition + replicate`
+- **Output format**: Results should live in `rowData` of the returned `commaData`, and `results()` should extract them to a data.frame
+
+### Phase 4 design constraints
 
 All new functions must:
 - Accept `commaData` as primary input
 - Return either an updated `commaData` or a tidy `data.frame`
-- Use `GenomicRanges::findOverlaps()` for any genomic interval query
 - Not hardcode any organism-specific values
+- Document every exported function with full roxygen2
 
 ---
 
-*Last updated: March 2026 (v0.2.0 — Phases 1 & 2 complete; Phase 3 is next priority)*
+*Last updated: March 2026 (v0.3.0 — Phases 1, 2 & 3 complete; Phase 4 is next priority)*
 *See `comma_pm.md` for complete design rationale and implementation details.*
