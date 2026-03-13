@@ -1,25 +1,58 @@
-Package: CoMMA
-Title: Comparison of Microbial Methylated Adenines
-Version: 0.1.0
-Authors@R: 
+Package: comma
+Title: Comparative Methylomics for Microbial Analysis
+Version: 0.3.0
+Authors@R:
     person("Carl", "Stone", , "carl.j.stone@vanderbilt.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-0232-5223"))
-Description: Comparative adenine methylomics between bacterial samples. This package can take methylated adenine calls from nanopore sequencing as input, then characterize methylation throughout the genome, identify differentially methylated sites between samples, and compare full adenine methylomes between samples.
+Description: Analyze bacterial DNA methylation from Oxford Nanopore sequencing
+    data. Supports genome-wide characterization of methylation patterns across
+    multiple modification types (6mA, 5mC, 4mC), annotation of methylation
+    sites relative to genomic features, and identification of differentially
+    methylated sites between conditions. Accepts input from modkit pileup
+    (primary), Dorado BAM, and Megalodon (legacy) callers.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
-Suggests: 
+RoxygenNote: 7.3.2
+biocViews: Sequencing, Epigenetics, Coverage, DifferentialMethylation,
+    GenomeAnnotation, DataImport
+Suggests:
+    BSgenome,
+    Biostrings,
+    rtracklayer,
     testthat (>= 3.0.0),
-    cowplot,
-    tidyverse
+    knitr,
+    rmarkdown
 Config/testthat/edition: 3
-Depends: 
-    R (>= 3.5.0)
+Collate:
+    'commaData_class.R'
+    'commaData_constructor.R'
+    'accessors.R'
+    'annotateSites.R'
+    'comma_example_data.R'
+    'coverage_analysis.R'
+    'find_motif_sites.R'
+    'genome_utils.R'
+    'load_annotation.R'
+    'methylome_summary.R'
+    'parse_dorado.R'
+    'parse_megalodon.R'
+    'parse_modkit.R'
+    'sliding_window.R'
+    'writeBED.R'
+Depends:
+    R (>= 4.1.0)
 LazyData: true
-Imports: 
-    methylKit,
-    forcats,
+Imports:
+    BiocGenerics,
+    GenomicRanges,
+    GenomeInfoDb,
+    IRanges,
+    S4Vectors,
+    SummarizedExperiment,
+    Rsamtools,
+    zoo,
     ggplot2,
+    dplyr,
     tidyr,
-    dplyr
+    methods
