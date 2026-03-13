@@ -100,12 +100,12 @@ test_that("varianceByDepth: variance is non-negative or NA", {
 
 test_that("varianceByDepth: NA variance when fewer than 2 sites at a level", {
     data(comma_example_data)
+    # Use a wide bin range; with 300 sites across 5:30 coverage levels some bins
+    # will have 0 or 1 sites, guaranteeing low_n rows exist.
     result <- varianceByDepth(comma_example_data, coverage_bins = 5:30)
-    # Where n_sites < 2, variance should be NA
-    low_n <- result[!is.na(result$n_sites) & result$n_sites < 2, ]
-    if (nrow(low_n) > 0) {
-        expect_true(all(is.na(low_n$variance)))
-    }
+    low_n <- result[!is.na(result$n_sites) & result$n_sites < 2L, ]
+    expect_true(nrow(low_n) > 0L)           # condition must actually be tested
+    expect_true(all(is.na(low_n$variance))) # variance must be NA for those rows
 })
 
 test_that("varianceByDepth: mod_type filtering works", {

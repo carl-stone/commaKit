@@ -85,6 +85,14 @@ slidingWindow <- function(object,
         )
     }
 
+    min_chr <- min(genome_info)
+    if (window > min_chr) {
+        stop(
+            "'window' (", window, " bp) exceeds the smallest chromosome size (",
+            min_chr, " bp). Reduce window size."
+        )
+    }
+
     # ── Filter by mod_type if requested ──────────────────────────────────────
     if (!is.null(mod_type)) {
         object <- subset(object, mod_type = mod_type)

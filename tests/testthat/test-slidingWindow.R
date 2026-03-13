@@ -89,16 +89,13 @@ test_that("slidingWindow: circular=TRUE and FALSE give different edge results", 
     gi   <- genome(comma_example_data)
     chr  <- names(gi)[1]
     samp <- sampleInfo(comma_example_data)$sample_name[1]
-    # Position 1 may differ between circular and linear
-    p1_circ   <- r_circ$window_median[r_circ$chrom == chr &
-                                      r_circ$position == 1 &
-                                      r_circ$sample_name == samp]
-    p1_linear <- r_linear$window_median[r_linear$chrom == chr &
-                                        r_linear$position == 1 &
-                                        r_linear$sample_name == samp]
-    # Both are numeric; they may or may not differ depending on data, but no error
-    expect_true(is.numeric(p1_circ))
-    expect_true(is.numeric(p1_linear))
+    # Compare all positions for one sample on the chromosome.
+    # With 300 sites across a 100kb genome and a 5000bp window, circular wrapping
+    # at the chromosome boundary must produce at least one position with a different
+    # smoothed value.
+    v_circ   <- r_circ$window_median[r_circ$chrom == chr & r_circ$sample_name == samp]
+    v_linear <- r_linear$window_median[r_linear$chrom == chr & r_linear$sample_name == samp]
+    expect_false(isTRUE(all.equal(v_circ, v_linear)))
 })
 
 test_that("slidingWindow: error on non-commaData input", {
@@ -119,6 +116,15 @@ test_that("slidingWindow: error when genome is NULL", {
         motifSites = comma_example_data@motifSites
     )
     expect_error(slidingWindow(obj_no_genome, window = 1000L), "genome\\(object\\)")
+})
+
+test_that("slidingWindow: error when window exceeds chromosome size", {
+    data(comma_example_data)
+    gi <- genome(comma_example_data)   # chr_sim = 100000 bp
+    expect_error(
+        slidingWindow(comma_example_data, window = 200000L),
+        "exceeds the smallest chromosome size"
+    )
 })
 
 test_that("slidingWindow: error on invalid mod_type", {
@@ -169,10 +175,11 @@ test_that("slidingWindow: known smoothed value for simple input", {
                annotation = GenomicRanges::GRanges(),
                motifSites = GenomicRanges::GRanges())
 
-    # With window=5 and position 10, the window covers 8:12 → includes site at 10 (0.8)
-    # and potentially 5 (0.2) and 15 (0.5) if within 2 of 10 — window of 5 means ±2
-    result <- slidingWindow(obj, window = 5L, circular = FALSE)
+    # window=5 centered on position 10 covers positions 8:12.
+    # Only the site at position 10 (beta=0.8) falls in [8:12]; sites at 5 and 15
+    # are outside. So median({0.8}) == 0.8 exactly.
+    result  <- slidingWindow(obj, window = 5L, circular = FALSE)
     val_p10 <- result$window_median[result$position == 10L]
-    expect_true(!is.na(val_p10))
-    expect_true(val_p10 >= 0 & val_p10 <= 1)
+    expect_false(is.na(val_p10))
+    expect_equal(val_p10, 0.8, tolerance = 1e-9)
 })

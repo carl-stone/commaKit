@@ -240,6 +240,7 @@ See `comma_pm.md` Section 4 for full task lists. Work sequentially — each phas
 - Treat genome size as a parameter from `commaData@genomeInfo`, never hardcode
 - Document every exported function with full roxygen2: `@param`, `@return`, `@examples`
 - Write tests for every exported function using `testthat`
+- **Preserve all annotated features**: `annotateSites()` stores ALL overlapping/nearby features per site as `CharacterList`/`IntegerList`/`NumericList` columns in `rowData`, not just the first or closest. This is a deliberate design decision reflecting the highly overlapping nature of bacterial genome annotations (genes, promoters, TF binding sites). Do NOT revert to single-match (`!duplicated()` or `distanceToNearest()`) behavior. Intergenic/non-overlapping sites receive length-0 list elements; test with `lengths(col) == 0`.
 
 ### Never
 
