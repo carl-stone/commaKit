@@ -289,7 +289,7 @@ Any function that touches genomic positions must be vectorized:
 | `IRanges` | Range operations (via GenomicRanges) |
 | `S4Vectors` | DataFrame and other S4 infrastructure used by SummarizedExperiment |
 | `BiocGenerics` | Bioconductor generic methods |
-| `Rsamtools` | BAM file parsing for Dorado input (stub; full parser Phase 4) |
+| `Rsamtools` | BAM file parsing for Dorado input (`.parseDorado()` MM/ML tag parser) |
 | `zoo` | Rolling window operations in `slidingWindow()` |
 | `ggplot2` | All visualization (Phase 5) |
 | `dplyr` | Data manipulation |
@@ -302,12 +302,13 @@ Any function that touches genomic positions must be vectorized:
 |---|---|
 | `BSgenome` | Genome sequence access for `findMotifSites()` |
 | `Biostrings` | Sequence pattern matching for motif search |
+| `methylKit` | Alternative differential methylation backend for `diffMethyl(..., method = "methylkit")` |
 | `rtracklayer` | GFF3 import via `import()` |
 | `testthat` | Testing framework (edition 3) |
 | `knitr` | R markdown processing for vignettes |
 | `rmarkdown` | Vignette rendering |
 
-> **Note:** `ComplexHeatmap` and `ggrepel` are in the future plan but not yet declared in DESCRIPTION. Add them when Phase 5 visualization functions are implemented. `methylKit` is planned as a Suggests for the Phase 4 methylKit wrapper but is not yet declared — add it then.
+> **Note:** `ComplexHeatmap` and `ggrepel` are in the future plan but not yet declared in DESCRIPTION. Add them when Phase 5 visualization functions are implemented.
 
 ---
 
@@ -331,7 +332,9 @@ Coordinates are **0-based** — the parser converts to 1-based by computing `pos
 
 ### Dorado BAM
 
-MM/ML tags in BAM format. Currently a stub (`parse_dorado.R`) that errors with a helpful message recommending `modkit pileup`. Full implementation is Phase 4. Use `Rsamtools` for reading.
+MM/ML tags in BAM format. Full implementation in `parse_dorado.R` (Phase 4). Reads MM/ML modification tags via `Rsamtools::scanBam()`, maps read positions to reference coordinates via CIGAR decoding, and aggregates per-read calls into per-site beta values. Supports 6mA, 5mC, and 4mC in one BAM. Invoked by `commaData(..., caller = "dorado")`.
+
+The recommended workflow remains running `modkit pileup` first, then loading with `caller = "modkit"`, as direct BAM parsing is slower.
 
 ### Megalodon (backward compatibility)
 
@@ -372,6 +375,9 @@ Also available: `tests/testthat/helper-fixtures.R` — minimal shared fixtures (
 | `test-slidingWindow.R` | stat modes, circular wrap, genome-size inference | ~15 |
 | `test-methylomeSummary.R` | per-sample stats, mod_type filtering | ~10 |
 | `test-coverageAnalysis.R` | coverageDepth() windowing, varianceByDepth() bins | ~8 |
+| `test-diffMethyl.R` | diffMethyl() basic, statistical correctness, mod_type/min_coverage/p_adjust, errors | ~22 |
+| `test-results.R` | results() and filterResults(): output shape, filtering, thresholds, errors | ~19 |
+| `test-parse_dorado.R` | .cigarToRefPos(), .parseMmTag() delta encoding, .parseDorado() error handling | ~13 |
 
 ### Required coverage
 
