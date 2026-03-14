@@ -1,6 +1,6 @@
 Package: comma
 Title: Comparative Methylomics for Microbial Analysis
-Version: 0.4.0
+Version: 0.5.0
 Authors@R:
     person("Carl", "Stone", , "carl.j.stone@vanderbilt.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-0232-5223"))
@@ -15,17 +15,23 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 biocViews: Sequencing, Epigenetics, Coverage, DifferentialMethylation,
-    GenomeAnnotation, DataImport
+    GenomeAnnotation, DataImport, Visualization
 Suggests:
     BSgenome,
     Biostrings,
+    BiocStyle,
+    ComplexHeatmap,
+    ggrepel,
     methylKit,
+    patchwork,
     rtracklayer,
     testthat (>= 3.0.0),
     knitr,
     rmarkdown
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Collate:
+    'comma-package.R'
     'commaData_class.R'
     'commaData_constructor.R'
     'accessors.R'
@@ -43,6 +49,13 @@ Collate:
     'parse_dorado.R'
     'parse_megalodon.R'
     'parse_modkit.R'
+    'plot_coverage.R'
+    'plot_distribution.R'
+    'plot_genome_track.R'
+    'plot_heatmap.R'
+    'plot_metagene.R'
+    'plot_pca.R'
+    'plot_volcano.R'
     'results_methods.R'
     'sliding_window.R'
     'writeBED.R'

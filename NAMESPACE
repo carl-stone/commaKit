@@ -20,6 +20,15 @@ export(writeBED)
 # Phase 4 exports
 export(diffMethyl)
 
+# Phase 5 exports
+export(plot_methylation_distribution)
+export(plot_genome_track)
+export(plot_metagene)
+export(plot_volcano)
+export(plot_heatmap)
+export(plot_pca)
+export(plot_coverage)
+
 # ── Exported S4 generics and methods ─────────────────────────────────────────
 exportMethods(
   "show",
@@ -48,6 +57,7 @@ importFrom(GenomicRanges, findOverlaps)
 importFrom(GenomicRanges, mcols)
 importFrom(GenomicRanges, "mcols<-")
 importFrom(GenomicRanges, resize)
+importFrom(GenomicRanges, seqnames)
 importFrom(GenomicRanges, sort)
 importFrom(GenomicRanges, strand)
 importFrom(GenomicRanges, "strand<-")
@@ -62,6 +72,7 @@ importFrom(IRanges, splitAsList)
 importFrom(S4Vectors, CharacterList)
 importFrom(S4Vectors, DataFrame)
 importFrom(S4Vectors, IntegerList)
+importFrom(S4Vectors, lengths)
 importFrom(S4Vectors, metadata)
 importFrom(S4Vectors, queryHits)
 importFrom(S4Vectors, subjectHits)
@@ -89,8 +100,11 @@ importFrom(methods, show)
 # ── Imports: stats (base R) ───────────────────────────────────────────────────
 importFrom(stats, coef)
 importFrom(stats, glm)
+importFrom(stats, median)
 importFrom(stats, p.adjust)
+importFrom(stats, prcomp)
 importFrom(stats, quasibinomial)
+importFrom(stats, sd)
 
 # ── Imports: other ────────────────────────────────────────────────────────────
 importFrom(dplyr, filter)
