@@ -103,11 +103,9 @@ test_that("plot_pca: error on invalid mod_type", {
 
 test_that("plot_pca: warning issued with fewer than 3 samples", {
     obj <- .make_pca_data()
-    # Subset to 2 samples
+    # Subset to 2 samples; expect a warning about low sample count
     obj2 <- obj[, 1:2]
-    expect_warning(plot_pca(obj2), NA)  # no error; just check it runs
-    # But do expect the warning if we check explicitly
-    # (the warning fires inside, but we just verify it returns a ggplot)
+    expect_warning(plot_pca(obj2), "[Ff]ewer than 3 samples")
     suppressWarnings({
         p <- plot_pca(obj2)
     })

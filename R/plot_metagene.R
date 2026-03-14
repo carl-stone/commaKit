@@ -91,7 +91,7 @@ plot_metagene <- function(object,
 
     ## metagene_positions is a NumericList (one list element per site)
     pos_list <- rd$metagene_positions
-    site_lengths <- S4Vectors::lengths(pos_list)
+    site_lengths <- lengths(pos_list)
 
     ## Keep only sites with at least one metagene position
     has_overlap <- site_lengths > 0L

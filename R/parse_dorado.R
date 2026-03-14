@@ -316,13 +316,14 @@ NULL
         mod_code  <- sub("^[ACGT][+-]([^,?. ]+)[?,.]?$", "\\1", header_str)
 
         # Map mod_code → mod_type using the same map as modkit parser
+        if (!mod_code %in% names(.MODKIT_CODE_MAP)) next  # unknown modification; skip
         mt <- .MODKIT_CODE_MAP[[mod_code]]
-        if (is.na(mt) || is.null(mt)) next  # unknown modification; skip
 
         # Parse delta-position array (comma-separated integers)
+        # Strip leading comma that follows the header (e.g., "A+a?,0" → rest=",0")
+        rest <- sub("^,+", "", trimws(rest))
         if (nchar(rest) == 0L) next
-        delta_str <- trimws(rest)
-        if (nchar(delta_str) == 0L) next
+        delta_str <- rest
 
         deltas <- tryCatch(
             as.integer(strsplit(delta_str, ",")[[1L]]),

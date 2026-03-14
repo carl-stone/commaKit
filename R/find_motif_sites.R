@@ -74,33 +74,39 @@ findMotifSites <- function(genome, motif, ...) {
 
         # Forward strand hits
         fwd_hits <- Biostrings::matchPattern(motif_dna, seq_i, fixed = FALSE)
+        fwd_starts <- BiocGenerics::start(fwd_hits)
         fwd_gr   <- GenomicRanges::GRanges(
-            seqnames = chr_name,
-            ranges   = IRanges::IRanges(start = BiocGenerics::start(fwd_hits),
+            seqnames = rep(chr_name, length(fwd_starts)),
+            ranges   = IRanges::IRanges(start = fwd_starts,
                                         end   = BiocGenerics::end(fwd_hits)),
-            strand   = "+"
+            strand   = rep("+", length(fwd_starts))
         )
 
         # Reverse strand hits (skip if palindrome to avoid duplicates at same pos)
         if (!is_palindrome) {
             rev_hits <- Biostrings::matchPattern(motif_rc, seq_i, fixed = FALSE)
+            rev_starts <- BiocGenerics::start(rev_hits)
             rev_gr   <- GenomicRanges::GRanges(
-                seqnames = chr_name,
-                ranges   = IRanges::IRanges(start = BiocGenerics::start(rev_hits),
+                seqnames = rep(chr_name, length(rev_starts)),
+                ranges   = IRanges::IRanges(start = rev_starts,
                                             end   = BiocGenerics::end(rev_hits)),
-                strand   = "-"
+                strand   = rep("-", length(rev_starts))
             )
             c(fwd_gr, rev_gr)
         } else {
             # Palindrome: assign both strands to the same positions
-            rev_gr <- fwd_gr
-            GenomicRanges::strand(rev_gr) <- "-"
-            c(fwd_gr, rev_gr)
+            if (length(fwd_gr) > 0L) {
+                rev_gr <- fwd_gr
+                GenomicRanges::strand(rev_gr) <- "-"
+                c(fwd_gr, rev_gr)
+            } else {
+                fwd_gr
+            }
         }
     })
 
     result <- do.call(c, all_ranges)
-    GenomicRanges::mcols(result)$motif <- motif
+    GenomicRanges::mcols(result)$motif <- rep(motif, length(result))
     GenomicRanges::sort(result)
 }
 

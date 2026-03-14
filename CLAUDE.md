@@ -494,7 +494,83 @@ GitHub Actions (`.github/workflows/r.yml`) runs `rcmdcheck` on push/PR against R
 
 ---
 
-## 14. Out of Scope for v1.0
+## 14. R Environment Setup in This Environment
+
+### When you need R
+
+**Not every task requires R to be running.** You can safely work without installing or invoking R for:
+- Writing or editing R source code (`.R` files, `CLAUDE.md`, `DESCRIPTION`, `NEWS.md`, etc.)
+- Writing documentation, vignettes, or roxygen2 comments
+- Reviewing logic, refactoring, or adding new functions
+- Any task that is purely code authoring without needing to execute or test
+
+**You DO need a working R environment when:**
+- Running the test suite (`devtools::test()`)
+- Checking the package (`devtools::check()`)
+- Rebuilding documentation (`devtools::document()`)
+- Verifying that new code actually runs without errors
+
+### What is already installed
+
+This is an Ubuntu/Debian Linux environment. R 4.3.3 and all required package dependencies for `comma` are **pre-installed** — you do not need to install them from scratch. The key packages already available include:
+
+- **R itself:** installed via `apt` (`r-base` 4.3.3)
+- **Bioconductor core:** `GenomicRanges`, `IRanges`, `SummarizedExperiment`, `S4Vectors`, `GenomeInfoDb`, `Rsamtools`, `Biostrings`, `BSgenome`, `rtracklayer`, `BiocGenerics` — all installed via `apt` (`r-bioc-*`)
+- **CRAN packages:** `zoo`, `ggplot2`, `dplyr`, `tidyr`, `devtools`, `testthat`, `knitr`, `rmarkdown`, `ggrepel`, `ComplexHeatmap` — installed in `/usr/local/lib/R/site-library/`
+- **`BiocManager`** is available for installing additional Bioconductor packages if needed
+
+Verify R is available with:
+```bash
+R --version
+```
+
+### Installing missing packages (if needed)
+
+`sudo` is available without a password in this environment. Prefer `apt` for system-level packages (faster, no compilation), then fall back to R-level installation.
+
+**Preferred: install via `apt` (no compilation, fast)**
+```bash
+# Bioconductor packages
+sudo apt install -y r-bioc-<pkgname>   # e.g., r-bioc-genomicranges
+
+# CRAN packages
+sudo apt install -y r-cran-<pkgname>   # e.g., r-cran-zoo
+```
+Package names are lowercase in apt. Check availability with `apt search r-bioc-` or `apt search r-cran-`.
+
+**Fallback: install from R directly**
+```r
+# CRAN
+install.packages("pkgname")
+
+# Bioconductor
+BiocManager::install("pkgname")
+```
+R-level installs write to `/usr/local/lib/R/site-library/` (writable without sudo in this environment) or `~/R/x86_64-pc-linux-gnu-library/4.3/`.
+
+### Running package checks and tests
+
+```bash
+# From repo root — all of these work without any extra setup
+Rscript -e "devtools::test()"
+Rscript -e "devtools::check()"
+Rscript -e "devtools::document()"
+```
+
+Or interactively:
+```r
+# Launch R from repo root, then:
+devtools::load_all()
+devtools::test()
+```
+
+### Key point for agents
+
+**Do not give up because R is not on PATH or packages appear missing.** R 4.3.3 is at `/usr/bin/R` and all `comma` dependencies are pre-installed. If a specific package is missing, install it with `sudo apt install r-bioc-<name>` or `install.packages()` — both work. The environment is fully capable of running the full test suite and package checks.
+
+---
+
+## 15. Out of Scope for v1.0
 
 Do not implement these without explicit discussion:
 
@@ -508,7 +584,7 @@ Do not implement these without explicit discussion:
 
 ---
 
-## 15. Quick Reference
+## 16. Quick Reference
 
 ### Install for development
 
@@ -569,7 +645,7 @@ filterResults(object, padj, delta_beta, ...)  # → filtered data.frame
 
 ---
 
-## 16. Phase 5 Implementation Guide (Next Phase)
+## 17. Phase 5 Implementation Guide (Next Phase)
 
 Phase 4 is complete. This section describes Phase 5.
 
@@ -604,4 +680,4 @@ Phase 5 completes the user-facing experience and prepares for Bioconductor submi
 
 ---
 
-*Last updated: March 2026 (v0.4.0 — Phases 1, 2, 3 & 4 complete; Phase 5 is current priority; test suite covers all exported functions through Phase 4)*
+*Last updated: March 2026 (v0.4.0 — Phases 1, 2, 3 & 4 complete; Phase 5 is current priority; test suite covers all exported functions through Phase 4; Section 14 documents R environment setup for agents)*

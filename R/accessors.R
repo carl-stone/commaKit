@@ -114,7 +114,7 @@ setGeneric("siteInfo", function(object) standardGeneric("siteInfo"))
 
 #' @rdname siteInfo
 setMethod("siteInfo", "commaData", function(object) {
-    as.data.frame(rowData(object))
+    rowData(object)
 })
 
 # ─── modTypes() ──────────────────────────────────────────────────────────────

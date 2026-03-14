@@ -119,7 +119,7 @@ test_that(".parseMegalodon() treats the same position on different strands as se
     result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     # Same position, different strand → two separate sites
     expect_equal(nrow(result), 2L)
-    expect_equal(sort(result$strand), c("-", "+"))
+    expect_setequal(result$strand, c("-", "+"))
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -179,12 +179,12 @@ test_that(".parseMegalodon() errors on non-existent file", {
     )
 })
 
-test_that(".parseMegalodon() errors on file with fewer than 8 columns", {
+test_that(".parseMegalodon() errors on file with fewer than 7 columns", {
     f <- tempfile(fileext = ".bed")
     writeLines("chr1\t99\t100\tread1\t255\t+", f)  # only 6 columns
     expect_error(
         comma:::.parseMegalodon(f, "s1", mod_type = "6mA"),
-        regexp = "8"
+        regexp = "7"
     )
 })
 
