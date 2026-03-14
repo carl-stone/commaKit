@@ -146,8 +146,10 @@ plot_genome_track <- function(object,
     if (use_annotation) {
         chr_annot <- annot_gr[as.character(GenomicRanges::seqnames(annot_gr)) == chromosome]
         if (!is.null(start)) {
-            chr_annot <- chr_annot[GenomicRanges::start(chr_annot) <= end &
-                                       GenomicRanges::end(chr_annot) >= start]
+            chr_annot <- chr_annot[GenomicRanges::end(chr_annot) >= start]
+        }
+        if (!is.null(end)) {
+            chr_annot <- chr_annot[GenomicRanges::start(chr_annot) <= end]
         }
         use_annotation <- length(chr_annot) > 0L
         if (use_annotation) annot_gr <- chr_annot
