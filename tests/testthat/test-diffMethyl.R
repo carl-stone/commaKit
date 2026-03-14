@@ -316,3 +316,54 @@ test_that("diffMethyl: site with zero coverage in all samples gets NA p-value", 
     rd <- as.data.frame(SummarizedExperiment::rowData(dm))
     expect_true(is.na(rd$dm_pvalue[1]))
 })
+
+# ─── Ground-truth recovery on comma_example_data ─────────────────────────────
+
+test_that("diffMethyl: dm_delta_beta is strongly negative for is_diff 6mA sites in comma_example_data", {
+    # The 30 is_diff 6mA sites have control ~0.90 and treatment ~0.25 (set.seed(42)),
+    # so dm_delta_beta (treatment - control) should be substantially negative.
+    # Non-diff sites have both conditions at ~0.90, so delta_beta should be near 0.
+    data(comma_example_data)
+    dm   <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+    rd   <- as.data.frame(SummarizedExperiment::rowData(dm))
+    rd6  <- rd[rd$mod_type == "6mA", ]
+
+    delta_diff    <- rd6$dm_delta_beta[rd6$is_diff    & !is.na(rd6$dm_delta_beta)]
+    delta_nondiff <- rd6$dm_delta_beta[!rd6$is_diff   & !is.na(rd6$dm_delta_beta)]
+
+    # Simulated differential sites: control ~0.90, treatment ~0.25 → delta < -0.3
+    expect_lt(median(delta_diff), -0.3)
+    # Non-differential sites: both conditions ~0.90 → |delta| near 0
+    expect_lt(abs(median(delta_nondiff)), 0.1)
+})
+
+test_that("diffMethyl: majority of is_diff 6mA sites recovered at padj < 0.05 in comma_example_data", {
+    # With a strong simulated signal (~0.65 delta_beta for 30 sites), diffMethyl()
+    # should detect at least half of the ground-truth differentially methylated sites.
+    data(comma_example_data)
+    dm  <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+    rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
+    rd6 <- rd[rd$mod_type == "6mA", ]
+
+    n_true_diff <- sum(rd6$is_diff, na.rm = TRUE)      # 30 ground-truth sites
+    n_detected  <- sum(rd6$is_diff & !is.na(rd6$dm_padj) & rd6$dm_padj < 0.05,
+                       na.rm = TRUE)
+
+    # Conservative: at least 50% recall (15/30)
+    expect_gte(n_detected, floor(n_true_diff * 0.5))
+})
+
+test_that("diffMethyl: significant hits are enriched for is_diff sites in comma_example_data", {
+    # Among sites called significant (padj < 0.05, |delta_beta| > 0.2), the majority
+    # should be ground-truth is_diff = TRUE — i.e., precision >= 50%.
+    data(comma_example_data)
+    dm  <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+    sig <- filterResults(dm, padj = 0.05, delta_beta = 0.2, mod_type = "6mA")
+
+    if (nrow(sig) > 0L) {
+        precision <- mean(sig$is_diff, na.rm = TRUE)
+        expect_gte(precision, 0.5)
+    } else {
+        skip("No significant sites found; cannot evaluate precision.")
+    }
+})
