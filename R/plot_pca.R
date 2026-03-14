@@ -97,9 +97,15 @@ plot_pca <- function(object,
     pct_var <- round(summary(pca)$importance[2L, seq_len(min(2L, ncol(pca$x)))] * 100,
                      digits = 1L)
 
-    ## Build scores data.frame
-    scores_df <- as.data.frame(pca$x[, seq_len(min(2L, ncol(pca$x))), drop = FALSE])
-    colnames(scores_df)[seq_len(2L)] <- c("PC1", "PC2")
+    ## Build scores data.frame – use only however many PCs are available (≤ 2)
+    n_pcs     <- min(2L, ncol(pca$x))
+    scores_df <- as.data.frame(pca$x[, seq_len(n_pcs), drop = FALSE])
+    colnames(scores_df)[seq_len(n_pcs)] <- c("PC1", "PC2")[seq_len(n_pcs)]
+    ## Add a dummy PC2 column of zeros when only 1 PC was computed so that the
+    ## ggplot2 aes mapping to "PC2" does not fail.
+    if (n_pcs < 2L) {
+        scores_df[["PC2"]] <- 0
+    }
     scores_df$sample_name <- rownames(scores_df)
 
     ## Join sampleInfo columns
