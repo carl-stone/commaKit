@@ -52,7 +52,7 @@ setMethod("results", "commaData", function(object, mod_type = NULL, ...) {
     if (is.null(md$diffMethyl_result_cols)) {
         stop(
             "No differential methylation results found in this commaData object.\n",
-            "Run diffMethyl() first:\n",
+            "run diffMethyl() first:\n",
             "  dm <- diffMethyl(object, formula = ~ condition)"
         )
     }

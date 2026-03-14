@@ -13,7 +13,7 @@
     )
     # Make last 5 sites non-differential
     methyl_mat[(n_sites - 4L):n_sites, 3L] <- 0.9
-    cov_mat <- matrix(30L, nrow = n_sites, ncol = 3L,
+    cov_mat <- matrix(10L, nrow = n_sites, ncol = 3L,
                       dimnames = dimnames(methyl_mat))
     rd <- S4Vectors::DataFrame(
         chrom    = rep("chr_sim", n_sites),

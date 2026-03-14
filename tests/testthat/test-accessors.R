@@ -119,9 +119,9 @@ test_that("sampleInfo() contains required columns", {
 # siteInfo()
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that("siteInfo() returns a data.frame", {
+test_that("siteInfo() returns a DataFrame", {
     obj <- .make_two_modtype()
-    expect_true(is.data.frame(siteInfo(obj)))
+    expect_true(is(siteInfo(obj), "DataFrame"))
 })
 
 test_that("siteInfo() has one row per site", {

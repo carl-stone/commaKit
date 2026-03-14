@@ -26,7 +26,8 @@ test_that(".validateGenomeInfo() coerces a named numeric vector to integer", {
     gi_num <- c(chr1 = 1000, chr2 = 2000)
     result  <- comma:::.validateGenomeInfo(gi_num)
     expect_true(is.integer(result))
-    expect_equal(result, as.integer(gi_num))
+    expected <- as.integer(unname(gi_num))
+    expect_equal(unname(result), expected)
     expect_equal(names(result), names(gi_num))
 })
 

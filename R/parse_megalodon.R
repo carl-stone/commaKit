@@ -67,14 +67,14 @@ NULL
         return(.emptyModkitResult())
     }
 
-    if (ncol(raw) < 8L) {
+    if (ncol(raw) < 7L) {
         stop(
             "Megalodon file '", file, "' has ", ncol(raw), " columns; ",
-            "expected at least 8 (chrom, start, end, read_id, score, strand, ..., mod_prob)."
+            "expected at least 7 (chrom, start, end, read_id, score, strand, mod_prob)."
         )
     }
 
-    # Standard Megalodon per-read BED columns (take first 8 at minimum)
+    # Standard Megalodon per-read BED columns (minimum 7)
     # Col 1=chrom, 2=start, 3=end, 4=read_id, 5=score, 6=strand, last=mod_prob
     chrom    <- as.character(raw[[1]])
     start    <- as.integer(raw[[2]])

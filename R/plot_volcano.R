@@ -107,7 +107,11 @@ plot_volcano <- function(results,
     ) +
         ggplot2::geom_point(alpha = 0.6, size = 1.2) +
         ggplot2::geom_vline(
-            xintercept = c(-delta_beta_threshold, delta_beta_threshold),
+            xintercept = -delta_beta_threshold,
+            linetype = "dashed", color = "grey40", linewidth = 0.5
+        ) +
+        ggplot2::geom_vline(
+            xintercept = delta_beta_threshold,
             linetype = "dashed", color = "grey40", linewidth = 0.5
         ) +
         ggplot2::geom_hline(

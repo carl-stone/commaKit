@@ -23,7 +23,9 @@ NULL
     }
 
     if (is.numeric(genome) && !is.null(names(genome))) {
-        return(as.integer(genome))
+        result <- as.integer(genome)
+        names(result) <- names(genome)
+        return(result)
     }
 
     if (is.character(genome) && length(genome) == 1) {

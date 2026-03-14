@@ -1,6 +1,6 @@
 #' @importFrom GenomicRanges GRanges findOverlaps start end width strand resize mcols
-#' @importFrom IRanges IRanges splitAsList
-#' @importFrom S4Vectors DataFrame queryHits subjectHits CharacterList IntegerList
+#' @importFrom IRanges IRanges CharacterList IntegerList NumericList
+#' @importFrom S4Vectors DataFrame queryHits subjectHits splitAsList
 #' @importFrom SummarizedExperiment rowData
 #' @importFrom methods is
 NULL
@@ -176,8 +176,8 @@ annotateSites <- function(object,
 
     # splitAsList groups values by site index; sites with no hit get character(0)
     site_factor <- factor(q_idx, levels = seq_len(n_sites))
-    rd$feature_types <- IRanges::splitAsList(feat_types_raw, site_factor)
-    rd$feature_names <- IRanges::splitAsList(feat_names_raw, site_factor)
+    rd$feature_types <- S4Vectors::splitAsList(feat_types_raw, site_factor)
+    rd$feature_names <- S4Vectors::splitAsList(feat_names_raw, site_factor)
     rd
 }
 
@@ -197,8 +197,8 @@ annotateSites <- function(object,
     hits  <- GenomicRanges::findOverlaps(sites_expanded, features, ignore.strand = TRUE)
 
     site_factor <- factor(integer(0), levels = seq_len(n_sites))  # empty default
-    empty_cl    <- IRanges::splitAsList(character(0), site_factor)
-    empty_il    <- IRanges::splitAsList(integer(0),   site_factor)
+    empty_cl    <- S4Vectors::splitAsList(character(0), site_factor)
+    empty_il    <- S4Vectors::splitAsList(integer(0),   site_factor)
 
     if (length(hits) == 0L) {
         rd$nearby_features      <- empty_cl
@@ -224,9 +224,9 @@ annotateSites <- function(object,
     signed_dist <- as.integer(ifelse(feat_strand == "-", tss - site_pos, site_pos - tss))
 
     site_factor <- factor(q_idx, levels = seq_len(n_sites))
-    rd$nearby_features       <- IRanges::splitAsList(feat_names,  site_factor)
-    rd$distances_to_features <- IRanges::splitAsList(dist_raw,    site_factor)
-    rd$rel_positions         <- IRanges::splitAsList(signed_dist, site_factor)
+    rd$nearby_features       <- S4Vectors::splitAsList(feat_names,  site_factor)
+    rd$distances_to_features <- S4Vectors::splitAsList(dist_raw,    site_factor)
+    rd$rel_positions         <- S4Vectors::splitAsList(signed_dist, site_factor)
     rd
 }
 
@@ -239,8 +239,8 @@ annotateSites <- function(object,
     hits    <- GenomicRanges::findOverlaps(sites_gr, features, ignore.strand = TRUE)
 
     site_factor <- factor(integer(0), levels = seq_len(n_sites))
-    empty_cl    <- IRanges::splitAsList(character(0), site_factor)
-    empty_nl    <- IRanges::splitAsList(numeric(0),   site_factor)
+    empty_cl    <- S4Vectors::splitAsList(character(0), site_factor)
+    empty_nl    <- S4Vectors::splitAsList(numeric(0),   site_factor)
 
     if (length(hits) == 0L) {
         rd$metagene_features  <- empty_cl
@@ -272,7 +272,7 @@ annotateSites <- function(object,
     frac <- pmax(0, pmin(1, frac))
 
     site_factor <- factor(q_idx, levels = seq_len(n_sites))
-    rd$metagene_features  <- IRanges::splitAsList(feat_names, site_factor)
-    rd$metagene_positions <- IRanges::splitAsList(frac,       site_factor)
+    rd$metagene_features  <- S4Vectors::splitAsList(feat_names, site_factor)
+    rd$metagene_positions <- S4Vectors::splitAsList(frac,       site_factor)
     rd
 }

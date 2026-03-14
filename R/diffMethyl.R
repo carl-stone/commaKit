@@ -115,6 +115,13 @@ diffMethyl <- function(
     method      <- match.arg(method)
     min_coverage <- as.integer(min_coverage)
 
+    if (method == "methylkit" && !requireNamespace("methylKit", quietly = TRUE)) {
+        stop(
+            "Package 'methylKit' is required for method = \"methylkit\".\n",
+            "Install it with: BiocManager::install(\"methylKit\")"
+        )
+    }
+
     if (!is.null(mod_type)) {
         available <- modTypes(object)
         bad <- setdiff(mod_type, available)
