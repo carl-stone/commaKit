@@ -9,11 +9,11 @@
 **Package name:** `comma` (was `CoMMA`; rename complete in package internals)
 **Full name:** Comparative Methylomics for Microbial Analysis
 **Author:** Carl Stone, Vanderbilt University (carl.j.stone@vanderbilt.edu)
-**Current version:** 0.4.0
+**Current version:** 0.5.0
 **License:** MIT
 **Target:** Bioconductor submission at v1.0.0
 
-`comma` is an R package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It characterizes genome-wide methylation patterns, annotates methylation sites relative to genomic features, and identifies differentially methylated sites between conditions. Phases 1–4 of the architectural refactor are complete; Phase 5 (visualization, vignettes, Bioconductor prep) is the current priority.
+`comma` is an R package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It characterizes genome-wide methylation patterns, annotates methylation sites relative to genomic features, identifies differentially methylated sites between conditions, and visualizes results. Phases 1–5 of the architectural refactor are complete; Bioconductor submission prep is the current priority.
 
 ### Scientific scope
 
@@ -23,72 +23,92 @@
 
 ## 2. Current Repository State
 
-### What exists now (v0.4.0 — Phases 1, 2, 3 & 4 complete)
+### What exists now (v0.5.0 — Phases 1–5 complete)
 
 ```
 CoMMA/
 ├── R/
-│   ├── commaData_class.R        # ✅ S4 class def (~175 lines), show(), validity()
-│   ├── commaData_constructor.R  # ✅ commaData() constructor (~270 lines)
-│   ├── accessors.R              # ✅ methylation(), coverage(), sampleInfo(), etc. (~150 lines)
-│   ├── parse_modkit.R           # ✅ PRIMARY input format parser (~175 lines)
-│   ├── parse_dorado.R           # ✅ Phase 4: full Dorado BAM parser with MM/ML tags (~220 lines)
-│   ├── parse_megalodon.R        # ✅ backward compatibility parser
-│   ├── load_annotation.R        # ✅ GFF3/BED → GRanges (~143 lines)
-│   ├── find_motif_sites.R       # ✅ FASTA + motif regex → GRanges (~130 lines)
-│   ├── genome_utils.R           # ✅ genome validation, circular arithmetic (~104 lines)
-│   ├── comma_example_data.R     # ✅ roxygen docs for synthetic dataset
-│   ├── annotateSites.R          # ✅ Phase 3: vectorized annotation using findOverlaps() (~252 lines)
-│   ├── sliding_window.R         # ✅ Phase 3: generalized slidingWindow() (~168 lines)
-│   ├── methylome_summary.R      # ✅ Phase 3: per-sample QC stats (~106 lines)
-│   ├── coverage_analysis.R      # ✅ Phase 3: coverageDepth() + varianceByDepth() (~205 lines)
-│   ├── writeBED.R               # ✅ Phase 3: rewritten, fully generalized (~191 lines)
-│   ├── diffMethyl.R             # ✅ Phase 4: main differential methylation interface (~220 lines)
-│   ├── beta_binomial.R          # ✅ Phase 4: quasibinomial GLM per-site engine (~165 lines)
-│   ├── methylkit_wrapper.R      # ✅ Phase 4: methylKit alternative method wrapper (~165 lines)
-│   ├── multiple_testing.R       # ✅ Phase 4: BH/FDR correction utility (~30 lines)
-│   └── results_methods.R        # ✅ Phase 4: results() + filterResults() S4 methods (~140 lines)
+│   ├── comma-package.R          # ✅ Package-level ?comma documentation (~49 lines)
+│   ├── commaData_class.R        # ✅ S4 class def (~174 lines), show(), validity()
+│   ├── commaData_constructor.R  # ✅ commaData() constructor (~258 lines)
+│   ├── accessors.R              # ✅ methylation(), coverage(), sampleInfo(), etc. (~298 lines)
+│   ├── parse_modkit.R           # ✅ PRIMARY input format parser (~143 lines)
+│   ├── parse_dorado.R           # ✅ Full Dorado BAM parser with MM/ML tags (~385 lines)
+│   ├── parse_megalodon.R        # ✅ Backward compatibility parser (~112 lines)
+│   ├── load_annotation.R        # ✅ GFF3/BED → GRanges (~142 lines)
+│   ├── find_motif_sites.R       # ✅ FASTA + motif regex → GRanges (~135 lines)
+│   ├── genome_utils.R           # ✅ Genome validation, circular arithmetic (~105 lines)
+│   ├── comma_example_data.R     # ✅ Roxygen docs for synthetic dataset (~57 lines)
+│   ├── annotateSites.R          # ✅ Vectorized annotation using findOverlaps() (~278 lines)
+│   ├── sliding_window.R         # ✅ Generalized slidingWindow() (~176 lines)
+│   ├── methylome_summary.R      # ✅ Per-sample QC stats (~106 lines)
+│   ├── coverage_analysis.R      # ✅ coverageDepth() + varianceByDepth() (~205 lines)
+│   ├── writeBED.R               # ✅ Fully generalized BED9 export (~149 lines)
+│   ├── diffMethyl.R             # ✅ Main differential methylation interface (~256 lines)
+│   ├── beta_binomial.R          # ✅ Quasibinomial GLM per-site engine (~198 lines)
+│   ├── methylkit_wrapper.R      # ✅ methylKit alternative method wrapper (~185 lines)
+│   ├── multiple_testing.R       # ✅ BH/FDR correction utility (~25 lines)
+│   ├── results_methods.R        # ✅ results() + filterResults() S4 methods (~139 lines)
+│   ├── plot_distribution.R      # ✅ Phase 5: plot_methylation_distribution() (~126 lines)
+│   ├── plot_genome_track.R      # ✅ Phase 5: plot_genome_track() (~269 lines)
+│   ├── plot_metagene.R          # ✅ Phase 5: plot_metagene() (~195 lines)
+│   ├── plot_volcano.R           # ✅ Phase 5: plot_volcano() (~134 lines)
+│   ├── plot_heatmap.R           # ✅ Phase 5: plot_heatmap() (~207 lines)
+│   ├── plot_pca.R               # ✅ Phase 5: plot_pca() (~163 lines)
+│   └── plot_coverage.R          # ✅ Phase 5: plot_coverage() (~147 lines)
+├── vignettes/
+│   ├── getting-started.Rmd           # ✅ End-to-end workflow (~214 lines)
+│   └── multiple-modification-types.Rmd  # ✅ Joint 6mA + 5mC analysis (~173 lines)
 ├── data/
-│   └── comma_example_data.rda   # ✅ synthetic commaData (300 sites, 3 samples, chr_sim 100kb)
+│   └── comma_example_data.rda   # ✅ Synthetic commaData (300 sites, 3 samples, chr_sim 100kb)
 ├── data-raw/
-│   └── create_example_data.R    # ✅ generates comma_example_data (set.seed(42))
+│   └── create_example_data.R    # ✅ Generates comma_example_data (set.seed(42))
 ├── inst/
 │   ├── extdata/
 │   │   ├── example_modkit.bed   # ✅ 20-site modkit pileup example (chr_sim, mixed 6mA+5mC)
 │   │   └── example.gff3         # ✅ 5-gene GFF3 annotation (chr_sim)
 │   └── scripts/
-│       └── methylKitGATC_historical.R  # ✅ Moved from root in Phase 3 (historical reference)
+│       └── methylKitGATC_historical.R  # ✅ Historical reference (moved from root in Phase 3)
 ├── tests/testthat/
-│   ├── helper-fixtures.R              # ✅ shared test fixtures (minimal 10kb genome, 3 sites)
 │   ├── test-commaData.R               # ✅ ~20 tests: S4 class, validity, constructor, show()
-│   ├── test-parsers.R                 # ✅ ~15 tests: .parseModkit(), .parseDorado() (now full impl), coverage filter
+│   ├── test-parsers.R                 # ✅ ~15 tests: .parseModkit(), coverage filter
 │   ├── test-accessors.R               # ✅ ~20 tests: all accessor methods, subsetting
-│   ├── test-genome_utils.R            # ✅ tests for .validateGenomeInfo(), .circularIndex(), .makeSeqinfo()
-│   ├── test-load_annotation.R         # ✅ tests for loadAnnotation() GFF3/BED parsing
-│   ├── test-find_motif_sites.R        # ✅ tests for findMotifSites()
-│   ├── test-parse_megalodon.R         # ✅ tests for .parseMegalodon()
+│   ├── test-genome_utils.R            # ✅ Tests for .validateGenomeInfo(), .circularIndex(), .makeSeqinfo()
+│   ├── test-load_annotation.R         # ✅ Tests for loadAnnotation() GFF3/BED parsing
+│   ├── test-find_motif_sites.R        # ✅ Tests for findMotifSites()
+│   ├── test-parse_megalodon.R         # ✅ Tests for .parseMegalodon()
 │   ├── test-annotateSites.R           # ✅ ~20 tests for annotateSites() (overlap/proximity/metagene)
 │   ├── test-slidingWindow.R           # ✅ ~15 tests for slidingWindow()
 │   ├── test-methylomeSummary.R        # ✅ ~11 tests for methylomeSummary() (incl. all-NA sample)
 │   ├── test-coverageAnalysis.R        # ✅ ~8 tests for coverageDepth() and varianceByDepth()
 │   ├── test-writeBED.R                # ✅ ~20 tests for writeBED() (file creation, BED format, RGB, errors)
-│   ├── test-diffMethyl.R              # ✅ Phase 4: ~30 tests for diffMethyl(), .betaBinomialTest(), .applyMultipleTesting()
-│   ├── test-results.R                 # ✅ Phase 4: ~23 tests for results() and filterResults() (incl. boundary cases)
-│   └── test-parse_dorado.R            # ✅ Phase 4: ~21 tests for .cigarToRefPos(), .parseMmTag(), .parseDorado()
+│   ├── test-diffMethyl.R              # ✅ ~30 tests for diffMethyl(), .betaBinomialTest(), .applyMultipleTesting(), ground-truth recovery
+│   ├── test-results.R                 # ✅ ~23 tests for results() and filterResults() (incl. boundary cases)
+│   ├── test-parse_dorado.R            # ✅ ~21 tests for .cigarToRefPos(), .parseMmTag(), .parseDorado()
+│   ├── test-plot_distribution.R       # ✅ Phase 5: plot_methylation_distribution() tests (~159 lines)
+│   ├── test-plot_genome_track.R       # ✅ Phase 5: plot_genome_track() tests (~145 lines)
+│   ├── test-plot_metagene.R           # ✅ Phase 5: plot_metagene() tests (~120 lines)
+│   ├── test-plot_volcano.R            # ✅ Phase 5: plot_volcano() tests (~103 lines)
+│   ├── test-plot_heatmap.R            # ✅ Phase 5: plot_heatmap() tests (~129 lines)
+│   ├── test-plot_pca.R                # ✅ Phase 5: plot_pca() tests (~121 lines)
+│   └── test-plot_coverage.R           # ✅ Phase 5: plot_coverage() tests (~117 lines)
 ├── man/                          # Roxygen2-generated docs (all current)
 ├── .github/workflows/
 │   ├── r.yml                     # rcmdcheck on push/PR (R 3.6.3 + 4.1.1, macOS-latest)
-│   └── render-rmarkdown.yaml     # auto-renders .Rmd on push
-├── DESCRIPTION                   # v0.4.0; 12 Imports, 7 Suggests; R >= 4.1.0
-├── NAMESPACE                     # commaData class + all Phase 1–4 exports
-├── NEWS.md                       # v0.4.0, v0.3.0, v0.2.0, and v0.1.0 entries
-├── README.md / README.Rmd        # ✅ Updated for v0.3.0 with Phase 1/2/3 examples
+│   └── render-rmarkdown.yaml     # Auto-renders .Rmd on push
+├── DESCRIPTION                   # v0.5.0; 12 Imports, 11 Suggests; R >= 4.1.0
+├── NAMESPACE                     # commaData class + all Phase 1–5 exports
+├── NEWS.md                       # v0.5.0, v0.4.0, v0.3.0, v0.2.0, and v0.1.0 entries
+├── README.md / README.Rmd        # Reflects v0.3.0 — needs update for v0.5.0
 └── CLAUDE.md                     # ← THIS FILE (AI assistant guide)
 ```
 
-**Note:** All root-level legacy files have been removed or moved in Phase 3:
+**Note:** All root-level legacy files have been removed or moved:
 - Deleted: `functions.R`, `testscript.R`, `WT_6mA_Mg.txt`, `WT_6mA_all_callers.txt`, `all_site_annotations.txt`, `all_site_annotations_60p.txt`
 - Moved: `methylKitGATC.R` → `inst/scripts/methylKitGATC_historical.R`
+- Deleted: `comma_pm.md` — all essential content migrated into this file
+
+**Note:** There is **no** `tests/testthat/helper-fixtures.R` — fixtures are defined inline within each test file, or `comma_example_data` is used directly via `data(comma_example_data)`.
 
 ### Implemented in v0.2.0 (Phase 1 & 2)
 
@@ -96,7 +116,6 @@ CoMMA/
 - **`commaData()` constructor** — dispatches to parser by `caller` arg; merges multi-sample matrices using site key (`chrom:position:strand:mod_type`); applies `min_coverage` thresholding
 - **Modkit parser** (`.parseModkit`) — reads 15-column modkit `pileup` BED; maps mod codes (`a`→6mA, `m`→5mC, `21839`→4mC); 0-based→1-based conversion
 - **Megalodon parser** (`.parseMegalodon`) — per-read aggregation to per-site beta values; explicit `mod_type` required
-- **Dorado parser** (`.parseDorado`) — intentional stub; fails with helpful error recommending `modkit pileup`
 - **Accessor S4 methods** — `methylation()`, `coverage()`, `sampleInfo()`, `siteInfo()`, `modTypes()`, `genome()`, `annotation()`, `motifSites()`, `[`, `subset()`
 - **`loadAnnotation()`** — GFF3/BED → GRanges with standardized feature_type/name columns
 - **`findMotifSites()`** — BSgenome or FASTA + motif regex → GRanges (both strands, IUPAC support)
@@ -113,6 +132,29 @@ CoMMA/
 - **`varianceByDepth()`** — methylation variance stratified by coverage level; replaces `varByCoverage()`
 - **`writeBED()`** — fully rewritten; accepts `commaData`, output path, sample name; writes BED9 format with itemRGB methylation scale; no hardcoded paths
 
+### Added in v0.4.0 (Phase 4)
+
+- **`diffMethyl()`** — main differential methylation function (modeled on DESeq2's `DESeq()`); accepts `commaData` + formula; returns enriched `commaData` with `dm_pvalue`, `dm_padj`, `dm_delta_beta`, `dm_mean_beta_<cond>` in `rowData`; supports `method = "beta_binomial"` (default) and `method = "methylkit"` (requires methylKit)
+- **`results()`** — S4 method to extract diff methylation table as tidy `data.frame`
+- **`filterResults()`** — S4 method to filter results by padj and delta_beta thresholds
+- **`.parseDorado()`** — full Dorado BAM parser; reads MM/ML tags via `Rsamtools::scanBam()`, CIGAR-decodes read positions, aggregates to per-site beta values; handles 6mA, 5mC, and 4mC in one BAM
+- **`beta_binomial.R`** — internal per-site quasibinomial GLM engine
+- **`methylkit_wrapper.R`** — internal methylKit dispatch wrapper
+- **`multiple_testing.R`** — internal BH/FDR correction utility
+
+### Added in v0.5.0 (Phase 5) — Current version
+
+- **`plot_methylation_distribution()`** — beta value density plot per sample, coloured by sample name, faceted by modification type; QC and distribution comparison
+- **`plot_genome_track()`** — genome browser-style scatter plot of methylation beta values vs. genomic position; supports positional windowing (`start`/`end`), `mod_type` filtering, and optional feature annotation rectangles from `annotation(object)`; uses `patchwork` for combined tracks
+- **`plot_metagene()`** — average methylation profile across a class of genomic features, normalized to fractional position [0 = TSS, 1 = TTS]; uses `annotateSites(type = "metagene")` internally
+- **`plot_volcano()`** — volcano plot for differential methylation results; accepts output of `results()`; colors points as Hypermethylated / Hypomethylated / Not significant
+- **`plot_heatmap()`** — `geom_tile` heatmap of top differentially methylated sites ranked by adjusted p-value; ggplot2 only (no ComplexHeatmap dependency required)
+- **`plot_pca()`** — PCA of per-sample methylation profiles using `stats::prcomp()`; points colored and optionally shaped by any column in `sampleInfo(object)`
+- **`plot_coverage()`** — histogram of sequencing depth per site, per sample; coverage QC
+- **Vignettes** — `vignettes/getting-started.Rmd` (end-to-end workflow) and `vignettes/multiple-modification-types.Rmd` (joint 6mA + 5mC analysis)
+- **`comma-package.R`** — package-level `?comma` documentation page (Bioconductor requirement)
+- **Tests for all plot functions** — every `plot_*()` function has a dedicated test file
+
 ### Breaking changes in v0.3.0
 
 The following functions were **removed** (use their replacements):
@@ -127,26 +169,9 @@ The following functions were **removed** (use their replacements):
 | `calculateMethylSiteDepth()` | `coverageDepth()` |
 | `varByCoverage()` | `varianceByDepth()` |
 
-### Added in v0.4.0 (Phase 4)
-
-- **`diffMethyl()`** — main differential methylation function (modeled on DESeq2's `DESeq()`); accepts `commaData` + formula; returns enriched `commaData` with `dm_pvalue`, `dm_padj`, `dm_delta_beta`, `dm_mean_beta_<cond>` in `rowData`; supports `method = "beta_binomial"` (default, no extra deps) and `method = "methylkit"` (requires methylKit)
-- **`results()`** — S4 method to extract diff methylation table as tidy `data.frame`
-- **`filterResults()`** — S4 method to filter results by padj and delta_beta thresholds
-- **`.parseDorado()`** — full Dorado BAM parser replacing the stub; reads MM/ML tags via `Rsamtools::scanBam()`, CIGAR-decodes read positions, aggregates to per-site beta values; handles 6mA, 5mC, and 4mC in one BAM
-- **`beta_binomial.R`** — internal per-site quasibinomial GLM engine
-- **`methylkit_wrapper.R`** — internal methylKit dispatch wrapper
-- **`multiple_testing.R`** — internal BH/FDR correction utility
-
-### Remaining issues (to fix in Phase 5)
-
-1. **No vignettes** — required for Bioconductor submission; planned for Phase 5
-2. **No visualization functions** — all `plot_*()` functions are Phase 5
-
 ---
 
-## 3. Target Architecture (Where We're Going)
-
-The full design is in `comma_pm.md`. This is the condensed version for quick reference.
+## 3. Target Architecture
 
 ### Central data object: `commaData` S4 class
 
@@ -181,38 +206,6 @@ commaData(
 )
 ```
 
-### Target file structure (✅ = exists, ⚠️ = partial, ⏳ = pending)
-
-```
-R/
-├── commaData_class.R         # ✅ S4 class def, show(), validity()
-├── commaData_constructor.R   # ✅ commaData() constructor
-├── accessors.R               # ✅ methylation(), coverage(), sampleInfo(), etc.
-├── parse_modkit.R            # ✅ PRIMARY input format
-├── parse_dorado.R            # ✅ Phase 4: full Dorado BAM parser (MM/ML tags)
-├── parse_megalodon.R         # ✅ Backward compatibility
-├── load_annotation.R         # ✅ GFF3/BED → GRanges
-├── find_motif_sites.R        # ✅ FASTA + motif regex → GRanges
-├── genome_utils.R            # ✅ Circular arithmetic, seqinfo helpers
-├── annotateSites.R           # ✅ Phase 3: vectorized annotation
-├── sliding_window.R          # ✅ Phase 3: generalized smoothing
-├── methylome_summary.R       # ✅ Phase 3: per-sample QC stats
-├── coverage_analysis.R       # ✅ Phase 3: depth windowing, variance
-├── writeBED.R                # ✅ Phase 3: generalized BED export
-├── diffMethyl.R              # ✅ Phase 4: main differential methylation interface
-├── beta_binomial.R           # ✅ Phase 4: quasibinomial GLM per-site engine
-├── methylkit_wrapper.R       # ✅ Phase 4: methylKit as alternative method
-├── multiple_testing.R        # ✅ Phase 4: BH / q-value correction
-├── results_methods.R         # ✅ Phase 4: results(), filterResults()
-├── plot_distribution.R       # ⏳ Phase 5
-├── plot_genome_track.R       # ⏳ Phase 5
-├── plot_metagene.R           # ⏳ Phase 5
-├── plot_volcano.R            # ⏳ Phase 5
-├── plot_heatmap.R            # ⏳ Phase 5
-├── plot_pca.R                # ⏳ Phase 5
-└── plot_coverage.R           # ⏳ Phase 5
-```
-
 ---
 
 ## 4. Naming Conventions
@@ -233,18 +226,16 @@ Follow these strictly. Inconsistency here will make the package feel unprofessio
 
 ## 5. Development Phases
 
-Work sequentially — each phase depends on the previous.
-
 | Phase | Version | Key deliverable | Status |
 |---|---|---|---|
 | 1 — Data Infrastructure | 0.2.0 | `commaData` S4 class + modkit parser + constructor | ✅ Complete |
 | 2 — Genome Generalization | 0.2.0 | Remove all hardcoded MG1655 assumptions | ✅ Complete |
 | 3 — Refactor Functions | 0.3.0 | Vectorized annotation, sliding window, coverage analysis, cleanup | ✅ Complete |
 | 4 — Differential Methylation | 0.4.0 | `diffMethyl()` with beta-binomial model | ✅ Complete |
-| 5 — Visualization & Release | 0.5.0 | All `plot_*()` functions, real tests, vignettes | ⏳ Next |
-| Bioconductor submission | 1.0.0 | `BiocCheck` passing, full docs | ⏳ Pending |
+| 5 — Visualization & Release | 0.5.0 | All `plot_*()` functions, vignettes, package docs | ✅ Complete |
+| Bioconductor submission | 1.0.0 | `BiocCheck` passing, full docs, DOI | ⏳ Next |
 
-**Phases 1, 2, 3, and 4 are complete.** Phase 5 is the current priority.
+**All five phases are complete.** Bioconductor submission prep is the current priority.
 
 ---
 
@@ -255,7 +246,7 @@ Work sequentially — each phase depends on the previous.
 - Every exported function must accept a `commaData` object as its primary input
 - Use `GenomicRanges::findOverlaps()` for any genomic interval overlap — never nested for-loops
 - Return tidy dataframes (or updated `commaData`) suitable for direct use with ggplot2
-- All `plot_*()` functions return a `ggplot` object, not a rendered image
+- All `plot_*()` functions return a `ggplot` object (or `patchwork` composite), not a rendered image
 - Use `mod_type` as a parameter or infer it from `commaData@rowData$mod_type`
 - Treat genome size as a parameter from `commaData@genomeInfo`, never hardcode
 - Document every exported function with full roxygen2: `@param`, `@return`, `@examples`
@@ -295,7 +286,7 @@ Any function that touches genomic positions must be vectorized:
 | `BiocGenerics` | Bioconductor generic methods |
 | `Rsamtools` | BAM file parsing for Dorado input (`.parseDorado()` MM/ML tag parser) |
 | `zoo` | Rolling window operations in `slidingWindow()` |
-| `ggplot2` | All visualization (Phase 5) |
+| `ggplot2` | All visualization |
 | `dplyr` | Data manipulation |
 | `tidyr` | Data reshaping |
 | `methods` | S4 class system (base R, but must be declared) |
@@ -306,13 +297,15 @@ Any function that touches genomic positions must be vectorized:
 |---|---|
 | `BSgenome` | Genome sequence access for `findMotifSites()` |
 | `Biostrings` | Sequence pattern matching for motif search |
+| `BiocStyle` | Vignette styling (Bioconductor standard) |
+| `ComplexHeatmap` | Available as alternative heatmap backend (not currently used — `plot_heatmap()` uses ggplot2) |
+| `ggrepel` | Available for volcano plot labels (not currently used — `plot_volcano()` uses ggplot2 directly) |
 | `methylKit` | Alternative differential methylation backend for `diffMethyl(..., method = "methylkit")` |
+| `patchwork` | Multi-panel plot assembly in `plot_genome_track()` and `plot_heatmap()` |
 | `rtracklayer` | GFF3 import via `import()` |
 | `testthat` | Testing framework (edition 3) |
 | `knitr` | R markdown processing for vignettes |
 | `rmarkdown` | Vignette rendering |
-
-> **Note:** `ComplexHeatmap` and `ggrepel` are in the future plan but not yet declared in DESCRIPTION. Add them when Phase 5 visualization functions are implemented.
 
 ---
 
@@ -336,7 +329,7 @@ Coordinates are **0-based** — the parser converts to 1-based by computing `pos
 
 ### Dorado BAM
 
-MM/ML tags in BAM format. Full implementation in `parse_dorado.R` (Phase 4). Reads MM/ML modification tags via `Rsamtools::scanBam()`, maps read positions to reference coordinates via CIGAR decoding, and aggregates per-read calls into per-site beta values. Supports 6mA, 5mC, and 4mC in one BAM. Invoked by `commaData(..., caller = "dorado")`.
+MM/ML tags in BAM format. Full implementation in `parse_dorado.R`. Reads MM/ML modification tags via `Rsamtools::scanBam()`, maps read positions to reference coordinates via CIGAR decoding, and aggregates per-read calls into per-site beta values. Supports 6mA, 5mC, and 4mC in one BAM. Invoked by `commaData(..., caller = "dorado")`.
 
 The recommended workflow remains running `modkit pileup` first, then loading with `caller = "modkit"`, as direct BAM parsing is slower.
 
@@ -362,27 +355,32 @@ Use `comma_example_data` — a synthetic `commaData` object created in Phase 1 (
 - **Ground truth**: ~30 of 200 6mA sites are differentially methylated (control ~0.9, treatment ~0.25); marked in `rowData$is_diff`
 - **Annotation**: 5 simulated genes (GRanges)
 
-Also available: `tests/testthat/helper-fixtures.R` — minimal shared fixtures (10kb genome, 3 sites, 2 features) for fast unit tests that don't need the full example dataset.
-
 ### Current test files
 
-| File | Coverage | Tests |
-|---|---|---|
-| `test-commaData.R` | S4 class validity, constructor, bad inputs, show() | ~20 |
-| `test-parsers.R` | Modkit column mapping, mod codes, coverage filter, Dorado stub | ~15 |
-| `test-accessors.R` | Matrix shape, value ranges, multi-mod-type, subsetting | ~20 |
-| `test-genome_utils.R` | .validateGenomeInfo, .circularIndex, .makeSeqinfo | ~5 |
-| `test-load_annotation.R` | GFF3/BED parsing, feature_type filtering | ~5 |
-| `test-find_motif_sites.R` | Motif search, both strands, palindromic motifs | ~5 |
-| `test-parse_megalodon.R` | .parseMegalodon aggregation, mod_type requirement | ~5 |
-| `test-annotateSites.R` | overlap/proximity/metagene modes, edge cases | ~20 |
-| `test-slidingWindow.R` | stat modes, circular wrap, genome-size inference | ~15 |
-| `test-methylomeSummary.R` | per-sample stats, mod_type filtering, all-NA sample column | ~11 |
-| `test-coverageAnalysis.R` | coverageDepth() windowing, varianceByDepth() bins | ~8 |
-| `test-writeBED.R` | file creation, return value, track header, 9-col BED, coordinate conversion, score, all 5 RGB color bands, NA exclusion, mod_type filtering, error handling | ~20 |
-| `test-diffMethyl.R` | diffMethyl() basic, statistical correctness, mod_type/min_coverage/p_adjust, errors, .applyMultipleTesting() contract (BH/none/NA/bonferroni), .betaBinomialTest() edge cases | ~30 |
-| `test-results.R` | results() and filterResults(): output shape, filtering, thresholds, boundary conditions (delta_beta=0, padj=0, AND combination), errors | ~23 |
-| `test-parse_dorado.R` | .cigarToRefPos() (H/S clips, N skips, mixed), .parseMmTag() (5mC, multi-mod, ML boundary values 127/255 and 128/255), .parseDorado() error handling | ~21 |
+| File | Coverage |
+|---|---|
+| `test-commaData.R` | S4 class validity, constructor, bad inputs, show() — ~20 tests |
+| `test-parsers.R` | Modkit column mapping, mod codes, coverage filter — ~15 tests |
+| `test-accessors.R` | Matrix shape, value ranges, multi-mod-type, subsetting — ~20 tests |
+| `test-genome_utils.R` | .validateGenomeInfo, .circularIndex, .makeSeqinfo |
+| `test-load_annotation.R` | GFF3/BED parsing, feature_type filtering |
+| `test-find_motif_sites.R` | Motif search, both strands, palindromic motifs |
+| `test-parse_megalodon.R` | .parseMegalodon aggregation, mod_type requirement |
+| `test-annotateSites.R` | overlap/proximity/metagene modes, edge cases — ~20 tests |
+| `test-slidingWindow.R` | stat modes, circular wrap, genome-size inference — ~15 tests |
+| `test-methylomeSummary.R` | per-sample stats, mod_type filtering, all-NA sample column — ~11 tests |
+| `test-coverageAnalysis.R` | coverageDepth() windowing, varianceByDepth() bins — ~8 tests |
+| `test-writeBED.R` | file creation, track header, 9-col BED, RGB color bands, NA exclusion, mod_type filtering, errors — ~20 tests |
+| `test-diffMethyl.R` | diffMethyl() basic, statistical correctness, mod_type/min_coverage/p_adjust, errors, .applyMultipleTesting() contract, .betaBinomialTest() edge cases, ground-truth recovery on comma_example_data — ~30 tests |
+| `test-results.R` | results() and filterResults(): output shape, filtering, thresholds, boundary conditions, errors — ~23 tests |
+| `test-parse_dorado.R` | .cigarToRefPos() (H/S clips, N skips, mixed), .parseMmTag() (5mC, multi-mod, ML boundary values 127/255 and 128/255), .parseDorado() error handling — ~21 tests |
+| `test-plot_distribution.R` | plot_methylation_distribution() returns ggplot, mod_type filtering, per_sample |
+| `test-plot_genome_track.R` | plot_genome_track() returns ggplot/patchwork, windowing, annotation |
+| `test-plot_metagene.R` | plot_metagene() returns ggplot, feature normalization |
+| `test-plot_volcano.R` | plot_volcano() returns ggplot, thresholds, coloring |
+| `test-plot_heatmap.R` | plot_heatmap() returns ggplot, top-N sites, sample annotation |
+| `test-plot_pca.R` | plot_pca() returns ggplot, color_by/shape_by arguments |
+| `test-plot_coverage.R` | plot_coverage() returns ggplot, per_sample mode |
 
 ### Required coverage
 
@@ -430,28 +428,38 @@ Stub documentation (`"A dataframe."`, `"A string."`) is not acceptable.
 
 ### Package-level documentation
 
-Write a `?comma` package documentation page explaining the overall workflow. This is a Bioconductor requirement — planned for Phase 5.
+`R/comma-package.R` provides the `?comma` package documentation page. It describes the five-step workflow: Load → QC → Annotate → Visualize → Differential methylation. This satisfies the Bioconductor requirement.
+
+### Vignettes
+
+Two vignettes in `vignettes/`:
+- **`getting-started.Rmd`** (~214 lines) — end-to-end workflow using `comma_example_data`: construct → characterize → diff methylation → visualize
+- **`multiple-modification-types.Rmd`** (~173 lines) — joint 6mA + 5mC analysis; demonstrates subsetting by `mod_type`, comparing patterns, visualizing both simultaneously
 
 ---
 
 ## 11. Bioconductor Requirements
 
-The package targets Bioconductor submission at v1.0.0. Follow these requirements throughout development:
+The package targets Bioconductor submission at v1.0.0.
 
-- Individual package imports only (`dplyr`, not `tidyverse`)
-- `S4` classes with proper `validity()` methods
-- `show()` methods for all S4 classes
-- Package passes `R CMD check --as-cran` with zero errors and zero warnings
-- `BiocCheck::BiocCheck()` passes with zero errors
-- Bundled data < 5 MB total
-- At least two vignettes
-- `NEWS.md` with version history
+| Requirement | Status |
+|---|---|
+| Individual package imports (`dplyr`, not `tidyverse`) | ✅ Done |
+| S4 classes with proper `validity()` methods | ✅ Done |
+| `show()` methods for all S4 classes | ✅ Done |
+| Package-level `?comma` documentation page | ✅ Done |
+| At least two vignettes | ✅ Done |
+| `NEWS.md` with version history | ✅ Done |
+| `biocViews` declared | ✅ Done (Sequencing, Epigenetics, Coverage, DifferentialMethylation, GenomeAnnotation, DataImport, Visualization) |
+| `R CMD check --as-cran` zero errors/warnings | ⏳ Verify |
+| `BiocCheck::BiocCheck()` zero errors | ⏳ Run and fix |
+| Bundled data < 5 MB total | ⏳ Verify |
+| Zenodo DOI | ⏳ Register before submission |
+| Version bumped to 1.0.0 | ⏳ Pending |
 
 ---
 
 ## 12. What Has Been Cleaned Up
-
-All Phase 3 cleanup tasks are complete:
 
 | File | Action | Status |
 |---|---|---|
@@ -464,7 +472,8 @@ All Phase 3 cleanup tasks are complete:
 | `all_site_annotations_60p.txt` (root) | Deleted — legacy data file | ✅ Done |
 | `data/*.rda` (MG1655 files) | Removed — replaced by `comma_example_data` | ✅ Done |
 | `writeBED.R` | Rewritten — generalized, no hardcoded paths | ✅ Done |
-| `parse_dorado.R` stub | Replaced with full Dorado BAM parser (MM/ML tags) in Phase 4 | ✅ Done |
+| `parse_dorado.R` stub | Replaced with full Dorado BAM parser (MM/ML tags) | ✅ Done |
+| `comma_pm.md` | Deleted — all essential content migrated to CLAUDE.md | ✅ Done |
 
 ---
 
@@ -483,7 +492,7 @@ Use descriptive, imperative commit messages:
 Add commaData S4 class definition and show() method
 Fix circular genome arithmetic to use genomeInfo slot
 Replace nested for-loops in annotateSites with findOverlaps
-Implement Phase 3 (v0.3.0): vectorized annotation, sliding window, coverage analysis
+Implement Phase 5 (v0.5.0): visualization functions and vignettes
 ```
 
 ### CI/CD
@@ -498,11 +507,10 @@ GitHub Actions (`.github/workflows/r.yml`) runs `rcmdcheck` on push/PR against R
 
 ### When you need R
 
-**Not every task requires R to be running.** You can safely work without installing or invoking R for:
+**Not every task requires R to be running.** You can safely work without invoking R for:
 - Writing or editing R source code (`.R` files, `CLAUDE.md`, `DESCRIPTION`, `NEWS.md`, etc.)
 - Writing documentation, vignettes, or roxygen2 comments
 - Reviewing logic, refactoring, or adding new functions
-- Any task that is purely code authoring without needing to execute or test
 
 **You DO need a working R environment when:**
 - Running the test suite (`devtools::test()`)
@@ -512,11 +520,11 @@ GitHub Actions (`.github/workflows/r.yml`) runs `rcmdcheck` on push/PR against R
 
 ### What is already installed
 
-This is an Ubuntu/Debian Linux environment. R 4.3.3 and all required package dependencies for `comma` are **pre-installed** — you do not need to install them from scratch. The key packages already available include:
+This is an Ubuntu/Debian Linux environment. R 4.3.3 and all required package dependencies for `comma` are **pre-installed**:
 
-- **R itself:** installed via `apt` (`r-base` 4.3.3)
-- **Bioconductor core:** `GenomicRanges`, `IRanges`, `SummarizedExperiment`, `S4Vectors`, `GenomeInfoDb`, `Rsamtools`, `Biostrings`, `BSgenome`, `rtracklayer`, `BiocGenerics` — all installed via `apt` (`r-bioc-*`)
-- **CRAN packages:** `zoo`, `ggplot2`, `dplyr`, `tidyr`, `devtools`, `testthat`, `knitr`, `rmarkdown`, `ggrepel`, `ComplexHeatmap` — installed in `/usr/local/lib/R/site-library/`
+- **R itself:** `/usr/bin/R` (r-base 4.3.3 via `apt`)
+- **Bioconductor core:** `GenomicRanges`, `IRanges`, `SummarizedExperiment`, `S4Vectors`, `GenomeInfoDb`, `Rsamtools`, `Biostrings`, `BSgenome`, `rtracklayer`, `BiocGenerics` — installed via `apt` (`r-bioc-*`)
+- **CRAN packages:** `zoo`, `ggplot2`, `dplyr`, `tidyr`, `devtools`, `testthat`, `knitr`, `rmarkdown`, `ggrepel`, `patchwork` — installed in `/usr/local/lib/R/site-library/`
 - **`BiocManager`** is available for installing additional Bioconductor packages if needed
 
 Verify R is available with:
@@ -526,9 +534,8 @@ R --version
 
 ### Installing missing packages (if needed)
 
-`sudo` is available without a password in this environment. Prefer `apt` for system-level packages (faster, no compilation), then fall back to R-level installation.
+`sudo` is available without a password in this environment. Prefer `apt` for system-level packages (faster, no compilation).
 
-**Preferred: install via `apt` (no compilation, fast)**
 ```bash
 # Bioconductor packages
 sudo apt install -y r-bioc-<pkgname>   # e.g., r-bioc-genomicranges
@@ -536,37 +543,23 @@ sudo apt install -y r-bioc-<pkgname>   # e.g., r-bioc-genomicranges
 # CRAN packages
 sudo apt install -y r-cran-<pkgname>   # e.g., r-cran-zoo
 ```
-Package names are lowercase in apt. Check availability with `apt search r-bioc-` or `apt search r-cran-`.
 
-**Fallback: install from R directly**
+Fallback — install from R directly (writes to `/usr/local/lib/R/site-library/`):
 ```r
-# CRAN
 install.packages("pkgname")
-
-# Bioconductor
 BiocManager::install("pkgname")
 ```
-R-level installs write to `/usr/local/lib/R/site-library/` (writable without sudo in this environment) or `~/R/x86_64-pc-linux-gnu-library/4.3/`.
 
 ### Running package checks and tests
 
 ```bash
-# From repo root — all of these work without any extra setup
+# From repo root
 Rscript -e "devtools::test()"
 Rscript -e "devtools::check()"
 Rscript -e "devtools::document()"
 ```
 
-Or interactively:
-```r
-# Launch R from repo root, then:
-devtools::load_all()
-devtools::test()
-```
-
-### Key point for agents
-
-**Do not give up because R is not on PATH or packages appear missing.** R 4.3.3 is at `/usr/bin/R` and all `comma` dependencies are pre-installed. If a specific package is missing, install it with `sudo apt install r-bioc-<name>` or `install.packages()` — both work. The environment is fully capable of running the full test suite and package checks.
+**Do not give up because R is not on PATH or packages appear missing.** R 4.3.3 is at `/usr/bin/R` and all `comma` dependencies are pre-installed. Install any missing package with `sudo apt install r-bioc-<name>` or `install.packages()`.
 
 ---
 
@@ -589,10 +582,7 @@ Do not implement these without explicit discussion:
 ### Install for development
 
 ```r
-# From repo root
-devtools::install()
-# or
-devtools::load_all()
+devtools::install()   # or devtools::load_all()
 ```
 
 ### Run checks
@@ -601,10 +591,10 @@ devtools::load_all()
 devtools::check()        # Full R CMD check
 devtools::test()         # Tests only
 devtools::document()     # Rebuild docs from roxygen2
-BiocCheck::BiocCheck()   # Bioconductor-specific checks (Phase 5)
+BiocCheck::BiocCheck()   # Bioconductor-specific checks
 ```
 
-### Currently exported API (v0.4.0)
+### Currently exported API (v0.5.0)
 
 ```r
 # S4 class (Phase 1)
@@ -629,8 +619,8 @@ loadAnnotation(file, feature_types)   # GFF3/BED → GRanges
 findMotifSites(genome, motif)         # genome + motif → GRanges
 
 # Analysis functions (Phase 3)
-annotateSites(object, features, type, ...)    # vectorized annotation; type = "overlap"|"proximity"|"metagene"
-slidingWindow(object, window, stat, ...)      # genome-wide smoothing; stat = "median"|"mean"
+annotateSites(object, features, type, ...)    # type = "overlap"|"proximity"|"metagene"
+slidingWindow(object, window, stat, ...)      # stat = "median"|"mean"
 methylomeSummary(object, mod_type)            # per-sample QC stats → tidy data.frame
 coverageDepth(object, window, method, ...)    # windowed sequencing depth → tidy data.frame
 varianceByDepth(object, coverage_bins)        # methylation variance by depth → tidy data.frame
@@ -641,43 +631,31 @@ diffMethyl(object, formula, method, mod_type, min_coverage, p_adjust_method)
                                               # → commaData with dm_* results in rowData
 results(object, mod_type)                     # → tidy data.frame of diff methylation results
 filterResults(object, padj, delta_beta, ...)  # → filtered data.frame
+
+# Visualization (Phase 5) — all return a ggplot (or patchwork) object
+plot_methylation_distribution(object, mod_type, per_sample)
+plot_genome_track(object, chromosome, start, end, mod_type)
+plot_metagene(object, feature, mod_type, window)
+plot_volcano(results_df, delta_beta_threshold, padj_threshold)
+plot_heatmap(object, result_df, n_sites, annotation_cols)
+plot_pca(object, mod_type, color_by, shape_by)
+plot_coverage(object, per_sample)
 ```
 
 ---
 
-## 17. Phase 5 Implementation Guide (Next Phase)
+## 17. Bioconductor Submission Checklist (Next Steps)
 
-Phase 4 is complete. This section describes Phase 5.
+These are the remaining tasks before v1.0.0 submission:
 
-### Goal: Visualization, Tests, Vignettes, and Bioconductor Release (v0.5.0)
-
-Phase 5 completes the user-facing experience and prepares for Bioconductor submission.
-
-### Priority order for Phase 5
-
-1. **Visualization functions** — all `plot_*()` functions return `ggplot` objects; add `ComplexHeatmap` and `ggrepel` to `Suggests` in DESCRIPTION when implementing:
-   - `plot_methylation_distribution(object, mod_type, per_sample)` — beta density/ECDF per sample
-   - `plot_genome_track(object, chromosome, start, end, mod_type)` — genome browser style; feature annotation as colored rectangles below the methylation track
-   - `plot_volcano(results_df, delta_beta_threshold, padj_threshold)` — volcano plot (uses `ggrepel` for labels)
-   - `plot_heatmap(object, result_df, n_sites, annotation_cols)` — heatmap of top diff sites with optional sample/site annotation bars (uses `ComplexHeatmap`)
-   - `plot_metagene(object, feature, mod_type, window)` — average methylation relative to feature midpoint (TSS, TTS, or any feature in annotation)
-   - `plot_pca(object, mod_type, color_by, shape_by)` — PCA on per-sample methylation profiles; QC and exploratory analysis
-   - `plot_coverage(object, per_sample)` — coverage distribution across sites; QC plot
-
-2. **Tests for plot functions** — every `plot_*()` function needs a test that it returns a `ggplot` object without error using `comma_example_data`. Also add tests ensuring `diffMethyl()` correctly identifies the ~30 simulated differentially methylated sites in `comma_example_data`.
-
-3. **Vignettes** — required for Bioconductor:
-   - "Getting Started with comma" — end-to-end workflow using `comma_example_data`: construct → characterize → diff methylation → visualize; should be completable in under 5 minutes on a laptop
-   - "Working with Multiple Modification Types" — demonstrates 6mA + 5mC joint analysis; shows subsetting by `mod_type`, comparing patterns, visualizing both simultaneously
-
-4. **Package-level documentation** — `?comma` page explaining the overall workflow (Bioconductor requirement)
-
-5. **Bioconductor submission prep**:
-   - Run `BiocCheck::BiocCheck()` and address all errors and warnings
-   - Ensure `R CMD check --as-cran` passes with no errors or warnings
-   - Register a package DOI via Zenodo before submission
-   - Verify bundled data remains < 5 MB total
+1. **Update README** — README.md/README.Rmd still reflects v0.3.0; update to showcase Phase 5 visualization functions and the complete five-step workflow
+2. **Run `BiocCheck::BiocCheck()`** — address all errors and warnings
+3. **Verify `R CMD check --as-cran`** — must pass with zero errors and zero warnings
+4. **Register DOI** — create a Zenodo release and register a DOI before submission
+5. **Verify data size** — bundled data must be < 5 MB total (`data/` + `inst/extdata/`)
+6. **Bump version to 1.0.0** — update DESCRIPTION and add NEWS.md entry
+7. **Submit to Bioconductor** — follow instructions at https://contributions.bioconductor.org/
 
 ---
 
-*Last updated: March 2026 (v0.4.0 — Phases 1, 2, 3 & 4 complete; Phase 5 is current priority; test suite covers all exported functions through Phase 4; Section 14 documents R environment setup for agents)*
+*Last updated: March 2026 (v0.5.0 — all five phases complete; 7 visualization functions, 2 vignettes, and package-level docs added in Phase 5; Bioconductor submission is the current priority; Section 14 documents R environment setup for agents)*
