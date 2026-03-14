@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-**comma** (**Co**mparative **M**ethylomics for **M**icrobial **A**nalysis) is
+**comma** (**co**mma: for **m**icrobial **m**ethylation **a**nalysis) is
 an R package for genome-wide analysis of bacterial DNA methylation from Oxford
 Nanopore sequencing data. It accepts output from **modkit**, **Dorado**, and
 **Megalodon**, supports **6mA, 5mC, and 4mC** in a single unified container,
