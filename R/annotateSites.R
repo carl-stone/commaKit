@@ -260,12 +260,15 @@ annotateSites <- function(object,
 
     # Fractional position [0, 1]: 0 = TSS, 1 = TTS
     # For - strand: 0 = high coordinate (TTS on genome), 1 = low coordinate (TSS on genome)
+    # For 1-bp features feat_widths - 1L == 0; use pmax(..., 1L) to avoid
+    # division by zero producing NaN (which pmax/pmin do not clamp).
+    denom <- pmax(feat_widths - 1L, 1L)
     frac <- ifelse(
         feat_strand == "-",
-        (feat_ends - site_pos) / (feat_widths - 1L),
-        (site_pos - feat_starts) / (feat_widths - 1L)
+        (feat_ends - site_pos) / denom,
+        (site_pos - feat_starts) / denom
     )
-    # Clamp to [0, 1] in case of rounding or single-bp features
+    # Clamp to [0, 1] in case of rounding
     frac <- pmax(0, pmin(1, frac))
 
     site_factor <- factor(q_idx, levels = seq_len(n_sites))

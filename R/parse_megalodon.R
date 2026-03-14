@@ -63,6 +63,10 @@ NULL
         error = function(e) stop("Failed to read Megalodon file '", file, "': ", e$message)
     )
 
+    if (nrow(raw) == 0L) {
+        return(.emptyModkitResult())
+    }
+
     if (ncol(raw) < 8L) {
         stop(
             "Megalodon file '", file, "' has ", ncol(raw), " columns; ",
@@ -76,10 +80,6 @@ NULL
     start    <- as.integer(raw[[2]])
     strand   <- as.character(raw[[6]])
     mod_prob <- as.numeric(raw[[ncol(raw)]])
-
-    if (nrow(raw) == 0L) {
-        return(.emptyModkitResult())
-    }
 
     # ── Aggregate per-read → per-site ───────────────────────────────────────
     # Site key: chrom:position:strand (1-based)
