@@ -1,6 +1,6 @@
 # CLAUDE.md — AI Assistant Guide for `comma`
 
-> This file is the primary reference for AI coding agents working on this repository. Read it fully before making any changes. The authoritative project management document is `comma_pm.md` — read that too before implementing anything significant.
+> This file is the primary reference for AI coding agents working on this repository. Read it fully before making any changes.
 
 ---
 
@@ -13,7 +13,11 @@
 **License:** MIT
 **Target:** Bioconductor submission at v1.0.0
 
-`comma` is an R package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It characterizes genome-wide methylation patterns, annotates methylation sites relative to genomic features, and identifies differentially methylated sites between conditions. Phases 1–4 of the architectural refactor are complete — see `comma_pm.md` for the full design specification and roadmap.
+`comma` is an R package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It characterizes genome-wide methylation patterns, annotates methylation sites relative to genomic features, and identifies differentially methylated sites between conditions. Phases 1–4 of the architectural refactor are complete; Phase 5 (visualization, vignettes, Bioconductor prep) is the current priority.
+
+### Scientific scope
+
+`comma` is **modification-type agnostic**. It was originally conceived for N6-methyladenine (6mA, Dam methyltransferase, GATC motif in *E. coli*), but 4mC and 5mC have significant and understudied roles even in model bacteria, and Dorado now detects all three modification types simultaneously from a single sequencing run. Every data structure, function signature, and analysis module must treat methylation type as a first-class parameter, not an assumption. The package must work equally well for 6mA, 4mC (various bacterial MTases), 5mC (Dcm and analogs), and any other modification type that nanopore callers produce.
 
 ---
 
@@ -79,8 +83,7 @@ CoMMA/
 ├── NAMESPACE                     # commaData class + all Phase 1–4 exports
 ├── NEWS.md                       # v0.4.0, v0.3.0, v0.2.0, and v0.1.0 entries
 ├── README.md / README.Rmd        # ✅ Updated for v0.3.0 with Phase 1/2/3 examples
-├── CLAUDE.md                     # ← THIS FILE (AI assistant guide)
-└── comma_pm.md                   # ← PROJECT MANAGEMENT DOCUMENT (read this)
+└── CLAUDE.md                     # ← THIS FILE (AI assistant guide)
 ```
 
 **Note:** All root-level legacy files have been removed or moved in Phase 3:
@@ -230,7 +233,7 @@ Follow these strictly. Inconsistency here will make the package feel unprofessio
 
 ## 5. Development Phases
 
-See `comma_pm.md` Section 4 for full task lists. Work sequentially — each phase depends on the previous.
+Work sequentially — each phase depends on the previous.
 
 | Phase | Version | Key deliverable | Status |
 |---|---|---|---|
@@ -576,24 +579,29 @@ Phase 5 completes the user-facing experience and prepares for Bioconductor submi
 
 ### Priority order for Phase 5
 
-1. **Visualization functions** — all `plot_*()` functions return `ggplot` objects:
+1. **Visualization functions** — all `plot_*()` functions return `ggplot` objects; add `ComplexHeatmap` and `ggrepel` to `Suggests` in DESCRIPTION when implementing:
    - `plot_methylation_distribution(object, mod_type, per_sample)` — beta density/ECDF per sample
-   - `plot_genome_track(object, chromosome, start, end, mod_type)` — genome browser style
-   - `plot_volcano(results_df, delta_beta_threshold, padj_threshold)` — volcano plot
-   - `plot_heatmap(object, result_df, n_sites)` — heatmap of top diff sites
-   - `plot_metagene(object, feature, mod_type, window)` — metagene plot
-   - `plot_pca(object, mod_type, color_by)` — PCA on methylation profiles
-   - `plot_coverage(object, per_sample)` — coverage distribution QC
+   - `plot_genome_track(object, chromosome, start, end, mod_type)` — genome browser style; feature annotation as colored rectangles below the methylation track
+   - `plot_volcano(results_df, delta_beta_threshold, padj_threshold)` — volcano plot (uses `ggrepel` for labels)
+   - `plot_heatmap(object, result_df, n_sites, annotation_cols)` — heatmap of top diff sites with optional sample/site annotation bars (uses `ComplexHeatmap`)
+   - `plot_metagene(object, feature, mod_type, window)` — average methylation relative to feature midpoint (TSS, TTS, or any feature in annotation)
+   - `plot_pca(object, mod_type, color_by, shape_by)` — PCA on per-sample methylation profiles; QC and exploratory analysis
+   - `plot_coverage(object, per_sample)` — coverage distribution across sites; QC plot
 
-2. **Vignettes** — required for Bioconductor:
-   - "Getting Started with comma" — end-to-end workflow using `comma_example_data`
-   - "Working with Multiple Modification Types" — 6mA + 5mC joint analysis
+2. **Tests for plot functions** — every `plot_*()` function needs a test that it returns a `ggplot` object without error using `comma_example_data`. Also add tests ensuring `diffMethyl()` correctly identifies the ~30 simulated differentially methylated sites in `comma_example_data`.
 
-3. **Package-level documentation** — `?comma` page explaining overall workflow
+3. **Vignettes** — required for Bioconductor:
+   - "Getting Started with comma" — end-to-end workflow using `comma_example_data`: construct → characterize → diff methylation → visualize; should be completable in under 5 minutes on a laptop
+   - "Working with Multiple Modification Types" — demonstrates 6mA + 5mC joint analysis; shows subsetting by `mod_type`, comparing patterns, visualizing both simultaneously
 
-4. **Bioconductor submission prep** — `BiocCheck::BiocCheck()`, `R CMD check --as-cran`
+4. **Package-level documentation** — `?comma` page explaining the overall workflow (Bioconductor requirement)
+
+5. **Bioconductor submission prep**:
+   - Run `BiocCheck::BiocCheck()` and address all errors and warnings
+   - Ensure `R CMD check --as-cran` passes with no errors or warnings
+   - Register a package DOI via Zenodo before submission
+   - Verify bundled data remains < 5 MB total
 
 ---
 
-*Last updated: March 2026 (v0.4.0 — Phases 1, 2, 3 & 4 complete; Phase 5 is current priority; test suite now covers all exported functions including writeBED)*
-*See `comma_pm.md` for complete design rationale and implementation details.*
+*Last updated: March 2026 (v0.4.0 — Phases 1, 2, 3 & 4 complete; Phase 5 is current priority; test suite covers all exported functions through Phase 4)*
