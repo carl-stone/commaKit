@@ -1,0 +1,214 @@
+---
+title: "Getting Started with comma"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Getting Started with comma}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+    collapse   = TRUE,
+    comment    = "#>",
+    fig.width  = 7,
+    fig.height = 5,
+    warning    = FALSE,
+    message    = FALSE
+)
+```
+
+# Introduction
+
+`comma` (**Co**mparative **M**ethylomics for **M**icrobial **A**nalysis) is an
+R package for genome-wide analysis of bacterial DNA methylation from Oxford
+Nanopore sequencing data. It supports three modification types — N6-methyladenine
+(6mA), 5-methylcytosine (5mC), and N4-methylcytosine (4mC) — in a single,
+unified data container. This vignette walks through the complete analysis
+workflow using the built-in `comma_example_data` synthetic dataset.
+
+The typical `comma` workflow has five steps:
+
+1. **Load** per-sample methylation files into a `commaData` object.
+2. **QC** the data (coverage, beta distributions, PCA).
+3. **Annotate** sites relative to genomic features.
+4. **Test** for differential methylation between conditions.
+5. **Visualize** the results.
+
+# Installation
+
+```{r install, eval = FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("comma")
+```
+
+```{r load}
+library(comma)
+```
+
+# The `commaData` Object
+
+`commaData` extends `SummarizedExperiment` and is the central data container
+in `comma`. It stores:
+
+- **methylation** — a sites × samples matrix of beta values (0–1).
+- **coverage** — a sites × samples matrix of read depths.
+- **rowData** — per-site metadata: chromosome, position, strand, mod_type.
+- **colData** — per-sample metadata: sample_name, condition, replicate.
+- **genomeInfo** — chromosome names and lengths.
+- **annotation** — genomic features as a `GRanges` object.
+- **motifSites** — motif instances as a `GRanges` object.
+
+The built-in `comma_example_data` contains 300 synthetic methylation sites
+(200 × 6mA, 100 × 5mC) on a simulated 100 kb chromosome across three samples:
+two controls (`ctrl_1`, `ctrl_2`) and one treatment (`treat_1`).
+
+```{r load-data}
+data(comma_example_data)
+comma_example_data
+```
+
+```{r explore-basics}
+# Modification types present
+modTypes(comma_example_data)
+
+# Per-sample metadata
+sampleInfo(comma_example_data)
+
+# Matrix dimensions: sites × samples
+dim(methylation(comma_example_data))
+```
+
+# Exploring the Methylome
+
+## Summary Statistics
+
+`methylomeSummary()` returns a tidy data frame with per-sample distribution
+statistics:
+
+```{r methylome-summary}
+ms <- methylomeSummary(comma_example_data)
+ms[, c("sample_name", "condition", "mean_beta", "median_beta", "n_covered")]
+```
+
+## Coverage QC
+
+`plot_coverage()` shows the distribution of sequencing depth per site, per
+sample. Consistent coverage across samples is an important quality indicator.
+
+```{r plot-coverage, fig.cap = "Coverage depth distribution per sample."}
+plot_coverage(comma_example_data)
+```
+
+## Beta Value Distributions
+
+`plot_methylation_distribution()` plots the density of methylation levels for
+each sample. Bacterial genomes often show a bimodal distribution (sites are
+either fully methylated or unmethylated).
+
+```{r plot-dist, fig.cap = "Methylation beta value density per sample, faceted by modification type."}
+plot_methylation_distribution(comma_example_data)
+```
+
+Restrict to a single modification type:
+
+```{r plot-dist-6ma, fig.cap = "Beta value density for 6mA sites only."}
+plot_methylation_distribution(comma_example_data, mod_type = "6mA")
+```
+
+## PCA for Sample-Level QC
+
+`plot_pca()` performs PCA on per-sample methylation profiles. Samples from
+the same condition should cluster together.
+
+```{r plot-pca, fig.cap = "PCA of methylation profiles colored by condition."}
+plot_pca(comma_example_data, color_by = "condition")
+```
+
+# Annotating Sites
+
+`annotateSites()` maps methylation sites to genomic features using three modes:
+
+- `"overlap"` — which features overlap each site.
+- `"proximity"` — the nearest feature to each site.
+- `"metagene"` — normalized position within features (TSS = 0, TTS = 1).
+
+```{r annotate}
+annotated <- annotateSites(comma_example_data, type = "overlap")
+si <- siteInfo(annotated)
+
+# Proportion of sites overlapping at least one annotated feature
+mean(lengths(si$feature_names) > 0)
+```
+
+`plot_metagene()` visualizes the average methylation profile across gene bodies:
+
+```{r plot-metagene, fig.cap = "Mean methylation profile across gene bodies (TSS to TTS)."}
+plot_metagene(comma_example_data, feature = "gene")
+```
+
+# Genome Track Visualization
+
+`plot_genome_track()` produces a genome browser–style plot of methylation
+along a chromosome region:
+
+```{r plot-track, fig.cap = "Genome track for the first 50 kb of chr_sim."}
+plot_genome_track(comma_example_data, chromosome = "chr_sim",
+                  start = 1L, end = 50000L, mod_type = "6mA")
+```
+
+# Differential Methylation
+
+`diffMethyl()` tests each site for differential methylation between conditions.
+It is modeled on DESeq2's workflow: pass a `commaData` object and a design
+formula, and receive back the same object with statistical results in `rowData`.
+
+```{r diff-methyl}
+cd_dm <- diffMethyl(comma_example_data, formula = ~ condition,
+                    mod_type = "6mA")
+cd_dm
+```
+
+Extract the results as a tidy data frame:
+
+```{r results}
+res <- results(cd_dm)
+# Top sites by adjusted p-value
+head(res[order(res$dm_padj),
+         c("chrom", "position", "mod_type", "dm_delta_beta", "dm_padj")])
+```
+
+Filter to significant sites (padj < 0.05, |Δβ| ≥ 0.2):
+
+```{r filter-results}
+sig <- filterResults(cd_dm, padj = 0.05, delta_beta = 0.2)
+cat("Significant sites:", nrow(sig), "\n")
+```
+
+## Volcano Plot
+
+`plot_volcano()` displays the differential methylation landscape. Sites are
+colored by direction and significance:
+
+```{r plot-volcano, fig.cap = "Volcano plot: effect size (Δβ) vs. significance (–log10 padj)."}
+plot_volcano(res)
+```
+
+## Heatmap of Top Sites
+
+`plot_heatmap()` shows methylation beta values for the top differentially
+methylated sites:
+
+```{r plot-heatmap, fig.cap = "Heatmap of top 30 differentially methylated 6mA sites."}
+plot_heatmap(res, cd_dm, n_sites = 30L)
+```
+
+# Session Information
+
+```{r session-info}
+sessionInfo()
+```

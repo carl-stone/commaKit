@@ -1,3 +1,56 @@
+# comma 0.5.0
+
+## Major new features
+
+* **`plot_methylation_distribution()`** — beta value density plot per sample,
+  coloured by sample name, and faceted by modification type when multiple types
+  are present. Useful for QC and comparing methylation level distributions.
+
+* **`plot_genome_track()`** — genome browser-style scatter plot of methylation
+  beta values vs. genomic position. Supports positional windowing via `start`/
+  `end` arguments, `mod_type` filtering, and optional feature annotation
+  rectangles from `annotation(object)`.
+
+* **`plot_metagene()`** — average methylation profile across a class of genomic
+  features, normalized to fractional position [0 = TSS, 1 = TTS]. Uses
+  `annotateSites(type = "metagene")` internally.
+
+* **`plot_volcano()`** — volcano plot for differential methylation results.
+  Accepts the `data.frame` output of `results()`. Colors points as
+  Hypermethylated, Hypomethylated, or Not significant based on user-supplied
+  `padj_threshold` and `delta_beta_threshold`.
+
+* **`plot_heatmap()`** — `geom_tile` heatmap of the top differentially
+  methylated sites (ranked by adjusted p-value) across all samples. Uses
+  `ggplot2` only; no `ComplexHeatmap` dependency required.
+
+* **`plot_pca()`** — PCA of per-sample methylation profiles using
+  `stats::prcomp()`. Points colored and optionally shaped by any column in
+  `sampleInfo(object)`.
+
+* **`plot_coverage()`** — histogram of sequencing depth per site, per sample.
+  Useful for coverage QC before differential methylation testing.
+
+## Documentation
+
+* Added **two vignettes** required for Bioconductor submission:
+  - `"Getting Started with comma"` — end-to-end workflow using
+    `comma_example_data`.
+  - `"Working with Multiple Modification Types"` — joint 6mA + 5mC analysis.
+
+* Added **package-level documentation** (`?comma`) describing the overall
+  workflow.
+
+## Dependency changes
+
+* Added `BiocStyle`, `ComplexHeatmap`, `ggrepel`, and `patchwork` to
+  `Suggests`. None are required for core functions; `patchwork` enables
+  combined annotation tracks in `plot_genome_track()` and `plot_heatmap()`.
+
+* Added `VignetteBuilder: knitr` to DESCRIPTION.
+
+* Added `Visualization` to `biocViews`.
+
 # comma 0.4.0
 
 ## Major new features
