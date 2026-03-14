@@ -4,12 +4,14 @@ output: github_document
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r, include = FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.path  = "man/figures/README-",
+  out.width = "100%",
+  message   = FALSE,
+  warning   = FALSE
 )
 ```
 
@@ -18,51 +20,60 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-**comma** (Comparative Methylomics for Microbial Analysis) is an R package for
-analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It
-provides:
+**comma** (**Co**mparative **M**ethylomics for **M**icrobial **A**nalysis) is
+an R package for genome-wide analysis of bacterial DNA methylation from Oxford
+Nanopore sequencing data. It accepts output from **modkit**, **Dorado**, and
+**Megalodon**, supports **6mA, 5mC, and 4mC** in a single unified container,
+and covers the full analysis workflow from raw files through quality control,
+site annotation, differential methylation testing, and publication-quality
+visualization.
 
-- A unified data object (`commaData`) that stores methylation beta values,
-  sequencing coverage, sample metadata, and genomic annotations together.
-- Parsers for **modkit pileup** BED (primary), Dorado BAM (stub), and Megalodon
-  (legacy) output.
-- Vectorized annotation of methylation sites against genomic features using
-  `GenomicRanges::findOverlaps()`.
-- Genome-wide sliding window smoothing for any organism.
-- Per-sample methylome quality-control summaries.
-- A path toward differential methylation analysis (Phase 4, v0.4.0).
+## Features
 
-`comma` works with **any sequenced bacterial genome** — no organism-specific
-values are hardcoded anywhere.
+- **`commaData` S4 class** — extends `SummarizedExperiment`; stores beta
+  values, coverage, sample metadata, genome info, and annotations together.
+- **Three parsers** — modkit pileup BED (primary), Dorado BAM (full MM/ML tag
+  decoding), and Megalodon (legacy).
+- **Vectorized annotation** via `GenomicRanges::findOverlaps()`; three modes:
+  overlap, proximity, and metagene (normalized position within feature bodies).
+- **Differential methylation** — quasibinomial GLM per site with a
+  DESeq2-style interface (`diffMethyl()` → `results()` → `filterResults()`).
+- **Seven `plot_*()` functions** — coverage QC, beta distributions, PCA, genome
+  tracks, metagene profiles, volcano plots, and heatmaps; all return `ggplot`
+  objects for further customization.
+- **Any bacterial genome** — no organism-specific values are hardcoded anywhere.
+- **Multi-modification-type** — 6mA, 5mC, and 4mC coexist in one object;
+  every function accepts a `mod_type` argument to work with individual types.
 
 ## Installation
 
-Install the development version from GitHub:
-
 ```r
-# install.packages("devtools")
+# Development version from GitHub:
 devtools::install_github("carl-stone/CoMMA")
+
+# Bioconductor (upcoming v1.0.0):
+# BiocManager::install("comma")
 ```
 
-## Quick Start
+## The `commaData` Object
 
-### 1. Construct a `commaData` object
+`commaData` extends `SummarizedExperiment` and is constructed from per-sample
+methylation files:
 
 ```r
 library(comma)
 
-# Named vector: sample_name → path to modkit pileup BED file
+# Named vector: sample_name → path to modkit pileup BED
 files <- c(
   ctrl_1  = "path/to/ctrl_rep1.bed",
   ctrl_2  = "path/to/ctrl_rep2.bed",
   treat_1 = "path/to/treat_rep1.bed"
 )
 
-# Sample metadata (data.frame with at least sample_name, condition, replicate)
 col_data <- data.frame(
-  sample_name = c("ctrl_1",   "ctrl_2",   "treat_1"),
-  condition   = c("control",  "control",  "treatment"),
-  replicate   = c(1L,         2L,         1L)
+  sample_name = c("ctrl_1",    "ctrl_2",    "treat_1"),
+  condition   = c("control",   "control",   "treatment"),
+  replicate   = c(1L,          2L,          1L)
 )
 
 obj <- commaData(
@@ -72,143 +83,171 @@ obj <- commaData(
   annotation   = "path/to/genes.gff3",  # GFF3 or BED (optional)
   motif        = "GATC",                # regex motif (optional)
   min_coverage = 5L,
-  caller       = "modkit"
+  caller       = "modkit"               # "modkit", "dorado", or "megalodon"
 )
-
-obj
-#> class: commaData
-#> sites: 3842 | samples: 3
-#> mod types: 6mA, 5mC
-#> conditions: control, treatment
-#> genome: 1 chromosome (4,641,652 bp total)
-#> annotation: 4497 features
-#> motif sites: 19120 sites
 ```
 
-### 2. Access data
+A built-in synthetic dataset (300 sites, 3 samples, 100 kb genome) is included
+for testing and demonstrations:
 
-```r
-# Beta value matrix (sites × samples)
-m <- methylation(obj)
-dim(m)  # [1] 3842    3
-
-# Coverage matrix
-cov <- coverage(obj)
-
-# Per-site metadata (chrom, position, strand, mod_type, ...)
-head(siteInfo(obj))
-
-# Per-sample metadata
-sampleInfo(obj)
-
-# Modification types present
-modTypes(obj)  # "5mC" "6mA"
-
-# Subset to 6mA sites only
-obj_6mA <- subset(obj, mod_type = "6mA")
-```
-
-### 3. Built-in example data
-
-A synthetic dataset is bundled for testing and examples:
-
-```{r load_example}
+```{r load-data}
 library(comma)
 data(comma_example_data)
 comma_example_data
 ```
 
-The example object has 300 sites (200 × 6mA, 100 × 5mC), 3 samples
-(ctrl\_1, ctrl\_2, treat\_1), and a simulated 100 kb genome.
+## Workflow
 
-### 4. Annotate methylation sites
+### Step 1 — Quality Control
 
-`annotateSites()` uses `GenomicRanges::findOverlaps()` — no nested
-for-loops — so it runs in milliseconds even on large genomes.
+`methylomeSummary()` returns per-sample distribution statistics:
+
+```{r qc-summary}
+ms <- methylomeSummary(comma_example_data)
+ms[, c("sample_name", "condition", "mean_beta", "median_beta",
+       "frac_methylated", "n_covered")]
+```
+
+`plot_coverage()` shows the sequencing depth distribution per sample:
+
+```{r plot-coverage, fig.alt = "Coverage depth distribution per sample."}
+plot_coverage(comma_example_data)
+```
+
+`plot_methylation_distribution()` plots the density of beta values, faceted by
+modification type. Bacterial methylomes often show a bimodal distribution
+(sites are either fully methylated or unmethylated):
+
+```{r plot-dist, fig.alt = "Beta value density per sample, faceted by modification type."}
+plot_methylation_distribution(comma_example_data)
+```
+
+`plot_pca()` runs PCA on per-sample methylation profiles for sample-level QC:
+
+```{r plot-pca, fig.alt = "PCA of methylation profiles colored by condition."}
+plot_pca(comma_example_data, color_by = "condition")
+```
+
+### Step 2 — Annotate Sites
+
+`annotateSites()` maps sites to genomic features using
+`GenomicRanges::findOverlaps()` — vectorized, no nested loops:
 
 ```{r annotate}
-# Overlap annotation: assign feature type and name to each site
 annotated <- annotateSites(comma_example_data, type = "overlap")
-head(siteInfo(annotated)[, c("chrom", "position", "mod_type",
-                              "feature_type", "feature_name")])
+
+# Fraction of sites overlapping at least one annotated feature
+si <- siteInfo(annotated)
+mean(lengths(si$feature_names) > 0)
 ```
 
-```{r metagene}
-# Metagene annotation: fractional position within feature (0=start, 1=end)
-mg <- annotateSites(comma_example_data, type = "metagene")
-head(siteInfo(mg)[, c("position", "metagene_feature", "metagene_pos")])
+Three annotation modes are available: `"overlap"`, `"proximity"` (nearest
+feature with signed distance), and `"metagene"` (normalized position 0–1
+within feature bodies).
+
+`plot_metagene()` shows the average methylation profile across gene bodies:
+
+```{r plot-metagene, fig.alt = "Mean methylation across gene bodies (TSS = 0 to TTS = 1)."}
+plot_metagene(comma_example_data, feature = "gene")
 ```
 
-```{r proximity}
-# Proximity annotation: distance and signed offset from nearest TSS
-prox <- annotateSites(comma_example_data, type = "proximity", window = 5000L)
-head(siteInfo(prox)[, c("position", "nearest_feature",
-                         "distance_to_feature", "rel_pos")])
+### Step 3 — Genome Track Visualization
+
+`plot_genome_track()` produces a genome browser–style scatter plot of
+methylation along a chromosomal region:
+
+```{r plot-track, fig.alt = "Genome track for the first 50 kb of chr_sim, 6mA sites."}
+plot_genome_track(comma_example_data, chromosome = "chr_sim",
+                  start = 1L, end = 50000L, mod_type = "6mA")
 ```
 
-### 5. Sliding window methylation
+### Step 4 — Differential Methylation
 
-`slidingWindow()` smooths methylation along the genome for each sample. Genome
-size comes from `genome(object)` — never hardcoded.
+`diffMethyl()` tests each site for differential methylation between conditions.
+It is modeled on DESeq2's workflow: pass a `commaData` object and a design
+formula, get back the same object with per-site statistics in `rowData`:
 
-```{r sliding_window}
-sw <- slidingWindow(comma_example_data, window = 5000L, stat = "median")
-head(sw)
+```{r diff-methyl}
+cd_dm <- diffMethyl(comma_example_data, formula = ~ condition,
+                    mod_type = "6mA")
 ```
 
-Visualize with ggplot2:
+Extract results as a tidy data frame and filter to significant sites:
 
-```{r sliding_window_plot, eval=FALSE}
-library(ggplot2)
-ggplot(sw[sw$sample_name == "ctrl_1", ],
-       aes(x = position, y = window_median)) +
-  geom_line() +
-  labs(x = "Genome position", y = "Median methylation (5 kb window)",
-       title = "ctrl_1 — genome-wide methylation profile") +
-  theme_bw()
+```{r results}
+res <- results(cd_dm)
+sig <- filterResults(cd_dm, padj = 0.05, delta_beta = 0.2)
+cat("Total 6mA sites tested:", nrow(res), "\n")
+cat("Significant sites (padj < 0.05, |Δβ| ≥ 0.2):", nrow(sig), "\n")
+
+# Top hits
+head(res[order(res$dm_padj),
+         c("chrom", "position", "dm_delta_beta", "dm_padj")])
 ```
 
-### 6. Methylome summary
+`plot_volcano()` displays the differential methylation landscape — effect size
+(Δβ) versus significance (–log₁₀ padj):
 
-`methylomeSummary()` produces per-sample QC statistics:
-
-```{r methylome_summary}
-ms <- methylomeSummary(comma_example_data)
-ms[, c("sample_name", "condition", "n_covered", "mean_beta", "frac_methylated")]
+```{r plot-volcano, fig.alt = "Volcano plot of differential 6mA methylation."}
+plot_volcano(res)
 ```
 
-### 7. Coverage analysis
+`plot_heatmap()` shows per-sample beta values for the top differentially
+methylated sites:
 
-```{r coverage_depth}
-# Windowed depth across the genome
-cd <- coverageDepth(comma_example_data, window = 10000L)
-head(cd)
+```{r plot-heatmap, fig.alt = "Heatmap of top 30 differentially methylated 6mA sites."}
+plot_heatmap(res, cd_dm, n_sites = 30L)
 ```
 
-```{r variance_by_depth}
-# Methylation variance as a function of sequencing depth
-vd <- varianceByDepth(comma_example_data, coverage_bins = 5:30)
-head(vd[!is.na(vd$variance), ])
+### Step 5 — Export to BED
+
+```{r writeBED, eval = FALSE}
+writeBED(cd_dm, file = "results_6mA.bed", sample = "ctrl_1", mod_type = "6mA")
 ```
 
-### 8. Export to BED
+## Multi-Modification-Type Support
 
-```{r writeBED, eval=FALSE}
-writeBED(comma_example_data,
-         file     = "ctrl_1_6mA.bed",
-         sample   = "ctrl_1",
-         mod_type = "6mA")
+A single `commaData` object can hold 6mA, 5mC, and 4mC sites simultaneously.
+The `mod_type` argument is available on every analysis function:
+
+```{r mod-types}
+# Modification types present in the example data
+modTypes(comma_example_data)
+
+# Subset to a single type
+obj_6mA <- subset(comma_example_data, mod_type = "6mA")
+obj_6mA
 ```
+
+For a complete joint 6mA + 5mC analysis, see the
+**Multiple Modification Types** vignette (`vignette("multiple-modification-types", package = "comma")`).
+
+## Documentation
+
+```r
+?comma        # Package overview and five-step workflow
+?commaData    # Constructor and commaData class
+?diffMethyl   # Differential methylation testing
+```
+
+Two vignettes are included:
+
+- **Getting Started** (`vignette("getting-started", package = "comma")`) —
+  end-to-end workflow: load → QC → annotate → differential methylation →
+  visualize.
+- **Multiple Modification Types**
+  (`vignette("multiple-modification-types", package = "comma")`) — joint 6mA
+  and 5mC analysis in a single `commaData` object.
 
 ## Roadmap
 
 | Version | Phase | Status |
 |---|---|---|
 | 0.2.0 | Data infrastructure — `commaData` S4 class, modkit parser | ✅ Complete |
-| 0.3.0 | Refactored functions — `annotateSites`, `slidingWindow`, `methylomeSummary` | ✅ Complete |
-| 0.4.0 | Differential methylation — `diffMethyl()`, beta-binomial model | ⏳ Next |
-| 0.5.0 | Visualization & Bioconductor preparation | ⏳ Pending |
-| 1.0.0 | Bioconductor submission | ⏳ Pending |
+| 0.3.0 | Refactored analysis — `annotateSites`, `slidingWindow`, QC utilities | ✅ Complete |
+| 0.4.0 | Differential methylation — `diffMethyl()`, beta-binomial GLM | ✅ Complete |
+| 0.5.0 | Visualization — seven `plot_*()` functions, vignettes, package docs | ✅ Complete |
+| 1.0.0 | Bioconductor submission | ⏳ In preparation |
 
 ## Citation
 
