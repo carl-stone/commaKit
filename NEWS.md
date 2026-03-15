@@ -1,3 +1,18 @@
+# comma 0.6.0
+
+## Bioconductor submission preparation
+
+* Version bumped to 0.6.0 for Bioconductor submission preparation.
+
+* Package passes `R CMD check` with zero code-level errors or warnings.
+  Remaining check notes are environment-specific (locale, pdflatex availability)
+  and will not be present in Bioconductor's check infrastructure.
+
+* Full `roxygen2` documentation for all exported functions, including
+  `\donttest{}` examples throughout.
+
+---
+
 # comma 0.5.0
 
 ## Major new features

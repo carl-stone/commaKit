@@ -19,19 +19,21 @@ coverageDepth(
 \item{method}{Character string. Aggregation method within each window.
 One of \code{"mean"} (default) or \code{"median"}.}
 
-\item{log2_transform}{Logical. If \code{TRUE}, depth values are
-log2-transformed as \eqn{log2(depth + 1)}. Default: \code{FALSE}.}
+\item{log2_transform}{Logical. If \code{TRUE}, the depth values are
+log2-transformed (using \eqn{log2(depth + 1)} to handle zeros). Default:
+\code{FALSE}.}
 }
 \value{
-A \code{data.frame} with one row per (window, sample), containing:
+A \code{data.frame} with one row per (chromosome window, sample),
+containing:
 \describe{
-  \item{\code{chrom}}{Chromosome name.}
-  \item{\code{window_start}}{First base of the window (1-based).}
-  \item{\code{window_end}}{Last base of the window (1-based).}
-  \item{\code{sample_name}}{Sample identifier.}
-  \item{\code{depth}}{Mean or median sequencing depth in the window.}
-  \item{\code{log2_depth}}{Log2-transformed depth (only present if
-    \code{log2_transform = TRUE}).}
+\item{\code{chrom}}{Chromosome name.}
+\item{\code{window_start}}{First base of the window (1-based).}
+\item{\code{window_end}}{Last base of the window (1-based).}
+\item{\code{sample_name}}{Sample identifier.}
+\item{\code{depth}}{Mean or median sequencing depth in the window.}
+\item{\code{log2_depth}}{Log2-transformed depth (only present if
+\code{log2_transform = TRUE}).}
 }
 }
 \description{
@@ -40,13 +42,19 @@ median) sequencing depth in each window for each sample. Returns a tidy
 \code{data.frame} suitable for plotting or downstream QC analysis.
 }
 \details{
-Depth is computed only at positions with observed methylation sites.
-Windows with no sites have \code{depth = NA}.
+Depth is computed only at positions with observed methylation sites. Windows
+with no sites have \code{depth = NA}.
+
+If genome size information is stored in \code{genome(object)}, windows are
+sized to fit the chromosomes exactly (the last window may be smaller than
+\code{window}). If genome information is absent, only the range spanned by
+observed sites is covered.
 }
 \examples{
 data(comma_example_data)
 cd <- coverageDepth(comma_example_data, window = 10000L)
 head(cd)
+
 }
 \seealso{
 \code{\link{varianceByDepth}}, \code{\link{methylomeSummary}}

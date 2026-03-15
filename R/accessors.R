@@ -1,5 +1,5 @@
-#' @importFrom methods setGeneric setMethod
-#' @importFrom SummarizedExperiment assay rowData colData
+#' @importFrom methods setGeneric setMethod callNextMethod
+#' @importFrom SummarizedExperiment assay rowData "rowData<-" colData
 #' @importFrom BiocGenerics annotation
 #' @importFrom IRanges coverage
 #' @importFrom GenomeInfoDb genome
@@ -44,7 +44,11 @@ setMethod("methylation", "commaData", function(object) {
 #' Retrieves the sites × samples matrix of read depth from a
 #' \code{\link{commaData}} object.
 #'
-#' @param object A \code{commaData} object.
+#' @param x A \code{commaData} object.
+#' @param shift Not used; inherited from the \code{IRanges::coverage} generic.
+#' @param width Not used; inherited from the \code{IRanges::coverage} generic.
+#' @param weight Not used; inherited from the \code{IRanges::coverage} generic.
+#' @param ... Not used.
 #'
 #' @return An integer matrix with rows corresponding to methylation sites and
 #'   columns corresponding to samples.
@@ -147,7 +151,7 @@ setMethod("modTypes", "commaData", function(object) {
 #'
 #' Returns the chromosome sizes stored in a \code{\link{commaData}} object.
 #'
-#' @param object A \code{commaData} object.
+#' @param x A \code{commaData} object.
 #'
 #' @return A named integer vector of chromosome sizes
 #'   (chromosome name → length in bp), or \code{NULL} if no genome information
@@ -221,6 +225,7 @@ setMethod("motifSites", "commaData", function(object) {
 #' @param x A \code{commaData} object.
 #' @param i Row (site) index: integer, logical, or character vector.
 #' @param j Column (sample) index: integer, logical, or character vector.
+#' @param ... Not used.
 #' @param drop Ignored (required by generic).
 #'
 #' @return A \code{commaData} object with the selected sites and samples.

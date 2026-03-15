@@ -38,6 +38,9 @@
 #' @section Package options:
 #' None. All parameters are passed directly to individual functions.
 #'
+#' @return No return value. This page provides package-level documentation.
+#'   See individual function pages for return values.
+#'
 #' @references
 #' The modkit pileup format is documented at
 #' \url{https://nanoporetech.github.io/modkit/}.
@@ -47,3 +50,7 @@
 #' @docType package
 #' @keywords package
 "_PACKAGE"
+
+## Suppress R CMD check NOTEs for rlang .data pronoun used in ggplot2 aes()
+## calls throughout the plot_* functions.
+utils::globalVariables(".data")

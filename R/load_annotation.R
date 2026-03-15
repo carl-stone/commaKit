@@ -35,15 +35,16 @@ NULL
 #' and Ensembl-style GFF3 are supported.
 #'
 #' @examples
-#' \dontrun{
-#' # Load all features from a GFF3
-#' ann <- loadAnnotation("MG1655.gff3")
+#' # Load the bundled example GFF3 annotation
+#' gff_file <- system.file("extdata", "example.gff3", package = "comma")
+#' if (requireNamespace("rtracklayer", quietly = TRUE)) {
+#'   ann <- loadAnnotation(gff_file)
+#'   ann <- loadAnnotation(gff_file, feature_types = "gene")
+#' }
 #'
-#' # Load only genes and CDS
-#' ann <- loadAnnotation("MG1655.gff3", feature_types = c("gene", "CDS"))
-#'
-#' # Pass to commaData constructor
-#' cd <- commaData(files, colData, genome, annotation = "MG1655.gff3")
+#' \donttest{
+#' # Load only genes and CDS from your own file
+#' ann <- loadAnnotation("my_genome.gff3", feature_types = c("gene", "CDS"))
 #' }
 #'
 #' @export
@@ -94,6 +95,7 @@ loadAnnotation <- function(file, feature_types = NULL, ...) {
 }
 
 #' Detect annotation file format from file extension
+#' @return Character string, either \code{"gff"} or \code{"bed"}.
 #' @keywords internal
 .annotationFileExt <- function(file) {
     # Strip compression suffix first
@@ -108,6 +110,8 @@ loadAnnotation <- function(file, feature_types = NULL, ...) {
 }
 
 #' Standardize annotation GRanges mcols to always have feature_type and name
+#' @return A \code{GRanges} object with standardized \code{feature_type} and
+#'   \code{name} metadata columns.
 #' @keywords internal
 .standardizeAnnotationMcols <- function(gr, ext) {
     mc <- GenomicRanges::mcols(gr)

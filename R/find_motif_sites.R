@@ -35,7 +35,7 @@ NULL
 #' reverse hits.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Find all GATC sites in a genome from a FASTA file
 #' gatc_sites <- findMotifSites(genome = "MG1655.fa", motif = "GATC")
 #'
@@ -111,6 +111,7 @@ findMotifSites <- function(genome, motif, ...) {
 }
 
 #' Load genome sequences from a FASTA path or BSgenome object
+#' @return A \code{DNAStringSet} with one element per chromosome.
 #' @keywords internal
 .loadGenomeSequences <- function(genome) {
     if (is.character(genome)) {

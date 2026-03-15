@@ -1,3 +1,7 @@
+#' @importFrom ggplot2 ggplot aes geom_histogram geom_vline facet_wrap
+#'   scale_x_log10 labs theme_bw waiver
+NULL
+
 #' Plot coverage depth distribution
 #'
 #' Produces a histogram of sequencing depth (coverage) across sites for each
@@ -100,7 +104,7 @@ plot_coverage <- function(object,
                 ggplot2::aes(xintercept = .data[["median_depth"]]),
                 linetype = "dashed", color = "grey30", linewidth = 0.6
             ) +
-            ggplot2::facet_wrap(~ sample_name) +
+            ggplot2::facet_wrap("sample_name") +
             ggplot2::labs(fill = "Sample")
     } else {
         overall_median <- stats::median(df$depth)

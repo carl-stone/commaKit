@@ -1,3 +1,7 @@
+#' @importFrom ggplot2 ggplot aes geom_tile scale_fill_gradient2 scale_x_discrete
+#'   scale_y_discrete labs theme_minimal theme element_text element_blank
+NULL
+
 #' Heatmap of top differentially methylated sites
 #'
 #' Produces a heatmap showing methylation beta values for the top

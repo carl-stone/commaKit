@@ -1,6 +1,6 @@
 Package: comma
 Title: Comparative Methylomics for Microbial Analysis
-Version: 0.5.0
+Version: 0.6.0
 Authors@R:
     person("Carl", "Stone", , "carl.j.stone@vanderbilt.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-0232-5223"))
@@ -11,9 +11,11 @@ Description: Analyze bacterial DNA methylation from Oxford Nanopore sequencing
     methylated sites between conditions. Accepts input from modkit pileup
     (primary), Dorado BAM, and Megalodon (legacy) callers.
 License: MIT + file LICENSE
+URL: https://github.com/carl-stone/CoMMA
+BugReports: https://github.com/carl-stone/CoMMA/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 biocViews: Sequencing, Epigenetics, Coverage, DifferentialMethylation,
     GenomeAnnotation, DataImport, Visualization
 Suggests:
@@ -27,7 +29,8 @@ Suggests:
     rtracklayer,
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    scales
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Collate:
@@ -60,8 +63,8 @@ Collate:
     'sliding_window.R'
     'writeBED.R'
 Depends:
-    R (>= 4.1.0)
-LazyData: true
+    R (>= 4.3.0)
+LazyData: false
 Imports:
     BiocGenerics,
     GenomicRanges,
@@ -72,6 +75,6 @@ Imports:
     Rsamtools,
     zoo,
     ggplot2,
-    dplyr,
-    tidyr,
-    methods
+    methods,
+    stats,
+    utils

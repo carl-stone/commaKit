@@ -1,3 +1,8 @@
+#' @importFrom ggplot2 ggplot aes geom_point geom_rect scale_color_manual
+#'   scale_x_continuous scale_y_continuous facet_wrap labs theme_bw theme
+#'   element_text element_blank
+NULL
+
 #' Genome browser–style methylation track plot
 #'
 #' Plots methylation beta values for individual sites along a chromosome
@@ -191,7 +196,7 @@ plot_genome_track <- function(object,
             limits = c(region_start, region_end),
             labels = function(x) format(x, big.mark = ",", scientific = FALSE)
         ) +
-        ggplot2::facet_wrap(~ sample_name, ncol = 1L) +
+        ggplot2::facet_wrap("sample_name", ncol = 1L) +
         ggplot2::labs(
             x     = paste0("Position on ", chromosome),
             title = paste0("Genome track: ", chromosome)

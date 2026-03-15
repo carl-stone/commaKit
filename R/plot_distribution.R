@@ -1,3 +1,7 @@
+#' @importFrom ggplot2 ggplot aes geom_density scale_x_continuous facet_wrap
+#'   labs theme_bw
+NULL
+
 #' Plot methylation beta value distributions
 #'
 #' Produces a density plot of methylation beta values (0--1) for each sample
@@ -119,7 +123,7 @@ plot_methylation_distribution <- function(object,
         ggplot2::theme_bw()
 
     if (multi_mod) {
-        p <- p + ggplot2::facet_wrap(~ mod_type)
+        p <- p + ggplot2::facet_wrap("mod_type")
     }
 
     p

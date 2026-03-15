@@ -1,7 +1,7 @@
 #' @importFrom GenomicRanges GRanges findOverlaps start end width strand resize mcols
 #' @importFrom IRanges IRanges CharacterList IntegerList NumericList
 #' @importFrom S4Vectors DataFrame queryHits subjectHits splitAsList
-#' @importFrom SummarizedExperiment rowData
+#' @importFrom SummarizedExperiment rowData "rowData<-"
 #' @importFrom methods is
 NULL
 
@@ -18,8 +18,8 @@ NULL
 #'
 #' All three modes return \emph{every} matching feature per site, not just the
 #' first or closest. Results are stored as
-#' \code{\link[S4Vectors]{CharacterList}},
-#' \code{\link[S4Vectors]{IntegerList}}, or \code{NumericList} columns in
+#' \code{\link[IRanges]{CharacterList}},
+#' \code{\link[IRanges]{IntegerList}}, or \code{NumericList} columns in
 #' \code{rowData} — standard Bioconductor list-valued annotation columns.
 #' Sites with no overlapping/nearby features receive length-0 list elements;
 #' test for them with \code{lengths(col) == 0}.
