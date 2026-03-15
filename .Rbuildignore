@@ -6,4 +6,6 @@
 ^data-raw$
 ^CLAUDE\.md$
 ^comma\.Rcheck$
+^comma\.BiocCheck$
 ^.*\.deb$
+^.*\.tar\.gz$

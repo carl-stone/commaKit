@@ -6,6 +6,9 @@
 \usage{
 .annotationFileExt(file)
 }
+\value{
+Character string, either \code{"gff"} or \code{"bed"}.
+}
 \description{
 Detect annotation file format from file extension
 }

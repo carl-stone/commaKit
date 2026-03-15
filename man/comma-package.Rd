@@ -5,6 +5,10 @@
 \alias{comma-package}
 \alias{comma}
 \title{comma: Comparative Methylomics for Microbial Analysis}
+\value{
+No return value. This page provides package-level documentation.
+See individual function pages for return values.
+}
 \description{
 The \pkg{comma} package provides a complete toolkit for genome-wide analysis
 of bacterial DNA methylation from Oxford Nanopore sequencing data. It
@@ -53,6 +57,14 @@ None. All parameters are passed directly to individual functions.
 \references{
 The modkit pileup format is documented at
 \url{https://nanoporetech.github.io/modkit/}.
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/carl-stone/CoMMA}
+  \item Report bugs at \url{https://github.com/carl-stone/CoMMA/issues}
+}
+
 }
 \author{
 \strong{Maintainer}: Carl Stone \email{carl.j.stone@vanderbilt.edu} (\href{https://orcid.org/0000-0003-0232-5223}{ORCID})

@@ -63,7 +63,7 @@ data(comma_example_data)
 tmp <- tempfile(fileext = ".bed")
 writeBED(comma_example_data, file = tmp, sample = "ctrl_1", mod_type = "6mA")
 
-\dontrun{
+\donttest{
 # Write to a permanent file
 writeBED(comma_example_data,
          file    = "ctrl_1_methylation.bed",

@@ -6,6 +6,9 @@
 \usage{
 .loadGenomeSequences(genome)
 }
+\value{
+A \code{DNAStringSet} with one element per chromosome.
+}
 \description{
 Load genome sequences from a FASTA path or BSgenome object
 }

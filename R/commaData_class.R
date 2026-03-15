@@ -45,6 +45,9 @@ NULL
 #' Per-sample metadata is in \code{colData(object)} and includes at minimum:
 #' \code{sample_name}, \code{condition}, \code{replicate}.
 #'
+#' @return An object of class \code{commaData}. Use
+#'   \code{\link{commaData}} to construct instances.
+#'
 #' @seealso \code{\link{commaData}} for the constructor,
 #'   \code{\link{methylation}}, \code{\link{coverage}},
 #'   \code{\link{sampleInfo}}, \code{\link{siteInfo}},

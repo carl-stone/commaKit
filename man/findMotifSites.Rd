@@ -42,7 +42,7 @@ hits at each location. Non-palindromic motifs will have distinct forward and
 reverse hits.
 }
 \examples{
-\dontrun{
+\donttest{
 # Find all GATC sites in a genome from a FASTA file
 gatc_sites <- findMotifSites(genome = "MG1655.fa", motif = "GATC")
 

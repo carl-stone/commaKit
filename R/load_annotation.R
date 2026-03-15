@@ -42,7 +42,7 @@ NULL
 #'   ann <- loadAnnotation(gff_file, feature_types = "gene")
 #' }
 #'
-#' \dontrun{
+#' \donttest{
 #' # Load only genes and CDS from your own file
 #' ann <- loadAnnotation("my_genome.gff3", feature_types = c("gene", "CDS"))
 #' }
@@ -95,6 +95,7 @@ loadAnnotation <- function(file, feature_types = NULL, ...) {
 }
 
 #' Detect annotation file format from file extension
+#' @return Character string, either \code{"gff"} or \code{"bed"}.
 #' @keywords internal
 .annotationFileExt <- function(file) {
     # Strip compression suffix first
@@ -109,6 +110,8 @@ loadAnnotation <- function(file, feature_types = NULL, ...) {
 }
 
 #' Standardize annotation GRanges mcols to always have feature_type and name
+#' @return A \code{GRanges} object with standardized \code{feature_type} and
+#'   \code{name} metadata columns.
 #' @keywords internal
 .standardizeAnnotationMcols <- function(gr, ext) {
     mc <- GenomicRanges::mcols(gr)

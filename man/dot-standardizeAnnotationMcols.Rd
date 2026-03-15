@@ -6,6 +6,10 @@
 \usage{
 .standardizeAnnotationMcols(gr, ext)
 }
+\value{
+A \code{GRanges} object with standardized \code{feature_type} and
+\code{name} metadata columns.
+}
 \description{
 Standardize annotation GRanges mcols to always have feature_type and name
 }

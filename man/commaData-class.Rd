@@ -4,6 +4,10 @@
 \name{commaData-class}
 \alias{commaData-class}
 \title{commaData: the central data object for the comma package}
+\value{
+An object of class \code{commaData}. Use
+\code{\link{commaData}} to construct instances.
+}
 \description{
 \code{commaData} is an S4 class that extends
 \code{\link[SummarizedExperiment]{SummarizedExperiment}} to store

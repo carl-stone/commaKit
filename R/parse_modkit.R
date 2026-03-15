@@ -130,6 +130,9 @@ NULL
 }
 
 #' Empty modkit parse result (zero-row data frame with correct schema)
+#' @return A zero-row \code{data.frame} with columns \code{chrom},
+#'   \code{position}, \code{strand}, \code{mod_type}, \code{beta},
+#'   \code{coverage}.
 #' @keywords internal
 .emptyModkitResult <- function() {
     data.frame(
