@@ -1,12 +1,8 @@
-# comma 1.0.0
+# comma 0.6.0
 
-## First Bioconductor submission release
+## Bioconductor submission preparation
 
-* Version bumped to 1.0.0 for initial Bioconductor submission.
-
-* All five development phases complete: data infrastructure, genome
-  generalization, analysis functions, differential methylation, and
-  visualization.
+* Version bumped to 0.6.0 for Bioconductor submission preparation.
 
 * Package passes `R CMD check` with zero code-level errors or warnings.
   Remaining check notes are environment-specific (locale, pdflatex availability)
