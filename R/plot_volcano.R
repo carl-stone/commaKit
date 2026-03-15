@@ -1,3 +1,7 @@
+#' @importFrom ggplot2 ggplot aes geom_point geom_vline geom_hline
+#'   scale_color_manual labs theme_bw
+NULL
+
 #' Volcano plot for differential methylation results
 #'
 #' Produces a volcano plot from differential methylation results computed by
@@ -8,7 +12,7 @@
 #' @param results A \code{data.frame} returned by \code{\link{results}()},
 #'   containing at minimum the columns \code{dm_delta_beta} (numeric, effect
 #'   size as beta difference treatment minus control) and \code{dm_padj}
-#'   (numeric, BH-adjusted p-value in [0, 1]).
+#'   (numeric, BH-adjusted p-value in \eqn{[0, 1]}).
 #' @param delta_beta_threshold Numeric scalar in (0, 1). Sites with
 #'   \code{|dm_delta_beta| >= delta_beta_threshold} AND
 #'   \code{dm_padj <= padj_threshold} are considered significant. Default

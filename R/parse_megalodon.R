@@ -1,3 +1,4 @@
+#' @importFrom utils read.table
 NULL
 
 #' Parse a Megalodon per-read methylation file into a tidy per-site data frame

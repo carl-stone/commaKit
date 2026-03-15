@@ -47,3 +47,7 @@
 #' @docType package
 #' @keywords package
 "_PACKAGE"
+
+## Suppress R CMD check NOTEs for rlang .data pronoun used in ggplot2 aes()
+## calls throughout the plot_* functions.
+utils::globalVariables(".data")

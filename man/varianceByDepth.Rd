@@ -11,33 +11,36 @@ varianceByDepth(object, coverage_bins = NULL, mod_type = NULL)
 
 \item{coverage_bins}{Integer vector specifying the coverage levels to
 include. If \code{NULL} (default), all unique coverage levels observed
-across all samples are used.}
+across all samples are used. Useful to pass \code{5:30} to focus on a
+specific depth range.}
 
 \item{mod_type}{Character string or \code{NULL}. If provided, only sites
-of the specified modification type are included. Default: \code{NULL}.}
+of the specified modification type are included. Default: \code{NULL}
+(all types).}
 }
 \value{
 A \code{data.frame} with one row per (coverage level, sample),
 containing:
 \describe{
-  \item{\code{coverage}}{Sequencing depth (integer).}
-  \item{\code{sample_name}}{Sample identifier.}
-  \item{\code{variance}}{Variance of beta values at sites with exactly
-    this coverage level. \code{NA} if fewer than 2 sites are at this
-    level.}
-  \item{\code{n_sites}}{Number of sites at this coverage level.}
+\item{\code{coverage}}{Sequencing depth (integer).}
+\item{\code{sample_name}}{Sample identifier.}
+\item{\code{variance}}{Variance of beta values at sites with exactly
+this coverage level. \code{NA} if fewer than 2 sites are at this
+level.}
+\item{\code{n_sites}}{Number of sites at this coverage level.}
 }
 }
 \description{
 For each coverage level (or coverage bin), computes the variance of
-methylation beta values across sites at that depth. Useful for diagnosing
-whether low-coverage sites have inflated methylation variance and for
-setting appropriate coverage thresholds.
+methylation beta values across sites at that depth. This is useful for
+diagnosing whether low-coverage sites have inflated methylation variance
+and for setting appropriate coverage thresholds.
 }
 \examples{
 data(comma_example_data)
 vd <- varianceByDepth(comma_example_data, coverage_bins = 5:30)
 head(vd)
+
 }
 \seealso{
 \code{\link{coverageDepth}}, \code{\link{methylomeSummary}}

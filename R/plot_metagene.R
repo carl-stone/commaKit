@@ -1,3 +1,7 @@
+#' @importFrom ggplot2 ggplot aes geom_line geom_vline scale_x_continuous
+#'   scale_y_continuous labs theme_bw
+NULL
+
 #' Metagene plot of methylation across genomic features
 #'
 #' Computes average methylation beta values at normalized positions across
@@ -14,7 +18,7 @@
 #'   (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), all
 #'   modification types are used.
 #' @param n_bins Positive integer. Number of equal-width bins to divide the
-#'   normalized feature position [0, 1] into. Default \code{50}.
+#'   normalized feature position \eqn{[0, 1]} into. Default \code{50}.
 #'
 #' @details
 #' Internally calls \code{\link{annotateSites}(type = "metagene")} to compute

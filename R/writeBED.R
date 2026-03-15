@@ -40,8 +40,12 @@ NULL
 #' excluded from the output.
 #'
 #' @examples
-#' \dontrun{
 #' data(comma_example_data)
+#' tmp <- tempfile(fileext = ".bed")
+#' writeBED(comma_example_data, file = tmp, sample = "ctrl_1", mod_type = "6mA")
+#'
+#' \dontrun{
+#' # Write to a permanent file
 #' writeBED(comma_example_data,
 #'          file    = "ctrl_1_methylation.bed",
 #'          sample  = "ctrl_1",
@@ -97,9 +101,9 @@ writeBED <- function(object,
     if (nrow(rd) == 0) {
         warning("No sites with non-NA methylation for sample '", sample, "'. ",
                 "Writing empty BED file.")
-        cat(paste0('track name="', track_name, '" description="', track_description,
-                   '" itemRgb="On"\n'),
-            file = file)
+        writeLines(paste0('track name="', track_name, '" description="',
+                          track_description, '" itemRgb="On"'),
+                   con = file)
         return(invisible(file))
     }
 
@@ -133,7 +137,7 @@ writeBED <- function(object,
     # ── Write output ──────────────────────────────────────────────────────────
     track_line <- paste0('track name="', track_name, '" description="',
                          track_description, '" itemRgb="On"')
-    cat(track_line, "\n", file = file, sep = "")
+    writeLines(track_line, con = file)
 
     utils::write.table(
         bed_df,

@@ -14,30 +14,35 @@ slidingWindow(
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object. Must have genome size
-information in \code{genome(object)}.}
+information in \code{genome(object)} (i.e., it must have been constructed
+with a \code{genome} argument).}
 
-\item{window}{Positive integer. Window size in base pairs.}
+\item{window}{Positive integer. Window size in base pairs. The smoothed
+value at position \eqn{p} is computed from positions
+\eqn{[p - \lfloor w/2 \rfloor,\; p + \lfloor w/2 \rfloor]}.}
 
 \item{stat}{Character string. Summary statistic to apply within each window.
 One of \code{"median"} (default) or \code{"mean"}.}
 
 \item{mod_type}{Character string or \code{NULL}. If provided, only sites of
-the specified modification type (e.g., \code{"6mA"}) are included. If
-\code{NULL} (default), all sites are used.}
+the specified modification type (e.g., \code{"6mA"}) are included in the
+smoothing. If \code{NULL} (default), all sites are used.}
 
-\item{circular}{Logical. If \code{TRUE} (default), wrap-around is applied
-at chromosome boundaries, appropriate for circular bacterial chromosomes.}
+\item{circular}{Logical. If \code{TRUE} (default), positions at the ends of
+each chromosome are wrapped around so that the window at position 1 can
+draw from positions near the chromosome end, and vice versa. Appropriate
+for circular bacterial chromosomes.}
 }
 \value{
 A \code{data.frame} with one row per (chromosome, position, sample)
 combination, containing:
 \describe{
-  \item{\code{chrom}}{Chromosome name (character).}
-  \item{\code{position}}{Genomic position, 1-based (integer).}
-  \item{\code{sample_name}}{Sample identifier (character).}
-  \item{\code{window_stat}}{Smoothed beta value (numeric). The column is
-    named \code{window_median} or \code{window_mean} depending on
-    \code{stat}.}
+\item{\code{chrom}}{Chromosome name (character).}
+\item{\code{position}}{Genomic position, 1-based (integer).}
+\item{\code{sample_name}}{Sample identifier (character).}
+\item{\code{window_stat}}{Smoothed beta value (numeric). The column is
+named \code{window_median} or \code{window_mean} depending on
+\code{stat}.}
 }
 }
 \description{
@@ -45,18 +50,28 @@ Computes a per-position sliding window statistic (median or mean) of
 methylation beta values for each sample in a \code{\link{commaData}}
 object. The genome size for each chromosome is read from
 \code{genome(object)}, so no organism-specific values are ever hardcoded.
-Circular genome wrap-around is supported.
+Circular genome wrap-around is supported via
+\code{.circularIndex()}.
 }
 \details{
-Positions where every site in the window is \code{NA} (no coverage)
+Because most positions in a genome have no methylation site, the beta value
+vector for each chromosome-sample pair is sparse (mostly \code{NA}).
+\code{zoo::rollapply} is called with \code{na.rm = TRUE} so that windows
+spanning regions with no data still produce a value where at least one site
+is present.
+
+Positions where every site in the window is \code{NA} (i.e., no coverage)
 remain \code{NA} in the output.
 }
 \examples{
 data(comma_example_data)
+\donttest{
 sw <- slidingWindow(comma_example_data, window = 5000L)
 head(sw)
 # Filter to one sample
 sw_ctrl1 <- sw[sw$sample_name == "ctrl_1", ]
+}
+
 }
 \seealso{
 \code{\link{methylation}}, \code{\link{genome}},

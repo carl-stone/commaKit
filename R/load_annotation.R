@@ -35,15 +35,16 @@ NULL
 #' and Ensembl-style GFF3 are supported.
 #'
 #' @examples
+#' # Load the bundled example GFF3 annotation
+#' gff_file <- system.file("extdata", "example.gff3", package = "comma")
+#' if (requireNamespace("rtracklayer", quietly = TRUE)) {
+#'   ann <- loadAnnotation(gff_file)
+#'   ann <- loadAnnotation(gff_file, feature_types = "gene")
+#' }
+#'
 #' \dontrun{
-#' # Load all features from a GFF3
-#' ann <- loadAnnotation("MG1655.gff3")
-#'
-#' # Load only genes and CDS
-#' ann <- loadAnnotation("MG1655.gff3", feature_types = c("gene", "CDS"))
-#'
-#' # Pass to commaData constructor
-#' cd <- commaData(files, colData, genome, annotation = "MG1655.gff3")
+#' # Load only genes and CDS from your own file
+#' ann <- loadAnnotation("my_genome.gff3", feature_types = c("gene", "CDS"))
 #' }
 #'
 #' @export

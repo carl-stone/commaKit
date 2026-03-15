@@ -23,58 +23,89 @@ mcols columns named by \code{feature_col} and \code{name_col}.}
 
 \item{type}{Character string specifying the annotation mode. One of:
 \describe{
-  \item{\code{"overlap"}}{(default) Each site is assigned the feature type
-    and name of the overlapping feature. Sites that overlap no feature
-    receive \code{"intergenic"}.}
-  \item{\code{"proximity"}}{Each site is assigned the nearest feature, its
-    distance, and a signed relative position (negative = upstream of the
-    feature start; positive = downstream).}
-  \item{\code{"metagene"}}{Each site that overlaps a feature is assigned
-    a fractional position within that feature (0 = feature start, 1 =
-    feature end). Strand-aware. Non-overlapping sites receive \code{NA}.}
+\item{\code{"overlap"}}{(default) Each site is assigned \emph{all}
+overlapping feature types and names. Sites that overlap no feature
+receive length-0 \code{CharacterList} elements.}
+\item{\code{"proximity"}}{Each site is assigned \emph{all} features
+within \code{window} bp: their names, absolute distances, and signed
+relative positions (negative = upstream; positive = downstream of the
+feature TSS). Sites with no nearby features receive length-0 elements.}
+\item{\code{"metagene"}}{Each site that overlaps a feature is assigned
+a fractional position within that feature (0 = feature start, 1 =
+feature end) for \emph{every} overlapping feature. Strand-aware: for
+\code{"-"} strand features, 0 is at the feature end (highest
+coordinate) and 1 is at the feature start (lowest coordinate).
+Non-overlapping sites receive length-0 elements.}
 }}
 
 \item{feature_col}{Character string. Name of the \code{mcols} column in
-\code{features} containing the feature type. Default: \code{"feature_type"}.}
+\code{features} that contains the feature type (e.g.,
+\code{"feature_type"}). Default: \code{"feature_type"}.}
 
 \item{name_col}{Character string. Name of the \code{mcols} column in
-\code{features} containing the feature name. Default: \code{"name"}.}
+\code{features} that contains the feature name (e.g., \code{"name"}).
+Default: \code{"name"}.}
 
 \item{window}{Integer. Window size in base pairs for
-\code{type = "proximity"}. Default: \code{500L}.}
+\code{type = "proximity"}. All features within this distance are
+returned. Default: \code{500L}.}
 }
 \value{
 A \code{\link{commaData}} object identical to \code{object} except
-that \code{rowData} has been extended with new annotation columns:
+that \code{rowData} has been extended with new list-valued annotation
+columns:
 \describe{
-  \item{For \code{type = "overlap"}:}{\code{feature_type} and
-    \code{feature_name} columns.}
-  \item{For \code{type = "proximity"}:}{\code{nearest_feature},
-    \code{distance_to_feature}, and \code{rel_pos} columns.}
-  \item{For \code{type = "metagene"}:}{\code{metagene_feature} and
-    \code{metagene_pos} columns.}
+\item{For \code{type = "overlap"}:}{\code{feature_types}
+(\code{CharacterList}) and \code{feature_names} (\code{CharacterList})
+— all overlapping feature types and names per site.
+Intergenic sites: \code{lengths(feature_types) == 0}.}
+\item{For \code{type = "proximity"}:}{\code{nearby_features}
+(\code{CharacterList}), \code{distances_to_features}
+(\code{IntegerList}), and \code{rel_positions} (\code{IntegerList})
+— all features within \code{window} bp. Sites with none:
+\code{lengths(nearby_features) == 0}.}
+\item{For \code{type = "metagene"}:}{\code{metagene_features}
+(\code{CharacterList}) and \code{metagene_positions}
+(\code{NumericList}) — all overlapping feature names and their
+fractional positions in \eqn{[0, 1]}. Non-overlapping sites:
+\code{lengths(metagene_features) == 0}.}
 }
 }
 \description{
 Assigns genomic feature annotations to methylation sites stored in a
 \code{\link{commaData}} object using vectorized
 \code{\link[GenomicRanges]{findOverlaps}} queries — no nested for-loops.
-Three annotation modes are available: \code{"overlap"} assigns feature
-identity to each site, \code{"proximity"} reports the distance and
-signed offset to the nearest feature boundary, and \code{"metagene"}
-reports the fractional position within the overlapping feature.
+Three annotation modes are available: \code{"overlap"} assigns all
+overlapping feature identities to each site, \code{"proximity"} reports
+all features within a distance window and their signed offsets, and
+\code{"metagene"} reports fractional positions within every overlapping
+feature.
+}
+\details{
+All three modes return \emph{every} matching feature per site, not just the
+first or closest. Results are stored as
+\code{\link[IRanges]{CharacterList}},
+\code{\link[IRanges]{IntegerList}}, or \code{NumericList} columns in
+\code{rowData} — standard Bioconductor list-valued annotation columns.
+Sites with no overlapping/nearby features receive length-0 list elements;
+test for them with \code{lengths(col) == 0}.
 }
 \examples{
 data(comma_example_data)
 # Overlap annotation using built-in annotation
 annotated <- annotateSites(comma_example_data)
-head(siteInfo(annotated)[, c("chrom", "position", "feature_type", "feature_name")])
+si <- siteInfo(annotated)
+# All overlapping feature types for the first site:
+si$feature_types[[1]]
+# Number of sites that overlap at least one feature:
+sum(lengths(si$feature_types) > 0)
+# Intergenic sites:
+sum(lengths(si$feature_types) == 0)
 
 # Metagene annotation
 mg <- annotateSites(comma_example_data, type = "metagene")
-head(siteInfo(mg)[, c("position", "metagene_pos")])
-}
-\seealso{
-\code{\link{annotation}}, \code{\link{siteInfo}},
-\code{\link{loadAnnotation}}
+si_mg <- siteInfo(mg)
+# Metagene positions for the first overlapping site:
+si_mg$metagene_positions[[which(lengths(si_mg$metagene_positions) > 0)[1]]]
+
 }

@@ -54,10 +54,12 @@ NULL
 #'
 #' @examples
 #' data(comma_example_data)
+#' \donttest{
 #' sw <- slidingWindow(comma_example_data, window = 5000L)
 #' head(sw)
 #' # Filter to one sample
 #' sw_ctrl1 <- sw[sw$sample_name == "ctrl_1", ]
+#' }
 #'
 #' @export
 slidingWindow <- function(object,

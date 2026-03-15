@@ -13,7 +13,7 @@ Description: Analyze bacterial DNA methylation from Oxford Nanopore sequencing
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 biocViews: Sequencing, Epigenetics, Coverage, DifferentialMethylation,
     GenomeAnnotation, DataImport, Visualization
 Suggests:
@@ -27,7 +27,8 @@ Suggests:
     rtracklayer,
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    scales
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Collate:
@@ -72,6 +73,4 @@ Imports:
     Rsamtools,
     zoo,
     ggplot2,
-    dplyr,
-    tidyr,
     methods

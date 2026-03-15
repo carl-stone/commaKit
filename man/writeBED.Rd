@@ -17,22 +17,25 @@ writeBED(
 \arguments{
 \item{object}{A \code{\link{commaData}} object.}
 
-\item{file}{Character string. Path to the output BED file. Created or
-overwritten.}
+\item{file}{Character string. Path to the output BED file. The file will be
+created or overwritten.}
 
-\item{sample}{Character string. Name of the sample to export. Must match
-a column name in \code{methylation(object)}.}
+\item{sample}{Character string. Name of the sample to export. Must match a
+column name in \code{methylation(object)}.}
 
 \item{mod_type}{Character string or \code{NULL}. If provided, only sites of
-the specified modification type are written. Default: \code{NULL}.}
+the specified modification type are written (e.g., \code{"6mA"}). If
+\code{NULL} (default), all sites are written.}
 
 \item{rgb_scale}{Logical. If \code{TRUE} (default), an \code{itemRGB}
-column is added using a blue-to-red methylation gradient.}
+column is added based on the methylation score using a blue-to-red
+gradient (low = blue, high = red). If \code{FALSE}, \code{itemRGB} is
+set to \code{"0,0,0"} for all sites.}
 
-\item{track_name}{Character string. Track name for the browser header.
-Defaults to \code{sample}.}
+\item{track_name}{Character string. Name shown in the genome browser track
+header. Defaults to \code{sample}.}
 
-\item{track_description}{Character string. Track description for the browser
+\item{track_description}{Character string. Description shown in the track
 header. Defaults to \code{"methylation beta values"}.}
 }
 \value{
@@ -40,23 +43,34 @@ Invisibly returns the path to the written file (\code{file}).
 }
 \description{
 Writes per-site methylation beta values for a single sample from a
-\code{\link{commaData}} object to a BED9 file suitable for visualisation
-in IGV, UCSC Genome Browser, or other genome browsers that support the
-\code{itemRGB} field.
+\code{\link{commaData}} object to a 9-column BED file (BED9 format),
+suitable for visualisation in IGV, UCSC Genome Browser, or other genome
+browsers that support the \code{itemRGB} field.
 }
 \details{
-The BED score field contains the beta value multiplied by 1000 (range
-0–1000). Sites with \code{NA} methylation (below the coverage threshold)
-are excluded.
+The BED score field (column 5) contains the beta value multiplied by 1000
+and rounded to the nearest integer (range 0–1000), which is the standard
+convention for methylation BED files. The \code{itemRGB} colour gradient
+transitions as follows: score ≤ 200 = blue (0,0,255), score ≤ 400 =
+blue-purple (83,0,172), score ≤ 600 = purple (167,0,85), score ≤ 800 =
+red-purple (222,0,28), score ≤ 1000 = red (250,0,0).
+
+Sites with \code{NA} methylation (below the coverage threshold) are
+excluded from the output.
 }
 \examples{
-\dontrun{
 data(comma_example_data)
+tmp <- tempfile(fileext = ".bed")
+writeBED(comma_example_data, file = tmp, sample = "ctrl_1", mod_type = "6mA")
+
+\dontrun{
+# Write to a permanent file
 writeBED(comma_example_data,
          file    = "ctrl_1_methylation.bed",
          sample  = "ctrl_1",
          mod_type = "6mA")
 }
+
 }
 \seealso{
 \code{\link{methylation}}, \code{\link{siteInfo}}

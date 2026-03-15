@@ -1,3 +1,4 @@
+#' @importFrom utils read.table
 NULL
 
 # ─── mod_code → mod_type mapping ─────────────────────────────────────────────

@@ -2,3 +2,8 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.Rmd$
+^\.github$
+^data-raw$
+^CLAUDE\.md$
+^comma\.Rcheck$
+^.*\.deb$

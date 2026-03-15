@@ -1,3 +1,4 @@
+#' @importFrom Rsamtools BamFile ScanBamParam scanBam
 NULL
 
 # ─── Dorado BAM parser ────────────────────────────────────────────────────────

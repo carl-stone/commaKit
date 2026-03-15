@@ -10,28 +10,31 @@ methylomeSummary(object, mod_type = NULL)
 \item{object}{A \code{\link{commaData}} object.}
 
 \item{mod_type}{Character string or \code{NULL}. If provided, only sites
-of the specified modification type (e.g., \code{"6mA"}) are included.
-If \code{NULL} (default), all modification types are summarized together.}
+of the specified modification type (e.g., \code{"6mA"}) are included in
+the summary. If \code{NULL} (default), all modification types are
+summarized together.}
 }
 \value{
 A \code{data.frame} with one row per sample, containing:
 \describe{
-  \item{\code{sample_name}}{Sample identifier.}
-  \item{\code{condition}}{Experimental condition from
-    \code{sampleInfo(object)$condition}.}
-  \item{\code{mod_type}}{The modification type summarized (\code{"all"} if
-    \code{mod_type = NULL}).}
-  \item{\code{n_sites}}{Total number of sites considered.}
-  \item{\code{n_covered}}{Number of sites with non-\code{NA} methylation in
-    this sample.}
-  \item{\code{mean_beta}}{Mean beta value across covered sites.}
-  \item{\code{median_beta}}{Median beta value across covered sites.}
-  \item{\code{sd_beta}}{Standard deviation of beta values across covered
-    sites.}
-  \item{\code{frac_methylated}}{Fraction of covered sites with
-    \eqn{\beta > 0.5}.}
-  \item{\code{mean_coverage}}{Mean sequencing depth across all sites.}
-  \item{\code{median_coverage}}{Median sequencing depth.}
+\item{\code{sample_name}}{Sample identifier.}
+\item{\code{condition}}{Experimental condition, from
+\code{sampleInfo(object)$condition}.}
+\item{\code{mod_type}}{The modification type summarized
+(\code{"all"} if \code{mod_type = NULL}).}
+\item{\code{n_sites}}{Total number of sites considered.}
+\item{\code{n_covered}}{Number of sites with non-\code{NA} methylation
+in this sample (i.e., sites above the coverage threshold).}
+\item{\code{mean_beta}}{Mean beta value across covered sites.}
+\item{\code{median_beta}}{Median beta value across covered sites.}
+\item{\code{sd_beta}}{Standard deviation of beta values across covered
+sites.}
+\item{\code{frac_methylated}}{Fraction of covered sites with
+\eqn{\beta > 0.5} (broadly methylated).}
+\item{\code{mean_coverage}}{Mean sequencing depth across all sites
+(including sites below the \code{min_coverage} threshold, which have
+coverage stored as 0 or their raw depth).}
+\item{\code{median_coverage}}{Median sequencing depth.}
 }
 }
 \description{
@@ -48,6 +51,7 @@ ms
 # Summarize only 6mA sites
 ms_6mA <- methylomeSummary(comma_example_data, mod_type = "6mA")
 ms_6mA[, c("sample_name", "condition", "mean_beta", "n_covered")]
+
 }
 \seealso{
 \code{\link{methylation}}, \code{\link{coverage}},
