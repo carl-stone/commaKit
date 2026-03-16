@@ -54,7 +54,7 @@ NULL
 #' }
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Load two modkit BED files
 #' cd <- commaData(
 #'   files   = c(

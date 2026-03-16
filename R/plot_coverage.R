@@ -131,7 +131,7 @@ plot_coverage <- function(object,
             labels = scales_comma_label()
         ) +
         ggplot2::labs(
-            x     = "Coverage depth (reads, log\u2081\u2080 scale)",
+            x     = expression("Coverage depth (reads, " * log[10] * " scale)"),
             y     = "Number of sites",
             title = "Coverage Depth Distribution"
         ) +

@@ -6,14 +6,15 @@ output: github_document
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  collapse  = TRUE,
-  comment   = "#>",
-  fig.path  = "man/figures/README-",
-  out.width = "100%",
-  message   = FALSE,
-  warning   = FALSE
+	fig.path = "man/figures/README-",
+	message = FALSE,
+	warning = FALSE,
+	collapse = TRUE,
+	comment = "#>",
+	out.width = "100%"
 )
 ```
+
 
 # comma
 
@@ -47,7 +48,7 @@ visualization.
 
 ## Installation
 
-```r
+```{r}
 # Development version from GitHub:
 devtools::install_github("carl-stone/CoMMA")
 
@@ -60,20 +61,21 @@ devtools::install_github("carl-stone/CoMMA")
 `commaData` extends `SummarizedExperiment` and is constructed from per-sample
 methylation files:
 
-```r
+```{r eval=FALSE}
 library(comma)
 
 # Named vector: sample_name → path to modkit pileup BED
 files <- c(
   ctrl_1  = "path/to/ctrl_rep1.bed",
   ctrl_2  = "path/to/ctrl_rep2.bed",
-  treat_1 = "path/to/treat_rep1.bed"
+  treat_1 = "path/to/treat_rep1.bed",
+  treat_2 = "path/to/treat_rep2.bed"
 )
 
 col_data <- data.frame(
-  sample_name = c("ctrl_1",    "ctrl_2",    "treat_1"),
-  condition   = c("control",   "control",   "treatment"),
-  replicate   = c(1L,          2L,          1L)
+  sample_name = c("ctrl_1",    "ctrl_2",    "treat_1",    "treat_2"),
+  condition   = c("control",   "control",   "treatment", "treatment"),
+  replicate   = c(1L,          2L,          1L,          2L)
 )
 
 obj <- commaData(
@@ -186,7 +188,7 @@ head(res[order(res$dm_padj),
 ```
 
 `plot_volcano()` displays the differential methylation landscape — effect size
-(Δβ) versus significance (–log₁₀ padj):
+(delta methylation) versus significance (–log10 padj):
 
 ```{r plot-volcano, fig.alt = "Volcano plot of differential 6mA methylation."}
 plot_volcano(res)
@@ -224,7 +226,7 @@ For a complete joint 6mA + 5mC analysis, see the
 
 ## Documentation
 
-```r
+```{r eval=FALSE, include=TRUE}
 ?comma        # Package overview and five-step workflow
 ?commaData    # Constructor and commaData class
 ?diffMethyl   # Differential methylation testing

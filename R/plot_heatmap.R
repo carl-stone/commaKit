@@ -147,13 +147,13 @@ plot_heatmap <- function(results,
             midpoint = 0.5,
             limits   = c(0, 1),
             na.value = "grey85",
-            name     = "Methylation\n(\u03b2)"
+            name     = "Methylation"
         ) +
         ggplot2::scale_y_discrete(limits = site_keys) +
         ggplot2::scale_x_discrete(limits = sample_nms) +
         ggplot2::labs(
             x     = NULL,
-            y     = paste0("Top ", n_final, " differential sites\n(ordered by \u0394\u03b2)"),
+            y     = paste0("Top ", n_final, " differential sites\n(ordered by delta methylation)"),
             title = "Differential Methylation Heatmap"
         ) +
         ggplot2::theme_minimal() +

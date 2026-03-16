@@ -187,7 +187,7 @@ plot_metagene <- function(object,
         ) +
         ggplot2::scale_y_continuous(
             limits = c(0, 1),
-            name   = "Mean methylation (\u03b2)"
+            name   = "Mean methylation"
         ) +
         ggplot2::labs(
             title = paste0("Metagene: ", feature),

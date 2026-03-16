@@ -4,7 +4,7 @@
 \name{comma-package}
 \alias{comma-package}
 \alias{comma}
-\title{comma: Comparative Methylomics for Microbial Analysis}
+\title{\strong{co}mma: for \strong{m}icrobial \strong{m}ethylation \strong{a}nalysis}
 \value{
 No return value. This page provides package-level documentation.
 See individual function pages for return values.

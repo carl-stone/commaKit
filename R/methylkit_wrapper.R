@@ -82,7 +82,8 @@ NULL
     n_sites   <- length(site_keys)
 
     # ── Build methylKit objects per sample ─────────────────────────────────────
-    sample_list <- lapply(seq_len(ncol(methyl_mat)), function(j) {
+    if (requireNamespace("methylKit", quietly = TRUE)) {
+      sample_list <- lapply(seq_len(ncol(methyl_mat)), function(j) {
         beta_j <- methyl_mat[, j]
         cov_j  <- as.integer(coverage_mat[, j])
 
@@ -96,42 +97,46 @@ NULL
         n_meth <- pmax(0L, pmin(n_meth, cov_j))
 
         methylKit::methylRaw(
-            data.frame(
-                chr      = chroms,
-                start    = positions,
-                end      = positions,
-                strand   = strands,
-                coverage = cov_j,
-                numCs    = n_meth,
-                numTs    = cov_j - n_meth,
-                stringsAsFactors = FALSE
-            ),
-            sample.id  = colnames(methyl_mat)[[j]],
-            assembly   = "custom",
-            context    = "none",
-            resolution = "base"
+          data.frame(
+            chr      = chroms,
+            start    = positions,
+            end      = positions,
+            strand   = strands,
+            coverage = cov_j,
+            numCs    = n_meth,
+            numTs    = cov_j - n_meth,
+            stringsAsFactors = FALSE
+          ),
+          sample.id  = colnames(methyl_mat)[[j]],
+          assembly   = "custom",
+          context    = "none",
+          resolution = "base"
         )
-    })
+      })
 
-    mk_list <- methylKit::methylRawList(
+      mk_list <- methylKit::methylRawList(
         sample_list,
         treatment = treatment
-    )
+      )
+
+    }
 
     # ── Unite and test ────────────────────────────────────────────────────────
-    mk_united <- tryCatch(
+    if (requireNamespace("methylKit", quietly = TRUE)) {
+      mk_united <- tryCatch(
         methylKit::unite(mk_list, destrand = FALSE, min.per.group = 1L),
         error = function(e) {
-            stop("methylKit::unite() failed: ", e$message)
+          stop("methylKit::unite() failed: ", e$message)
         }
-    )
+      )
 
-    mk_diff <- tryCatch(
+      mk_diff <- tryCatch(
         methylKit::calculateDiffMeth(mk_united),
         error = function(e) {
-            stop("methylKit::calculateDiffMeth() failed: ", e$message)
+          stop("methylKit::calculateDiffMeth() failed: ", e$message)
         }
-    )
+      )
+    }
 
     # ── Extract results and standardise format ────────────────────────────────
     diff_df  <- as.data.frame(mk_diff)

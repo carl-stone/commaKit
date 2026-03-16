@@ -190,7 +190,7 @@ plot_genome_track <- function(object,
         ) +
         ggplot2::scale_y_continuous(
             limits = c(0, 1),
-            name   = "Methylation (\u03b2)"
+            name   = "Methylation (beta)"
         ) +
         ggplot2::scale_x_continuous(
             limits = c(region_start, region_end),

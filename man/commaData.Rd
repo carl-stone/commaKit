@@ -73,7 +73,7 @@ their beta value set to \code{NA} (but coverage is preserved).
 }
 }
 \examples{
-\donttest{
+\dontrun{
 # Load two modkit BED files
 cd <- commaData(
   files   = c(

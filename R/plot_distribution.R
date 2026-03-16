@@ -114,7 +114,7 @@ plot_methylation_distribution <- function(object,
         ggplot2::scale_x_continuous(
             limits = c(0, 1),
             expand = c(0.01, 0.01),
-            name   = "Methylation (\u03b2)"
+            name   = "Methylation"
         ) +
         ggplot2::labs(
             y     = "Density",

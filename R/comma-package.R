@@ -1,4 +1,4 @@
-#' comma: Comparative Methylomics for Microbial Analysis
+#' **co**mma: for **m**icrobial **m**ethylation **a**nalysis
 #'
 #' The \pkg{comma} package provides a complete toolkit for genome-wide analysis
 #' of bacterial DNA methylation from Oxford Nanopore sequencing data. It

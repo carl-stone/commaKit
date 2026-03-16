@@ -1,5 +1,5 @@
 Package: comma
-Title: Comparative Methylomics for Microbial Analysis
+Title: comma: for microbial methylation analysis
 Version: 0.6.0
 Authors@R:
     person("Carl", "Stone", , "carl.j.stone@vanderbilt.edu", role = c("aut", "cre"),

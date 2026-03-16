@@ -14,14 +14,14 @@
 ##   - Random coverage 10–50 per site per sample
 ##   - Object constructed directly (no file I/O) to avoid round-trip artifacts
 
-set.seed(42)
+set.seed(1312)
 
 # ── Parameters ────────────────────────────────────────────────────────────────
 GENOME_SIZE  <- 100000L
 CHR_NAME     <- "chr_sim"
-SAMPLES      <- c("ctrl_1", "ctrl_2", "treat_1")
-CONDITIONS   <- c("control", "control", "treatment")
-REPLICATES   <- c(1L, 2L, 1L)
+SAMPLES      <- c("ctrl_1", "ctrl_2", "ctrl_3", "treat_1", "treat_2", "treat_3")
+CONDITIONS   <- c("control", "control", "control", "treatment", "treatment", "treatment")
+REPLICATES   <- c(1L, 2L, 3L, 1L, 2L, 3L)
 N_6MA_SITES  <- 200L
 N_5MC_SITES  <- 100L
 N_DIFF_SITES <- 30L   # 6mA sites that are differentially methylated
@@ -58,21 +58,33 @@ is_diff_6ma <- seq_len(N_6MA_SITES) %in% diff_idx_6ma
 
 beta_6ma_ctrl1  <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = FALSE)
 beta_6ma_ctrl2  <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = FALSE)
+beta_6ma_ctrl3  <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = FALSE)
 beta_6ma_treat1 <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = TRUE)
+beta_6ma_treat2 <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = TRUE)
+beta_6ma_treat3 <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = TRUE)
 
 # 5mC: no differential methylation in this example
 beta_5mc_ctrl1  <- rbeta(N_5MC_SITES, 8, 2)  # mean ~0.80
 beta_5mc_ctrl2  <- rbeta(N_5MC_SITES, 8, 2)
+beta_5mc_ctrl3  <- rbeta(N_5MC_SITES, 8, 2)
 beta_5mc_treat1 <- rbeta(N_5MC_SITES, 8, 2)
+beta_5mc_treat2 <- rbeta(N_5MC_SITES, 8, 2)
+beta_5mc_treat3 <- rbeta(N_5MC_SITES, 8, 2)
 
 # ── Simulate coverage ─────────────────────────────────────────────────────────
-cov_6ma_ctrl1  <- sample(10L:50L, N_6MA_SITES, replace = TRUE)
-cov_6ma_ctrl2  <- sample(10L:50L, N_6MA_SITES, replace = TRUE)
-cov_6ma_treat1 <- sample(10L:50L, N_6MA_SITES, replace = TRUE)
+cov_6ma_ctrl1  <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
+cov_6ma_ctrl2  <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
+cov_6ma_ctrl3  <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
+cov_6ma_treat1 <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
+cov_6ma_treat2 <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
+cov_6ma_treat3 <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
 
-cov_5mc_ctrl1  <- sample(10L:50L, N_5MC_SITES, replace = TRUE)
-cov_5mc_ctrl2  <- sample(10L:50L, N_5MC_SITES, replace = TRUE)
-cov_5mc_treat1 <- sample(10L:50L, N_5MC_SITES, replace = TRUE)
+cov_5mc_ctrl1  <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
+cov_5mc_ctrl2  <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
+cov_5mc_ctrl3  <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
+cov_5mc_treat1 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
+cov_5mc_treat2 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
+cov_5mc_treat3 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
 
 # ── Build site keys ───────────────────────────────────────────────────────────
 keys_6ma <- paste(CHR_NAME, gatc_positions, gatc_strands, "6mA", sep = ":")
@@ -84,16 +96,22 @@ n_total  <- length(all_keys)
 methyl_mat <- matrix(
     c(c(beta_6ma_ctrl1,  beta_5mc_ctrl1),
       c(beta_6ma_ctrl2,  beta_5mc_ctrl2),
-      c(beta_6ma_treat1, beta_5mc_treat1)),
-    nrow = n_total, ncol = 3L,
+      c(beta_6ma_ctrl3,  beta_5mc_ctrl3),
+      c(beta_6ma_treat1, beta_5mc_treat1),
+      c(beta_6ma_treat2, beta_5mc_treat2),
+      c(beta_6ma_treat3, beta_5mc_treat3)),
+    nrow = n_total, ncol = 6L,
     dimnames = list(all_keys, SAMPLES)
 )
 
 coverage_mat <- matrix(
     c(c(cov_6ma_ctrl1,  cov_5mc_ctrl1),
       c(cov_6ma_ctrl2,  cov_5mc_ctrl2),
-      c(cov_6ma_treat1, cov_5mc_treat1)),
-    nrow = n_total, ncol = 3L,
+      c(cov_6ma_ctrl3,  cov_5mc_ctrl3),
+      c(cov_6ma_treat1, cov_5mc_treat1),
+      c(cov_6ma_treat2, cov_5mc_treat2),
+      c(cov_6ma_treat3, cov_5mc_treat3)),
+    nrow = n_total, ncol = 6L,
     dimnames = list(all_keys, SAMPLES)
 )
 storage.mode(coverage_mat) <- "integer"
@@ -113,7 +131,7 @@ col_df <- S4Vectors::DataFrame(
     sample_name = SAMPLES,
     condition   = CONDITIONS,
     replicate   = REPLICATES,
-    caller      = rep("modkit", 3L),
+    caller      = rep("modkit", 6L),
     row.names   = SAMPLES
 )
 

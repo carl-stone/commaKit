@@ -127,8 +127,8 @@ plot_volcano <- function(results,
             drop = FALSE
         ) +
         ggplot2::labs(
-            x     = "\u0394\u03b2 (treatment \u2212 control)",
-            y     = "-log\u2081\u2080(adjusted p-value)",
+            x     = "delta methylation (treatment - control)",
+            y     = "-log10(adjusted p-value)",
             title = "Differential Methylation Volcano Plot",
             color = NULL
         ) +

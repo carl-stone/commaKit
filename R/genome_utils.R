@@ -53,7 +53,7 @@ NULL
             )
         }
         chr_names <- BSgenome::seqnames(genome)
-        chr_sizes <- as.integer(BSgenome::seqlengths(genome))
+        chr_sizes <- as.integer(GenomeInfoDb::seqlengths(genome))
         names(chr_sizes) <- chr_names
         return(chr_sizes)
     }
