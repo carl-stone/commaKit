@@ -19,6 +19,7 @@ knitr::opts_chunk$set(
 # comma
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/carl-stone/CoMMA/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/carl-stone/CoMMA/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 **comma** (**co**mma: for **m**icrobial **m**ethylation **a**nalysis) is
