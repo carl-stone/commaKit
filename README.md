@@ -5,6 +5,7 @@
 
 <!-- badges: start -->
 
+[![R-CMD-check](https://github.com/carl-stone/CoMMA/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/carl-stone/CoMMA/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 **comma** (**co**mma: for **m**icrobial **m**ethylation **a**nalysis) is
@@ -43,15 +44,16 @@ testing, and publication-quality visualization.
 # Development version from GitHub:
 devtools::install_github("carl-stone/CoMMA")
 #> ── R CMD build ─────────────────────────────────────────────────────────────────
-#>      checking for file ‘/private/var/folders/3k/ldfp2j0n0f14b16ghvbmqcp00000gn/T/Rtmpqy1wHx/remotese157133bc77e/carl-stone-CoMMA-4b69118/DESCRIPTION’ ...  ✔  checking for file ‘/private/var/folders/3k/ldfp2j0n0f14b16ghvbmqcp00000gn/T/Rtmpqy1wHx/remotese157133bc77e/carl-stone-CoMMA-4b69118/DESCRIPTION’
-#>   ─  preparing ‘comma’:
-#>      checking DESCRIPTION meta-information ...  ✔  checking DESCRIPTION meta-information
-#>   ─  checking for LF line-endings in source and make files and shell scripts
-#>   ─  checking for empty or unneeded directories
-#>   ─  looking to see if a ‘data/datalist’ file should be added
-#>   ─  building ‘comma_0.6.0.tar.gz’
-#>      
-#> 
+#> * checking for file ‘/private/var/folders/3k/ldfp2j0n0f14b16ghvbmqcp00000gn/T/RtmpaBvRfl/remotesec493f429421/carl-stone-CoMMA-b5db7c0/DESCRIPTION’ ... OK
+#> * preparing ‘comma’:
+#> * checking DESCRIPTION meta-information ... OK
+#> * checking for LF line-endings in source and make files and shell scripts
+#> * checking for empty or unneeded directories
+#> Removed empty directory ‘comma/.claude/worktrees/cranky-dhawan’
+#> Removed empty directory ‘comma/.claude/worktrees’
+#> Removed empty directory ‘comma/.claude’
+#> * looking to see if a ‘data/datalist’ file should be added
+#> * building ‘comma_0.6.0.tar.gz’
 
 # Bioconductor (upcoming v1.0.0):
 # BiocManager::install("comma")
@@ -98,7 +100,7 @@ library(comma)
 data(comma_example_data)
 comma_example_data
 #> class: commaData
-#> sites: 300 | samples: 3 
+#> sites: 300 | samples: 6 
 #> mod types: 5mC, 6mA 
 #> conditions: control, treatment 
 #> genome: 1 chromosome (100,000 bp total) 
@@ -117,9 +119,12 @@ ms <- methylomeSummary(comma_example_data)
 ms[, c("sample_name", "condition", "mean_beta", "median_beta",
        "frac_methylated", "n_covered")]
 #>   sample_name condition mean_beta median_beta frac_methylated n_covered
-#> 1      ctrl_1   control 0.8642268   0.8895048       0.9966667       300
-#> 2      ctrl_2   control 0.8608948   0.8871344       0.9933333       300
-#> 3     treat_1 treatment 0.8065626   0.8802956       0.9000000       300
+#> 1      ctrl_1   control 0.8678843   0.8881436       0.9900000       300
+#> 2      ctrl_2   control 0.8728354   0.8951648       0.9966667       300
+#> 3      ctrl_3   control 0.8781476   0.8966108       1.0000000       300
+#> 4     treat_1 treatment 0.8135452   0.8829561       0.9166667       300
+#> 5     treat_2 treatment 0.8136529   0.8867238       0.9000000       300
+#> 6     treat_3 treatment 0.8004998   0.8694701       0.9066667       300
 ```
 
 `plot_coverage()` shows the sequencing depth distribution per sample:
@@ -160,7 +165,7 @@ annotated <- annotateSites(comma_example_data, type = "overlap")
 # Fraction of sites overlapping at least one annotated feature
 si <- siteInfo(annotated)
 mean(lengths(si$feature_names) > 0)
-#> [1] 0.03666667
+#> [1] 0.02333333
 ```
 
 Three annotation modes are available: `"overlap"`, `"proximity"`
@@ -208,22 +213,22 @@ sig <- filterResults(cd_dm, padj = 0.05, delta_beta = 0.2)
 cat("Total 6mA sites tested:", nrow(res), "\n")
 #> Total 6mA sites tested: 300
 cat("Significant sites (padj < 0.05, |Δβ| ≥ 0.2):", nrow(sig), "\n")
-#> Significant sites (padj < 0.05, |Δβ| ≥ 0.2): 0
+#> Significant sites (padj < 0.05, |Δβ| ≥ 0.2): 7
 
 # Top hits
 head(res[order(res$dm_padj),
          c("chrom", "position", "dm_delta_beta", "dm_padj")])
-#>                       chrom position dm_delta_beta      dm_padj
-#> chr_sim:8947:+:6mA  chr_sim     8947    0.07706022 0.000000e+00
-#> chr_sim:51470:-:6mA chr_sim    51470    0.14414713 5.063859e-11
-#> chr_sim:72380:-:6mA chr_sim    72380   -0.58612775 1.145158e-01
-#> chr_sim:157:-:6mA   chr_sim      157   -0.17796563 6.042545e-01
-#> chr_sim:1908:+:6mA  chr_sim     1908    0.04584536 6.042545e-01
-#> chr_sim:5262:+:6mA  chr_sim     5262    0.05723850 6.042545e-01
+#>                       chrom position dm_delta_beta     dm_padj
+#> chr_sim:8907:-:6mA  chr_sim     8907    -0.6097199 0.009737468
+#> chr_sim:52014:+:6mA chr_sim    52014    -0.7591100 0.009737468
+#> chr_sim:69527:+:6mA chr_sim    69527    -0.6702704 0.009737468
+#> chr_sim:72824:-:6mA chr_sim    72824    -0.1353157 0.009737468
+#> chr_sim:62293:-:6mA chr_sim    62293    -0.6522237 0.012869199
+#> chr_sim:9028:-:6mA  chr_sim     9028    -0.6850134 0.018361742
 ```
 
 `plot_volcano()` displays the differential methylation landscape —
-effect size (Δβ) versus significance (–log₁₀ padj):
+effect size (delta methylation) versus significance (–log10 padj):
 
 ``` r
 plot_volcano(res)
@@ -261,7 +266,7 @@ modTypes(comma_example_data)
 obj_6mA <- subset(comma_example_data, mod_type = "6mA")
 obj_6mA
 #> class: commaData
-#> sites: 200 | samples: 3 
+#> sites: 200 | samples: 6 
 #> mod types: 6mA 
 #> conditions: control, treatment 
 #> genome: 1 chromosome (100,000 bp total) 
