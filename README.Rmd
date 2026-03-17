@@ -35,27 +35,29 @@ visualization.
 
 - **`commaData` S4 class** — extends `SummarizedExperiment`; stores beta
   values, coverage, sample metadata, genome info, and annotations together.
-- **Three parsers** — modkit pileup BED (primary), Dorado BAM (full MM/ML tag
+- **Three input types** — modkit pileup BED (primary), Dorado BAM (full MM/ML tag
   decoding), and Megalodon (legacy).
-- **Vectorized annotation** via `GenomicRanges::findOverlaps()`; three modes:
+- **Genome annotation** via `GenomicRanges::findOverlaps()`; three modes:
   overlap, proximity, and metagene (normalized position within feature bodies).
-- **Differential methylation** — quasibinomial GLM per site with a
-  DESeq2-style interface (`diffMethyl()` → `results()` → `filterResults()`).
+- **Differential methylation** — inference using two methods 
+  ([`methylKit`](https://doi.org/doi:10.18129/B9.bioc.methylKit) or a 
+  quasibinomial GLM per site), with a DESeq2-style interface (`diffMethyl()` → 
+  `results()` → `filterResults()`).
 - **Seven `plot_*()` functions** — coverage QC, beta distributions, PCA, genome
   tracks, metagene profiles, volcano plots, and heatmaps; all return `ggplot`
   objects for further customization.
-- **Any bacterial genome** — no organism-specific values are hardcoded anywhere.
+- **Compatible with any monoploid genome** — genome annotations can be loaded
+  as GFF3 or BED files. Supports linear or circular chromosomes.
 - **Multi-modification-type** — 6mA, 5mC, and 4mC coexist in one object;
   every function accepts a `mod_type` argument to work with individual types.
 
 ## Installation
 
-```{r}
+```{r message=FALSE}
 # Development version from GitHub:
-devtools::install_github("carl-stone/CoMMA")
+devtools::install_github("carl-stone/comma")
 
-# Bioconductor (upcoming v1.0.0):
-# BiocManager::install("comma")
+# Bioconductor release forthcoming
 ```
 
 ## The `commaData` Object
@@ -70,14 +72,16 @@ library(comma)
 files <- c(
   ctrl_1  = "path/to/ctrl_rep1.bed",
   ctrl_2  = "path/to/ctrl_rep2.bed",
+  ctrl_3  = "path/to/ctrl_rep3.bed",
   treat_1 = "path/to/treat_rep1.bed",
-  treat_2 = "path/to/treat_rep2.bed"
+  treat_2 = "path/to/treat_rep2.bed",
+  treat_3 = "path/to/treat_rep3.bed"
 )
 
 col_data <- data.frame(
-  sample_name = c("ctrl_1",    "ctrl_2",    "treat_1",    "treat_2"),
-  condition   = c("control",   "control",   "treatment", "treatment"),
-  replicate   = c(1L,          2L,          1L,          2L)
+  sample_name = c("ctrl_1",    "ctrl_2",    "ctrl_3",    "treat_1",    "treat_2",   "treat_3"),
+  condition   = c("control",   "control",   "control",   "treatment",  "treatment", "treatment"),
+  replicate   = c(1L,          2L,          3L,          1L,           2L,          3L)
 )
 
 obj <- commaData(
@@ -91,7 +95,7 @@ obj <- commaData(
 )
 ```
 
-A built-in synthetic dataset (300 sites, 3 samples, 100 kb genome) is included
+A built-in synthetic dataset (300 sites, 6 samples, 100 kb genome) is included
 for testing and demonstrations:
 
 ```{r load-data}
@@ -160,9 +164,9 @@ plot_metagene(comma_example_data, feature = "gene")
 `plot_genome_track()` produces a genome browser–style scatter plot of
 methylation along a chromosomal region:
 
-```{r plot-track, fig.alt = "Genome track for the first 50 kb of chr_sim, 6mA sites."}
+```{r plot-track, fig.alt="Genome track for the first 10 kb of chr_sim, fig.height=10, fig.width=5}
 plot_genome_track(comma_example_data, chromosome = "chr_sim",
-                  start = 1L, end = 50000L, mod_type = "6mA")
+                  start = 1L, end = 10000L, mod_type = "6mA")
 ```
 
 ### Step 4 — Differential Methylation
