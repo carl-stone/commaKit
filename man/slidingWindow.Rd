@@ -74,6 +74,6 @@ sw_ctrl1 <- sw[sw$sample_name == "ctrl_1", ]
 
 }
 \seealso{
-\code{\link{methylation}}, \code{\link[GenomeInfoDb]{genome}},
+\code{\link{methylation}},
 \code{\link{methylomeSummary}}
 }
