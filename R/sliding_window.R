@@ -49,7 +49,7 @@ NULL
 #' Positions where every site in the window is \code{NA} (i.e., no coverage)
 #' remain \code{NA} in the output.
 #'
-#' @seealso \code{\link{methylation}}, \code{\link[GenomeInfoDb]{genome}},
+#' @seealso \code{\link{methylation}},
 #'   \code{\link{methylomeSummary}}
 #'
 #' @examples

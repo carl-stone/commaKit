@@ -12,3 +12,6 @@
 ^comma\.BiocCheck$
 ^.*\.deb$
 ^.*\.tar\.gz$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

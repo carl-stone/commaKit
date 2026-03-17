@@ -51,7 +51,7 @@ NULL
 #' @seealso \code{\link{commaData}} for the constructor,
 #'   \code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
 #'   \code{\link{sampleInfo}}, \code{\link{siteInfo}},
-#'   \code{\link{modTypes}}, \code{\link[GenomeInfoDb]{genome}},
+#'   \code{\link{modTypes}},
 #'   \code{\link[BiocGenerics]{annotation}} for accessors.
 #'
 #' @name commaData-class

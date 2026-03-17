@@ -6,3 +6,4 @@
 *.BiocCheck/
 *.tar.gz
 *.deb
+docs

@@ -1,6 +1,6 @@
 Package: comma
 Title: comma: for microbial methylation analysis
-Version: 0.6.0
+Version: 0.7.0
 Authors@R:
     person("Carl", "Stone", , "carl.j.stone@vanderbilt.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-0232-5223"))
@@ -11,7 +11,7 @@ Description: Analyze bacterial DNA methylation from Oxford Nanopore sequencing
     methylated sites between conditions. Accepts input from modkit pileup
     (primary), Dorado BAM, and Megalodon (legacy) callers.
 License: MIT + file LICENSE
-URL: https://github.com/carl-stone/CoMMA
+URL: https://github.com/carl-stone/CoMMA, https://carl-stone.github.io/CoMMA/
 BugReports: https://github.com/carl-stone/CoMMA/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
