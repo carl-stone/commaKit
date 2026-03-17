@@ -21,7 +21,7 @@ NULL
 #' analysis functions.
 #'
 #' @slot genomeInfo Named integer vector of chromosome sizes
-#'   (chromosome name → length in bp).
+#'   c(chromosome name = length in bp).
 #' @slot annotation \code{\link[GenomicRanges]{GRanges}} of genomic features
 #'   loaded from a GFF3 or BED file. May be an empty \code{GRanges} if no
 #'   annotation was provided.
@@ -49,10 +49,10 @@ NULL
 #'   \code{\link{commaData}} to construct instances.
 #'
 #' @seealso \code{\link{commaData}} for the constructor,
-#'   \code{\link{methylation}}, \code{\link{coverage}},
+#'   \code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
 #'   \code{\link{sampleInfo}}, \code{\link{siteInfo}},
-#'   \code{\link{modTypes}}, \code{\link{genome}},
-#'   \code{\link{annotation}} for accessors.
+#'   \code{\link{modTypes}}, \code{\link[GenomeInfoDb]{genome}},
+#'   \code{\link[BiocGenerics]{annotation}} for accessors.
 #'
 #' @name commaData-class
 #' @exportClass commaData

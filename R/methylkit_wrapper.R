@@ -96,7 +96,7 @@ NULL
         n_meth[is.na(n_meth)] <- 0L
         n_meth <- pmax(0L, pmin(n_meth, cov_j))
 
-        methylKit::methylRaw(
+        methylKit::methRead(
           data.frame(
             chr      = chroms,
             start    = positions,
@@ -114,7 +114,7 @@ NULL
         )
       })
 
-      mk_list <- methylKit::methylRawList(
+      mk_list <- methylKit::methRead(
         sample_list,
         treatment = treatment
       )

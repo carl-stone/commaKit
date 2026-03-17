@@ -74,7 +74,7 @@ NULL
 #' }
 #'
 #' @seealso \code{\link{commaData-class}}, \code{\link{methylation}},
-#'   \code{\link{coverage}}, \code{\link{sampleInfo}}, \code{\link{siteInfo}},
+#'   \code{\link[=coverage,commaData-method]{coverage}}, \code{\link{sampleInfo}}, \code{\link{siteInfo}},
 #'   \code{\link{modTypes}}, \code{\link{loadAnnotation}},
 #'   \code{\link{findMotifSites}}
 #'

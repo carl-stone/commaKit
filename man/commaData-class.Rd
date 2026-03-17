@@ -35,7 +35,7 @@ Per-sample metadata is in \code{colData(object)} and includes at minimum:
 
 \describe{
 \item{\code{genomeInfo}}{Named integer vector of chromosome sizes
-(chromosome name → length in bp).}
+c(chromosome name = length in bp).}
 
 \item{\code{annotation}}{\code{\link[GenomicRanges]{GRanges}} of genomic features
 loaded from a GFF3 or BED file. May be an empty \code{GRanges} if no
@@ -48,8 +48,8 @@ May be an empty \code{GRanges} if no motif was specified.}
 
 \seealso{
 \code{\link{commaData}} for the constructor,
-\code{\link{methylation}}, \code{\link{coverage}},
+\code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
 \code{\link{sampleInfo}}, \code{\link{siteInfo}},
-\code{\link{modTypes}}, \code{\link{genome}},
-\code{\link{annotation}} for accessors.
+\code{\link{modTypes}}, \code{\link[GenomeInfoDb]{genome}},
+\code{\link[BiocGenerics]{annotation}} for accessors.
 }

@@ -31,6 +31,6 @@ head(m)
 
 }
 \seealso{
-\code{\link{coverage}}, \code{\link{siteInfo}},
+\code{\link[=coverage,commaData-method]{coverage}}, \code{\link{siteInfo}},
 \code{\link{sampleInfo}}
 }

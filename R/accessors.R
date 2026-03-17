@@ -20,7 +20,7 @@ NULL
 #'   columns corresponding to samples. Rownames are site keys
 #'   (\code{"chrom:position:strand:mod_type"}); column names are sample names.
 #'
-#' @seealso \code{\link{coverage}}, \code{\link{siteInfo}},
+#' @seealso \code{\link[=coverage,commaData-method]{coverage}}, \code{\link{siteInfo}},
 #'   \code{\link{sampleInfo}}
 #'
 #' @examples

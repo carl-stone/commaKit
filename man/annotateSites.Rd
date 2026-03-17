@@ -18,7 +18,7 @@ annotateSites(
 
 \item{features}{A \code{\link[GenomicRanges]{GRanges}} of genomic features
 to annotate against. If \code{NULL} (default), the annotation stored in
-\code{object} via \code{\link{annotation}(object)} is used. Must have
+\code{object} via \code{\link[BiocGenerics]{annotation}(object)} is used. Must have
 mcols columns named by \code{feature_col} and \code{name_col}.}
 
 \item{type}{Character string specifying the annotation mode. One of:

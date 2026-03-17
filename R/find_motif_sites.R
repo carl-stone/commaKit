@@ -107,7 +107,7 @@ findMotifSites <- function(genome, motif, ...) {
         }
     })
 
-    result <- do.call(c, all_ranges)
+    suppressWarnings(result <- do.call(c, all_ranges))
     GenomicRanges::mcols(result)$motif <- rep(motif, length(result))
     GenomicRanges::sort(result)
 }
