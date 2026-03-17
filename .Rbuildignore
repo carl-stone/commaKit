@@ -7,7 +7,7 @@
 ^\.github$
 ^data-raw$
 ^CLAUDE\.md$
-^\\.claude$
+^\.claude$
 ^comma\.Rcheck$
 ^comma\.BiocCheck$
 ^.*\.deb$

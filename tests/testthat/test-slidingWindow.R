@@ -1,36 +1,78 @@
+
+# Create a tiny dataset for most tests to speed up execution. We can still use the full dataset for tests that require more complex structure or specific edge cases.
+make_tiny <- function() {
+  gi <- c(chr_test = 20L)
+
+  sites_gr <- GenomicRanges::GRanges(
+    seqnames = "chr_test",
+    ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
+    strand   = "+"
+  )
+
+  # Two samples, two mod types so mod_type filtering has something to split
+  methyl_mat <- matrix(
+    c(0.2, 0.8, 0.6,   # samp1
+      0.1, 0.6, 0.9),  # samp2
+    nrow = 3, ncol = 2,
+    dimnames = list(NULL, c("samp1", "samp2"))
+  )
+  cov_mat <- matrix(10L, nrow = 3, ncol = 2,
+                    dimnames = list(NULL, c("samp1", "samp2")))
+
+  rd <- S4Vectors::DataFrame(
+    chrom    = "chr_test",
+    position = c(5L, 10L, 15L),
+    strand   = "+",
+    mod_type = c("6mA", "5mC", "6mA")   # mixed types for filter test
+  )
+  cd <- S4Vectors::DataFrame(
+    sample_name = c("samp1", "samp2"),
+    condition   = c("ctrl", "treat"),
+    replicate   = c(1L, 1L)
+  )
+  se <- SummarizedExperiment::SummarizedExperiment(
+    assays  = list(methylation = methyl_mat, coverage = cov_mat),
+    rowData = rd,
+    colData = cd
+  )
+  new("commaData", se,
+      genomeInfo = gi,
+      annotation = GenomicRanges::GRanges(),
+      motifSites = GenomicRanges::GRanges())
+}
+
+tiny_data <- make_tiny()
+W <- 8L
+
+
 test_that("slidingWindow: returns a data.frame", {
-    data(comma_example_data)
-    result <- slidingWindow(comma_example_data, window = 5000L)
+    result <- slidingWindow(tiny_data, window = W)
     expect_s3_class(result, "data.frame")
 })
 
 test_that("slidingWindow: output has required columns", {
-    data(comma_example_data)
-    result <- slidingWindow(comma_example_data, window = 5000L)
+    result <- slidingWindow(tiny_data, window = W)
     expect_true(all(c("chrom", "position", "sample_name", "window_median") %in% colnames(result)))
 })
 
 test_that("slidingWindow: stat='mean' produces window_mean column", {
-    data(comma_example_data)
-    result <- slidingWindow(comma_example_data, window = 5000L, stat = "mean")
+    result <- slidingWindow(tiny_data, window = W, stat = "mean")
     expect_true("window_mean" %in% colnames(result))
     expect_false("window_median" %in% colnames(result))
 })
 
 test_that("slidingWindow: number of rows equals genome_size * n_samples", {
-    data(comma_example_data)
-    gi <- genome(comma_example_data)
+    gi <- genome(tiny_data)
     n_pos <- sum(gi)
-    n_samp <- ncol(comma_example_data)
-    result <- slidingWindow(comma_example_data, window = 5000L)
+    n_samp <- ncol(tiny_data)
+    result <- slidingWindow(tiny_data, window = W)
     expect_equal(nrow(result), n_pos * n_samp)
 })
 
 test_that("slidingWindow: positions span 1 to chromosome size", {
-    data(comma_example_data)
-    gi <- genome(comma_example_data)
+    gi <- genome(tiny_data)
     chr_size <- gi[1]
-    result <- slidingWindow(comma_example_data, window = 5000L)
+    result <- slidingWindow(tiny_data, window = W)
     chr_result <- result[result$chrom == names(gi)[1], ]
     expect_equal(min(chr_result$position[chr_result$sample_name == chr_result$sample_name[1]]), 1L)
     expect_equal(max(chr_result$position[chr_result$sample_name == chr_result$sample_name[1]]),
@@ -38,15 +80,13 @@ test_that("slidingWindow: positions span 1 to chromosome size", {
 })
 
 test_that("slidingWindow: all sample names present in output", {
-    data(comma_example_data)
-    result <- slidingWindow(comma_example_data, window = 5000L)
-    expect_setequal(unique(result$sample_name), sampleInfo(comma_example_data)$sample_name)
+    result <- slidingWindow(tiny_data, window = W)
+    expect_setequal(unique(result$sample_name), sampleInfo(tiny_data)$sample_name)
 })
 
 test_that("slidingWindow: median and mean give different results", {
-    data(comma_example_data)
-    r_med  <- slidingWindow(comma_example_data, window = 5000L, stat = "median")
-    r_mean <- slidingWindow(comma_example_data, window = 5000L, stat = "mean")
+    r_med  <- slidingWindow(tiny_data, window = 16, stat = "median")
+    r_mean <- slidingWindow(tiny_data, window = 16, stat = "mean")
     # They can differ; compare non-NA values
     v_med  <- r_med$window_median[!is.na(r_med$window_median)]
     v_mean <- r_mean$window_mean[!is.na(r_mean$window_mean)]
@@ -54,12 +94,11 @@ test_that("slidingWindow: median and mean give different results", {
 })
 
 test_that("slidingWindow: mod_type filtering works", {
-    data(comma_example_data)
-    result_6mA <- slidingWindow(comma_example_data, window = 5000L, mod_type = "6mA")
-    result_5mC <- slidingWindow(comma_example_data, window = 5000L, mod_type = "5mC")
+    result_6mA <- slidingWindow(tiny_data, window = W, mod_type = "6mA")
+    result_5mC <- slidingWindow(tiny_data, window = W, mod_type = "5mC")
     # Both still produce full-genome output (genome size × n_samples)
-    gi <- genome(comma_example_data)
-    n_samp <- ncol(comma_example_data)
+    gi <- genome(tiny_data)
+    n_samp <- ncol(tiny_data)
     expect_equal(nrow(result_6mA), sum(gi) * n_samp)
     expect_equal(nrow(result_5mC), sum(gi) * n_samp)
     # The smoothed values should differ because different sites are included
@@ -69,26 +108,23 @@ test_that("slidingWindow: mod_type filtering works", {
 })
 
 test_that("slidingWindow: values are in [0,1] range (ignoring NA)", {
-    data(comma_example_data)
-    result <- slidingWindow(comma_example_data, window = 5000L)
+    result <- slidingWindow(tiny_data, window = W)
     vals <- result$window_median[!is.na(result$window_median)]
     expect_true(all(vals >= 0 & vals <= 1))
 })
 
 test_that("slidingWindow: circular=FALSE works without error", {
-    data(comma_example_data)
-    result <- slidingWindow(comma_example_data, window = 5000L, circular = FALSE)
+    result <- slidingWindow(tiny_data, window = W, circular = FALSE)
     expect_s3_class(result, "data.frame")
     expect_true("window_median" %in% colnames(result))
 })
 
 test_that("slidingWindow: circular=TRUE and FALSE give different edge results", {
-    data(comma_example_data)
-    r_circ   <- slidingWindow(comma_example_data, window = 5000L, circular = TRUE)
-    r_linear <- slidingWindow(comma_example_data, window = 5000L, circular = FALSE)
-    gi   <- genome(comma_example_data)
+    r_circ   <- slidingWindow(tiny_data, window = 16, circular = TRUE)
+    r_linear <- slidingWindow(tiny_data, window = 16, circular = FALSE)
+    gi   <- genome(tiny_data)
     chr  <- names(gi)[1]
-    samp <- sampleInfo(comma_example_data)$sample_name[1]
+    samp <- sampleInfo(tiny_data)$sample_name[1]
     # Compare all positions for one sample on the chromosome.
     # With 300 sites across a 100kb genome and a 5000bp window, circular wrapping
     # at the chromosome boundary must produce at least one position with a different
@@ -103,12 +139,10 @@ test_that("slidingWindow: error on non-commaData input", {
 })
 
 test_that("slidingWindow: error on missing window argument", {
-    data(comma_example_data)
-    expect_error(slidingWindow(comma_example_data))
+    expect_error(slidingWindow(tiny_data))
 })
 
 test_that("slidingWindow: error when genome is NULL", {
-    data(comma_example_data)
     obj_no_genome <- new("commaData",
         as(comma_example_data, "SummarizedExperiment"),
         genomeInfo = NULL,
@@ -119,24 +153,23 @@ test_that("slidingWindow: error when genome is NULL", {
 })
 
 test_that("slidingWindow: error when window exceeds chromosome size", {
-    data(comma_example_data)
-    gi <- genome(comma_example_data)   # chr_sim = 100000 bp
+    gi <- genome(tiny_data)   # chr_sim = 20 bp
     expect_error(
-        slidingWindow(comma_example_data, window = 200000L),
+        slidingWindow(tiny_data, window = 200000L),
         "exceeds the smallest chromosome size"
     )
 })
 
 test_that("slidingWindow: error on invalid mod_type", {
-    data(comma_example_data)
     expect_error(
-        slidingWindow(comma_example_data, window = 1000L, mod_type = "invalid_type"),
+        slidingWindow(tiny_data, window = W, mod_type = "invalid_type"),
         "No sites remain"
     )
 })
 
 test_that("slidingWindow: NaN values converted to NA", {
-    data(comma_example_data)
+    env <- new.env(parent = emptyenv())
+    data(comma_example_data, envir = env)
     result <- slidingWindow(comma_example_data, window = 5000L)
     expect_false(any(is.nan(result$window_median)))
 })
