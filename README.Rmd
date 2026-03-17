@@ -164,7 +164,7 @@ plot_metagene(comma_example_data, feature = "gene")
 `plot_genome_track()` produces a genome browser–style scatter plot of
 methylation along a chromosomal region:
 
-```{r plot-track, fig.alt="Genome track for the first 10 kb of chr_sim, fig.height=10, fig.width=5}
+```{r plot-track, fig.alt="Genome track for the first 10 kb of chr_sim", fig.height=10, fig.width=5}
 plot_genome_track(comma_example_data, chromosome = "chr_sim",
                   start = 1L, end = 10000L, mod_type = "6mA")
 ```
