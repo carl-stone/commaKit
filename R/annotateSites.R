@@ -8,39 +8,38 @@ NULL
 #' Annotate methylation sites relative to genomic features
 #'
 #' Assigns genomic feature annotations to methylation sites stored in a
-#' \code{\link{commaData}} object using vectorized
-#' \code{\link[GenomicRanges]{findOverlaps}} queries — no nested for-loops.
+#' \code{\link{commaData}} object using
+#' \code{\link[GenomicRanges]{findOverlaps}}.
 #' Three annotation modes are available: \code{"overlap"} assigns all
 #' overlapping feature identities to each site, \code{"proximity"} reports
 #' all features within a distance window and their signed offsets, and
 #' \code{"metagene"} reports fractional positions within every overlapping
 #' feature.
 #'
-#' All three modes return \emph{every} matching feature per site, not just the
-#' first or closest. Results are stored as
+#' All three modes return every matching feature per site. Results are stored as
 #' \code{\link[IRanges]{CharacterList}},
 #' \code{\link[IRanges]{IntegerList}}, or \code{NumericList} columns in
-#' \code{rowData} — standard Bioconductor list-valued annotation columns.
+#' \code{rowData}.
 #' Sites with no overlapping/nearby features receive length-0 list elements;
 #' test for them with \code{lengths(col) == 0}.
 #'
 #' @param object A \code{\link{commaData}} object.
 #' @param features A \code{\link[GenomicRanges]{GRanges}} of genomic features
 #'   to annotate against. If \code{NULL} (default), the annotation stored in
-#'   \code{object} via \code{\link[BiocGenerics]{annotation}(object)} is used. Must have
-#'   mcols columns named by \code{feature_col} and \code{name_col}.
+#'   \code{object} via \code{\link[BiocGenerics]{annotation}(object)} is used.
+#'   Must have mcols columns named by \code{feature_col} and \code{name_col}.
 #' @param type Character string specifying the annotation mode. One of:
 #'   \describe{
-#'     \item{\code{"overlap"}}{(default) Each site is assigned \emph{all}
+#'     \item{\code{"overlap"}}{(default) Each site is assigned all
 #'       overlapping feature types and names. Sites that overlap no feature
 #'       receive length-0 \code{CharacterList} elements.}
-#'     \item{\code{"proximity"}}{Each site is assigned \emph{all} features
+#'     \item{\code{"proximity"}}{Each site is assigned all features
 #'       within \code{window} bp: their names, absolute distances, and signed
 #'       relative positions (negative = upstream; positive = downstream of the
 #'       feature TSS). Sites with no nearby features receive length-0 elements.}
 #'     \item{\code{"metagene"}}{Each site that overlaps a feature is assigned
 #'       a fractional position within that feature (0 = feature start, 1 =
-#'       feature end) for \emph{every} overlapping feature. Strand-aware: for
+#'       feature end) for every overlapping feature. Strand-aware: for
 #'       \code{"-"} strand features, 0 is at the feature end (highest
 #'       coordinate) and 1 is at the feature start (lowest coordinate).
 #'       Non-overlapping sites receive length-0 elements.}

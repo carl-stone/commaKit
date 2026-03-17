@@ -28,9 +28,9 @@ jobs:
           r-version: renv
 
       - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev libbz2-dev liblzma-dev
 
       - uses: r-lib/actions/setup-renv@v2
-        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev libbz2-dev liblzma-dev
 
       - name: Render Rmarkdown files and Commit Results
         run: |
