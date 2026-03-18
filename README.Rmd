@@ -53,7 +53,7 @@ visualization.
 
 ## Installation
 
-```{r message=FALSE}
+```{r message=FALSE, eval = FALSE}
 # Development version from GitHub:
 devtools::install_github("carl-stone/comma")
 
