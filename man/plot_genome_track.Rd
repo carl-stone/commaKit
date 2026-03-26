@@ -10,6 +10,7 @@ plot_genome_track(
   start = NULL,
   end = NULL,
   mod_type = NULL,
+  motif = NULL,
   annotation = NULL
 )
 }

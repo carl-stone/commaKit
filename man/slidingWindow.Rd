@@ -9,6 +9,7 @@ slidingWindow(
   window,
   stat = c("median", "mean"),
   mod_type = NULL,
+  motif = NULL,
   circular = TRUE
 )
 }

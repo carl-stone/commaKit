@@ -5,7 +5,7 @@
 .make_dm_data <- function(n_sites = 20L, n_ctrl = 2L, n_treat = 1L) {
     set.seed(99L)
     n_samp  <- n_ctrl + n_treat
-    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 100L, ":+:6mA")
+    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 100L, ":+:6mA:GATC")
 
     # First half of sites: differentially methylated (ctrl ~0.9, treat ~0.2)
     # Second half: not (both ~0.5)
@@ -32,6 +32,7 @@
         position = seq_len(n_sites) * 100L,
         strand   = rep("+", n_sites),
         mod_type = rep("6mA", n_sites),
+        motif    = rep("GATC", n_sites),
         is_diff  = c(rep(TRUE, n_diff), rep(FALSE, n_sites - n_diff)),
         row.names = site_keys
     )

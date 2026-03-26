@@ -23,7 +23,8 @@ make_tiny <- function() {
     chrom    = "chr_test",
     position = c(5L, 10L, 15L),
     strand   = "+",
-    mod_type = c("6mA", "5mC", "6mA")   # mixed types for filter test
+    mod_type = c("6mA", "5mC", "6mA"),   # mixed types for filter test
+    motif    = c("GATC", "CCWGG", "GATC")
   )
   cd <- S4Vectors::DataFrame(
     sample_name = c("samp1", "samp2"),
@@ -192,7 +193,8 @@ test_that("slidingWindow: known smoothed value for simple input", {
         chrom    = "chr_test",
         position = c(5L, 10L, 15L),
         strand   = "+",
-        mod_type = "6mA"
+        mod_type = "6mA",
+        motif    = "GATC"
     )
     cd <- S4Vectors::DataFrame(
         sample_name = "samp1",

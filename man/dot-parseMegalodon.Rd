@@ -20,7 +20,9 @@ If \code{NULL}, defaults to \code{"6mA"} with a warning.}
 }
 \value{
 A \code{data.frame} with columns: \code{chrom}, \code{position}
-(1-based), \code{strand}, \code{mod_type}, \code{beta}, \code{coverage}.
+(1-based), \code{strand}, \code{mod_type}, \code{motif} (always
+\code{NA} — Megalodon files do not encode motif context), \code{beta},
+\code{coverage}.
 }
 \description{
 Reads a Megalodon per-read modification output file, aggregates per-read

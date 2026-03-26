@@ -44,7 +44,25 @@ library(testthat)
 test_that(".parseModkit() returns correct columns", {
     f <- .write_tmp_modkit(.modkit_row())
     result <- comma:::.parseModkit(f, "s1")
-    expect_named(result, c("chrom", "position", "strand", "mod_type", "beta", "coverage"))
+    expect_named(result, c("chrom", "position", "strand", "mod_type", "motif", "beta", "coverage"))
+})
+
+test_that(".parseModkit() extracts motif from compound mod_code 'a,GATC,1'", {
+    f <- .write_tmp_modkit(.modkit_row(mod_code = "a,GATC,1"))
+    result <- comma:::.parseModkit(f, "s1")
+    expect_equal(result$motif, "GATC")
+})
+
+test_that(".parseModkit() extracts motif from compound mod_code 'm,CCWGG,1'", {
+    f <- .write_tmp_modkit(.modkit_row(mod_code = "m,CCWGG,1"))
+    result <- comma:::.parseModkit(f, "s1")
+    expect_equal(result$motif, "CCWGG")
+})
+
+test_that(".parseModkit() returns NA motif for simple mod_code without comma", {
+    f <- .write_tmp_modkit(.modkit_row(mod_code = "a"))
+    result <- comma:::.parseModkit(f, "s1")
+    expect_true(is.na(result$motif))
 })
 
 test_that(".parseModkit() maps mod_code 'a' to '6mA'", {
@@ -177,7 +195,7 @@ test_that(".parseModkit() returns empty data frame for empty file", {
         regexp = "no data"
     )
     expect_equal(nrow(result), 0L)
-    expect_named(result, c("chrom", "position", "strand", "mod_type", "beta", "coverage"))
+    expect_named(result, c("chrom", "position", "strand", "mod_type", "motif", "beta", "coverage"))
 })
 
 # ─────────────────────────────────────────────────────────────────────────────

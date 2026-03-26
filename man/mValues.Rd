@@ -4,7 +4,7 @@
 \alias{mValues}
 \title{Compute M-values from a commaData object}
 \usage{
-mValues(object, alpha = 0.5, mod_type = NULL)
+mValues(object, alpha = 0.5, mod_type = NULL, motif = NULL)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object containing methylation beta
@@ -18,6 +18,10 @@ Beta(alpha, alpha) prior on the methylation fraction. Default \code{0.5}.}
 \item{mod_type}{Character string specifying a single modification type
 (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), M-values
 are computed for all sites in \code{object}.}
+
+\item{motif}{Character vector or \code{NULL}. If provided, only sites with
+matching sequence context motif(s) are included. If \code{NULL} (default),
+all motifs are included.}
 }
 \value{
 A numeric matrix of M-values with the same dimensions and

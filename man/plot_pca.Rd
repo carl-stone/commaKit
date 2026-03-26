@@ -4,7 +4,14 @@
 \alias{plot_pca}
 \title{PCA of methylation profiles}
 \usage{
-plot_pca(object, mod_type = NULL, color_by = "condition", shape_by = NULL)
+plot_pca(
+  object,
+  mod_type = NULL,
+  motif = NULL,
+  color_by = "condition",
+  shape_by = NULL,
+  return_data = FALSE
+)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object.}
@@ -18,13 +25,25 @@ to use for point color. Default \code{"condition"}.}
 
 \item{shape_by}{Character string naming a column in \code{sampleInfo(object)}
 to use for point shape. If \code{NULL} (default), all points use the same
-shape.}
+shape. Ignored when \code{return_data = TRUE}.}
+
+\item{return_data}{Logical. If \code{TRUE}, return the underlying scores
+\code{data.frame} instead of a ggplot object. Useful for building custom
+plots. Default \code{FALSE}.}
 }
 \value{
-A \code{\link[ggplot2]{ggplot}} object. PC1 and PC2 are shown on
-the x- and y-axes, respectively, with percentage of variance explained
-shown in the axis labels. Each point represents one sample and is labeled
-with its \code{sample_name}. Points are colored by \code{color_by}.
+When \code{return_data = FALSE} (default), a
+\code{\link[ggplot2]{ggplot}} object. PC1 and PC2 are shown on the x- and
+y-axes, respectively, with percentage of variance explained in the axis
+labels. Each point represents one sample and is labeled with its
+\code{sample_name}. Points are colored by \code{color_by}.
+
+When \code{return_data = TRUE}, a \code{data.frame} with one row per
+sample containing columns \code{PC1}, \code{PC2}, \code{sample_name}, and
+all columns from \code{sampleInfo(object)}. The attribute
+\code{percentVar} (accessible via \code{attr(result, "percentVar")}) is a
+named numeric vector giving the percentage of variance explained by PC1 and
+PC2.
 }
 \description{
 Performs principal component analysis (PCA) on per-sample methylation
@@ -52,6 +71,10 @@ plot_pca(comma_example_data, color_by = "condition")
 
 # Only 6mA sites
 plot_pca(comma_example_data, mod_type = "6mA")
+
+# Return data for custom plotting
+d <- plot_pca(comma_example_data, return_data = TRUE)
+attr(d, "percentVar")  # variance explained by PC1, PC2
 
 }
 \seealso{

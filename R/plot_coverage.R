@@ -39,6 +39,7 @@ NULL
 #' @export
 plot_coverage <- function(object,
                           mod_type = NULL,
+                          motif    = NULL,
                           per_sample = TRUE) {
 
     ## --- Input validation ---------------------------------------------------
@@ -57,6 +58,9 @@ plot_coverage <- function(object,
                  "Available types: ", paste(available, collapse = ", "), ".")
         }
         object <- subset(object, mod_type = mod_type)
+    }
+    if (!is.null(motif)) {
+        object <- subset(object, motif = motif)
     }
 
     ## --- Extract data -------------------------------------------------------

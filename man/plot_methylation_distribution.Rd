@@ -4,7 +4,12 @@
 \alias{plot_methylation_distribution}
 \title{Plot methylation beta value distributions}
 \usage{
-plot_methylation_distribution(object, mod_type = NULL, per_sample = TRUE)
+plot_methylation_distribution(
+  object,
+  mod_type = NULL,
+  motif = NULL,
+  per_sample = TRUE
+)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object.}

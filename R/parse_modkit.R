@@ -42,6 +42,10 @@ NULL
 #'     \item{\code{strand}}{Strand, \code{"+"} or \code{"-"} (character).}
 #'     \item{\code{mod_type}}{Modification type: \code{"6mA"}, \code{"5mC"},
 #'       or \code{"4mC"} (character).}
+#'     \item{\code{motif}}{Sequence context motif extracted from the modkit
+#'       \code{mod_code} field (e.g., \code{"GATC"}, \code{"CCWGG"}).
+#'       \code{NA} if the \code{mod_code} field does not contain motif
+#'       information (older modkit formats).}
 #'     \item{\code{beta}}{Proportion of reads called methylated, range 0–1
 #'       (numeric).}
 #'     \item{\code{coverage}}{Total read depth at this site (integer).}
@@ -92,12 +96,17 @@ NULL
     raw <- raw[, seq_len(18L), drop = FALSE]
     colnames(raw) <- .MODKIT_COLS
 
-    # ── Map mod_code → mod_type ─────────────────────────────────────────────
-    # mod_code is compound "code,motif,position" (e.g. "a,GATC,1"); extract code
+    # ── Map mod_code → mod_type, extract motif ──────────────────────────────
+    # mod_code is compound "code,motif,position" (e.g. "a,GATC,1"); extract
+    # both the code (part 1) and the motif (part 2). Older modkit files may
+    # have just the code with no commas, in which case motif is NA.
     raw$mod_code <- as.character(raw$mod_code)
-    raw$mod_code <- vapply(
-        strsplit(raw$mod_code, ",", fixed = TRUE),
-        `[`, character(1L), 1L
+    parts        <- strsplit(raw$mod_code, ",", fixed = TRUE)
+    raw$mod_code <- vapply(parts, `[`, character(1L), 1L)
+    raw$motif    <- vapply(
+        parts,
+        function(x) if (length(x) >= 2L) x[[2L]] else NA_character_,
+        character(1L)
     )
     mapped        <- .MODKIT_CODE_MAP[raw$mod_code]
     unknown_codes <- unique(raw$mod_code[is.na(mapped)])
@@ -132,6 +141,7 @@ NULL
         position = as.integer(raw$start) + 1L,  # BED is 0-based → 1-based
         strand   = as.character(raw$strand),
         mod_type = raw$mod_type_mapped,
+        motif    = raw$motif,
         beta     = as.numeric(raw$fraction_modified) / 100,  # percentage → fraction
         coverage = raw$Nvalid_cov,
         stringsAsFactors = FALSE
@@ -140,8 +150,8 @@ NULL
 
 #' Empty modkit parse result (zero-row data frame with correct schema)
 #' @return A zero-row \code{data.frame} with columns \code{chrom},
-#'   \code{position}, \code{strand}, \code{mod_type}, \code{beta},
-#'   \code{coverage}.
+#'   \code{position}, \code{strand}, \code{mod_type}, \code{motif},
+#'   \code{beta}, \code{coverage}.
 #' @keywords internal
 .emptyModkitResult <- function() {
     data.frame(
@@ -149,6 +159,7 @@ NULL
         position = integer(0),
         strand   = character(0),
         mod_type = character(0),
+        motif    = character(0),
         beta     = numeric(0),
         coverage = integer(0),
         stringsAsFactors = FALSE

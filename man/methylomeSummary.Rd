@@ -4,7 +4,7 @@
 \alias{methylomeSummary}
 \title{Summarize per-sample methylation and coverage distributions}
 \usage{
-methylomeSummary(object, mod_type = NULL)
+methylomeSummary(object, mod_type = NULL, motif = NULL)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object.}

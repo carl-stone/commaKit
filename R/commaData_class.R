@@ -40,7 +40,11 @@ NULL
 #' }
 #'
 #' Per-site metadata is in \code{rowData(object)} and includes at minimum:
-#' \code{chrom}, \code{position}, \code{strand}, \code{mod_type}.
+#' \code{chrom}, \code{position}, \code{strand}, \code{mod_type}, \code{motif}.
+#' The \code{motif} column stores the sequence context of each site (e.g.,
+#' \code{"GATC"} or \code{"CCWGG"}) as extracted from the modkit
+#' \code{mod_code} field. It is \code{NA} for Dorado and Megalodon callers,
+#' which do not encode per-site motif context.
 #'
 #' Per-sample metadata is in \code{colData(object)} and includes at minimum:
 #' \code{sample_name}, \code{condition}, \code{replicate}.
@@ -77,7 +81,7 @@ setValidity("commaData", function(object) {
     errors <- character(0)
 
     # ── rowData required columns ────────────────────────────────────────────
-    required_row_cols <- c("chrom", "position", "strand", "mod_type")
+    required_row_cols <- c("chrom", "position", "strand", "mod_type", "motif")
     rd <- rowData(object)
     missing_cols <- setdiff(required_row_cols, colnames(rd))
     if (length(missing_cols) > 0) {
@@ -97,6 +101,13 @@ setValidity("commaData", function(object) {
                 ". Allowed values: ",
                 paste(.VALID_MOD_TYPES, collapse = ", ")
             ))
+        }
+    }
+
+    # ── motif column type ───────────────────────────────────────────────────
+    if ("motif" %in% colnames(rd)) {
+        if (!is.character(rd$motif) && !all(is.na(rd$motif))) {
+            errors <- c(errors, "rowData$motif must be a character vector (NA allowed)")
         }
     }
 
@@ -145,11 +156,15 @@ setMethod("show", "commaData", function(object) {
     cat("class: commaData\n")
     cat("sites:", n_sites, "| samples:", n_samples, "\n")
 
-    # mod types
+    # mod types and motifs
     rd <- rowData(object)
     if ("mod_type" %in% colnames(rd) && n_sites > 0) {
         mt <- sort(unique(rd$mod_type))
         cat("mod types:", paste(mt, collapse = ", "), "\n")
+    }
+    if ("motif" %in% colnames(rd) && n_sites > 0) {
+        m <- sort(unique(rd$motif[!is.na(rd$motif)]))
+        cat("motifs:", if (length(m) == 0L) "not available" else paste(m, collapse = ", "), "\n")
     }
 
     # conditions

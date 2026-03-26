@@ -31,7 +31,9 @@ NULL
 #' @param min_coverage Integer. Minimum read depth. Default \code{5}.
 #'
 #' @return A \code{data.frame} with columns: \code{chrom}, \code{position}
-#'   (1-based), \code{strand}, \code{mod_type}, \code{beta}, \code{coverage}.
+#'   (1-based), \code{strand}, \code{mod_type}, \code{motif} (always
+#'   \code{NA} — Megalodon files do not encode motif context), \code{beta},
+#'   \code{coverage}.
 #'
 #' @keywords internal
 .parseMegalodon <- function(file, sample_name, mod_type = NULL, min_coverage = 5L) {
@@ -101,6 +103,7 @@ NULL
         position = out_pos,
         strand   = out_strand,
         mod_type = mod_type,
+        motif    = NA_character_,
         beta     = as.numeric(beta_vals),
         coverage = as.integer(cov_vals),
         stringsAsFactors = FALSE

@@ -5,7 +5,7 @@
 .make_dist_data <- function() {
     n_sites   <- 10L
     positions <- seq(1000L, 10000L, by = 1000L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA")
+    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     set.seed(1L)
     betas <- matrix(
         runif(n_sites * 3L, 0.1, 0.9),
@@ -19,6 +19,7 @@
         position = positions,
         strand   = rep("+", n_sites),
         mod_type = rep("6mA", n_sites),
+        motif    = rep("GATC", n_sites),
         row.names = site_keys
     )
     cd <- S4Vectors::DataFrame(
@@ -43,8 +44,9 @@
     n_6ma <- 8L; n_5mc <- 4L
     n_sites <- n_6ma + n_5mc
     positions <- seq(1000L, n_sites * 1000L, by = 1000L)
-    mod_types <- c(rep("6mA", n_6ma), rep("5mC", n_5mc))
-    site_keys <- paste0("chr_sim:", positions, ":+:", mod_types)
+    mod_types  <- c(rep("6mA", n_6ma), rep("5mC", n_5mc))
+    motif_vals <- c(rep("GATC", n_6ma), rep("CCWGG", n_5mc))
+    site_keys  <- paste0("chr_sim:", positions, ":+:", mod_types, ":", motif_vals)
     set.seed(2L)
     betas <- matrix(
         runif(n_sites * 2L, 0.1, 0.9),
@@ -58,6 +60,7 @@
         position = positions,
         strand   = rep("+", n_sites),
         mod_type = mod_types,
+        motif    = motif_vals,
         row.names = site_keys
     )
     cd <- S4Vectors::DataFrame(

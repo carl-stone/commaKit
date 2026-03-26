@@ -40,6 +40,7 @@ NULL
 #' @export
 plot_methylation_distribution <- function(object,
                                           mod_type = NULL,
+                                          motif    = NULL,
                                           per_sample = TRUE) {
 
     ## --- Input validation ---------------------------------------------------
@@ -58,6 +59,9 @@ plot_methylation_distribution <- function(object,
                  "Available types: ", paste(available, collapse = ", "), ".")
         }
         object <- subset(object, mod_type = mod_type)
+    }
+    if (!is.null(motif)) {
+        object <- subset(object, motif = motif)
     }
 
     ## --- Extract data -------------------------------------------------------

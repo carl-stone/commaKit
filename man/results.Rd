@@ -7,7 +7,7 @@
 \usage{
 results(object, ...)
 
-\S4method{results}{commaData}(object, mod_type = NULL, ...)
+\S4method{results}{commaData}(object, mod_type = NULL, motif = NULL, ...)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object on which
@@ -18,6 +18,10 @@ results(object, ...)
 \item{mod_type}{Character string or \code{NULL}. If provided, only sites
 of the specified modification type are returned. If \code{NULL} (default),
 results for all modification types are returned.}
+
+\item{motif}{Character vector or \code{NULL}. If provided, only sites with
+matching sequence context motif(s) are returned. If \code{NULL} (default),
+all motifs are returned.}
 }
 \value{
 A \code{data.frame} with one row per methylation site, containing:

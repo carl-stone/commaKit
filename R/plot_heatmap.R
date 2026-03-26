@@ -78,14 +78,14 @@ plot_heatmap <- function(results,
     top_res <- res_sorted[seq_len(n_use), , drop = FALSE]
 
     ## --- Match to object rowData --------------------------------------------
-    make_key <- function(chrom, position, strand, mod_type) {
-        paste(chrom, position, strand, mod_type, sep = ":")
+    make_key <- function(chrom, position, strand, mod_type, motif) {
+        paste(chrom, position, strand, mod_type, motif, sep = ":")
     }
 
     rd        <- siteInfo(object)
-    obj_keys  <- make_key(rd$chrom, rd$position, rd$strand, rd$mod_type)
+    obj_keys  <- make_key(rd$chrom, rd$position, rd$strand, rd$mod_type, rd$motif)
     res_keys  <- make_key(top_res$chrom, top_res$position,
-                          top_res$strand, top_res$mod_type)
+                          top_res$strand, top_res$mod_type, top_res$motif)
 
     row_idx <- match(res_keys, obj_keys)
     missing_keys <- sum(is.na(row_idx))
@@ -110,7 +110,7 @@ plot_heatmap <- function(results,
 
     ## Build site keys for y-axis ordering
     site_keys <- make_key(top_res$chrom, top_res$position,
-                          top_res$strand, top_res$mod_type)
+                          top_res$strand, top_res$mod_type, top_res$motif)
     n_final <- length(site_keys)
 
     ## --- Reshape to long data.frame ----------------------------------------

@@ -46,6 +46,7 @@ NULL
 plot_metagene <- function(object,
                           feature  = "gene",
                           mod_type = NULL,
+                          motif    = NULL,
                           n_bins   = 50L) {
 
     ## --- Input validation ---------------------------------------------------
@@ -87,6 +88,9 @@ plot_metagene <- function(object,
                  "Available types: ", paste(available, collapse = ", "), ".")
         }
         object <- subset(object, mod_type = mod_type)
+    }
+    if (!is.null(motif)) {
+        object <- subset(object, motif = motif)
     }
 
     ## --- Run metagene annotation -------------------------------------------

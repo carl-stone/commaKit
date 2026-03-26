@@ -67,6 +67,10 @@ NULL
 #' @param mod_type Character vector or \code{NULL}. Modification type(s) to
 #'   test (e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL}
 #'   (default), all modification types present in \code{object} are tested.
+#' @param motif Character vector or \code{NULL}. If provided, only sites with
+#'   matching sequence context motif(s) are tested (e.g., \code{"GATC"}).
+#'   Uses \code{\link{motifs}} to validate the requested values. If \code{NULL}
+#'   (default), all motifs (including \code{NA}) are included.
 #' @param min_coverage Integer. Minimum per-sample read depth required to
 #'   include a site in testing. Sites where any sample has coverage below
 #'   this threshold are treated as \code{NA} in that sample. Default \code{5L}.
@@ -101,6 +105,7 @@ diffMethyl <- function(
     formula         = ~ condition,
     method          = c("beta_binomial", "methylkit"),
     mod_type        = NULL,
+    motif           = NULL,
     min_coverage    = 5L,
     p_adjust_method = "BH",
     ...
@@ -132,6 +137,19 @@ diffMethyl <- function(
                 ". Available: ", paste(available, collapse = ", ")
             )
         }
+    }
+
+    if (!is.null(motif)) {
+        available_m <- motifs(object)
+        bad_m <- setdiff(motif, available_m)
+        if (length(bad_m) > 0L) {
+            stop(
+                "motif value(s) not found in object: ",
+                paste(bad_m, collapse = ", "),
+                ". Available: ", paste(available_m, collapse = ", ")
+            )
+        }
+        object <- subset(object, motif = motif)
     }
 
     # Validate formula variable exists in colData

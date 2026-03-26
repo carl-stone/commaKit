@@ -7,7 +7,7 @@
 \usage{
 subset(x, ...)
 
-\S4method{subset}{commaData}(x, mod_type = NULL, condition = NULL, chrom = NULL, ...)
+\S4method{subset}{commaData}(x, mod_type = NULL, condition = NULL, chrom = NULL, motif = NULL, ...)
 }
 \arguments{
 \item{x}{A \code{commaData} object.}
@@ -22,6 +22,11 @@ matching the specified condition(s) are kept.}
 
 \item{chrom}{Character vector or \code{NULL}. If provided, only sites on
 the specified chromosome(s) are kept.}
+
+\item{motif}{Character vector or \code{NULL}. If provided, only sites with
+a matching sequence context motif are kept (e.g., \code{"GATC"}). Sites
+with \code{NA} motif values are excluded when this filter is active.
+Use \code{\link{motifs}} to see which motifs are present.}
 }
 \value{
 A \code{commaData} object containing only the selected sites and
@@ -36,5 +41,9 @@ data(comma_example_data)
 # Only 6mA sites
 six_ma <- subset(comma_example_data, mod_type = "6mA")
 modTypes(six_ma)
+
+# Only GATC-context sites
+gatc <- subset(comma_example_data, motif = "GATC")
+nrow(gatc)
 
 }

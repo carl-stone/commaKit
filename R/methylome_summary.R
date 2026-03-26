@@ -50,7 +50,7 @@ NULL
 #'   \code{\link{sampleInfo}}
 #'
 #' @export
-methylomeSummary <- function(object, mod_type = NULL) {
+methylomeSummary <- function(object, mod_type = NULL, motif = NULL) {
     # ── Input validation ──────────────────────────────────────────────────────
     if (!is(object, "commaData")) {
         stop("'object' must be a commaData object.")
@@ -68,6 +68,20 @@ methylomeSummary <- function(object, mod_type = NULL) {
             )
         }
         object <- subset(object, mod_type = mod_type)
+    }
+
+    # ── Filter by motif ───────────────────────────────────────────────────────
+    if (!is.null(motif)) {
+        available_m <- motifs(object)
+        bad_m <- setdiff(motif, available_m)
+        if (length(bad_m) > 0L) {
+            stop(
+                "'motif' value(s) not found in object: ",
+                paste(bad_m, collapse = ", "),
+                ". Available: ", paste(available_m, collapse = ", ")
+            )
+        }
+        object <- subset(object, motif = motif)
     }
 
     methyl_mat <- methylation(object)

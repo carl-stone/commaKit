@@ -6,7 +6,7 @@
                              seed = 99L, cov_val = 20L) {
     set.seed(seed)
     positions <- seq(1000L, by = 1000L, length.out = n_sites)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA")
+    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     betas <- matrix(
         runif(n_sites * n_samples, 0.05, 0.95),
         nrow = n_sites, ncol = n_samples,
@@ -19,6 +19,7 @@
         position = positions,
         strand   = rep("+", n_sites),
         mod_type = rep("6mA", n_sites),
+        motif    = rep("GATC", n_sites),
         row.names = site_keys
     )
     cd <- S4Vectors::DataFrame(

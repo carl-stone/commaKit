@@ -66,6 +66,7 @@ slidingWindow <- function(object,
                           window,
                           stat     = c("median", "mean"),
                           mod_type = NULL,
+                          motif    = NULL,
                           circular = TRUE) {
     # ── Input validation ──────────────────────────────────────────────────────
     if (!is(object, "commaData")) {
@@ -95,11 +96,18 @@ slidingWindow <- function(object,
         )
     }
 
-    # ── Filter by mod_type if requested ──────────────────────────────────────
+    # ── Filter by mod_type and/or motif if requested ──────────────────────────
     if (!is.null(mod_type)) {
         object <- subset(object, mod_type = mod_type)
         if (nrow(object) == 0) {
             stop("No sites remain after filtering for mod_type = '", mod_type, "'.")
+        }
+    }
+    if (!is.null(motif)) {
+        object <- subset(object, motif = motif)
+        if (nrow(object) == 0) {
+            stop("No sites remain after filtering for motif = '",
+                 paste(motif, collapse = "', '"), "'.")
         }
     }
 

@@ -26,7 +26,11 @@ methylated, range 0–1). Sites with coverage below the
 }
 
 Per-site metadata is in \code{rowData(object)} and includes at minimum:
-\code{chrom}, \code{position}, \code{strand}, \code{mod_type}.
+\code{chrom}, \code{position}, \code{strand}, \code{mod_type}, \code{motif}.
+The \code{motif} column stores the sequence context of each site (e.g.,
+\code{"GATC"} or \code{"CCWGG"}) as extracted from the modkit
+\code{mod_code} field. It is \code{NA} for Dorado and Megalodon callers,
+which do not encode per-site motif context.
 
 Per-sample metadata is in \code{colData(object)} and includes at minimum:
 \code{sample_name}, \code{condition}, \code{replicate}.

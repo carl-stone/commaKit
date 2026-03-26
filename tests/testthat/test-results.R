@@ -5,7 +5,7 @@
 .make_tested_object <- function() {
     set.seed(123L)
     n_sites  <- 15L
-    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 50L, ":+:6mA")
+    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 50L, ":+:6mA:GATC")
     methyl_mat <- matrix(
         c(rep(0.9, n_sites), rep(0.9, n_sites), rep(0.2, n_sites)),
         nrow = n_sites, ncol = 3L,
@@ -20,6 +20,7 @@
         position = seq_len(n_sites) * 50L,
         strand   = rep("+", n_sites),
         mod_type = rep("6mA", n_sites),
+        motif    = rep("GATC", n_sites),
         row.names = site_keys
     )
     cd <- S4Vectors::DataFrame(

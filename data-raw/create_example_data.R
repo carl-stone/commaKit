@@ -25,6 +25,8 @@ REPLICATES   <- c(1L, 2L, 3L, 1L, 2L, 3L)
 N_6MA_SITES  <- 200L
 N_5MC_SITES  <- 100L
 N_DIFF_SITES <- 30L   # 6mA sites that are differentially methylated
+MOTIF_6MA    <- "GATC"   # simulated Dam methyltransferase motif for 6mA sites
+MOTIF_5MC    <- "CCWGG"  # simulated Dcm methyltransferase motif for 5mC sites
 
 # ── Simulate site positions ───────────────────────────────────────────────────
 # 6mA sites (mimic GATC motif spacing — roughly every 256 bp on average)
@@ -87,8 +89,8 @@ cov_5mc_treat2 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
 cov_5mc_treat3 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
 
 # ── Build site keys ───────────────────────────────────────────────────────────
-keys_6ma <- paste(CHR_NAME, gatc_positions, gatc_strands, "6mA", sep = ":")
-keys_5mc <- paste(CHR_NAME, ccgg_positions, ccgg_strands, "5mC", sep = ":")
+keys_6ma <- paste(CHR_NAME, gatc_positions, gatc_strands, "6mA", MOTIF_6MA, sep = ":")
+keys_5mc <- paste(CHR_NAME, ccgg_positions, ccgg_strands, "5mC", MOTIF_5MC, sep = ":")
 all_keys <- c(keys_6ma, keys_5mc)
 n_total  <- length(all_keys)
 
@@ -122,6 +124,7 @@ row_df <- S4Vectors::DataFrame(
     position = c(gatc_positions, ccgg_positions),
     strand   = c(gatc_strands, ccgg_strands),
     mod_type = c(rep("6mA", N_6MA_SITES), rep("5mC", N_5MC_SITES)),
+    motif    = c(rep(MOTIF_6MA, N_6MA_SITES), rep(MOTIF_5MC, N_5MC_SITES)),
     is_diff  = c(is_diff_6ma, rep(FALSE, N_5MC_SITES)),  # ground truth for testing
     row.names = all_keys
 )

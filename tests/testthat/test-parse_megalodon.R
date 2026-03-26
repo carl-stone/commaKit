@@ -40,7 +40,7 @@ test_that(".parseMegalodon() returns a data.frame with correct columns", {
     f <- .write_tmp_megalodon(.megalodon_row())
     result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     expect_true(is.data.frame(result))
-    expect_named(result, c("chrom", "position", "strand", "mod_type", "beta", "coverage"))
+    expect_named(result, c("chrom", "position", "strand", "mod_type", "motif", "beta", "coverage"))
 })
 
 # ─────────────────────────────────────────────────────────────────────────────

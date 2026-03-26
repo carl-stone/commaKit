@@ -16,6 +16,9 @@ NULL
 #' @param mod_type Character string or \code{NULL}. If provided, only sites
 #'   of the specified modification type are returned. If \code{NULL} (default),
 #'   results for all modification types are returned.
+#' @param motif Character vector or \code{NULL}. If provided, only sites with
+#'   matching sequence context motif(s) are returned. If \code{NULL} (default),
+#'   all motifs are returned.
 #' @param ... Ignored (for S4 generic compatibility).
 #'
 #' @return A \code{data.frame} with one row per methylation site, containing:
@@ -46,7 +49,7 @@ NULL
 setGeneric("results", function(object, ...) standardGeneric("results"))
 
 #' @rdname results
-setMethod("results", "commaData", function(object, mod_type = NULL, ...) {
+setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL, ...) {
     # ── Check diffMethyl has been run ─────────────────────────────────────────
     md <- metadata(object)
     if (is.null(md$diffMethyl_result_cols)) {
@@ -74,6 +77,20 @@ setMethod("results", "commaData", function(object, mod_type = NULL, ...) {
         rd <- rd[rd$mod_type %in% mod_type, , drop = FALSE]
     }
 
+    # ── Optional motif filter ─────────────────────────────────────────────────
+    if (!is.null(motif)) {
+        available_m <- sort(unique(rd$motif[!is.na(rd$motif)]))
+        bad_m <- setdiff(motif, available_m)
+        if (length(bad_m) > 0L) {
+            stop(
+                "'motif' value(s) not found: ",
+                paste(bad_m, collapse = ", "),
+                ". Available: ", paste(available_m, collapse = ", ")
+            )
+        }
+        rd <- rd[!is.na(rd$motif) & rd$motif %in% motif, , drop = FALSE]
+    }
+
     rd
 })
 
@@ -93,6 +110,8 @@ setMethod("results", "commaData", function(object, mod_type = NULL, ...) {
 #'   disable filtering on effect size.
 #' @param mod_type Character string or \code{NULL}. Passed to
 #'   \code{\link{results}} for optional modification type filtering.
+#' @param motif Character vector or \code{NULL}. Passed to
+#'   \code{\link{results}} for optional sequence context motif filtering.
 #' @param ... Ignored.
 #'
 #' @return A \code{data.frame} (same format as \code{\link{results}}) containing
@@ -114,8 +133,8 @@ setGeneric("filterResults",
 
 #' @rdname filterResults
 setMethod("filterResults", "commaData",
-          function(object, padj = 0.05, delta_beta = 0.1, mod_type = NULL, ...) {
-    res <- results(object, mod_type = mod_type)
+          function(object, padj = 0.05, delta_beta = 0.1, mod_type = NULL, motif = NULL, ...) {
+    res <- results(object, mod_type = mod_type, motif = motif)
 
     if (!"dm_padj" %in% colnames(res)) {
         stop(

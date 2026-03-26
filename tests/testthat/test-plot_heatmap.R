@@ -5,7 +5,7 @@
 .make_heatmap_fixtures <- function() {
     n_sites   <- 15L
     positions <- seq(1000L, 15000L, by = 1000L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA")
+    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     set.seed(10L)
     betas <- matrix(
         runif(n_sites * 3L, 0.0, 1.0),
@@ -19,6 +19,7 @@
         position = positions,
         strand   = rep("+", n_sites),
         mod_type = rep("6mA", n_sites),
+        motif    = rep("GATC", n_sites),
         row.names = site_keys
     )
     cd <- S4Vectors::DataFrame(
@@ -44,6 +45,7 @@
         position      = positions,
         strand        = rep("+", n_sites),
         mod_type      = rep("6mA", n_sites),
+        motif         = rep("GATC", n_sites),
         dm_pvalue     = runif(n_sites, 0, 0.1),
         dm_padj       = runif(n_sites, 0, 0.05),
         dm_delta_beta = runif(n_sites, -0.5, 0.5),

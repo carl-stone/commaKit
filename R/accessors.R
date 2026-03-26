@@ -103,9 +103,10 @@ setMethod("sampleInfo", "commaData", function(object) {
 #' @param object A \code{commaData} object.
 #'
 #' @return A \code{data.frame} with one row per methylation site. Always
-#'   contains columns \code{chrom}, \code{position}, \code{strand}, and
-#'   \code{mod_type}. May contain additional annotation columns added by
-#'   \code{\link[=annotateSites]{annotateSites()}}.
+#'   contains columns \code{chrom}, \code{position}, \code{strand},
+#'   \code{mod_type}, and \code{motif} (the sequence context; \code{NA} for
+#'   Dorado/Megalodon callers). May contain additional annotation columns
+#'   added by \code{\link[=annotateSites]{annotateSites()}}.
 #'
 #' @seealso \code{\link{methylation}}, \code{\link{modTypes}}
 #'
@@ -143,6 +144,34 @@ setGeneric("modTypes", function(object) standardGeneric("modTypes"))
 #' @rdname modTypes
 setMethod("modTypes", "commaData", function(object) {
     sort(unique(rowData(object)$mod_type))
+})
+
+# ─── motifs() ────────────────────────────────────────────────────────────────
+
+#' Accessor for sequence context motifs present in a commaData object
+#'
+#' Returns the sorted unique motif strings stored in
+#' \code{rowData(object)$motif}. \code{NA} values (sites from Dorado or
+#' Megalodon callers where motif context is unavailable) are excluded from
+#' the result.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return A sorted character vector of unique non-\code{NA} motif strings
+#'   (e.g., \code{c("CCWGG", "GATC")}). Returns \code{character(0)} if all
+#'   motif values are \code{NA} (e.g., Dorado-only data).
+#'
+#' @examples
+#' data(comma_example_data)
+#' motifs(comma_example_data)
+#'
+#' @export
+setGeneric("motifs", function(object) standardGeneric("motifs"))
+
+#' @rdname motifs
+setMethod("motifs", "commaData", function(object) {
+    all_m <- rowData(object)$motif
+    sort(unique(all_m[!is.na(all_m)]))
 })
 
 # ─── genome() ────────────────────────────────────────────────────────────────
@@ -263,6 +292,10 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
 #'   matching the specified condition(s) are kept.
 #' @param chrom Character vector or \code{NULL}. If provided, only sites on
 #'   the specified chromosome(s) are kept.
+#' @param motif Character vector or \code{NULL}. If provided, only sites with
+#'   a matching sequence context motif are kept (e.g., \code{"GATC"}). Sites
+#'   with \code{NA} motif values are excluded when this filter is active.
+#'   Use \code{\link{motifs}} to see which motifs are present.
 #' @param ... Ignored.
 #'
 #' @return A \code{commaData} object containing only the selected sites and
@@ -274,13 +307,18 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
 #' six_ma <- subset(comma_example_data, mod_type = "6mA")
 #' modTypes(six_ma)
 #'
+#' # Only GATC-context sites
+#' gatc <- subset(comma_example_data, motif = "GATC")
+#' nrow(gatc)
+#'
 #' @export
 setGeneric("subset", function(x, ...) standardGeneric("subset"))
 
 #' @rdname subset
 setMethod("subset", "commaData", function(x, mod_type = NULL,
                                            condition = NULL,
-                                           chrom = NULL, ...) {
+                                           chrom = NULL,
+                                           motif = NULL, ...) {
     rd <- rowData(x)
     cd <- colData(x)
 
@@ -291,6 +329,9 @@ setMethod("subset", "commaData", function(x, mod_type = NULL,
     }
     if (!is.null(chrom)) {
         site_keep <- site_keep & (rd$chrom %in% chrom)
+    }
+    if (!is.null(motif)) {
+        site_keep <- site_keep & (!is.na(rd$motif)) & (rd$motif %in% motif)
     }
 
     # Sample filter

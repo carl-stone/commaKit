@@ -52,6 +52,7 @@ plot_genome_track <- function(object,
                               start      = NULL,
                               end        = NULL,
                               mod_type   = NULL,
+                              motif      = NULL,
                               annotation = NULL) {
 
     ## --- Input validation ---------------------------------------------------
@@ -85,6 +86,9 @@ plot_genome_track <- function(object,
                  "Available types: ", paste(available, collapse = ", "), ".")
         }
         object <- subset(object, mod_type = mod_type)
+    }
+    if (!is.null(motif)) {
+        object <- subset(object, motif = motif)
     }
 
     ## --- Extract and filter site data ---------------------------------------

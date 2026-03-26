@@ -11,7 +11,7 @@
     #   0.9 → score 900 ≤ 1000→ red      (250,0,0)
     n_sites   <- 5L
     positions <- c(1000L, 2000L, 3000L, 4000L, 5000L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA")
+    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     betas     <- c(0.1, 0.3, 0.5, 0.7, 0.9)
 
     methyl_mat <- matrix(
@@ -30,6 +30,7 @@
         position = positions,
         strand   = rep("+", n_sites),
         mod_type = rep("6mA", n_sites),
+        motif    = rep("GATC", n_sites),
         row.names = site_keys
     )
     cd <- S4Vectors::DataFrame(

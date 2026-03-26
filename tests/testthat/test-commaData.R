@@ -12,7 +12,7 @@ library(GenomicRanges)
 # ── Helper: build a minimal valid commaData without file I/O ──────────────────
 
 .make_minimal_commaData <- function(n_sites = 5L, n_samples = 2L) {
-    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 100L, ":+:6mA")
+    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 100L, ":+:6mA:GATC")
     methyl    <- matrix(runif(n_sites * n_samples, 0.1, 0.9),
                         nrow = n_sites, ncol = n_samples,
                         dimnames = list(site_keys, paste0("s", seq_len(n_samples))))
@@ -24,6 +24,7 @@ library(GenomicRanges)
         position = seq_len(n_sites) * 100L,
         strand   = rep("+", n_sites),
         mod_type = rep("6mA", n_sites),
+        motif    = rep("GATC", n_sites),
         row.names = site_keys
     )
     cd <- S4Vectors::DataFrame(
@@ -92,6 +93,36 @@ test_that("show() produces output without error", {
 test_that("show() lists modification types", {
     obj <- .make_minimal_commaData()
     expect_output(show(obj), regexp = "6mA")
+})
+
+test_that("show() prints motifs line with GATC", {
+    obj <- .make_minimal_commaData()
+    expect_output(show(obj), regexp = "motifs")
+    expect_output(show(obj), regexp = "GATC")
+})
+
+test_that("show() prints 'not available' when all motifs are NA", {
+    obj <- .make_minimal_commaData()
+    rd  <- rowData(obj)
+    rd$motif <- NA_character_
+    rowData(obj) <- rd
+    expect_output(show(obj), regexp = "not available")
+})
+
+test_that("validity passes when motif column contains NA values", {
+    obj <- .make_minimal_commaData()
+    rd  <- rowData(obj)
+    rd$motif[1L] <- NA_character_
+    rowData(obj) <- rd
+    expect_no_error(validObject(obj))
+})
+
+test_that("validity passes when all motif values are NA", {
+    obj <- .make_minimal_commaData()
+    rd  <- rowData(obj)
+    rd$motif <- NA_character_
+    rowData(obj) <- rd
+    expect_no_error(validObject(obj))
 })
 
 # ─────────────────────────────────────────────────────────────────────────────

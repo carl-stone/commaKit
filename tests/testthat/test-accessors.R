@@ -15,8 +15,8 @@ library(GenomicRanges)
     n_total <- n_6ma + n_5mc
     samp_names <- c("ctrl_1", "ctrl_2", "treat_1")
 
-    keys_6ma <- paste0("chr_sim:", seq_len(n_6ma) * 100L, ":+:6mA")
-    keys_5mc <- paste0("chr_sim:", seq_len(n_5mc) * 200L, ":-:5mC")
+    keys_6ma <- paste0("chr_sim:", seq_len(n_6ma) * 100L, ":+:6mA:GATC")
+    keys_5mc <- paste0("chr_sim:", seq_len(n_5mc) * 200L, ":-:5mC:CCWGG")
     all_keys <- c(keys_6ma, keys_5mc)
 
     methyl <- matrix(runif(n_total * n_samp, 0.1, 0.95),
@@ -29,6 +29,7 @@ library(GenomicRanges)
         position = c(seq_len(n_6ma) * 100L, seq_len(n_5mc) * 200L),
         strand   = c(rep("+", n_6ma), rep("-", n_5mc)),
         mod_type = c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
+        motif    = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc)),
         row.names = all_keys
     )
     cd <- S4Vectors::DataFrame(
@@ -277,6 +278,85 @@ test_that("subset() returns commaData", {
     obj <- .make_two_modtype()
     sub <- subset(obj, mod_type = "6mA")
     expect_true(is(sub, "commaData"))
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# comma_example_data integration tests (skipped if data not yet generated)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# motifs() accessor
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("motifs() returns a character vector", {
+    obj <- .make_two_modtype()
+    expect_type(motifs(obj), "character")
+})
+
+test_that("motifs() returns sorted unique non-NA values", {
+    obj <- .make_two_modtype()
+    m <- motifs(obj)
+    expect_equal(m, c("CCWGG", "GATC"))
+})
+
+test_that("motifs() excludes NA values", {
+    obj <- .make_two_modtype()
+    rd  <- SummarizedExperiment::rowData(obj)
+    rd$motif[1L] <- NA_character_
+    SummarizedExperiment::rowData(obj) <- rd
+    m <- motifs(obj)
+    expect_false(any(is.na(m)))
+})
+
+test_that("motifs() returns empty character vector when all motifs are NA", {
+    obj <- .make_two_modtype()
+    rd  <- SummarizedExperiment::rowData(obj)
+    rd$motif <- NA_character_
+    SummarizedExperiment::rowData(obj) <- rd
+    expect_equal(length(motifs(obj)), 0L)
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# subset() by motif
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("subset() by motif returns only sites with that motif", {
+    obj <- .make_two_modtype()
+    sub <- subset(obj, motif = "GATC")
+    expect_true(all(SummarizedExperiment::rowData(sub)$motif == "GATC"))
+})
+
+test_that("subset() by motif reduces site count", {
+    obj <- .make_two_modtype()
+    sub <- subset(obj, motif = "GATC")
+    expect_lt(nrow(sub), nrow(obj))
+})
+
+test_that("subset() by motif='GATC' returns only 6mA sites", {
+    obj <- .make_two_modtype()
+    sub <- subset(obj, motif = "GATC")
+    expect_true(all(SummarizedExperiment::rowData(sub)$mod_type == "6mA"))
+})
+
+test_that("subset() with both motif and mod_type composes correctly", {
+    obj  <- .make_two_modtype()
+    sub  <- subset(obj, mod_type = "6mA", motif = "GATC")
+    rd   <- SummarizedExperiment::rowData(sub)
+    expect_true(all(rd$mod_type == "6mA"))
+    expect_true(all(rd$motif   == "GATC"))
+    expect_equal(nrow(sub), 10L)  # all 10 6mA sites have motif GATC
+})
+
+test_that("subset() by motif returns commaData", {
+    obj <- .make_two_modtype()
+    sub <- subset(obj, motif = "GATC")
+    expect_true(is(sub, "commaData"))
+})
+
+test_that("subset() by non-existent motif returns zero-row object", {
+    obj <- .make_two_modtype()
+    sub <- subset(obj, motif = "TTAA")
+    expect_equal(nrow(sub), 0L)
 })
 
 # ─────────────────────────────────────────────────────────────────────────────

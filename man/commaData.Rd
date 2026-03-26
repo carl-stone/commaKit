@@ -44,9 +44,15 @@ types to retain (e.g., \code{"6mA"} or \code{c("6mA", "5mC")}). If
 \code{NULL}, all modification types detected in the files are kept.}
 
 \item{motif}{Optional character string. A DNA sequence motif (e.g.,
-\code{"GATC"}) to locate in the genome. Requires \code{genome} to be
-a FASTA path or \code{BSgenome} object (not a named integer vector).
-If \code{NULL}, the \code{motifSites} slot is left empty.}
+\code{"GATC"}) to locate in the genome using \code{\link{findMotifSites}}.
+The results are stored in the \code{motifSites} slot as a genome-wide
+\code{GRanges} of all motif instances. Requires \code{genome} to be a
+FASTA path or \code{BSgenome} object (not a named integer vector). If
+\code{NULL}, the \code{motifSites} slot is left empty. \emph{Note:} this
+argument is distinct from \code{rowData(object)$motif}, which stores the
+per-site sequence context extracted automatically from the modkit
+\code{mod_code} field (e.g., \code{"a,GATC,1"} → \code{motif = "GATC"})
+and is \code{NA} for Dorado and Megalodon callers.}
 
 \item{min_coverage}{Integer. Minimum read depth to include a site. Sites
 present in a sample with coverage below this threshold have their beta
@@ -70,7 +76,9 @@ genomic annotation and motif site positions.
 The constructor uses a parse-then-merge strategy:
 \enumerate{
 \item Each file is parsed independently using the appropriate parser.
-\item Sites are identified by a key: \code{"chrom:position:strand:mod_type"}.
+\item Sites are identified by a 5-part key:
+\code{"chrom:position:strand:mod_type:motif"} (motif is \code{"NA"}
+for Dorado and Megalodon callers).
 \item The union of all sites across all samples is taken.
 \item Beta values and coverage are arranged into sites × samples matrices,
 with \code{NA} for samples that do not cover a given site.

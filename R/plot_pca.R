@@ -65,6 +65,7 @@ NULL
 #' @export
 plot_pca <- function(object,
                      mod_type    = NULL,
+                     motif       = NULL,
                      color_by    = "condition",
                      shape_by    = NULL,
                      return_data = FALSE) {
@@ -82,6 +83,9 @@ plot_pca <- function(object,
                  "Available types: ", paste(available, collapse = ", "), ".")
         }
         object <- subset(object, mod_type = mod_type)
+    }
+    if (!is.null(motif)) {
+        object <- subset(object, motif = motif)
     }
 
     ## --- Validate color_by / shape_by (only needed when plotting) -----------

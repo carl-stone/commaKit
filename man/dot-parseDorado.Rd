@@ -28,6 +28,9 @@ A \code{data.frame} with columns:
 \item{\code{strand}}{Strand, \code{"+"} or \code{"-"} (character).}
 \item{\code{mod_type}}{Modification type: \code{"6mA"}, \code{"5mC"},
 or \code{"4mC"} (character).}
+\item{\code{motif}}{Always \code{NA} — Dorado BAM MM/ML tags do not
+encode sequence context motifs. Motif information can be added
+post-hoc with \code{\link{findMotifSites}} if needed.}
 \item{\code{beta}}{Proportion of reads called methylated, range 0–1
 (numeric).}
 \item{\code{coverage}}{Total read depth at this site (integer).}

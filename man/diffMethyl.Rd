@@ -9,6 +9,7 @@ diffMethyl(
   formula = ~condition,
   method = c("beta_binomial", "methylkit"),
   mod_type = NULL,
+  motif = NULL,
   min_coverage = 5L,
   p_adjust_method = "BH",
   ...
@@ -30,6 +31,11 @@ Default is \code{~ condition}.}
 \item{mod_type}{Character vector or \code{NULL}. Modification type(s) to
 test (e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL}
 (default), all modification types present in \code{object} are tested.}
+
+\item{motif}{Character vector or \code{NULL}. If provided, only sites with
+matching sequence context motif(s) are tested (e.g., \code{"GATC"}).
+Uses \code{\link{motifs}} to validate the requested values. If \code{NULL}
+(default), all motifs (including \code{NA}) are included.}
 
 \item{min_coverage}{Integer. Minimum per-sample read depth required to
 include a site in testing. Sites where any sample has coverage below

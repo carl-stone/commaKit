@@ -7,7 +7,7 @@
     n_sites   <- 10L
     positions <- c(1500L, 2000L, 2500L, 3000L, 3500L,
                    6500L, 7000L, 7500L, 8000L, 8500L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA")
+    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     set.seed(5L)
     betas <- matrix(
         runif(n_sites * 2L, 0.1, 0.9),
@@ -21,6 +21,7 @@
         position = positions,
         strand   = rep("+", n_sites),
         mod_type = rep("6mA", n_sites),
+        motif    = rep("GATC", n_sites),
         row.names = site_keys
     )
     cd <- S4Vectors::DataFrame(

@@ -7,7 +7,14 @@
 \usage{
 filterResults(object, ...)
 
-\S4method{filterResults}{commaData}(object, padj = 0.05, delta_beta = 0.1, mod_type = NULL, ...)
+\S4method{filterResults}{commaData}(
+  object,
+  padj = 0.05,
+  delta_beta = 0.1,
+  mod_type = NULL,
+  motif = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object on which
@@ -24,6 +31,9 @@ disable filtering on effect size.}
 
 \item{mod_type}{Character string or \code{NULL}. Passed to
 \code{\link{results}} for optional modification type filtering.}
+
+\item{motif}{Character vector or \code{NULL}. Passed to
+\code{\link{results}} for optional sequence context motif filtering.}
 }
 \value{
 A \code{data.frame} (same format as \code{\link{results}}) containing

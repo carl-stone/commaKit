@@ -19,8 +19,10 @@
 #'     }
 #'   }
 #'   \item{\strong{rowData}}{Per-site metadata including \code{chrom},
-#'     \code{position}, \code{strand}, \code{mod_type}, and \code{is_diff}
-#'     (ground-truth differential methylation status for testing purposes).}
+#'     \code{position}, \code{strand}, \code{mod_type}, \code{motif}
+#'     (\code{"GATC"} for 6mA sites, \code{"CCWGG"} for 5mC sites), and
+#'     \code{is_diff} (ground-truth differential methylation status for
+#'     testing purposes).}
 #'   \item{\strong{colData}}{Per-sample metadata: \code{sample_name},
 #'     \code{condition}, \code{replicate}, \code{caller}.}
 #'   \item{\strong{genomeInfo}}{Named integer vector: \code{c(chr_sim = 100000L)}.}
@@ -46,6 +48,7 @@
 #' data(comma_example_data)
 #' comma_example_data
 #' modTypes(comma_example_data)
+#' motifs(comma_example_data)
 #' sampleInfo(comma_example_data)
 #' dim(methylation(comma_example_data))
 #'

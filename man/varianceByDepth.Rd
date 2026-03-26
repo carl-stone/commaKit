@@ -4,7 +4,7 @@
 \alias{varianceByDepth}
 \title{Methylation variance as a function of sequencing depth}
 \usage{
-varianceByDepth(object, coverage_bins = NULL, mod_type = NULL)
+varianceByDepth(object, coverage_bins = NULL, mod_type = NULL, motif = NULL)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object.}

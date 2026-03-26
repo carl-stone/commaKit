@@ -5,7 +5,7 @@
 .make_pca_data <- function() {
     n_sites <- 20L
     positions <- seq(1000L, 20000L, by = 1000L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA")
+    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     set.seed(42L)
     betas <- matrix(
         runif(n_sites * 3L, 0.0, 1.0),
@@ -19,6 +19,7 @@
         position = positions,
         strand   = rep("+", n_sites),
         mod_type = rep("6mA", n_sites),
+        motif    = rep("GATC", n_sites),
         row.names = site_keys
     )
     cd <- S4Vectors::DataFrame(

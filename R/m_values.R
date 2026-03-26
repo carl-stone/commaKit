@@ -14,6 +14,9 @@
 #' @param mod_type Character string specifying a single modification type
 #'   (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), M-values
 #'   are computed for all sites in \code{object}.
+#' @param motif Character vector or \code{NULL}. If provided, only sites with
+#'   matching sequence context motif(s) are included. If \code{NULL} (default),
+#'   all motifs are included.
 #'
 #' @details
 #' The M-value for a site in one sample is computed as:
@@ -53,7 +56,7 @@
 #'   \code{\link{plot_pca}}
 #'
 #' @export
-mValues <- function(object, alpha = 0.5, mod_type = NULL) {
+mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL) {
 
     ## --- Input validation ---------------------------------------------------
     if (!is(object, "commaData")) {
@@ -72,6 +75,18 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL) {
                  "Available types: ", paste(available, collapse = ", "), ".")
         }
         object <- subset(object, mod_type = mod_type)
+    }
+
+    ## --- Optional motif filter ----------------------------------------------
+    if (!is.null(motif)) {
+        available_m <- motifs(object)
+        bad_m <- setdiff(motif, available_m)
+        if (length(bad_m) > 0L) {
+            stop("'motif' value(s) not found in object: ",
+                 paste(bad_m, collapse = ", "),
+                 ". Available: ", paste(available_m, collapse = ", "), ".")
+        }
+        object <- subset(object, motif = motif)
     }
 
     ## --- Compute M-values ---------------------------------------------------

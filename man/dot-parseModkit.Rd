@@ -27,6 +27,10 @@ A \code{data.frame} with columns:
 \item{\code{strand}}{Strand, \code{"+"} or \code{"-"} (character).}
 \item{\code{mod_type}}{Modification type: \code{"6mA"}, \code{"5mC"},
 or \code{"4mC"} (character).}
+\item{\code{motif}}{Sequence context motif extracted from the modkit
+\code{mod_code} field (e.g., \code{"GATC"}, \code{"CCWGG"}).
+\code{NA} if the \code{mod_code} field does not contain motif
+information (older modkit formats).}
 \item{\code{beta}}{Proportion of reads called methylated, range 0–1
 (numeric).}
 \item{\code{coverage}}{Total read depth at this site (integer).}

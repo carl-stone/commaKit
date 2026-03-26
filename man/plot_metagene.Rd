@@ -4,7 +4,13 @@
 \alias{plot_metagene}
 \title{Metagene plot of methylation across genomic features}
 \usage{
-plot_metagene(object, feature = "gene", mod_type = NULL, n_bins = 50L)
+plot_metagene(
+  object,
+  feature = "gene",
+  mod_type = NULL,
+  motif = NULL,
+  n_bins = 50L
+)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object with a non-empty
