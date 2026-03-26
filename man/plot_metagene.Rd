@@ -24,6 +24,10 @@ of the annotation. Default \code{"gene"}.}
 (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), all
 modification types are used.}
 
+\item{motif}{Character vector or \code{NULL}. If provided, only sites with
+matching sequence context motif(s) are included (e.g., \code{"GATC"}).
+If \code{NULL} (default), all motifs are included.}
+
 \item{n_bins}{Positive integer. Number of equal-width bins to divide the
 normalized feature position \eqn{[0, 1]} into. Default \code{50}.}
 }

@@ -17,6 +17,10 @@ specific depth range.}
 \item{mod_type}{Character string or \code{NULL}. If provided, only sites
 of the specified modification type are included. Default: \code{NULL}
 (all types).}
+
+\item{motif}{Character vector or \code{NULL}. If provided, only sites with
+matching sequence context motif(s) are included (e.g., \code{"GATC"}).
+If \code{NULL} (default), all motifs are included.}
 }
 \value{
 A \code{data.frame} with one row per (coverage level, sample),

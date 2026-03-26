@@ -20,6 +20,10 @@ plot_pca(
 (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), all sites
 from all modification types are used.}
 
+\item{motif}{Character vector or \code{NULL}. If provided, only sites with
+matching sequence context motif(s) are included (e.g., \code{"GATC"}).
+If \code{NULL} (default), all motifs are included.}
+
 \item{color_by}{Character string naming a column in \code{sampleInfo(object)}
 to use for point color. Default \code{"condition"}.}
 

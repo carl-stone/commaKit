@@ -13,6 +13,9 @@ NULL
 #'   plot (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), all
 #'   modification types are included and the plot is faceted by
 #'   \code{mod_type}.
+#' @param motif Character vector or \code{NULL}. If provided, only sites with
+#'   matching sequence context motif(s) are included (e.g., \code{"GATC"}).
+#'   If \code{NULL} (default), all motifs are included.
 #' @param per_sample Logical. If \code{TRUE} (default), a separate density
 #'   curve is drawn for each sample. If \code{FALSE}, a single aggregate
 #'   density curve is drawn per modification type.

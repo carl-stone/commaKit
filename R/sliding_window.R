@@ -23,6 +23,9 @@ NULL
 #' @param mod_type Character string or \code{NULL}. If provided, only sites of
 #'   the specified modification type (e.g., \code{"6mA"}) are included in the
 #'   smoothing. If \code{NULL} (default), all sites are used.
+#' @param motif Character vector or \code{NULL}. If provided, only sites with
+#'   matching sequence context motif(s) are included (e.g., \code{"GATC"}).
+#'   If \code{NULL} (default), all motifs are included.
 #' @param circular Logical. If \code{TRUE} (default), positions at the ends of
 #'   each chromosome are wrapped around so that the window at position 1 can
 #'   draw from positions near the chromosome end, and vice versa. Appropriate

@@ -12,6 +12,9 @@ NULL
 #' @param mod_type Character string specifying a single modification type
 #'   (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), all sites
 #'   from all modification types are included.
+#' @param motif Character vector or \code{NULL}. If provided, only sites with
+#'   matching sequence context motif(s) are included (e.g., \code{"GATC"}).
+#'   If \code{NULL} (default), all motifs are included.
 #' @param per_sample Logical. If \code{TRUE} (default), the plot is faceted by
 #'   sample, producing one histogram panel per sample. If \code{FALSE}, all
 #'   samples are overlaid on a single plot with per-sample colors.

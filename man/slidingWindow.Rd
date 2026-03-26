@@ -29,6 +29,10 @@ One of \code{"median"} (default) or \code{"mean"}.}
 the specified modification type (e.g., \code{"6mA"}) are included in the
 smoothing. If \code{NULL} (default), all sites are used.}
 
+\item{motif}{Character vector or \code{NULL}. If provided, only sites with
+matching sequence context motif(s) are included (e.g., \code{"GATC"}).
+If \code{NULL} (default), all motifs are included.}
+
 \item{circular}{Logical. If \code{TRUE} (default), positions at the ends of
 each chromosome are wrapped around so that the window at position 1 can
 draw from positions near the chromosome end, and vice versa. Appropriate

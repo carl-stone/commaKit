@@ -14,6 +14,9 @@ NULL
 #'   of the specified modification type (e.g., \code{"6mA"}) are included in
 #'   the summary. If \code{NULL} (default), all modification types are
 #'   summarized together.
+#' @param motif Character vector or \code{NULL}. If provided, only sites with
+#'   matching sequence context motif(s) are included (e.g., \code{"GATC"}).
+#'   If \code{NULL} (default), all motifs are included.
 #'
 #' @return A \code{data.frame} with one row per sample, containing:
 #'   \describe{
