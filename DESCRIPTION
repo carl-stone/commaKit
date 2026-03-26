@@ -58,6 +58,7 @@ Collate:
     'plot_heatmap.R'
     'plot_metagene.R'
     'plot_pca.R'
+    'plot_tss_profile.R'
     'plot_volcano.R'
     'results_methods.R'
     'sliding_window.R'
