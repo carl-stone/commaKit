@@ -9,11 +9,15 @@ NULL
     "21839" = "4mC"
 )
 
-# modkit pileup BED column names (15 columns)
+# modkit pileup bedMethyl column names (18 columns, tab-separated)
+# Columns 7-9 (thickStart, thickEnd, itemRgb) are BED compatibility fields.
+# fraction_modified (col 11) is a percentage (0-100); divide by 100 for beta.
+# mod_code (col 4) uses compound format "code,motif,position" (e.g. "a,GATC,1").
 .MODKIT_COLS <- c(
     "chrom", "start", "end", "mod_code", "score", "strand",
-    "coverage", "mod_frequency", "n_mod", "n_canonical",
-    "n_other_mod", "n_delete", "n_fail", "n_diff", "n_no_call"
+    "thickStart", "thickEnd", "itemRgb",
+    "Nvalid_cov", "fraction_modified", "Nmod", "Ncanonical",
+    "Nother_mod", "Ndelete", "Nfail", "Ndiff", "Nnocall"
 )
 
 #' Parse a modkit pileup BED file into a tidy per-site data frame
@@ -77,19 +81,24 @@ NULL
         return(.emptyModkitResult())
     }
 
-    if (ncol(raw) < 15L) {
+    if (ncol(raw) < 18L) {
         stop(
             "modkit BED file '", file, "' has ", ncol(raw), " columns; ",
-            "expected at least 15 (modkit pileup format). ",
+            "expected at least 18 (modkit pileup bedMethyl format). ",
             "Check that the file is a modkit pileup output."
         )
     }
-    # Use only the first 15 columns
-    raw <- raw[, seq_len(15L), drop = FALSE]
+    # Use only the first 18 columns
+    raw <- raw[, seq_len(18L), drop = FALSE]
     colnames(raw) <- .MODKIT_COLS
 
     # ── Map mod_code → mod_type ─────────────────────────────────────────────
+    # mod_code is compound "code,motif,position" (e.g. "a,GATC,1"); extract code
     raw$mod_code <- as.character(raw$mod_code)
+    raw$mod_code <- vapply(
+        strsplit(raw$mod_code, ",", fixed = TRUE),
+        `[`, character(1L), 1L
+    )
     mapped        <- .MODKIT_CODE_MAP[raw$mod_code]
     unknown_codes <- unique(raw$mod_code[is.na(mapped)])
     if (length(unknown_codes) > 0) {
@@ -105,8 +114,8 @@ NULL
     raw <- raw[!is.na(raw$mod_type_mapped), , drop = FALSE]
 
     # ── Apply min_coverage filter ───────────────────────────────────────────
-    raw$coverage <- as.integer(raw$coverage)
-    raw <- raw[raw$coverage >= min_coverage, , drop = FALSE]
+    raw$Nvalid_cov <- as.integer(raw$Nvalid_cov)
+    raw <- raw[raw$Nvalid_cov >= min_coverage, , drop = FALSE]
 
     # ── Apply mod_type filter ───────────────────────────────────────────────
     if (!is.null(mod_type)) {
@@ -123,8 +132,8 @@ NULL
         position = as.integer(raw$start) + 1L,  # BED is 0-based → 1-based
         strand   = as.character(raw$strand),
         mod_type = raw$mod_type_mapped,
-        beta     = as.numeric(raw$mod_frequency),
-        coverage = raw$coverage,
+        beta     = as.numeric(raw$fraction_modified) / 100,  # percentage → fraction
+        coverage = raw$Nvalid_cov,
         stringsAsFactors = FALSE
     )
 }
