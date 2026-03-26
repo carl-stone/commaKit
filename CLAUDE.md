@@ -625,6 +625,7 @@ methylomeSummary(object, mod_type)            # per-sample QC stats → tidy dat
 coverageDepth(object, window, method, ...)    # windowed sequencing depth → tidy data.frame
 varianceByDepth(object, coverage_bins)        # methylation variance by depth → tidy data.frame
 writeBED(object, file, sample, ...)           # write BED9 output file
+mValues(object, alpha, mod_type)              # beta values → M-values matrix (variance-stabilized)
 
 # Differential methylation (Phase 4)
 diffMethyl(object, formula, method, mod_type, min_coverage, p_adjust_method)

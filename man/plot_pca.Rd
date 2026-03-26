@@ -33,7 +33,11 @@ outliers, and assessing whether biological conditions separate in
 methylation space.
 }
 \details{
-Sites with any \code{NA} beta values across samples are removed before PCA
+Beta values are first converted to M-values via \code{\link{mValues}}
+(using \code{alpha = 0.5}) before PCA. M-values are variance-stabilized
+relative to raw beta values, making distance-based analyses more reliable
+especially when many sites are near 0 or 1. Sites with any \code{NA}
+M-values across samples (including sites with zero coverage) are removed
 to ensure a complete data matrix. PCA is computed via \code{stats::prcomp}
 with centering (\code{center = TRUE}) and without scaling
 (\code{scale. = FALSE}). A warning is issued if fewer than three samples

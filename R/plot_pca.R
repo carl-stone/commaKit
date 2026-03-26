@@ -20,7 +20,11 @@ NULL
 #'   shape.
 #'
 #' @details
-#' Sites with any \code{NA} beta values across samples are removed before PCA
+#' Beta values are first converted to M-values via \code{\link{mValues}}
+#' (using \code{alpha = 0.5}) before PCA. M-values are variance-stabilized
+#' relative to raw beta values, making distance-based analyses more reliable
+#' especially when many sites are near 0 or 1. Sites with any \code{NA}
+#' M-values across samples (including sites with zero coverage) are removed
 #' to ensure a complete data matrix. PCA is computed via \code{stats::prcomp}
 #' with centering (\code{center = TRUE}) and without scaling
 #' (\code{scale. = FALSE}). A warning is issued if fewer than three samples
@@ -75,8 +79,8 @@ plot_pca <- function(object,
              "Available columns: ", paste(colnames(si), collapse = ", "), ".")
     }
 
-    ## --- Build complete-case matrix -----------------------------------------
-    methyl_mat <- methylation(object)
+    ## --- Build complete-case matrix (M-value transformed) -------------------
+    methyl_mat <- mValues(object)     # variance-stabilized M-values
     n_samples  <- ncol(methyl_mat)
 
     if (n_samples < 2L) {
@@ -86,10 +90,10 @@ plot_pca <- function(object,
         warning("Fewer than 3 samples available; PCA results may not be meaningful.")
     }
 
-    ## Keep only sites with no NA across all samples
+    ## Keep only sites with no NA M-values across all samples
     complete_sites <- which(rowSums(is.na(methyl_mat)) == 0L)
     if (length(complete_sites) < 2L) {
-        stop("Fewer than 2 sites have non-NA methylation values across all samples. ",
+        stop("Fewer than 2 sites have non-NA M-values across all samples. ",
              "Cannot compute PCA. Try reducing 'min_coverage' in commaData() or ",
              "using a larger dataset.")
     }
