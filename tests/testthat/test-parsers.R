@@ -20,14 +20,21 @@ library(testthat)
     file
 }
 
-# A minimal valid modkit row (15 columns):
-# chrom start end mod_code score strand cov mod_freq n_mod n_can n_other n_del n_fail n_diff n_nocall
-.modkit_row <- function(chrom = "chr1", start = 99L, mod_code = "a",
+# A minimal valid modkit row (18 columns, real modkit bedMethyl format):
+# chrom start end mod_code score strand thickStart thickEnd itemRgb
+#   Nvalid_cov fraction_modified Nmod Ncanonical Nother_mod Ndelete Nfail Ndiff Nnocall
+# mod_code uses compound "code,motif,position" format (e.g. "a,GATC,1")
+# fraction_modified is a percentage (0-100)
+.modkit_row <- function(chrom = "chr1", start = 99L, mod_code = "a,GATC,1",
                          strand = "+", cov = 20L, mod_freq = 0.9) {
-    data.frame(chrom, start, start + 1L, mod_code, 255L, strand,
-               cov, mod_freq,
-               as.integer(mod_freq * cov), cov - as.integer(mod_freq * cov),
-               0L, 0L, 0L, 0L, 0L)
+    n_mod <- as.integer(round(mod_freq * cov))
+    n_can <- cov - n_mod
+    data.frame(chrom, start, start + 1L, mod_code, cov, strand,
+               start, start + 1L, "255,0,0",
+               cov, mod_freq * 100,
+               n_mod, n_can,
+               0L, 0L, 0L, 0L, 0L,
+               stringsAsFactors = FALSE)
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -41,19 +48,19 @@ test_that(".parseModkit() returns correct columns", {
 })
 
 test_that(".parseModkit() maps mod_code 'a' to '6mA'", {
-    f <- .write_tmp_modkit(.modkit_row(mod_code = "a"))
+    f <- .write_tmp_modkit(.modkit_row(mod_code = "a,GATC,1"))
     result <- comma:::.parseModkit(f, "s1")
     expect_equal(result$mod_type, "6mA")
 })
 
 test_that(".parseModkit() maps mod_code 'm' to '5mC'", {
-    f <- .write_tmp_modkit(.modkit_row(mod_code = "m"))
+    f <- .write_tmp_modkit(.modkit_row(mod_code = "m,CCWGG,1"))
     result <- comma:::.parseModkit(f, "s1")
     expect_equal(result$mod_type, "5mC")
 })
 
 test_that(".parseModkit() maps mod_code '21839' to '4mC'", {
-    f <- .write_tmp_modkit(.modkit_row(mod_code = "21839"))
+    f <- .write_tmp_modkit(.modkit_row(mod_code = "21839,CCWGG,1"))
     result <- comma:::.parseModkit(f, "s1")
     expect_equal(result$mod_type, "4mC")
 })
@@ -78,9 +85,9 @@ test_that(".parseModkit() preserves coverage correctly", {
 
 test_that(".parseModkit() parses multiple mod types correctly", {
     rows <- rbind(
-        .modkit_row(mod_code = "a", start = 99L),
-        .modkit_row(mod_code = "m", start = 199L),
-        .modkit_row(mod_code = "21839", start = 299L)
+        .modkit_row(mod_code = "a,GATC,1",     start = 99L),
+        .modkit_row(mod_code = "m,CCWGG,1",    start = 199L),
+        .modkit_row(mod_code = "21839,CCWGG,1", start = 299L)
     )
     f <- .write_tmp_modkit(rows)
     result <- comma:::.parseModkit(f, "s1")
@@ -139,19 +146,19 @@ test_that(".parseModkit() errors on missing file", {
     )
 })
 
-test_that(".parseModkit() errors on file with fewer than 15 columns", {
+test_that(".parseModkit() errors on file with fewer than 18 columns", {
     f <- tempfile(fileext = ".bed")
-    writeLines("chr1\t99\t100\ta\t255\t+", f)
+    writeLines("chr1\t99\t100\ta,GATC,1\t255\t+", f)
     expect_error(
         comma:::.parseModkit(f, "s1"),
-        regexp = "15"
+        regexp = "18"
     )
 })
 
 test_that(".parseModkit() warns on unknown mod_code and drops those rows", {
     rows <- rbind(
-        .modkit_row(mod_code = "z", start = 99L),    # unknown
-        .modkit_row(mod_code = "a", start = 199L)    # known
+        .modkit_row(mod_code = "z,GATC,1", start = 99L),   # unknown
+        .modkit_row(mod_code = "a,GATC,1", start = 199L)   # known
     )
     f <- .write_tmp_modkit(rows)
     expect_warning(
