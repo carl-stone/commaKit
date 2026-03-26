@@ -1,0 +1,7 @@
+CJS 2026-03-26
+  As it is, selecting mod_type or motif from a commaData object filters each of them separately,
+  so if I do mod_type = c("6mA", "5mC") and motif = c("GATC", "CCWGG") together, it will return
+  any combination of those, including 6mA at GATC AND CCWGG sites and 5mC at both motifs as well.
+  I don't know what the best schema is, but the primary behavior I want is a joint mod_type-motif
+  pair, so that I can subset to all sites that have both 6mA and GATC or 5mC and CCWGG. This is
+  a much more useful behavior and follows the biological unit more closely.

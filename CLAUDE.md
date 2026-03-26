@@ -35,9 +35,9 @@ Whenever you add, remove, or rename an R source file, test file, exported functi
 **Author:** Carl Stone, Vanderbilt University (carl.j.stone@vanderbilt.edu)
 **Current version:** 0.7.2.9000 (dev; last stable release: 0.6.0)
 **License:** MIT
-**Target:** Bioconductor submission at v1.0.0
+**Target:** Bioconductor submission at v1.0.0 (on hold — active feature development and testing underway)
 
-`comma` is an R package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It characterizes genome-wide methylation patterns, annotates methylation sites relative to genomic features, identifies differentially methylated sites between conditions, and visualizes results. Phases 1–5 of the architectural refactor are complete; Bioconductor submission prep is the current priority.
+`comma` is an R package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It characterizes genome-wide methylation patterns, annotates methylation sites relative to genomic features, identifies differentially methylated sites between conditions, and visualizes results. The core architecture is complete and stable; active development is focused on adding and testing new features.
 
 ### Scientific scope
 
@@ -263,20 +263,18 @@ Follow these strictly. Inconsistency here will make the package feel unprofessio
 
 ---
 
-## 5. Development Phases
+## 5. Build History
 
-| Phase | Version | Key deliverable | Status |
-|---|---|---|---|
-| 1 — Data Infrastructure | 0.2.0 | `commaData` S4 class + modkit parser + constructor | ✅ Complete |
-| 2 — Genome Generalization | 0.2.0 | Remove all hardcoded MG1655 assumptions | ✅ Complete |
-| 3 — Refactor Functions | 0.3.0 | Vectorized annotation, sliding window, coverage analysis, cleanup | ✅ Complete |
-| 4 — Differential Methylation | 0.4.0 | `diffMethyl()` with beta-binomial model | ✅ Complete |
-| 5 — Visualization & Release | 0.5.0 | All `plot_*()` functions, vignettes, package docs | ✅ Complete |
-| 6 — M-values & QC polish | 0.6.0 | `mValues()`, `motifs()`, M-value PCA, R CMD check clean | ✅ Complete |
-| 7 — TSS profile & dev | 0.7.x | `plot_tss_profile()`, ongoing Bioconductor prep | 🔄 In progress |
-| Bioconductor submission | 1.0.0 | `BiocCheck` passing, full docs, DOI | ⏳ Next |
+This section records what was built in each version. It is a reference for understanding the codebase, not a roadmap.
 
-**Phases 1–6 are complete.** v0.7.x development is ongoing; Bioconductor submission prep is the current priority.
+| Version | Key deliverable |
+|---|---|
+| 0.2.0 | `commaData` S4 class + modkit/Megalodon parsers + constructor + accessors; removed all hardcoded MG1655 assumptions |
+| 0.3.0 | `annotateSites()`, `slidingWindow()`, `methylomeSummary()`, `coverageDepth()`, `varianceByDepth()`, `writeBED()` |
+| 0.4.0 | `diffMethyl()` (beta-binomial + methylKit), `results()`, `filterResults()`, full Dorado BAM parser |
+| 0.5.0 | All `plot_*()` functions (7 total), vignettes, `comma-package.R` docs |
+| 0.6.0 | `mValues()`, `motifs()` accessor, M-value transform in `plot_pca()`, R CMD check clean |
+| 0.7.x | `plot_tss_profile()` |
 
 ---
 
@@ -640,7 +638,7 @@ devtools::document()     # Rebuild docs from roxygen2
 BiocCheck::BiocCheck()   # Bioconductor-specific checks
 ```
 
-### Currently exported API (v0.5.0)
+### Currently exported API (v0.7.2.9000)
 
 ```r
 # S4 class (Phase 1)
@@ -652,6 +650,7 @@ coverage(object)         # → sites × samples integer matrix
 sampleInfo(object)       # → per-sample DataFrame
 siteInfo(object)         # → per-site DataFrame (chrom, position, strand, mod_type, ...)
 modTypes(object)         # → character vector of modification types present
+motifs(object)           # → character vector of unique sequence context motifs present
 genome(object)           # → named integer vector of chromosome sizes
 annotation(object)       # → GRanges of genomic features
 motifSites(object)       # → GRanges of motif instances
@@ -679,7 +678,7 @@ diffMethyl(object, formula, method, mod_type, min_coverage, p_adjust_method)
 results(object, mod_type)                     # → tidy data.frame of diff methylation results
 filterResults(object, padj, delta_beta, ...)  # → filtered data.frame
 
-# Visualization (Phase 5) — all return a ggplot (or patchwork) object
+# Visualization (Phase 5+) — all return a ggplot (or patchwork) object
 plot_methylation_distribution(object, mod_type, per_sample)
 plot_genome_track(object, chromosome, start, end, mod_type)
 plot_metagene(object, feature, mod_type, window)
@@ -687,22 +686,27 @@ plot_volcano(results_df, delta_beta_threshold, padj_threshold)
 plot_heatmap(object, result_df, n_sites, annotation_cols)
 plot_pca(object, mod_type, color_by, shape_by, return_data)
 plot_coverage(object, per_sample)
+plot_tss_profile(object, feature_type, window, mod_type, motif,   # v0.7.x
+                 color_by, facet_by, alpha, show_smooth, smooth_span,
+                 regulatory_feature_types)
 ```
 
 ---
 
-## 17. Bioconductor Submission Checklist (Next Steps)
+## 17. Bioconductor Submission Notes
 
-These are the remaining tasks before v1.0.0 submission:
+Bioconductor submission is on hold while active feature development and testing continue. The checklist below captures what will need to be completed before submission whenever that becomes a priority — it is not an active roadmap.
 
-1. **Update README** — README.md/README.Rmd still reflects v0.3.0; update to showcase Phase 5 visualization functions and the complete five-step workflow
+**Remaining tasks before submission:**
+
+1. **Update README** — README.md/README.Rmd still reflects v0.3.0; update to showcase all visualization functions and the complete workflow
 2. **Run `BiocCheck::BiocCheck()`** — address all errors and warnings
 3. **Verify `R CMD check --as-cran`** — must pass with zero errors and zero warnings
 4. **Register DOI** — create a Zenodo release and register a DOI before submission
 5. **Verify data size** — bundled data must be < 5 MB total (`data/` + `inst/extdata/`)
 6. **Bump version to 1.0.0** — update DESCRIPTION and add NEWS.md entry
-7. **Submit to Bioconductor** — follow instructions at https://contributions.bioconductor.org/
+7. **Submit** — follow instructions at https://contributions.bioconductor.org/
 
 ---
 
-*Last updated: March 2026 (v0.5.0 — all five phases complete; 7 visualization functions, 2 vignettes, and package-level docs added in Phase 5; Bioconductor submission is the current priority; Section 14 documents R environment setup for agents)*
+*Last updated: March 2026 (v0.7.2.9000 dev — v0.6.0 added mValues(), motifs(), M-value PCA; v0.7.x adds plot_tss_profile(); active feature development ongoing; Bioconductor submission on indefinite hold; Section 14 documents R environment setup for agents)*
