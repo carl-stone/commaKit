@@ -200,6 +200,26 @@ test_that("commaData() applies min_coverage filter correctly", {
     expect_true(sum(is.na(m)) > 0)
 })
 
+test_that("commaData() accepts a tibble as colData without warning", {
+    skip_if_not_installed("tibble")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    skip_if(bed_file == "", message = "extdata not available")
+
+    tbl_cd <- tibble::tibble(
+        sample_name = "s1",
+        condition   = "control",
+        replicate   = 1L
+    )
+    expect_no_warning(
+        commaData(
+            files   = c(s1 = bed_file),
+            colData = tbl_cd,
+            genome  = c(chr_sim = 100000L),
+            caller  = "modkit"
+        )
+    )
+})
+
 test_that("commaData() mod_type filter reduces sites", {
     bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
     skip_if(bed_file == "", message = "extdata not available")

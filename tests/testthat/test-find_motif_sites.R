@@ -153,6 +153,37 @@ test_that("findMotifSites() returns a zero-length GRanges when the motif is abse
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
+# findMotifSites() — DNAStringSet input
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("findMotifSites() accepts a DNAStringSet", {
+    skip_if_not_installed("Biostrings")
+    seqs   <- Biostrings::DNAStringSet(c(chr_test = "ATCGATCGGG"))
+    result <- findMotifSites(seqs, "GATC")
+    expect_true(is(result, "GRanges"))
+    fwd    <- result[as.character(strand(result)) == "+"]
+    expect_equal(length(fwd), 1L)
+    expect_equal(start(fwd), 4L)
+})
+
+test_that("findMotifSites() DNAStringSet result has motif mcols column", {
+    skip_if_not_installed("Biostrings")
+    seqs   <- Biostrings::DNAStringSet(c(chr_test = "ATCGATCGGG"))
+    result <- findMotifSites(seqs, "GATC")
+    expect_true("motif" %in% names(mcols(result)))
+    expect_true(all(result$motif == "GATC"))
+})
+
+test_that("findMotifSites() DNAStringSet multi-chromosome searches all sequences", {
+    skip_if_not_installed("Biostrings")
+    seqs   <- Biostrings::DNAStringSet(c(chr1 = "GATCAAAA", chr2 = "AAAGATCA"))
+    result <- findMotifSites(seqs, "GATC")
+    chroms <- as.character(seqnames(result))
+    expect_true("chr1" %in% chroms)
+    expect_true("chr2" %in% chroms)
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
 # findMotifSites() — error handling
 # ─────────────────────────────────────────────────────────────────────────────
 

@@ -63,7 +63,7 @@ NULL
         read.table(
             file,
             header          = FALSE,
-            sep             = "\t",
+            sep             = "",
             stringsAsFactors = FALSE,
             comment.char    = "#",
             fill            = TRUE

@@ -81,6 +81,47 @@ test_that(".validateGenomeInfo() FASTA result has correct sizes for unequal chro
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
+# .validateGenomeInfo() — DNAStringSet input
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that(".validateGenomeInfo() accepts a named DNAStringSet", {
+    skip_if_not_installed("Biostrings")
+    seqs   <- Biostrings::DNAStringSet(c(chr1 = "ATCGATCG", chr2 = "GGGGCCCC"))
+    result <- comma:::.validateGenomeInfo(seqs)
+    expect_true(is.integer(result))
+    expect_equal(names(result), c("chr1", "chr2"))
+    expect_equal(result[["chr1"]], 8L)
+    expect_equal(result[["chr2"]], 8L)
+})
+
+test_that(".validateGenomeInfo() DNAStringSet single-sequence returns correct size", {
+    skip_if_not_installed("Biostrings")
+    seqs   <- Biostrings::DNAStringSet(c(NC_000913 = "GATCAAAA"))
+    result <- comma:::.validateGenomeInfo(seqs)
+    expect_equal(names(result), "NC_000913")
+    expect_equal(result[["NC_000913"]], 8L)
+})
+
+test_that(".validateGenomeInfo() errors on unnamed DNAStringSet", {
+    skip_if_not_installed("Biostrings")
+    seqs <- Biostrings::DNAStringSet(c("ATCGATCG", "GGGGCCCC"))
+    expect_error(comma:::.validateGenomeInfo(seqs), regexp = "names")
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# .validateGenomeInfo() — DNAString input
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that(".validateGenomeInfo() errors on DNAString with helpful message", {
+    skip_if_not_installed("Biostrings")
+    seq <- Biostrings::DNAString("ATCGATCG")
+    expect_error(
+        comma:::.validateGenomeInfo(seq),
+        regexp = "DNAString"
+    )
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
 # .circularIndex() — valid (in-range) positions
 # ─────────────────────────────────────────────────────────────────────────────
 

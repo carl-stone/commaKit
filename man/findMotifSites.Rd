@@ -7,8 +7,9 @@
 findMotifSites(genome, motif, ...)
 }
 \arguments{
-\item{genome}{A \code{BSgenome} object, or a character string giving the
-path to a FASTA file containing the genome sequence.}
+\item{genome}{A \code{DNAStringSet} object (Biostrings), a \code{BSgenome}
+object, or a character string giving the path to a FASTA file containing
+the genome sequence.}
 
 \item{motif}{A character string specifying the DNA sequence motif to search
 for (e.g., \code{"GATC"} or \code{"CCWGG"}). Standard IUPAC ambiguity

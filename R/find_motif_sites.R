@@ -10,8 +10,9 @@ NULL
 #' example, locating all GATC (Dam methyltransferase) sites in an \emph{E. coli}
 #' genome.
 #'
-#' @param genome A \code{BSgenome} object, or a character string giving the
-#'   path to a FASTA file containing the genome sequence.
+#' @param genome A \code{DNAStringSet} object (Biostrings), a \code{BSgenome}
+#'   object, or a character string giving the path to a FASTA file containing
+#'   the genome sequence.
 #' @param motif A character string specifying the DNA sequence motif to search
 #'   for (e.g., \code{"GATC"} or \code{"CCWGG"}). Standard IUPAC ambiguity
 #'   codes are supported (e.g., W = A or T). The motif is matched exactly on
@@ -129,9 +130,12 @@ findMotifSites <- function(genome, motif, ...) {
         seqs      <- BSgenome::getSeq(genome, chr_names)
         names(seqs) <- chr_names
         seqs
+    } else if (is(genome, "DNAStringSet")) {
+        genome   # already the correct type; pass through unchanged
     } else {
         stop(
-            "genome must be a path to a FASTA file or a BSgenome object. Got: ",
+            "genome must be a path to a FASTA file, a Biostrings DNAStringSet, ",
+            "or a BSgenome object. Got: ",
             class(genome)
         )
     }

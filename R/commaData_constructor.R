@@ -18,9 +18,15 @@ NULL
 #'   columns \code{sample_name}, \code{condition}, and \code{replicate}.
 #'   Additional columns (e.g., \code{file_path}, \code{batch}) are preserved.
 #' @param genome Genome size information: a named integer vector of chromosome
-#'   sizes (e.g., \code{c(chr1 = 4641652L)}), a path to a FASTA file, or a
-#'   \code{BSgenome} object. Set to \code{NULL} to omit genome information
-#'   (not recommended).
+#'   sizes (e.g., \code{c(NC_000913 = 4641652L)}), a path to a FASTA file, a
+#'   \code{DNAStringSet} (Biostrings), or a \code{BSgenome} object. For
+#'   single-chromosome genomes pass the \code{BSgenome} object directly or a
+#'   named integer vector — do not index into the BSgenome with \code{$}
+#'   (e.g., \code{BSgenome.Ecoli.NCBI.20080805$NC_000913}) as that yields a
+#'   \code{DNAString} which has no chromosome name and cannot be used. Set to
+#'   \code{NULL} to omit genome information (not recommended). When a
+#'   multi-sequence source is provided, genomeInfo is automatically restricted
+#'   to chromosomes present in the data.
 #' @param annotation Optional. Path to a GFF3 or BED annotation file, or a
 #'   pre-loaded \code{\link[GenomicRanges]{GRanges}} object. If \code{NULL},
 #'   the annotation slot is left empty.
@@ -205,12 +211,28 @@ commaData <- function(files,
 
     # ── Build colData ───────────────────────────────────────────────────────
     # Reorder colData to match sample_names order in files
-    cd_ordered <- colData[match(sample_names, colData$sample_name), , drop = FALSE]
+    cd_ordered <- as.data.frame(
+        colData[match(sample_names, colData$sample_name), , drop = FALSE]
+    )
     rownames(cd_ordered) <- cd_ordered$sample_name
     col_df <- S4Vectors::DataFrame(cd_ordered)
 
     # ── Genome info ─────────────────────────────────────────────────────────
     genome_info <- .validateGenomeInfo(genome)
+
+    # Restrict genomeInfo to chromosomes actually present in the data
+    if (!is.null(genome_info)) {
+        data_chroms  <- unique(all_sites$chrom)
+        extra_chroms <- setdiff(names(genome_info), data_chroms)
+        if (length(extra_chroms) > 0L) {
+            message(
+                "Dropping ", length(extra_chroms), " chromosome(s) from genomeInfo ",
+                "not present in data: ",
+                paste(extra_chroms, collapse = ", ")
+            )
+            genome_info <- genome_info[names(genome_info) %in% data_chroms]
+        }
+    }
 
     # ── Annotation ──────────────────────────────────────────────────────────
     ann_gr <- GenomicRanges::GRanges()

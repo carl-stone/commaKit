@@ -58,9 +58,31 @@ NULL
         return(chr_sizes)
     }
 
+    # DNAStringSet (Biostrings) — named collection of sequences
+    if (is(genome, "DNAStringSet")) {
+        if (is.null(names(genome)) || any(nchar(names(genome)) == 0L)) {
+            stop("DNAStringSet genome must have non-empty names for every sequence")
+        }
+        sizes <- as.integer(Biostrings::width(genome))
+        names(sizes) <- names(genome)
+        return(sizes)
+    }
+
+    # DNAString (single sequence, no names slot) — user likely indexed into a
+    # BSgenome with $seqname (e.g., BSgenome.Ecoli.NCBI.20080805$NC_000913)
+    if (is(genome, "DNAString")) {
+        stop(
+            "genome is a DNAString (a single, unnamed sequence). Either pass the ",
+            "whole BSgenome object directly (e.g., BSgenome.Ecoli.NCBI.20080805), ",
+            "or provide a named integer vector of chromosome sizes:\n",
+            "  c(NC_000913 = ", Biostrings::nchar(genome), "L)"
+        )
+    }
+
     stop(
         "genome must be a named integer vector of chromosome sizes, ",
-        "a path to a FASTA file, or a BSgenome object. Got: ",
+        "a path to a FASTA file, a Biostrings DNAString or DNAStringSet, or a ",
+        "BSgenome object. Got: ",
         class(genome)
     )
 }

@@ -25,9 +25,15 @@ columns \code{sample_name}, \code{condition}, and \code{replicate}.
 Additional columns (e.g., \code{file_path}, \code{batch}) are preserved.}
 
 \item{genome}{Genome size information: a named integer vector of chromosome
-sizes (e.g., \code{c(chr1 = 4641652L)}), a path to a FASTA file, or a
-\code{BSgenome} object. Set to \code{NULL} to omit genome information
-(not recommended).}
+sizes (e.g., \code{c(NC_000913 = 4641652L)}), a path to a FASTA file, a
+\code{DNAStringSet} (Biostrings), or a \code{BSgenome} object. For
+single-chromosome genomes pass the \code{BSgenome} object directly or a
+named integer vector — do not index into the BSgenome with \code{$}
+(e.g., \code{BSgenome.Ecoli.NCBI.20080805$NC_000913}) as that yields a
+\code{DNAString} which has no chromosome name and cannot be used. Set to
+\code{NULL} to omit genome information (not recommended). When a
+multi-sequence source is provided, genomeInfo is automatically restricted
+to chromosomes present in the data.}
 
 \item{annotation}{Optional. Path to a GFF3 or BED annotation file, or a
 pre-loaded \code{\link[GenomicRanges]{GRanges}} object. If \code{NULL},
