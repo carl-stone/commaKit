@@ -17,7 +17,10 @@ NULL
 #'   to use for point color. Default \code{"condition"}.
 #' @param shape_by Character string naming a column in \code{sampleInfo(object)}
 #'   to use for point shape. If \code{NULL} (default), all points use the same
-#'   shape.
+#'   shape. Ignored when \code{return_data = TRUE}.
+#' @param return_data Logical. If \code{TRUE}, return the underlying scores
+#'   \code{data.frame} instead of a ggplot object. Useful for building custom
+#'   plots. Default \code{FALSE}.
 #'
 #' @details
 #' Beta values are first converted to M-values via \code{\link{mValues}}
@@ -30,10 +33,18 @@ NULL
 #' (\code{scale. = FALSE}). A warning is issued if fewer than three samples
 #' are present.
 #'
-#' @return A \code{\link[ggplot2]{ggplot}} object. PC1 and PC2 are shown on
-#'   the x- and y-axes, respectively, with percentage of variance explained
-#'   shown in the axis labels. Each point represents one sample and is labeled
-#'   with its \code{sample_name}. Points are colored by \code{color_by}.
+#' @return When \code{return_data = FALSE} (default), a
+#'   \code{\link[ggplot2]{ggplot}} object. PC1 and PC2 are shown on the x- and
+#'   y-axes, respectively, with percentage of variance explained in the axis
+#'   labels. Each point represents one sample and is labeled with its
+#'   \code{sample_name}. Points are colored by \code{color_by}.
+#'
+#'   When \code{return_data = TRUE}, a \code{data.frame} with one row per
+#'   sample containing columns \code{PC1}, \code{PC2}, \code{sample_name}, and
+#'   all columns from \code{sampleInfo(object)}. The attribute
+#'   \code{percentVar} (accessible via \code{attr(result, "percentVar")}) is a
+#'   named numeric vector giving the percentage of variance explained by PC1 and
+#'   PC2.
 #'
 #' @examples
 #' data(comma_example_data)
@@ -45,13 +56,18 @@ NULL
 #' # Only 6mA sites
 #' plot_pca(comma_example_data, mod_type = "6mA")
 #'
+#' # Return data for custom plotting
+#' d <- plot_pca(comma_example_data, return_data = TRUE)
+#' attr(d, "percentVar")  # variance explained by PC1, PC2
+#'
 #' @seealso \code{\link{methylomeSummary}}, \code{\link{plot_methylation_distribution}}
 #'
 #' @export
 plot_pca <- function(object,
-                     mod_type  = NULL,
-                     color_by  = "condition",
-                     shape_by  = NULL) {
+                     mod_type    = NULL,
+                     color_by    = "condition",
+                     shape_by    = NULL,
+                     return_data = FALSE) {
 
     ## --- Input validation ---------------------------------------------------
     if (!is(object, "commaData")) {
@@ -68,15 +84,17 @@ plot_pca <- function(object,
         object <- subset(object, mod_type = mod_type)
     }
 
-    ## --- Validate color_by / shape_by ---------------------------------------
+    ## --- Validate color_by / shape_by (only needed when plotting) -----------
     si <- sampleInfo(object)
-    if (!color_by %in% colnames(si)) {
-        stop("'color_by' column '", color_by, "' not found in sampleInfo(object). ",
-             "Available columns: ", paste(colnames(si), collapse = ", "), ".")
-    }
-    if (!is.null(shape_by) && !shape_by %in% colnames(si)) {
-        stop("'shape_by' column '", shape_by, "' not found in sampleInfo(object). ",
-             "Available columns: ", paste(colnames(si), collapse = ", "), ".")
+    if (!return_data) {
+        if (!color_by %in% colnames(si)) {
+            stop("'color_by' column '", color_by, "' not found in sampleInfo(object). ",
+                 "Available columns: ", paste(colnames(si), collapse = ", "), ".")
+        }
+        if (!is.null(shape_by) && !shape_by %in% colnames(si)) {
+            stop("'shape_by' column '", shape_by, "' not found in sampleInfo(object). ",
+                 "Available columns: ", paste(colnames(si), collapse = ", "), ".")
+        }
     }
 
     ## --- Build complete-case matrix (M-value transformed) -------------------
@@ -118,6 +136,12 @@ plot_pca <- function(object,
 
     ## Join sampleInfo columns
     scores_df <- merge(scores_df, si, by = "sample_name", all.x = TRUE)
+
+    ## --- Early return for custom plotting -----------------------------------
+    if (return_data) {
+        attr(scores_df, "percentVar") <- pct_var
+        return(scores_df)
+    }
 
     ## --- Build ggplot -------------------------------------------------------
     x_label <- if (length(pct_var) >= 1L) {

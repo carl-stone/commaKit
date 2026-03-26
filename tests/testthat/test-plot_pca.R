@@ -112,6 +112,48 @@ test_that("plot_pca: warning issued with fewer than 3 samples", {
     expect_s3_class(p, "ggplot")
 })
 
+# ─── return_data = TRUE ───────────────────────────────────────────────────────
+
+test_that("plot_pca: return_data = TRUE returns a data.frame", {
+    obj <- .make_pca_data()
+    d <- plot_pca(obj, return_data = TRUE)
+    expect_s3_class(d, "data.frame")
+})
+
+test_that("plot_pca: return_data data.frame has PC1 and PC2 columns", {
+    obj <- .make_pca_data()
+    d <- plot_pca(obj, return_data = TRUE)
+    expect_true(all(c("PC1", "PC2") %in% colnames(d)))
+})
+
+test_that("plot_pca: return_data data.frame has one row per sample", {
+    obj <- .make_pca_data()
+    d <- plot_pca(obj, return_data = TRUE)
+    expect_equal(nrow(d), ncol(methylation(obj)))
+})
+
+test_that("plot_pca: return_data data.frame includes sampleInfo columns", {
+    obj <- .make_pca_data()
+    d <- plot_pca(obj, return_data = TRUE)
+    expect_true("condition" %in% colnames(d))
+    expect_true("sample_name" %in% colnames(d))
+})
+
+test_that("plot_pca: return_data attaches percentVar attribute", {
+    obj <- .make_pca_data()
+    d <- plot_pca(obj, return_data = TRUE)
+    pv <- attr(d, "percentVar")
+    expect_true(is.numeric(pv))
+    expect_true(length(pv) <= 2L)
+    expect_true(all(pv >= 0 & pv <= 100))
+})
+
+test_that("plot_pca: return_data = TRUE skips color_by validation", {
+    obj <- .make_pca_data()
+    # Would error if color_by were validated; should not error with return_data = TRUE
+    expect_no_error(plot_pca(obj, color_by = "nonexistent_col", return_data = TRUE))
+})
+
 # ─── Comma example data ───────────────────────────────────────────────────────
 
 test_that("plot_pca: works with comma_example_data", {
