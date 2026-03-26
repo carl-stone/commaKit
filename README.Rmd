@@ -45,7 +45,11 @@ visualization.
   `results()` → `filterResults()`).
 - **Seven `plot_*()` functions** — coverage QC, beta distributions, PCA, genome
   tracks, metagene profiles, volcano plots, and heatmaps; all return `ggplot`
-  objects for further customization.
+  objects for further customization. PCA uses variance-stabilized M-values
+  internally and supports `return_data = TRUE` for custom plotting.
+- **`mValues()`** — converts beta values and read depths to M-values
+  (`log2((M + α) / (U + α))`), useful for distance-based analyses and
+  custom plots.
 - **Compatible with any monoploid genome** — genome annotations can be loaded
   as GFF3 or BED files. Supports linear or circular chromosomes.
 - **Multi-modification-type** — 6mA, 5mC, and 4mC coexist in one object;
@@ -130,10 +134,18 @@ modification type. Bacterial methylomes often show a bimodal distribution
 plot_methylation_distribution(comma_example_data)
 ```
 
-`plot_pca()` runs PCA on per-sample methylation profiles for sample-level QC:
+`plot_pca()` runs PCA on per-sample methylation profiles for sample-level QC.
+Beta values are converted to M-values before PCA for better variance
+stabilization. Use `return_data = TRUE` to retrieve the scores data frame for
+custom plotting:
 
 ```{r plot-pca, fig.alt = "PCA of methylation profiles colored by condition."}
 plot_pca(comma_example_data, color_by = "condition")
+```
+
+```{r pca-data, eval = FALSE}
+pca_df <- plot_pca(comma_example_data, return_data = TRUE)
+attr(pca_df, "percentVar")  # variance explained by PC1, PC2
 ```
 
 ### Step 2 — Annotate Sites

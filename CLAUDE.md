@@ -54,7 +54,8 @@ CoMMA/
 │   ├── plot_metagene.R          # ✅ Phase 5: plot_metagene() (~195 lines)
 │   ├── plot_volcano.R           # ✅ Phase 5: plot_volcano() (~134 lines)
 │   ├── plot_heatmap.R           # ✅ Phase 5: plot_heatmap() (~207 lines)
-│   ├── plot_pca.R               # ✅ Phase 5: plot_pca() (~163 lines)
+│   ├── m_values.R               # ✅ mValues() — M-value transformation from beta + coverage
+│   ├── plot_pca.R               # ✅ Phase 5: plot_pca() with M-value transform + return_data (~196 lines)
 │   └── plot_coverage.R          # ✅ Phase 5: plot_coverage() (~147 lines)
 ├── vignettes/
 │   ├── getting-started.Rmd           # ✅ End-to-end workflow (~214 lines)
@@ -90,7 +91,8 @@ CoMMA/
 │   ├── test-plot_metagene.R           # ✅ Phase 5: plot_metagene() tests (~120 lines)
 │   ├── test-plot_volcano.R            # ✅ Phase 5: plot_volcano() tests (~103 lines)
 │   ├── test-plot_heatmap.R            # ✅ Phase 5: plot_heatmap() tests (~129 lines)
-│   ├── test-plot_pca.R                # ✅ Phase 5: plot_pca() tests (~121 lines)
+│   ├── test-m_values.R                # ✅ mValues() tests (~24 tests: formula, NA propagation, alpha, mod_type)
+│   ├── test-plot_pca.R                # ✅ Phase 5: plot_pca() tests, including return_data (~22 tests)
 │   └── test-plot_coverage.R           # ✅ Phase 5: plot_coverage() tests (~117 lines)
 ├── man/                          # Roxygen2-generated docs (all current)
 ├── .github/workflows/
@@ -379,7 +381,8 @@ Use `comma_example_data` — a synthetic `commaData` object created in Phase 1 (
 | `test-plot_metagene.R` | plot_metagene() returns ggplot, feature normalization |
 | `test-plot_volcano.R` | plot_volcano() returns ggplot, thresholds, coloring |
 | `test-plot_heatmap.R` | plot_heatmap() returns ggplot, top-N sites, sample annotation |
-| `test-plot_pca.R` | plot_pca() returns ggplot, color_by/shape_by arguments |
+| `test-m_values.R` | mValues(): formula correctness, NA/zero-coverage propagation, alpha validation, mod_type filter — ~24 tests |
+| `test-plot_pca.R` | plot_pca(): returns ggplot, color_by/shape_by, return_data data.frame + percentVar attr — ~22 tests |
 | `test-plot_coverage.R` | plot_coverage() returns ggplot, per_sample mode |
 
 ### Required coverage
@@ -639,7 +642,7 @@ plot_genome_track(object, chromosome, start, end, mod_type)
 plot_metagene(object, feature, mod_type, window)
 plot_volcano(results_df, delta_beta_threshold, padj_threshold)
 plot_heatmap(object, result_df, n_sites, annotation_cols)
-plot_pca(object, mod_type, color_by, shape_by)
+plot_pca(object, mod_type, color_by, shape_by, return_data)
 plot_coverage(object, per_sample)
 ```
 

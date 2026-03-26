@@ -123,10 +123,22 @@ plot_methylation_distribution(comma_example_data, mod_type = "6mA")
 ## PCA for Sample-Level QC
 
 `plot_pca()` performs PCA on per-sample methylation profiles. Samples from
-the same condition should cluster together.
+the same condition should cluster together. Internally, beta values are
+converted to M-values via `mValues()` before PCA, which stabilizes variance
+across sites near 0 or 1.
 
 ```{r plot-pca, fig.cap = "PCA of methylation profiles colored by condition."}
 plot_pca(comma_example_data, color_by = "condition")
+```
+
+To retrieve the underlying scores for custom plotting, use `return_data = TRUE`.
+The result is a `data.frame` with `PC1`, `PC2`, and all sample metadata columns;
+the percentage of variance explained by each PC is stored in
+`attr(result, "percentVar")`.
+
+```{r pca-data}
+pca_df <- plot_pca(comma_example_data, return_data = TRUE)
+attr(pca_df, "percentVar")  # variance explained by PC1 and PC2
 ```
 
 # Annotating Sites

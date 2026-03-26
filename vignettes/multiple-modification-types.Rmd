@@ -136,8 +136,9 @@ if (requireNamespace("patchwork", quietly = TRUE)) {
 
 # PCA Across Modification Types
 
-The PCA plot uses all sites by default. Use `mod_type` to restrict to a single
-modification type:
+`plot_pca()` converts beta values to M-values via `mValues()` before PCA,
+which stabilizes variance for sites near 0 or 1. By default all sites are
+used; pass `mod_type` to restrict to one modification type:
 
 ```{r pca-all, fig.cap = "PCA using all modification types."}
 plot_pca(comma_example_data, color_by = "condition")
@@ -145,6 +146,16 @@ plot_pca(comma_example_data, color_by = "condition")
 
 ```{r pca-6ma, fig.cap = "PCA using 6mA sites only."}
 plot_pca(comma_example_data, mod_type = "6mA", color_by = "condition")
+```
+
+Use `return_data = TRUE` to retrieve the PC scores for custom plots or
+downstream analysis:
+
+```{r pca-data}
+pca_df <- plot_pca(comma_example_data, mod_type = "6mA", return_data = TRUE)
+# data.frame with PC1, PC2, sample_name, condition, replicate, ...
+head(pca_df[, c("sample_name", "condition", "PC1", "PC2")])
+attr(pca_df, "percentVar")
 ```
 
 # Genome Track with Both Modification Types
