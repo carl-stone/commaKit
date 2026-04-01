@@ -193,6 +193,7 @@ CoMMA/
 ### Added in v0.7.x (current dev)
 
 - **`plot_tss_profile()`** — TSS-centered methylation scatter plot showing individual sites at their signed base-pair distance from the nearest TSS; supports `color_by = "sample"|"mod_type"|"regulatory_element"`, `facet_by`, optional loess smooth overlay, and `motif` filtering; distinct from `plot_metagene()` in that it shows absolute bp positions rather than normalized fractional positions
+- **`diffMethyl(..., method = "limma")`** — empirical Bayes moderated t-test via `limma::eBayes()` on M-value-transformed data; borrows variance information across all sites to stabilize tests with few replicates; `alpha` pseudocount parameter controls M-value transformation
 
 ### Breaking changes in v0.3.0
 
@@ -341,6 +342,7 @@ Any function that touches genomic positions must be vectorized:
 | `BiocStyle` | Vignette styling (Bioconductor standard) |
 | `ComplexHeatmap` | Available as alternative heatmap backend (not currently used — `plot_heatmap()` uses ggplot2) |
 | `ggrepel` | Available for volcano plot labels (not currently used — `plot_volcano()` uses ggplot2 directly) |
+| `limma` | Empirical Bayes moderated t-test (eBayes) on M-values for `diffMethyl(..., method = "limma")` |
 | `methylKit` | Alternative differential methylation backend for `diffMethyl(..., method = "methylkit")` |
 | `patchwork` | Multi-panel plot assembly in `plot_genome_track()` and `plot_heatmap()` |
 | `rtracklayer` | GFF3 import via `import()` |
@@ -673,7 +675,7 @@ writeBED(object, file, sample, ...)           # write BED9 output file
 mValues(object, alpha, mod_type)              # beta values → M-values matrix (variance-stabilized)
 
 # Differential methylation (Phase 4)
-diffMethyl(object, formula, method, mod_type, min_coverage, p_adjust_method)
+diffMethyl(object, formula, method, mod_type, min_coverage, alpha, p_adjust_method)
                                               # → commaData with dm_* results in rowData
 results(object, mod_type)                     # → tidy data.frame of diff methylation results
 filterResults(object, padj, delta_beta, ...)  # → filtered data.frame

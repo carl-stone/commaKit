@@ -24,6 +24,7 @@ Suggests:
     BiocStyle,
     ComplexHeatmap,
     ggrepel,
+    limma,
     methylKit,
     patchwork,
     rtracklayer,
@@ -45,7 +46,9 @@ Collate:
     'diffMethyl.R'
     'find_motif_sites.R'
     'genome_utils.R'
+    'limma_wrapper.R'
     'load_annotation.R'
+    'm_values.R'
     'methylkit_wrapper.R'
     'methylome_summary.R'
     'multiple_testing.R'

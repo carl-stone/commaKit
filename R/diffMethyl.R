@@ -25,6 +25,17 @@ NULL
 #' contrast coefficient. This method requires no additional packages beyond
 #' base R.
 #'
+#' \strong{Alternative model (\code{method = "limma"}):}
+#' Beta values are transformed to M-values via
+#' \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))},
+#' then \code{\link[limma]{lmFit}} fits an OLS model per site and
+#' \code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage —
+#' borrowing information across all sites to stabilize the per-site variance
+#' estimate. This gives substantially more power than \code{"beta_binomial"}
+#' when replicates are few (n < 3 per group). Requires \pkg{limma}
+#' (\code{BiocManager::install("limma")}). Effect sizes are reported on the
+#' original beta scale.
+#'
 #' \strong{Alternative model (\code{method = "methylkit"}):}
 #' Wraps \code{methylKit::calculateDiffMeth()}, which uses logistic regression.
 #' Requires \pkg{methylKit} to be installed
@@ -62,8 +73,15 @@ NULL
 #'   Default is \code{~ condition}.
 #' @param method Character string selecting the statistical backend.
 #'   \code{"beta_binomial"} (default) uses a quasibinomial GLM via base R.
+#'   \code{"limma"} applies empirical Bayes variance shrinkage via
+#'   \code{\link[limma]{eBayes}} on M-value-transformed data; recommended when
+#'   replicates are few (n < 3 per group). Requires \pkg{limma}.
 #'   \code{"methylkit"} wraps \code{methylKit::calculateDiffMeth()}, requiring
 #'   \pkg{methylKit} to be installed.
+#' @param alpha Positive numeric pseudocount used to compute M-values when
+#'   \code{method = "limma"}:
+#'   \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))}.
+#'   Default \code{0.5} (a Beta(0.5, 0.5) prior). Ignored for other methods.
 #' @param mod_type Character vector or \code{NULL}. Modification type(s) to
 #'   test (e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL}
 #'   (default), all modification types present in \code{object} are tested.
@@ -103,10 +121,11 @@ NULL
 diffMethyl <- function(
     object,
     formula         = ~ condition,
-    method          = c("beta_binomial", "methylkit"),
+    method          = c("beta_binomial", "methylkit", "limma"),
     mod_type        = NULL,
     motif           = NULL,
     min_coverage    = 5L,
+    alpha           = 0.5,
     p_adjust_method = "BH",
     ...
 ) {
@@ -125,6 +144,20 @@ diffMethyl <- function(
             "Package 'methylKit' is required for method = \"methylkit\".\n",
             "Install it with: BiocManager::install(\"methylKit\")"
         )
+    }
+
+    if (method == "limma" && !requireNamespace("limma", quietly = TRUE)) {
+        stop(
+            "Package 'limma' is required for method = \"limma\".\n",
+            "Install it with: BiocManager::install(\"limma\")"
+        )
+    }
+
+    if (method == "limma") {
+        if (!is.numeric(alpha) || length(alpha) != 1L ||
+                !is.finite(alpha) || alpha <= 0) {
+            stop("'alpha' must be a single positive finite number.")
+        }
     }
 
     if (!is.null(mod_type)) {
@@ -204,6 +237,8 @@ diffMethyl <- function(
         res_sub <- tryCatch(
             if (method == "beta_binomial") {
                 .betaBinomialTest(methyl_sub, cov_sub, cd, formula)
+            } else if (method == "limma") {
+                .runLimma(methyl_sub, cov_sub, cd, formula, alpha = alpha)
             } else {
                 .runMethylKit(methyl_sub, cov_sub, cd, formula)
             },
@@ -267,6 +302,7 @@ diffMethyl <- function(
         mod_type        = mod_type,
         p_adjust_method = p_adjust_method,
         min_coverage    = min_coverage,
+        alpha           = alpha,
         timestamp       = Sys.time()
     )
 
