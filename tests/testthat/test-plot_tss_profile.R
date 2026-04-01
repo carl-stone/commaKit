@@ -26,11 +26,12 @@
                       dimnames = list(NULL, c("ctrl_1", "treat_1")))
 
     rd <- S4Vectors::DataFrame(
-        chrom    = "chr_sim",
-        position = positions,
-        strand   = "+",
-        mod_type = "6mA",
-        motif    = "GATC"
+        chrom       = "chr_sim",
+        position    = positions,
+        strand      = "+",
+        mod_type    = "6mA",
+        motif       = "GATC",
+        mod_context = "6mA_GATC"
     )
     cd <- S4Vectors::DataFrame(
         sample_name = c("ctrl_1", "treat_1"),
@@ -190,7 +191,8 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
     cov_mat    <- matrix(20L, nrow = 2, ncol = 2,
                          dimnames = list(NULL, c("ctrl_1", "treat_1")))
     rd <- S4Vectors::DataFrame(chrom = "chr_sim", position = positions,
-                                strand = "+", mod_type = "6mA", motif = "GATC")
+                                strand = "+", mod_type = "6mA", motif = "GATC",
+                                mod_context = "6mA_GATC")
     cd <- S4Vectors::DataFrame(sample_name = c("ctrl_1", "treat_1"),
                                 condition   = c("control", "treatment"),
                                 replicate   = c(1L, 1L))

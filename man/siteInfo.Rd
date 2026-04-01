@@ -15,9 +15,10 @@ siteInfo(object)
 \value{
 A \code{data.frame} with one row per methylation site. Always
 contains columns \code{chrom}, \code{position}, \code{strand},
-\code{mod_type}, and \code{motif} (the sequence context; \code{NA} for
-Dorado/Megalodon callers). May contain additional annotation columns
-added by \code{\link[=annotateSites]{annotateSites()}}.
+\code{mod_type}, \code{motif} (the sequence context; \code{NA} for
+Dorado/Megalodon callers), and \code{mod_context} (the composite
+modification context, e.g., \code{"6mA_GATC"}). May contain additional
+annotation columns added by \code{\link[=annotateSites]{annotateSites()}}.
 }
 \description{
 Returns the per-site metadata table from a \code{\link{commaData}} object.

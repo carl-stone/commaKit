@@ -47,10 +47,11 @@ NULL
 #'
 #' @export
 plot_metagene <- function(object,
-                          feature  = "gene",
-                          mod_type = NULL,
-                          motif    = NULL,
-                          n_bins   = 50L) {
+                          feature     = "gene",
+                          mod_type    = NULL,
+                          motif       = NULL,
+                          mod_context = NULL,
+                          n_bins      = 50L) {
 
     ## --- Input validation ---------------------------------------------------
     if (!is(object, "commaData")) {
@@ -94,6 +95,9 @@ plot_metagene <- function(object,
     }
     if (!is.null(motif)) {
         object <- subset(object, motif = motif)
+    }
+    if (!is.null(mod_context)) {
+        object <- subset(object, mod_context = mod_context)
     }
 
     ## --- Run metagene annotation -------------------------------------------

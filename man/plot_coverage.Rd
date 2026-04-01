@@ -4,7 +4,13 @@
 \alias{plot_coverage}
 \title{Plot coverage depth distribution}
 \usage{
-plot_coverage(object, mod_type = NULL, motif = NULL, per_sample = TRUE)
+plot_coverage(
+  object,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  per_sample = TRUE
+)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object.}

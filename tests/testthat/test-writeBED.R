@@ -26,12 +26,13 @@
                       dimnames = dimnames(methyl_mat))
 
     rd <- S4Vectors::DataFrame(
-        chrom    = rep("chr_sim", n_sites),
-        position = positions,
-        strand   = rep("+", n_sites),
-        mod_type = rep("6mA", n_sites),
-        motif    = rep("GATC", n_sites),
-        row.names = site_keys
+        chrom       = rep("chr_sim", n_sites),
+        position    = positions,
+        strand      = rep("+", n_sites),
+        mod_type    = rep("6mA", n_sites),
+        motif       = rep("GATC", n_sites),
+        mod_context = rep("6mA_GATC", n_sites),
+        row.names   = site_keys
     )
     cd <- S4Vectors::DataFrame(
         sample_name = c("samp1", "samp2"),

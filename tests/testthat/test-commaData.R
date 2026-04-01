@@ -20,12 +20,13 @@ library(GenomicRanges)
                         nrow = n_sites, ncol = n_samples,
                         dimnames = list(site_keys, paste0("s", seq_len(n_samples))))
     rd <- S4Vectors::DataFrame(
-        chrom    = rep("chr_sim", n_sites),
-        position = seq_len(n_sites) * 100L,
-        strand   = rep("+", n_sites),
-        mod_type = rep("6mA", n_sites),
-        motif    = rep("GATC", n_sites),
-        row.names = site_keys
+        chrom       = rep("chr_sim", n_sites),
+        position    = seq_len(n_sites) * 100L,
+        strand      = rep("+", n_sites),
+        mod_type    = rep("6mA", n_sites),
+        motif       = rep("GATC", n_sites),
+        mod_context = rep("6mA_GATC", n_sites),
+        row.names   = site_keys
     )
     cd <- S4Vectors::DataFrame(
         sample_name = paste0("s", seq_len(n_samples)),
@@ -113,6 +114,7 @@ test_that("validity passes when motif column contains NA values", {
     obj <- .make_minimal_commaData()
     rd  <- rowData(obj)
     rd$motif[1L] <- NA_character_
+    rd$mod_context[1L] <- "6mA"  # fallback when motif is NA
     rowData(obj) <- rd
     expect_no_error(validObject(obj))
 })
@@ -121,6 +123,7 @@ test_that("validity passes when all motif values are NA", {
     obj <- .make_minimal_commaData()
     rd  <- rowData(obj)
     rd$motif <- NA_character_
+    rd$mod_context <- "6mA"  # fallback when motif is NA
     rowData(obj) <- rd
     expect_no_error(validObject(obj))
 })
@@ -271,4 +274,107 @@ test_that("commaData() mod_type filter reduces sites", {
     # Only 6mA sites retained
     expect_true(nrow(cd_6ma) <= nrow(cd_all))
     expect_equal(unique(rowData(cd_6ma)$mod_type), "6mA")
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# expected_mod_contexts constructor filter
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("commaData: expected_mod_contexts filters to specified contexts", {
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    skip_if(bed_file == "", message = "extdata not available")
+
+    cd_all <- commaData(
+        files   = c(s1 = bed_file),
+        colData = data.frame(sample_name = "s1", condition = "ctrl",
+                             replicate = 1L, stringsAsFactors = FALSE),
+        genome  = c(chr_sim = 100000L)
+    )
+    expect_message(
+        cd_6mA <- commaData(
+            files                 = c(s1 = bed_file),
+            colData               = data.frame(sample_name = "s1", condition = "ctrl",
+                                               replicate = 1L, stringsAsFactors = FALSE),
+            genome                = c(chr_sim = 100000L),
+            expected_mod_contexts = list("6mA" = "GATC")
+        ),
+        regexp = "dropping"
+    )
+    # Only 6mA_GATC sites remain
+    expect_true(all(rowData(cd_6mA)$mod_context == "6mA_GATC"))
+    expect_true(nrow(cd_6mA) < nrow(cd_all))
+})
+
+test_that("commaData: expected_mod_contexts accepts multiple mod types", {
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    skip_if(bed_file == "", message = "extdata not available")
+
+    cd <- commaData(
+        files                 = c(s1 = bed_file),
+        colData               = data.frame(sample_name = "s1", condition = "ctrl",
+                                           replicate = 1L, stringsAsFactors = FALSE),
+        genome                = c(chr_sim = 100000L),
+        expected_mod_contexts = list("6mA" = "GATC", "5mC" = "CCWGG")
+    )
+    expect_true(all(rowData(cd)$mod_context %in% c("6mA_GATC", "5mC_CCWGG")))
+})
+
+test_that("commaData: expected_mod_contexts stops if no sites remain", {
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    skip_if(bed_file == "", message = "extdata not available")
+
+    expect_error(
+        commaData(
+            files                 = c(s1 = bed_file),
+            colData               = data.frame(sample_name = "s1", condition = "ctrl",
+                                               replicate = 1L, stringsAsFactors = FALSE),
+            genome                = c(chr_sim = 100000L),
+            expected_mod_contexts = list("6mA" = "TTAA")  # no TTAA motif in data
+        ),
+        regexp = "No sites remain"
+    )
+})
+
+test_that("commaData: expected_mod_contexts errors with unrecognized mod_type", {
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    skip_if(bed_file == "", message = "extdata not available")
+
+    expect_error(
+        commaData(
+            files                 = c(s1 = bed_file),
+            colData               = data.frame(sample_name = "s1", condition = "ctrl",
+                                               replicate = 1L, stringsAsFactors = FALSE),
+            genome                = c(chr_sim = 100000L),
+            expected_mod_contexts = list("7mX" = "GATC")
+        ),
+        regexp = "Unrecognized"
+    )
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# mod_context validity checks
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("validity fails when mod_context is missing from rowData", {
+    obj <- .make_minimal_commaData()
+    rd  <- rowData(obj)
+    rd$mod_context <- NULL
+    rowData(obj) <- rd
+    expect_error(validObject(obj), "mod_context")
+})
+
+test_that("validity fails when mod_context is inconsistent with mod_type + motif", {
+    obj <- .make_minimal_commaData()
+    rd  <- rowData(obj)
+    rd$mod_context <- rep("5mC_CCWGG", nrow(rd))  # wrong context for 6mA_GATC data
+    rowData(obj) <- rd
+    expect_error(validObject(obj), "mod_context")
+})
+
+test_that("validity fails when mod_context contains NA", {
+    obj <- .make_minimal_commaData()
+    rd  <- rowData(obj)
+    rd$mod_context[1L] <- NA_character_
+    rowData(obj) <- rd
+    expect_error(validObject(obj), "mod_context")
 })

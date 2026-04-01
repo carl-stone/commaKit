@@ -43,6 +43,21 @@ NULL
 #'   per-site sequence context extracted automatically from the modkit
 #'   \code{mod_code} field (e.g., \code{"a,GATC,1"} → \code{motif = "GATC"})
 #'   and is \code{NA} for Dorado and Megalodon callers.
+#' @param expected_mod_contexts Named list or \code{NULL}. If provided,
+#'   specifies which modification type / sequence motif combinations to retain.
+#'   Names must be modification type strings (e.g., \code{"6mA"}, \code{"5mC"}).
+#'   Values are character vectors of motif strings (e.g., \code{c("GATC",
+#'   "ACCACC")}). Sites whose \code{mod_context}
+#'   (\code{paste(mod_type, motif, sep = "_")}) does not match any name–value
+#'   pair are dropped before the object is assembled. A message is emitted
+#'   reporting the number of sites dropped per modification type. Use
+#'   \code{NULL} (default) to retain all sites.
+#'   Example: \code{list("6mA" = "GATC", "5mC" = c("CCWGG", "CCGG"))}.
+#'   \emph{Note:} for Dorado/Megalodon callers where \code{motif} is
+#'   \code{NA}, the \code{mod_context} falls back to just \code{mod_type}
+#'   (e.g., \code{"6mA"}), so those sites are only retained if you include
+#'   \code{NA} in the motif vector for that type
+#'   (e.g., \code{list("6mA" = NA)}).
 #' @param min_coverage Integer. Minimum read depth to include a site. Sites
 #'   present in a sample with coverage below this threshold have their beta
 #'   value set to \code{NA}. Sites absent from a sample entirely are also
@@ -95,15 +110,37 @@ NULL
 #' @export
 commaData <- function(files,
                       colData,
-                      genome      = NULL,
-                      annotation  = NULL,
-                      mod_type    = NULL,
-                      motif       = NULL,
-                      min_coverage = 5L,
-                      caller      = "modkit") {
+                      genome               = NULL,
+                      annotation           = NULL,
+                      mod_type             = NULL,
+                      motif                = NULL,
+                      expected_mod_contexts = NULL,
+                      min_coverage         = 5L,
+                      caller               = "modkit") {
 
     min_coverage <- as.integer(min_coverage)
     caller       <- match.arg(caller, c("modkit", "megalodon", "dorado"))
+
+    # ── Validate expected_mod_contexts ───────────────────────────────────────
+    if (!is.null(expected_mod_contexts)) {
+        if (!is.list(expected_mod_contexts) ||
+                is.null(names(expected_mod_contexts)) ||
+                any(names(expected_mod_contexts) == "")) {
+            stop(
+                "'expected_mod_contexts' must be a named list mapping modification ",
+                "type strings to character vectors of motif strings ",
+                "(e.g., list(\"6mA\" = \"GATC\", \"5mC\" = \"CCWGG\")) or NULL."
+            )
+        }
+        bad_types <- setdiff(names(expected_mod_contexts), .VALID_MOD_TYPES)
+        if (length(bad_types) > 0L) {
+            stop(
+                "Names in 'expected_mod_contexts' must be valid mod_type values. ",
+                "Unrecognized: ", paste(bad_types, collapse = ", "),
+                ". Allowed: ", paste(.VALID_MOD_TYPES, collapse = ", ")
+            )
+        }
+    }
 
     # ── Validate colData ────────────────────────────────────────────────────
     if (!is.data.frame(colData)) {
@@ -182,6 +219,56 @@ commaData <- function(files,
     all_sites <- all_sites[ord, , drop = FALSE]
     rownames(all_sites) <- NULL
 
+    # ── Compute mod_context ──────────────────────────────────────────────────
+    # "6mA_GATC" when motif is known; falls back to "6mA" for NA-motif callers.
+    all_sites$mod_context <- ifelse(
+        is.na(all_sites$motif),
+        all_sites$mod_type,
+        paste(all_sites$mod_type, all_sites$motif, sep = "_")
+    )
+
+    # ── Apply expected_mod_contexts filter ───────────────────────────────────
+    if (!is.null(expected_mod_contexts)) {
+        # Build the set of allowed mod_context strings from the named list.
+        # NA motif values in the list produce a fallback context (just mod_type).
+        allowed_contexts <- character(0L)
+        for (mt in names(expected_mod_contexts)) {
+            motifs_for_mt <- expected_mod_contexts[[mt]]
+            na_motifs  <- is.na(motifs_for_mt)
+            str_motifs <- motifs_for_mt[!na_motifs]
+            if (length(str_motifs) > 0L) {
+                allowed_contexts <- c(allowed_contexts,
+                                      paste(mt, str_motifs, sep = "_"))
+            }
+            if (any(na_motifs)) {
+                allowed_contexts <- c(allowed_contexts, mt)
+            }
+        }
+        allowed_contexts <- unique(allowed_contexts)
+
+        drop_mask <- !(all_sites$mod_context %in% allowed_contexts)
+        if (any(drop_mask)) {
+            dropped <- all_sites[drop_mask, , drop = FALSE]
+            for (mt in unique(dropped$mod_type)) {
+                n_drop <- sum(dropped$mod_type == mt)
+                message(
+                    "expected_mod_contexts: dropping ", n_drop,
+                    " site(s) with mod_type='", mt,
+                    "' not in expected contexts."
+                )
+            }
+            all_sites <- all_sites[!drop_mask, , drop = FALSE]
+            rownames(all_sites) <- NULL
+        }
+        if (nrow(all_sites) == 0L) {
+            stop(
+                "No sites remain after applying 'expected_mod_contexts' filter. ",
+                "Check that the named list matches the mod_type and motif values ",
+                "present in your data."
+            )
+        }
+    }
+
     site_keys <- paste(all_sites$chrom, all_sites$position,
                        all_sites$strand, all_sites$mod_type,
                        all_sites$motif, sep = ":")
@@ -212,12 +299,13 @@ commaData <- function(files,
 
     # ── Build rowData ───────────────────────────────────────────────────────
     row_df <- S4Vectors::DataFrame(
-        chrom    = all_sites$chrom,
-        position = all_sites$position,
-        strand   = all_sites$strand,
-        mod_type = all_sites$mod_type,
-        motif    = all_sites$motif,
-        row.names = site_keys
+        chrom       = all_sites$chrom,
+        position    = all_sites$position,
+        strand      = all_sites$strand,
+        mod_type    = all_sites$mod_type,
+        motif       = all_sites$motif,
+        mod_context = all_sites$mod_context,
+        row.names   = site_keys
     )
 
     # ── Build colData ───────────────────────────────────────────────────────

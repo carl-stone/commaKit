@@ -26,11 +26,16 @@ methylated, range 0–1). Sites with coverage below the
 }
 
 Per-site metadata is in \code{rowData(object)} and includes at minimum:
-\code{chrom}, \code{position}, \code{strand}, \code{mod_type}, \code{motif}.
-The \code{motif} column stores the sequence context of each site (e.g.,
-\code{"GATC"} or \code{"CCWGG"}) as extracted from the modkit
-\code{mod_code} field. It is \code{NA} for Dorado and Megalodon callers,
-which do not encode per-site motif context.
+\code{chrom}, \code{position}, \code{strand}, \code{mod_type}, \code{motif},
+and \code{mod_context}. The \code{motif} column stores the sequence context
+of each site (e.g., \code{"GATC"} or \code{"CCWGG"}) as extracted from the
+modkit \code{mod_code} field. It is \code{NA} for Dorado and Megalodon
+callers. The \code{mod_context} column is a composite of modification type
+and motif (e.g., \code{"6mA_GATC"}, \code{"5mC_CCWGG"}), or just
+\code{mod_type} when motif is unavailable (e.g., \code{"6mA"} for
+Dorado/Megalodon data). All analyses default to running independently per
+\code{mod_context} group to prevent spurious mixing of biologically distinct
+methylation events.
 
 Per-sample metadata is in \code{colData(object)} and includes at minimum:
 \code{sample_name}, \code{condition}, \code{replicate}.
@@ -54,6 +59,6 @@ May be an empty \code{GRanges} if no motif was specified.}
 \code{\link{commaData}} for the constructor,
 \code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
 \code{\link{sampleInfo}}, \code{\link{siteInfo}},
-\code{\link{modTypes}},
+\code{\link{modTypes}}, \code{\link{modContexts}},
 \code{\link[BiocGenerics]{annotation}} for accessors.
 }

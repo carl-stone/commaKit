@@ -26,6 +26,10 @@ NULL
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are included (e.g., \code{"GATC"}).
 #'   If \code{NULL} (default), all motifs are included.
+#' @param mod_context Character vector or \code{NULL}. If provided, only sites
+#'   with a matching modification context are included (e.g.,
+#'   \code{"6mA_GATC"}). Applied after any \code{mod_type} and \code{motif}
+#'   filters.
 #' @param circular Logical. If \code{TRUE} (default), positions at the ends of
 #'   each chromosome are wrapped around so that the window at position 1 can
 #'   draw from positions near the chromosome end, and vice versa. Appropriate
@@ -67,10 +71,11 @@ NULL
 #' @export
 slidingWindow <- function(object,
                           window,
-                          stat     = c("median", "mean"),
-                          mod_type = NULL,
-                          motif    = NULL,
-                          circular = TRUE) {
+                          stat        = c("median", "mean"),
+                          mod_type    = NULL,
+                          motif       = NULL,
+                          mod_context = NULL,
+                          circular    = TRUE) {
     # ── Input validation ──────────────────────────────────────────────────────
     if (!is(object, "commaData")) {
         stop("'object' must be a commaData object.")
@@ -99,7 +104,7 @@ slidingWindow <- function(object,
         )
     }
 
-    # ── Filter by mod_type and/or motif if requested ──────────────────────────
+    # ── Filter by mod_type, motif, and/or mod_context if requested ───────────
     if (!is.null(mod_type)) {
         object <- subset(object, mod_type = mod_type)
         if (nrow(object) == 0) {
@@ -111,6 +116,13 @@ slidingWindow <- function(object,
         if (nrow(object) == 0) {
             stop("No sites remain after filtering for motif = '",
                  paste(motif, collapse = "', '"), "'.")
+        }
+    }
+    if (!is.null(mod_context)) {
+        object <- subset(object, mod_context = mod_context)
+        if (nrow(object) == 0) {
+            stop("No sites remain after filtering for mod_context = '",
+                 paste(mod_context, collapse = "', '"), "'.")
         }
     }
 

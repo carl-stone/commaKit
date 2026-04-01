@@ -40,11 +40,16 @@ NULL
 #' }
 #'
 #' Per-site metadata is in \code{rowData(object)} and includes at minimum:
-#' \code{chrom}, \code{position}, \code{strand}, \code{mod_type}, \code{motif}.
-#' The \code{motif} column stores the sequence context of each site (e.g.,
-#' \code{"GATC"} or \code{"CCWGG"}) as extracted from the modkit
-#' \code{mod_code} field. It is \code{NA} for Dorado and Megalodon callers,
-#' which do not encode per-site motif context.
+#' \code{chrom}, \code{position}, \code{strand}, \code{mod_type}, \code{motif},
+#' and \code{mod_context}. The \code{motif} column stores the sequence context
+#' of each site (e.g., \code{"GATC"} or \code{"CCWGG"}) as extracted from the
+#' modkit \code{mod_code} field. It is \code{NA} for Dorado and Megalodon
+#' callers. The \code{mod_context} column is a composite of modification type
+#' and motif (e.g., \code{"6mA_GATC"}, \code{"5mC_CCWGG"}), or just
+#' \code{mod_type} when motif is unavailable (e.g., \code{"6mA"} for
+#' Dorado/Megalodon data). All analyses default to running independently per
+#' \code{mod_context} group to prevent spurious mixing of biologically distinct
+#' methylation events.
 #'
 #' Per-sample metadata is in \code{colData(object)} and includes at minimum:
 #' \code{sample_name}, \code{condition}, \code{replicate}.
@@ -55,7 +60,7 @@ NULL
 #' @seealso \code{\link{commaData}} for the constructor,
 #'   \code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
 #'   \code{\link{sampleInfo}}, \code{\link{siteInfo}},
-#'   \code{\link{modTypes}},
+#'   \code{\link{modTypes}}, \code{\link{modContexts}},
 #'   \code{\link[BiocGenerics]{annotation}} for accessors.
 #'
 #' @name commaData-class
@@ -81,7 +86,8 @@ setValidity("commaData", function(object) {
     errors <- character(0)
 
     # ── rowData required columns ────────────────────────────────────────────
-    required_row_cols <- c("chrom", "position", "strand", "mod_type", "motif")
+    required_row_cols <- c("chrom", "position", "strand",
+                           "mod_type", "motif", "mod_context")
     rd <- rowData(object)
     missing_cols <- setdiff(required_row_cols, colnames(rd))
     if (length(missing_cols) > 0) {
@@ -108,6 +114,28 @@ setValidity("commaData", function(object) {
     if ("motif" %in% colnames(rd)) {
         if (!is.character(rd$motif) && !all(is.na(rd$motif))) {
             errors <- c(errors, "rowData$motif must be a character vector (NA allowed)")
+        }
+    }
+
+    # ── mod_context column type and consistency ─────────────────────────────
+    if ("mod_context" %in% colnames(rd)) {
+        if (!is.character(rd$mod_context) || any(is.na(rd$mod_context))) {
+            errors <- c(errors,
+                "rowData$mod_context must be a non-NA character vector. ",
+                "Re-create the object using commaData()."
+            )
+        } else if ("mod_type" %in% colnames(rd) && "motif" %in% colnames(rd)) {
+            expected_ctx <- ifelse(
+                is.na(rd$motif),
+                rd$mod_type,
+                paste(rd$mod_type, rd$motif, sep = "_")
+            )
+            if (!all(rd$mod_context == expected_ctx, na.rm = TRUE)) {
+                errors <- c(errors,
+                    "rowData$mod_context values are inconsistent with mod_type and motif. ",
+                    "Re-create the object using commaData()."
+                )
+            }
         }
     }
 
@@ -156,7 +184,7 @@ setMethod("show", "commaData", function(object) {
     cat("class: commaData\n")
     cat("sites:", n_sites, "| samples:", n_samples, "\n")
 
-    # mod types and motifs
+    # mod types, motifs, and contexts
     rd <- rowData(object)
     if ("mod_type" %in% colnames(rd) && n_sites > 0) {
         mt <- sort(unique(rd$mod_type))
@@ -165,6 +193,10 @@ setMethod("show", "commaData", function(object) {
     if ("motif" %in% colnames(rd) && n_sites > 0) {
         m <- sort(unique(rd$motif[!is.na(rd$motif)]))
         cat("motifs:", if (length(m) == 0L) "not available" else paste(m, collapse = ", "), "\n")
+    }
+    if ("mod_context" %in% colnames(rd) && n_sites > 0) {
+        mc <- sort(unique(rd$mod_context))
+        cat("mod contexts:", paste(mc, collapse = ", "), "\n")
     }
 
     # conditions

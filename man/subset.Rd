@@ -7,7 +7,15 @@
 \usage{
 subset(x, ...)
 
-\S4method{subset}{commaData}(x, mod_type = NULL, condition = NULL, chrom = NULL, motif = NULL, ...)
+\S4method{subset}{commaData}(
+  x,
+  mod_type = NULL,
+  condition = NULL,
+  chrom = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{commaData} object.}
@@ -27,6 +35,14 @@ the specified chromosome(s) are kept.}
 a matching sequence context motif are kept (e.g., \code{"GATC"}). Sites
 with \code{NA} motif values are excluded when this filter is active.
 Use \code{\link{motifs}} to see which motifs are present.}
+
+\item{mod_context}{Character vector or \code{NULL}. If provided, only sites
+with a matching modification context are kept (e.g.,
+\code{"6mA_GATC"}, \code{"5mC_CCWGG"}). A \code{mod_context} value is
+\code{paste(mod_type, motif, sep = "_")} when motif is available, or just
+\code{mod_type} for Dorado/Megalodon data. Use \code{\link{modContexts}}
+to see which contexts are present. When provided, this filter is applied in
+addition to (ANDed with) any \code{mod_type} or \code{motif} filters.}
 }
 \value{
 A \code{commaData} object containing only the selected sites and
@@ -45,5 +61,9 @@ modTypes(six_ma)
 # Only GATC-context sites
 gatc <- subset(comma_example_data, motif = "GATC")
 nrow(gatc)
+
+# Filter by mod_context (equivalent to the above for modkit data)
+gatc2 <- subset(comma_example_data, mod_context = "6mA_GATC")
+nrow(gatc2)
 
 }

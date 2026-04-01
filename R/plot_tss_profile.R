@@ -102,11 +102,14 @@ plot_tss_profile <- function(object,
                               regulatory_feature_types = NULL,
                               mod_type                 = NULL,
                               motif                    = NULL,
+                              mod_context              = NULL,
                               color_by                 = c("sample",
                                                            "regulatory_element",
-                                                           "mod_type"),
+                                                           "mod_type",
+                                                           "mod_context"),
                               facet_by                 = c("none", "sample",
-                                                           "mod_type"),
+                                                           "mod_type",
+                                                           "mod_context"),
                               alpha                    = 0.4,
                               show_smooth              = FALSE,
                               smooth_span              = 0.3) {
@@ -161,7 +164,7 @@ plot_tss_profile <- function(object,
              paste(available_types, collapse = ", "), ".")
     }
 
-    ## ── C. Filter by mod_type / motif ────────────────────────────────────────
+    ## ── C. Filter by mod_type / motif / mod_context ──────────────────────────
     if (!is.null(mod_type)) {
         available <- modTypes(object)
         if (!mod_type %in% available) {
@@ -172,6 +175,9 @@ plot_tss_profile <- function(object,
     }
     if (!is.null(motif)) {
         object <- subset(object, motif = motif)
+    }
+    if (!is.null(mod_context)) {
+        object <- subset(object, mod_context = mod_context)
     }
     if (nrow(object) == 0L) {
         stop("No sites remain after filtering.")
@@ -216,12 +222,13 @@ plot_tss_profile <- function(object,
     n_samples   <- length(sample_nms)
 
     df <- data.frame(
-        rel_pos     = rep(rel_pos_vals, times  = n_samples),
-        beta        = as.vector(methyl_mat),
-        sample_name = rep(sample_nms,   each   = n_sites_sub),
-        mod_type_col = rep(rd_sub$mod_type, times = n_samples),
-        chrom       = rep(rd_sub$chrom,    times = n_samples),
-        position    = rep(rd_sub$position, times = n_samples),
+        rel_pos      = rep(rel_pos_vals, times  = n_samples),
+        beta         = as.vector(methyl_mat),
+        sample_name  = rep(sample_nms,   each   = n_sites_sub),
+        mod_type_col = rep(rd_sub$mod_type,    times = n_samples),
+        mod_context  = rep(rd_sub$mod_context, times = n_samples),
+        chrom        = rep(rd_sub$chrom,       times = n_samples),
+        position     = rep(rd_sub$position,    times = n_samples),
         stringsAsFactors = FALSE
     )
     ## Rename mod_type_col → mod_type (avoid clash with parameter name)
@@ -277,7 +284,8 @@ plot_tss_profile <- function(object,
     color_var <- switch(color_by,
         sample             = "sample_name",
         regulatory_element = "regulatory_element",
-        mod_type           = "mod_type"
+        mod_type           = "mod_type",
+        mod_context        = "mod_context"
     )
 
     ## ── I. Build ggplot ───────────────────────────────────────────────────────
@@ -315,7 +323,8 @@ plot_tss_profile <- function(object,
             color = switch(color_by,
                 sample             = "Sample",
                 regulatory_element = "Regulatory element",
-                mod_type           = "Modification type"
+                mod_type           = "Modification type",
+                mod_context        = "Modification context"
             )
         ) +
         ggplot2::theme_bw()
@@ -384,6 +393,8 @@ plot_tss_profile <- function(object,
         p <- p + ggplot2::facet_wrap("sample_name", ncol = 1L)
     } else if (facet_by == "mod_type") {
         p <- p + ggplot2::facet_wrap("mod_type")
+    } else if (facet_by == "mod_context") {
+        p <- p + ggplot2::facet_wrap("mod_context")
     }
 
     p

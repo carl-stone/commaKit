@@ -8,6 +8,7 @@ plot_methylation_distribution(
   object,
   mod_type = NULL,
   motif = NULL,
+  mod_context = NULL,
   per_sample = TRUE
 )
 }

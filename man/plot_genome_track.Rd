@@ -11,6 +11,7 @@ plot_genome_track(
   end = NULL,
   mod_type = NULL,
   motif = NULL,
+  mod_context = NULL,
   annotation = NULL
 )
 }

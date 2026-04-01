@@ -52,11 +52,12 @@ NULL
 #' @export
 plot_genome_track <- function(object,
                               chromosome,
-                              start      = NULL,
-                              end        = NULL,
-                              mod_type   = NULL,
-                              motif      = NULL,
-                              annotation = NULL) {
+                              start       = NULL,
+                              end         = NULL,
+                              mod_type    = NULL,
+                              motif       = NULL,
+                              mod_context = NULL,
+                              annotation  = NULL) {
 
     ## --- Input validation ---------------------------------------------------
     if (!is(object, "commaData")) {
@@ -92,6 +93,9 @@ plot_genome_track <- function(object,
     }
     if (!is.null(motif)) {
         object <- subset(object, motif = motif)
+    }
+    if (!is.null(mod_context)) {
+        object <- subset(object, mod_context = mod_context)
     }
 
     ## --- Extract and filter site data ---------------------------------------

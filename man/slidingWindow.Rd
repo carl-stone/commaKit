@@ -10,6 +10,7 @@ slidingWindow(
   stat = c("median", "mean"),
   mod_type = NULL,
   motif = NULL,
+  mod_context = NULL,
   circular = TRUE
 )
 }
@@ -32,6 +33,11 @@ smoothing. If \code{NULL} (default), all sites are used.}
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with
 matching sequence context motif(s) are included (e.g., \code{"GATC"}).
 If \code{NULL} (default), all motifs are included.}
+
+\item{mod_context}{Character vector or \code{NULL}. If provided, only sites
+with a matching modification context are included (e.g.,
+\code{"6mA_GATC"}). Applied after any \code{mod_type} and \code{motif}
+filters.}
 
 \item{circular}{Logical. If \code{TRUE} (default), positions at the ends of
 each chromosome are wrapped around so that the window at position 1 can

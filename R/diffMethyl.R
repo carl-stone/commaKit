@@ -55,10 +55,14 @@ NULL
 #' (\code{BiocManager::install("methylKit")}). Returns results in the same
 #' standardised format.
 #'
-#' \strong{Multiple mod types:} When \code{mod_type = NULL} (default), all
-#' modification types present in the object are tested independently and
-#' results are combined. Sites of a mod type that is not being tested receive
-#' \code{NA} in all \code{dm_*} columns.
+#' \strong{Multiple mod contexts:} When \code{mod_context = NULL} (default),
+#' all modification contexts (mod_type × motif combinations) present in the
+#' object are tested independently and results are combined. Sites not belonging
+#' to a tested context receive \code{NA} in all \code{dm_*} columns. Testing by
+#' \code{mod_context} rather than just \code{mod_type} prevents spurious pooling
+#' of biologically distinct methylation events (e.g., 6mA at GATC from Dam
+#' methyltransferase versus cytosine modifications at GATC, which are likely
+#' artefactual).
 #'
 #' \strong{Small-sample note:} Differential methylation testing with very few
 #' replicates (e.g., n = 1 per group) is mathematically possible but has
@@ -98,13 +102,23 @@ NULL
 #'   \code{method = "limma"}:
 #'   \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))}.
 #'   Default \code{0.5} (a Beta(0.5, 0.5) prior). Ignored for other methods.
+#' @param mod_context Character vector or \code{NULL}. Modification context(s)
+#'   to test (e.g., \code{"6mA_GATC"}, \code{c("6mA_GATC", "5mC_CCWGG")}).
+#'   A \code{mod_context} value is \code{paste(mod_type, motif, sep = "_")}
+#'   when motif information is available, or just \code{mod_type} for
+#'   Dorado/Megalodon data. Use \code{\link{modContexts}(object)} to see which
+#'   contexts are present. If \code{NULL} (default), all contexts present in
+#'   \code{object} are tested independently. When provided, takes precedence
+#'   over the \code{mod_type} and \code{motif} arguments.
 #' @param mod_type Character vector or \code{NULL}. Modification type(s) to
 #'   test (e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL}
 #'   (default), all modification types present in \code{object} are tested.
+#'   Ignored when \code{mod_context} is provided.
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are tested (e.g., \code{"GATC"}).
 #'   Uses \code{\link{motifs}} to validate the requested values. If \code{NULL}
-#'   (default), all motifs (including \code{NA}) are included.
+#'   (default), all motifs (including \code{NA}) are included. Ignored when
+#'   \code{mod_context} is provided.
 #' @param min_coverage Integer. Minimum per-sample read depth required to
 #'   include a site in testing. Sites where any sample has coverage below
 #'   this threshold are treated as \code{NA} in that sample. Default \code{5L}.
@@ -138,6 +152,7 @@ diffMethyl <- function(
     object,
     formula         = ~ condition,
     method          = c("beta_binomial", "methylkit", "limma", "quasi_f"),
+    mod_context     = NULL,
     mod_type        = NULL,
     motif           = NULL,
     min_coverage    = 5L,
@@ -177,29 +192,48 @@ diffMethyl <- function(
         }
     }
 
-    if (!is.null(mod_type)) {
-        available <- modTypes(object)
-        bad <- setdiff(mod_type, available)
-        if (length(bad) > 0L) {
-            stop(
-                "mod_type value(s) not found in object: ",
-                paste(bad, collapse = ", "),
-                ". Available: ", paste(available, collapse = ", ")
+    if (!is.null(mod_context)) {
+        if (!is.null(mod_type) || !is.null(motif)) {
+            message(
+                "'mod_context' takes precedence over 'mod_type' and 'motif' ",
+                "when both are provided."
             )
         }
-    }
+        available_mc <- modContexts(object)
+        bad_mc <- setdiff(mod_context, available_mc)
+        if (length(bad_mc) > 0L) {
+            stop(
+                "mod_context value(s) not found in object: ",
+                paste(bad_mc, collapse = ", "),
+                ". Available: ", paste(available_mc, collapse = ", ")
+            )
+        }
+        object <- subset(object, mod_context = mod_context)
+    } else {
+        if (!is.null(mod_type)) {
+            available <- modTypes(object)
+            bad <- setdiff(mod_type, available)
+            if (length(bad) > 0L) {
+                stop(
+                    "mod_type value(s) not found in object: ",
+                    paste(bad, collapse = ", "),
+                    ". Available: ", paste(available, collapse = ", ")
+                )
+            }
+        }
 
-    if (!is.null(motif)) {
-        available_m <- motifs(object)
-        bad_m <- setdiff(motif, available_m)
-        if (length(bad_m) > 0L) {
-            stop(
-                "motif value(s) not found in object: ",
-                paste(bad_m, collapse = ", "),
-                ". Available: ", paste(available_m, collapse = ", ")
-            )
+        if (!is.null(motif)) {
+            available_m <- motifs(object)
+            bad_m <- setdiff(motif, available_m)
+            if (length(bad_m) > 0L) {
+                stop(
+                    "motif value(s) not found in object: ",
+                    paste(bad_m, collapse = ", "),
+                    ". Available: ", paste(available_m, collapse = ", ")
+                )
+            }
+            object <- subset(object, motif = motif)
         }
-        object <- subset(object, motif = motif)
     }
 
     # Validate formula variable exists in colData
@@ -222,8 +256,27 @@ diffMethyl <- function(
         )
     }
 
-    # ── Determine which mod types to test ─────────────────────────────────────
-    test_types <- if (!is.null(mod_type)) mod_type else modTypes(object)
+    # ── Determine which mod contexts to test ──────────────────────────────────
+    # Loop by mod_context (mod_type × motif combination) rather than mod_type
+    # alone, so that e.g. "6mA_GATC" and "5mC_GATC" are always tested
+    # independently.  When mod_context was explicitly provided, the object has
+    # already been filtered above; modContexts() now returns only those groups.
+    # When mod_type was provided (without mod_context), further restrict the
+    # loop to contexts belonging to the requested mod_type(s).
+    if (!is.null(mod_context)) {
+        test_contexts <- mod_context
+    } else if (!is.null(mod_type)) {
+        all_mc <- modContexts(object)
+        # Keep contexts whose mod_type prefix matches
+        test_contexts <- all_mc[
+            rowData(object)$mod_type[
+                match(all_mc, rowData(object)$mod_context)
+            ] %in% mod_type
+        ]
+        test_contexts <- sort(unique(test_contexts))
+    } else {
+        test_contexts <- modContexts(object)
+    }
     cond_levels <- sort(unique(cd[[primary_var]]))
 
     # ── Extract full matrices ─────────────────────────────────────────────────
@@ -238,9 +291,9 @@ diffMethyl <- function(
     mean_beta_cols <- lapply(cond_levels, function(lv) rep(NA_real_, n_sites_all))
     names(mean_beta_cols) <- paste0("dm_mean_beta_", cond_levels)
 
-    # ── Test each mod type independently ─────────────────────────────────────
-    for (mt in test_types) {
-        site_idx <- which(rd_full$mod_type == mt)
+    # ── Test each mod context independently ──────────────────────────────────
+    for (mc in test_contexts) {
+        site_idx <- which(rd_full$mod_context == mc)
         if (length(site_idx) == 0L) next
 
         methyl_sub <- methyl_full[site_idx, , drop = FALSE]
@@ -263,8 +316,8 @@ diffMethyl <- function(
             },
             error = function(e) {
                 warning(
-                    "diffMethyl() failed for mod_type = '", mt, "': ",
-                    e$message, ". Skipping this mod type."
+                    "diffMethyl() failed for mod_context = '", mc, "': ",
+                    e$message, ". Skipping this context."
                 )
                 NULL
             }
@@ -318,7 +371,9 @@ diffMethyl <- function(
     S4Vectors::metadata(out)$diffMethyl_params <- list(
         formula         = deparse(formula),
         method          = method,
+        mod_context     = mod_context,
         mod_type        = mod_type,
+        motif           = motif,
         p_adjust_method = p_adjust_method,
         min_coverage    = min_coverage,
         alpha           = alpha,

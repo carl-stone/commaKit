@@ -15,12 +15,13 @@
     cov_mat <- matrix(cov_val, nrow = n_sites, ncol = n_samples,
                       dimnames = dimnames(betas))
     rd <- S4Vectors::DataFrame(
-        chrom    = rep("chr_sim", n_sites),
-        position = positions,
-        strand   = rep("+", n_sites),
-        mod_type = rep("6mA", n_sites),
-        motif    = rep("GATC", n_sites),
-        row.names = site_keys
+        chrom       = rep("chr_sim", n_sites),
+        position    = positions,
+        strand      = rep("+", n_sites),
+        mod_type    = rep("6mA", n_sites),
+        motif       = rep("GATC", n_sites),
+        mod_context = rep("6mA_GATC", n_sites),
+        row.names   = site_keys
     )
     cd <- S4Vectors::DataFrame(
         sample_name = paste0("s", seq_len(n_samples)),

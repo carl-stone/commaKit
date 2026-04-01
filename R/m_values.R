@@ -17,6 +17,10 @@
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are included. If \code{NULL} (default),
 #'   all motifs are included.
+#' @param mod_context Character vector or \code{NULL}. If provided, only sites
+#'   with a matching modification context are included (e.g.,
+#'   \code{"6mA_GATC"}). Applied after any \code{mod_type} and \code{motif}
+#'   filters.
 #'
 #' @details
 #' The M-value for a site in one sample is computed as:
@@ -56,7 +60,8 @@
 #'   \code{\link{plot_pca}}
 #'
 #' @export
-mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL) {
+mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
+                    mod_context = NULL) {
 
     ## --- Input validation ---------------------------------------------------
     if (!is(object, "commaData")) {
@@ -87,6 +92,18 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL) {
                  ". Available: ", paste(available_m, collapse = ", "), ".")
         }
         object <- subset(object, motif = motif)
+    }
+
+    ## --- Optional mod_context filter ----------------------------------------
+    if (!is.null(mod_context)) {
+        available_mc <- modContexts(object)
+        bad_mc <- setdiff(mod_context, available_mc)
+        if (length(bad_mc) > 0L) {
+            stop("'mod_context' value(s) not found in object: ",
+                 paste(bad_mc, collapse = ", "),
+                 ". Available: ", paste(available_mc, collapse = ", "), ".")
+        }
+        object <- subset(object, mod_context = mod_context)
     }
 
     ## --- Compute M-values ---------------------------------------------------

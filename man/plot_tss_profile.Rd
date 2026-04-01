@@ -11,8 +11,9 @@ plot_tss_profile(
   regulatory_feature_types = NULL,
   mod_type = NULL,
   motif = NULL,
-  color_by = c("sample", "regulatory_element", "mod_type"),
-  facet_by = c("none", "sample", "mod_type"),
+  mod_context = NULL,
+  color_by = c("sample", "regulatory_element", "mod_type", "mod_context"),
+  facet_by = c("none", "sample", "mod_type", "mod_context"),
   alpha = 0.4,
   show_smooth = FALSE,
   smooth_span = 0.3

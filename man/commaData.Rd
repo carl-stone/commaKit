@@ -11,6 +11,7 @@ commaData(
   annotation = NULL,
   mod_type = NULL,
   motif = NULL,
+  expected_mod_contexts = NULL,
   min_coverage = 5L,
   caller = "modkit"
 )
@@ -53,6 +54,22 @@ argument is distinct from \code{rowData(object)$motif}, which stores the
 per-site sequence context extracted automatically from the modkit
 \code{mod_code} field (e.g., \code{"a,GATC,1"} → \code{motif = "GATC"})
 and is \code{NA} for Dorado and Megalodon callers.}
+
+\item{expected_mod_contexts}{Named list or \code{NULL}. If provided,
+specifies which modification type / sequence motif combinations to retain.
+Names must be modification type strings (e.g., \code{"6mA"}, \code{"5mC"}).
+Values are character vectors of motif strings (e.g., \code{c("GATC",
+  "ACCACC")}). Sites whose \code{mod_context}
+(\code{paste(mod_type, motif, sep = "_")}) does not match any name–value
+pair are dropped before the object is assembled. A message is emitted
+reporting the number of sites dropped per modification type. Use
+\code{NULL} (default) to retain all sites.
+Example: \code{list("6mA" = "GATC", "5mC" = c("CCWGG", "CCGG"))}.
+\emph{Note:} for Dorado/Megalodon callers where \code{motif} is
+\code{NA}, the \code{mod_context} falls back to just \code{mod_type}
+(e.g., \code{"6mA"}), so those sites are only retained if you include
+\code{NA} in the motif vector for that type
+(e.g., \code{list("6mA" = NA)}).}
 
 \item{min_coverage}{Integer. Minimum read depth to include a site. Sites
 present in a sample with coverage below this threshold have their beta

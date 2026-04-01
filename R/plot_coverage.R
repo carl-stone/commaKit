@@ -41,9 +41,10 @@ NULL
 #'
 #' @export
 plot_coverage <- function(object,
-                          mod_type = NULL,
-                          motif    = NULL,
-                          per_sample = TRUE) {
+                          mod_type    = NULL,
+                          motif       = NULL,
+                          mod_context = NULL,
+                          per_sample  = TRUE) {
 
     ## --- Input validation ---------------------------------------------------
     if (!is(object, "commaData")) {
@@ -64,6 +65,9 @@ plot_coverage <- function(object,
     }
     if (!is.null(motif)) {
         object <- subset(object, motif = motif)
+    }
+    if (!is.null(mod_context)) {
+        object <- subset(object, mod_context = mod_context)
     }
 
     ## --- Extract data -------------------------------------------------------

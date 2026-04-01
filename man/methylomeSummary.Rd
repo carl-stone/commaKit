@@ -4,7 +4,7 @@
 \alias{methylomeSummary}
 \title{Summarize per-sample methylation and coverage distributions}
 \usage{
-methylomeSummary(object, mod_type = NULL, motif = NULL)
+methylomeSummary(object, mod_type = NULL, motif = NULL, mod_context = NULL)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object.}
@@ -17,6 +17,11 @@ summarized together.}
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with
 matching sequence context motif(s) are included (e.g., \code{"GATC"}).
 If \code{NULL} (default), all motifs are included.}
+
+\item{mod_context}{Character vector or \code{NULL}. If provided, only sites
+with a matching modification context are included (e.g.,
+\code{"6mA_GATC"}). Applied after any \code{mod_type} and \code{motif}
+filters. Use \code{\link{modContexts}} to see available values.}
 }
 \value{
 A \code{data.frame} with one row per sample, containing:

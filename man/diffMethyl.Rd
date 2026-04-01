@@ -8,6 +8,7 @@ diffMethyl(
   object,
   formula = ~condition,
   method = c("beta_binomial", "methylkit", "limma", "quasi_f"),
+  mod_context = NULL,
   mod_type = NULL,
   motif = NULL,
   min_coverage = 5L,
@@ -35,14 +36,25 @@ replicates are few (n < 3 per group). Requires \pkg{limma}.
 \code{"methylkit"} wraps \code{methylKit::calculateDiffMeth()}, requiring
 \pkg{methylKit} to be installed.}
 
+\item{mod_context}{Character vector or \code{NULL}. Modification context(s)
+to test (e.g., \code{"6mA_GATC"}, \code{c("6mA_GATC", "5mC_CCWGG")}).
+A \code{mod_context} value is \code{paste(mod_type, motif, sep = "_")}
+when motif information is available, or just \code{mod_type} for
+Dorado/Megalodon data. Use \code{\link{modContexts}(object)} to see which
+contexts are present. If \code{NULL} (default), all contexts present in
+\code{object} are tested independently. When provided, takes precedence
+over the \code{mod_type} and \code{motif} arguments.}
+
 \item{mod_type}{Character vector or \code{NULL}. Modification type(s) to
 test (e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL}
-(default), all modification types present in \code{object} are tested.}
+(default), all modification types present in \code{object} are tested.
+Ignored when \code{mod_context} is provided.}
 
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with
 matching sequence context motif(s) are tested (e.g., \code{"GATC"}).
 Uses \code{\link{motifs}} to validate the requested values. If \code{NULL}
-(default), all motifs (including \code{NA}) are included.}
+(default), all motifs (including \code{NA}) are included. Ignored when
+\code{mod_context} is provided.}
 
 \item{min_coverage}{Integer. Minimum per-sample read depth required to
 include a site in testing. Sites where any sample has coverage below
@@ -116,10 +128,14 @@ Requires \pkg{methylKit} to be installed
 (\code{BiocManager::install("methylKit")}). Returns results in the same
 standardised format.
 
-\strong{Multiple mod types:} When \code{mod_type = NULL} (default), all
-modification types present in the object are tested independently and
-results are combined. Sites of a mod type that is not being tested receive
-\code{NA} in all \code{dm_*} columns.
+\strong{Multiple mod contexts:} When \code{mod_context = NULL} (default),
+all modification contexts (mod_type × motif combinations) present in the
+object are tested independently and results are combined. Sites not belonging
+to a tested context receive \code{NA} in all \code{dm_*} columns. Testing by
+\code{mod_context} rather than just \code{mod_type} prevents spurious pooling
+of biologically distinct methylation events (e.g., 6mA at GATC from Dam
+methyltransferase versus cytosine modifications at GATC, which are likely
+artefactual).
 
 \strong{Small-sample note:} Differential methylation testing with very few
 replicates (e.g., n = 1 per group) is mathematically possible but has

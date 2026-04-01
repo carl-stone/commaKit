@@ -9,6 +9,7 @@ plot_metagene(
   feature = "gene",
   mod_type = NULL,
   motif = NULL,
+  mod_context = NULL,
   n_bins = 50L
 )
 }

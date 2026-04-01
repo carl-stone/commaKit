@@ -8,6 +8,7 @@ plot_pca(
   object,
   mod_type = NULL,
   motif = NULL,
+  mod_context = NULL,
   color_by = "condition",
   shape_by = NULL,
   return_data = FALSE

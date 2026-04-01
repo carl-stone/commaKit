@@ -28,13 +28,14 @@
                       dimnames = list(site_keys, colnames(methyl_mat)))
 
     rd <- S4Vectors::DataFrame(
-        chrom    = rep("chr_sim", n_sites),
-        position = seq_len(n_sites) * 100L,
-        strand   = rep("+", n_sites),
-        mod_type = rep("6mA", n_sites),
-        motif    = rep("GATC", n_sites),
-        is_diff  = c(rep(TRUE, n_diff), rep(FALSE, n_sites - n_diff)),
-        row.names = site_keys
+        chrom       = rep("chr_sim", n_sites),
+        position    = seq_len(n_sites) * 100L,
+        strand      = rep("+", n_sites),
+        mod_type    = rep("6mA", n_sites),
+        motif       = rep("GATC", n_sites),
+        mod_context = rep("6mA_GATC", n_sites),
+        is_diff     = c(rep(TRUE, n_diff), rep(FALSE, n_sites - n_diff)),
+        row.names   = site_keys
     )
     cd <- S4Vectors::DataFrame(
         sample_name = colnames(methyl_mat),
@@ -507,4 +508,37 @@ test_that("diffMethyl: significant hits are enriched for is_diff sites in comma_
     } else {
         skip("No significant sites found; cannot evaluate precision.")
     }
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# mod_context parameter and per-context looping
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("diffMethyl: mod_context parameter filters to matching contexts", {
+    data(comma_example_data)
+    dm_6mA <- diffMethyl(comma_example_data, formula = ~ condition,
+                          mod_context = "6mA_GATC")
+    rd <- SummarizedExperiment::rowData(dm_6mA)
+    # Only 6mA_GATC sites in result
+    expect_true(all(rd$mod_context[!is.na(rd$dm_pvalue)] == "6mA_GATC"))
+})
+
+test_that("diffMethyl: loops separately over each mod_context", {
+    data(comma_example_data)
+    # comma_example_data has 2 contexts: 6mA_GATC and 5mC_CCWGG
+    dm <- diffMethyl(comma_example_data, formula = ~ condition)
+    rd <- SummarizedExperiment::rowData(dm)
+    # Both contexts should have results (non-NA pvalues)
+    has_6mA <- any(!is.na(rd$dm_pvalue[rd$mod_context == "6mA_GATC"]))
+    has_5mC <- any(!is.na(rd$dm_pvalue[rd$mod_context == "5mC_CCWGG"]))
+    expect_true(has_6mA)
+    expect_true(has_5mC)
+})
+
+test_that("diffMethyl: mod_context stored in metadata params", {
+    data(comma_example_data)
+    dm <- diffMethyl(comma_example_data, formula = ~ condition,
+                     mod_context = "6mA_GATC")
+    params <- S4Vectors::metadata(dm)$diffMethyl_params
+    expect_equal(params$mod_context, "6mA_GATC")
 })

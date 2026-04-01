@@ -13,6 +13,7 @@ filterResults(object, ...)
   delta_beta = 0.1,
   mod_type = NULL,
   motif = NULL,
+  mod_context = NULL,
   ...
 )
 }
@@ -34,6 +35,10 @@ disable filtering on effect size.}
 
 \item{motif}{Character vector or \code{NULL}. Passed to
 \code{\link{results}} for optional sequence context motif filtering.}
+
+\item{mod_context}{Character vector or \code{NULL}. Passed to
+\code{\link{results}} for optional modification context filtering
+(e.g., \code{"6mA_GATC"}).}
 }
 \value{
 A \code{data.frame} (same format as \code{\link{results}}) containing

@@ -104,9 +104,10 @@ setMethod("sampleInfo", "commaData", function(object) {
 #'
 #' @return A \code{data.frame} with one row per methylation site. Always
 #'   contains columns \code{chrom}, \code{position}, \code{strand},
-#'   \code{mod_type}, and \code{motif} (the sequence context; \code{NA} for
-#'   Dorado/Megalodon callers). May contain additional annotation columns
-#'   added by \code{\link[=annotateSites]{annotateSites()}}.
+#'   \code{mod_type}, \code{motif} (the sequence context; \code{NA} for
+#'   Dorado/Megalodon callers), and \code{mod_context} (the composite
+#'   modification context, e.g., \code{"6mA_GATC"}). May contain additional
+#'   annotation columns added by \code{\link[=annotateSites]{annotateSites()}}.
 #'
 #' @seealso \code{\link{methylation}}, \code{\link{modTypes}}
 #'
@@ -172,6 +173,44 @@ setGeneric("motifs", function(object) standardGeneric("motifs"))
 setMethod("motifs", "commaData", function(object) {
     all_m <- rowData(object)$motif
     sort(unique(all_m[!is.na(all_m)]))
+})
+
+# ─── modContexts() ───────────────────────────────────────────────────────────
+
+#' Return the modification contexts present in a commaData object
+#'
+#' Returns the unique modification contexts stored in a
+#' \code{\link{commaData}} object. A \code{mod_context} is a composite string
+#' combining modification type and sequence motif:
+#' \code{paste(mod_type, motif, sep = "_")} when motif information is available
+#' (e.g., \code{"6mA_GATC"}, \code{"5mC_CCWGG"}), or just \code{mod_type} for
+#' callers that do not provide per-site motif context (e.g., \code{"6mA"} for
+#' Dorado or Megalodon data).
+#'
+#' All differential methylation analyses run independently per
+#' \code{mod_context} group by default, preventing spurious pooling of
+#' biologically distinct methylation events (e.g., 6mA at GATC motifs from
+#' Dam methyltransferase versus any cytosine methylation detected at GATC
+#' positions, which is likely artefactual).
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return A sorted character vector of unique \code{mod_context} strings
+#'   present in \code{rowData(object)$mod_context}
+#'   (e.g., \code{c("5mC_CCWGG", "6mA_GATC")}).
+#'
+#' @seealso \code{\link{modTypes}}, \code{\link{motifs}}, \code{\link{subset}}
+#'
+#' @examples
+#' data(comma_example_data)
+#' modContexts(comma_example_data)
+#'
+#' @export
+setGeneric("modContexts", function(object) standardGeneric("modContexts"))
+
+#' @rdname modContexts
+setMethod("modContexts", "commaData", function(object) {
+    sort(unique(rowData(object)$mod_context))
 })
 
 # ─── genome() ────────────────────────────────────────────────────────────────
@@ -296,6 +335,13 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
 #'   a matching sequence context motif are kept (e.g., \code{"GATC"}). Sites
 #'   with \code{NA} motif values are excluded when this filter is active.
 #'   Use \code{\link{motifs}} to see which motifs are present.
+#' @param mod_context Character vector or \code{NULL}. If provided, only sites
+#'   with a matching modification context are kept (e.g.,
+#'   \code{"6mA_GATC"}, \code{"5mC_CCWGG"}). A \code{mod_context} value is
+#'   \code{paste(mod_type, motif, sep = "_")} when motif is available, or just
+#'   \code{mod_type} for Dorado/Megalodon data. Use \code{\link{modContexts}}
+#'   to see which contexts are present. When provided, this filter is applied in
+#'   addition to (ANDed with) any \code{mod_type} or \code{motif} filters.
 #' @param ... Ignored.
 #'
 #' @return A \code{commaData} object containing only the selected sites and
@@ -311,6 +357,10 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
 #' gatc <- subset(comma_example_data, motif = "GATC")
 #' nrow(gatc)
 #'
+#' # Filter by mod_context (equivalent to the above for modkit data)
+#' gatc2 <- subset(comma_example_data, mod_context = "6mA_GATC")
+#' nrow(gatc2)
+#'
 #' @export
 setGeneric("subset", function(x, ...) standardGeneric("subset"))
 
@@ -318,7 +368,8 @@ setGeneric("subset", function(x, ...) standardGeneric("subset"))
 setMethod("subset", "commaData", function(x, mod_type = NULL,
                                            condition = NULL,
                                            chrom = NULL,
-                                           motif = NULL, ...) {
+                                           motif = NULL,
+                                           mod_context = NULL, ...) {
     rd <- rowData(x)
     cd <- colData(x)
 
@@ -332,6 +383,9 @@ setMethod("subset", "commaData", function(x, mod_type = NULL,
     }
     if (!is.null(motif)) {
         site_keep <- site_keep & (!is.na(rd$motif)) & (rd$motif %in% motif)
+    }
+    if (!is.null(mod_context)) {
+        site_keep <- site_keep & (rd$mod_context %in% mod_context)
     }
 
     # Sample filter

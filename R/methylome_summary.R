@@ -17,6 +17,10 @@ NULL
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are included (e.g., \code{"GATC"}).
 #'   If \code{NULL} (default), all motifs are included.
+#' @param mod_context Character vector or \code{NULL}. If provided, only sites
+#'   with a matching modification context are included (e.g.,
+#'   \code{"6mA_GATC"}). Applied after any \code{mod_type} and \code{motif}
+#'   filters. Use \code{\link{modContexts}} to see available values.
 #'
 #' @return A \code{data.frame} with one row per sample, containing:
 #'   \describe{
@@ -53,7 +57,8 @@ NULL
 #'   \code{\link{sampleInfo}}
 #'
 #' @export
-methylomeSummary <- function(object, mod_type = NULL, motif = NULL) {
+methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
+                             mod_context = NULL) {
     # ── Input validation ──────────────────────────────────────────────────────
     if (!is(object, "commaData")) {
         stop("'object' must be a commaData object.")
@@ -85,6 +90,20 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL) {
             )
         }
         object <- subset(object, motif = motif)
+    }
+
+    # ── Filter by mod_context ─────────────────────────────────────────────────
+    if (!is.null(mod_context)) {
+        available_mc <- modContexts(object)
+        bad_mc <- setdiff(mod_context, available_mc)
+        if (length(bad_mc) > 0L) {
+            stop(
+                "'mod_context' value(s) not found in object: ",
+                paste(bad_mc, collapse = ", "),
+                ". Available: ", paste(available_mc, collapse = ", ")
+            )
+        }
+        object <- subset(object, mod_context = mod_context)
     }
 
     methyl_mat <- methylation(object)

@@ -25,12 +25,13 @@ library(GenomicRanges)
                      nrow = n_total, dimnames = list(all_keys, samp_names))
 
     rd <- S4Vectors::DataFrame(
-        chrom    = rep("chr_sim", n_total),
-        position = c(seq_len(n_6ma) * 100L, seq_len(n_5mc) * 200L),
-        strand   = c(rep("+", n_6ma), rep("-", n_5mc)),
-        mod_type = c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
-        motif    = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc)),
-        row.names = all_keys
+        chrom       = rep("chr_sim", n_total),
+        position    = c(seq_len(n_6ma) * 100L, seq_len(n_5mc) * 200L),
+        strand      = c(rep("+", n_6ma), rep("-", n_5mc)),
+        mod_type    = c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
+        motif       = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc)),
+        mod_context = c(rep("6mA_GATC", n_6ma), rep("5mC_CCWGG", n_5mc)),
+        row.names   = all_keys
     )
     cd <- S4Vectors::DataFrame(
         sample_name = samp_names,
@@ -374,4 +375,67 @@ test_that("comma_example_data loads and accessors work correctly", {
     expect_equal(ncol(comma_example_data), 6L)
     expect_equal(nrow(comma_example_data), 300L)
     expect_equal(genome(comma_example_data), c(chr_sim = 100000L))
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# modContexts() accessor
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("modContexts: returns sorted unique mod_context values", {
+    obj <- .make_two_modtype()
+    mc <- modContexts(obj)
+    expect_equal(mc, c("5mC_CCWGG", "6mA_GATC"))
+})
+
+test_that("modContexts: returns character vector", {
+    obj <- .make_two_modtype()
+    expect_type(modContexts(obj), "character")
+})
+
+test_that("modContexts: single context returns length-1 vector", {
+    data(comma_example_data)
+    sub <- subset(comma_example_data, mod_type = "6mA")
+    expect_equal(modContexts(sub), "6mA_GATC")
+})
+
+test_that("modContexts: returns 'mod_type' only for NA-motif rows", {
+    obj <- .make_two_modtype()
+    rd  <- rowData(obj)
+    rd$motif      <- NA_character_
+    rd$mod_context <- rd$mod_type   # fallback: mod_type without motif suffix
+    rowData(obj) <- rd
+    mc <- modContexts(obj)
+    expect_true(all(mc %in% c("6mA", "5mC")))
+    expect_false(any(grepl("NA", mc)))
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# subset(object, mod_context = ...) filtering
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("subset: mod_context filters to matching rows", {
+    obj <- .make_two_modtype()
+    sub <- subset(obj, mod_context = "6mA_GATC")
+    expect_true(all(rowData(sub)$mod_context == "6mA_GATC"))
+    expect_equal(nrow(sub), 10L)
+})
+
+test_that("subset: mod_context = '5mC_CCWGG' retains only 5mC rows", {
+    obj <- .make_two_modtype()
+    sub <- subset(obj, mod_context = "5mC_CCWGG")
+    expect_true(all(rowData(sub)$mod_context == "5mC_CCWGG"))
+    expect_equal(nrow(sub), 5L)
+})
+
+test_that("subset: mod_context with non-existent context returns 0 rows", {
+    obj <- .make_two_modtype()
+    sub <- subset(obj, mod_context = "4mC_GATC")
+    expect_equal(nrow(sub), 0L)
+})
+
+test_that("subset: mod_context and mod_type can be combined", {
+    obj <- .make_two_modtype()
+    sub <- subset(obj, mod_context = "6mA_GATC", mod_type = "6mA")
+    expect_equal(nrow(sub), 10L)
+    expect_true(all(rowData(sub)$mod_type == "6mA"))
 })

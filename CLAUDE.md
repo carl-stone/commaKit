@@ -47,15 +47,15 @@ Whenever you add, remove, or rename an R source file, test file, exported functi
 
 ## 2. Current Repository State
 
-### What exists now (v0.7.2.9000 dev — Phases 1–5 complete + post-release additions)
+### What exists now (v0.8.0 dev — Phases 1–5 complete + post-release additions)
 
 ```
 CoMMA/
 ├── R/
 │   ├── comma-package.R          # ✅ Package-level ?comma documentation (~49 lines)
-│   ├── commaData_class.R        # ✅ S4 class def (~174 lines), show(), validity()
-│   ├── commaData_constructor.R  # ✅ commaData() constructor (~258 lines)
-│   ├── accessors.R              # ✅ methylation(), coverage(), sampleInfo(), etc. (~298 lines)
+│   ├── commaData_class.R        # ✅ S4 class def (~190 lines), show(), validity(); requires mod_context
+│   ├── commaData_constructor.R  # ✅ commaData() constructor (~280 lines); computes mod_context, expected_mod_contexts filter
+│   ├── accessors.R              # ✅ methylation(), coverage(), sampleInfo(), modContexts(), etc. (~320 lines)
 │   ├── parse_modkit.R           # ✅ PRIMARY input format parser (~143 lines)
 │   ├── parse_dorado.R           # ✅ Full Dorado BAM parser with MM/ML tags (~385 lines)
 │   ├── parse_megalodon.R        # ✅ Backward compatibility parser (~112 lines)
@@ -190,11 +190,24 @@ CoMMA/
 - **`motifs()`** — new exported accessor; returns sorted unique sequence context motif strings present in `rowData(object)$motif`
 - **Full roxygen2 docs** — `\donttest{}` examples throughout; package passes `R CMD check` with zero code-level errors or warnings
 
-### Added in v0.7.x (current dev)
+### Added in v0.7.x
 
 - **`plot_tss_profile()`** — TSS-centered methylation scatter plot showing individual sites at their signed base-pair distance from the nearest TSS; supports `color_by = "sample"|"mod_type"|"regulatory_element"`, `facet_by`, optional loess smooth overlay, and `motif` filtering; distinct from `plot_metagene()` in that it shows absolute bp positions rather than normalized fractional positions
 - **`diffMethyl(..., method = "limma")`** — empirical Bayes moderated t-test via `limma::eBayes()` on M-value-transformed data; borrows variance information across all sites to stabilize tests with few replicates; `alpha` pseudocount parameter controls M-value transformation
 - **`diffMethyl(..., method = "quasi_f")`** — quasi-likelihood F-test: same quasibinomial GLM per site as `beta_binomial`, but applies `limma::squeezeVar()` to shrink per-site dispersion estimates toward a global prior; count-data EB, analogous to edgeR's `glmQLFTest`; requires `limma`
+
+### Added in v0.8.0 (current dev)
+
+- **`mod_context` rowData column** — composite key combining `mod_type` and `motif` (e.g. `"6mA_GATC"`, `"5mC_CCWGG"`); falls back to `mod_type` alone when motif is `NA`; required in all `commaData` objects; enforced by `setValidity()`; stored in `rowData(object)$mod_context`
+- **`modContexts()`** — new exported S4 accessor; returns sorted unique modification context strings from `rowData(object)$mod_context`
+- **`expected_mod_contexts`** — new parameter in `commaData()` constructor; named list (e.g. `list("6mA" = "GATC", "5mC" = "CCWGG")`) that filters out unexpected mod_type × motif combinations during construction; emits per-type messages about dropped site counts; errors if no sites remain
+- **`subset(object, mod_context = ...)`** — `mod_context` added as filter parameter in `subset()`; works alongside existing `mod_type`, `condition`, `chrom` filters
+- **`diffMethyl()` loops by `mod_context`** — analysis now runs independently per `mod_context` group (not per `mod_type`); prevents spurious pooling of e.g. 6mA@GATC with 6mA@other-motif; `mod_context` parameter takes precedence over `mod_type`
+- **`mod_context` filter on all analysis + plot functions** — `mod_context = NULL` parameter added to `methylomeSummary()`, `slidingWindow()`, `mValues()`, `writeBED()`, `results()`, `filterResults()`, and all 8 `plot_*()` functions; `plot_tss_profile()` additionally supports `color_by = "mod_context"` and `facet_by = "mod_context"`
+
+### Breaking changes in v0.8.0
+
+- **`commaData` objects created before v0.8.0 are invalid** — `rowData` must include a `mod_context` character column; old objects will fail `validObject()`. Re-create from source files using the updated constructor.
 
 ### Breaking changes in v0.3.0
 
@@ -222,7 +235,7 @@ Every analysis function accepts a `commaData` object. Modeled on DESeq2's `DESeq
 commaData
 ├── methylation    # sites × samples matrix of beta values (0-1)
 ├── coverage       # sites × samples matrix of read depth
-├── rowData        # per-site: chrom, position, strand, motif, mod_type
+├── rowData        # per-site: chrom, position, strand, motif, mod_type, mod_context (v0.8.0)
 ├── colData        # per-sample: sample_name, condition, replicate, caller, file_path
 ├── genomeInfo     # chromosome names and sizes (named integer vector or NULL)
 ├── annotation     # GRanges of genomic features (from GFF3/BED)
@@ -230,20 +243,22 @@ commaData
 └── metadata       # list: package version, creation date, user fields
 ```
 
-Key: `rowData` includes `mod_type` (`"6mA"`, `"5mC"`, `"4mC"`) as a first-class column. A single object can hold multiple modification types.
+Key: `rowData` includes `mod_type` (`"6mA"`, `"5mC"`, `"4mC"`) and `mod_context` (`"6mA_GATC"`, `"5mC_CCWGG"`) as first-class columns. A single object can hold multiple modification types and contexts. `mod_context` is required in all objects (v0.8.0+).
 
 ### Constructor
 
 ```r
 commaData(
-  files,         # named character vector: sample_name → file_path
-  colData,       # data frame: sample_name, condition, replicate (minimum)
-  genome,        # BSgenome, FASTA path, or named integer vector of chr sizes
-  annotation,    # GFF3 path or GRanges (optional)
-  mod_type,      # "6mA", "5mC", "4mC", or NULL to auto-detect
-  motif,         # regex motif string (e.g., "GATC") or NULL
-  min_coverage,  # integer, default 5
-  caller         # "dorado", "modkit", "megalodon"
+  files,                  # named character vector: sample_name → file_path
+  colData,                # data frame: sample_name, condition, replicate (minimum)
+  genome,                 # BSgenome, FASTA path, or named integer vector of chr sizes
+  annotation,             # GFF3 path or GRanges (optional)
+  mod_type,               # "6mA", "5mC", "4mC", or NULL to auto-detect
+  motif,                  # regex motif string (e.g., "GATC") or NULL
+  min_coverage,           # integer, default 5
+  caller,                 # "dorado", "modkit", "megalodon"
+  expected_mod_contexts   # v0.8.0: named list, e.g. list("6mA"=c("GATC","ACCACC"), "5mC"="CCWGG")
+                          # drops sites with unexpected mod_type × motif combinations
 )
 ```
 
@@ -276,7 +291,8 @@ This section records what was built in each version. It is a reference for under
 | 0.4.0 | `diffMethyl()` (beta-binomial + methylKit), `results()`, `filterResults()`, full Dorado BAM parser |
 | 0.5.0 | All `plot_*()` functions (7 total), vignettes, `comma-package.R` docs |
 | 0.6.0 | `mValues()`, `motifs()` accessor, M-value transform in `plot_pca()`, R CMD check clean |
-| 0.7.x | `plot_tss_profile()` |
+| 0.7.x | `plot_tss_profile()`, `diffMethyl(method="limma"|"quasi_f")` |
+| 0.8.0 | `mod_context` rowData column + `modContexts()` accessor + `expected_mod_contexts` constructor filter; `diffMethyl()` loops by mod_context; `mod_context` param on all analysis/plot functions |
 
 ---
 
@@ -641,18 +657,20 @@ devtools::document()     # Rebuild docs from roxygen2
 BiocCheck::BiocCheck()   # Bioconductor-specific checks
 ```
 
-### Currently exported API (v0.7.2.9000)
+### Currently exported API (v0.8.0.9000)
 
 ```r
-# S4 class (Phase 1)
-commaData(files, colData, genome, annotation, mod_type, motif, min_coverage, caller)
+# S4 class (Phase 1 + v0.8.0)
+commaData(files, colData, genome, annotation, mod_type, motif, min_coverage, caller,
+          expected_mod_contexts)  # NEW v0.8.0: named list filter, e.g. list("6mA"="GATC")
 
-# Accessors (Phase 1) — all accept a commaData object
+# Accessors (Phase 1 + v0.8.0) — all accept a commaData object
 methylation(object)      # → sites × samples beta matrix
 coverage(object)         # → sites × samples integer matrix
 sampleInfo(object)       # → per-sample DataFrame
-siteInfo(object)         # → per-site DataFrame (chrom, position, strand, mod_type, ...)
+siteInfo(object)         # → per-site DataFrame (chrom, position, strand, mod_type, mod_context, ...)
 modTypes(object)         # → character vector of modification types present
+modContexts(object)      # NEW v0.8.0: sorted unique mod_context strings (e.g. "6mA_GATC")
 motifs(object)           # → character vector of unique sequence context motifs present
 genome(object)           # → named integer vector of chromosome sizes
 annotation(object)       # → GRanges of genomic features
@@ -660,39 +678,41 @@ motifSites(object)       # → GRanges of motif instances
 
 # Subsetting
 object[sites, samples]   # numeric/logical index
-subset(object, ...)      # subset by mod_type, condition, chrom
+subset(object, ...)      # subset by mod_type, mod_context, condition, chrom  (mod_context NEW v0.8.0)
 
 # Utilities (Phase 1)
 loadAnnotation(file, feature_types)   # GFF3/BED → GRanges
 findMotifSites(genome, motif)         # genome + motif → GRanges
 
-# Analysis functions (Phase 3)
+# Analysis functions (Phase 3 + v0.8.0 mod_context param added throughout)
 annotateSites(object, features, type, ...)    # type = "overlap"|"proximity"|"metagene"
-slidingWindow(object, window, stat, ...)      # stat = "median"|"mean"
-methylomeSummary(object, mod_type)            # per-sample QC stats → tidy data.frame
+slidingWindow(object, window, stat, mod_context, ...)  # mod_context filter NEW v0.8.0
+methylomeSummary(object, mod_type, mod_context)         # mod_context filter NEW v0.8.0
 coverageDepth(object, window, method, ...)    # windowed sequencing depth → tidy data.frame
 varianceByDepth(object, coverage_bins)        # methylation variance by depth → tidy data.frame
-writeBED(object, file, sample, ...)           # write BED9 output file
-mValues(object, alpha, mod_type)              # beta values → M-values matrix (variance-stabilized)
+writeBED(object, file, sample, mod_context, ...)        # mod_context filter NEW v0.8.0
+mValues(object, alpha, mod_type, mod_context)           # mod_context filter NEW v0.8.0
 
-# Differential methylation (Phase 4)
-diffMethyl(object, formula, method, mod_type, min_coverage, alpha, p_adjust_method)
+# Differential methylation (Phase 4 + v0.8.0)
+diffMethyl(object, formula, method, mod_type, mod_context, min_coverage, alpha, p_adjust_method)
 # method: "beta_binomial" | "quasi_f" | "limma" | "methylkit"
+# mod_context NEW v0.8.0: loops separately over each mod_context by default
                                               # → commaData with dm_* results in rowData
-results(object, mod_type)                     # → tidy data.frame of diff methylation results
+results(object, mod_type, mod_context)        # mod_context filter NEW v0.8.0
 filterResults(object, padj, delta_beta, ...)  # → filtered data.frame
 
-# Visualization (Phase 5+) — all return a ggplot (or patchwork) object
-plot_methylation_distribution(object, mod_type, per_sample)
-plot_genome_track(object, chromosome, start, end, mod_type)
-plot_metagene(object, feature, mod_type, window)
+# Visualization (Phase 5 + v0.8.0 mod_context param added throughout)
+plot_methylation_distribution(object, mod_type, mod_context, per_sample)
+plot_genome_track(object, chromosome, start, end, mod_type, mod_context)
+plot_metagene(object, feature, mod_type, mod_context, window)
 plot_volcano(results_df, delta_beta_threshold, padj_threshold)
 plot_heatmap(object, result_df, n_sites, annotation_cols)
-plot_pca(object, mod_type, color_by, shape_by, return_data)
-plot_coverage(object, per_sample)
-plot_tss_profile(object, feature_type, window, mod_type, motif,   # v0.7.x
-                 color_by, facet_by, alpha, show_smooth, smooth_span,
-                 regulatory_feature_types)
+plot_pca(object, mod_type, mod_context, color_by, shape_by, return_data)
+plot_coverage(object, mod_context, per_sample)
+plot_tss_profile(object, feature_type, window, mod_type, mod_context, motif,  # mod_context NEW v0.8.0
+                 color_by,   # "sample"|"mod_type"|"mod_context"|"regulatory_element"
+                 facet_by,   # "sample"|"mod_type"|"mod_context"
+                 alpha, show_smooth, smooth_span, regulatory_feature_types)
 ```
 
 ---
