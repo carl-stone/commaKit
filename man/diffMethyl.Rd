@@ -7,7 +7,7 @@
 diffMethyl(
   object,
   formula = ~condition,
-  method = c("beta_binomial", "methylkit", "limma"),
+  method = c("beta_binomial", "methylkit", "limma", "quasi_f"),
   mod_type = NULL,
   motif = NULL,
   min_coverage = 5L,
@@ -26,6 +26,9 @@ Default is \code{~ condition}.}
 
 \item{method}{Character string selecting the statistical backend.
 \code{"beta_binomial"} (default) uses a quasibinomial GLM via base R.
+\code{"quasi_f"} applies empirical Bayes shrinkage of quasibinomial
+dispersions via \code{\link[limma]{squeezeVar}} (quasi-likelihood F-test;
+count-data EB, recommended for small n). Requires \pkg{limma}.
 \code{"limma"} applies empirical Bayes variance shrinkage via
 \code{\link[limma]{eBayes}} on M-value-transformed data; recommended when
 replicates are few (n < 3 per group). Requires \pkg{limma}.
@@ -82,6 +85,19 @@ where \eqn{n_{\text{mod}} = \text{round}(\beta \times \text{coverage})} and
 for overdispersion. P-values are extracted from the Wald t-test on the
 contrast coefficient. This method requires no additional packages beyond
 base R.
+
+\strong{Alternative model (\code{method = "quasi_f"}):}
+A two-pass extension of \code{"beta_binomial"} that adds empirical Bayes
+shrinkage of the per-site quasibinomial dispersion estimates, analogous to
+the quasi-likelihood F-test of \pkg{edgeR}. Pass 1 fits the same
+quasibinomial GLM per site and collects the per-site dispersion
+\eqn{\hat\phi_j} and residual df \eqn{df_j}. Pass 2 calls
+\code{\link[limma]{squeezeVar}} to estimate a log-normal prior on
+\eqn{\{\hat\phi_j\}} and compute posterior estimates
+\eqn{\{\tilde\phi_j\}}. Pass 3 recomputes the t-statistic using
+\eqn{\tilde\phi_j} and evaluates it against a t-distribution with
+\eqn{d_0 + df_j} degrees of freedom (where \eqn{d_0} is the estimated prior
+df). Requires \pkg{limma}.
 
 \strong{Alternative model (\code{method = "limma"}):}
 Beta values are transformed to M-values via

@@ -194,6 +194,7 @@ CoMMA/
 
 - **`plot_tss_profile()`** — TSS-centered methylation scatter plot showing individual sites at their signed base-pair distance from the nearest TSS; supports `color_by = "sample"|"mod_type"|"regulatory_element"`, `facet_by`, optional loess smooth overlay, and `motif` filtering; distinct from `plot_metagene()` in that it shows absolute bp positions rather than normalized fractional positions
 - **`diffMethyl(..., method = "limma")`** — empirical Bayes moderated t-test via `limma::eBayes()` on M-value-transformed data; borrows variance information across all sites to stabilize tests with few replicates; `alpha` pseudocount parameter controls M-value transformation
+- **`diffMethyl(..., method = "quasi_f")`** — quasi-likelihood F-test: same quasibinomial GLM per site as `beta_binomial`, but applies `limma::squeezeVar()` to shrink per-site dispersion estimates toward a global prior; count-data EB, analogous to edgeR's `glmQLFTest`; requires `limma`
 
 ### Breaking changes in v0.3.0
 
@@ -676,6 +677,7 @@ mValues(object, alpha, mod_type)              # beta values → M-values matrix 
 
 # Differential methylation (Phase 4)
 diffMethyl(object, formula, method, mod_type, min_coverage, alpha, p_adjust_method)
+# method: "beta_binomial" | "quasi_f" | "limma" | "methylkit"
                                               # → commaData with dm_* results in rowData
 results(object, mod_type)                     # → tidy data.frame of diff methylation results
 filterResults(object, padj, delta_beta, ...)  # → filtered data.frame

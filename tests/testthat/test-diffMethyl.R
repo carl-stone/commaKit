@@ -310,6 +310,75 @@ test_that("diffMethyl: non-positive alpha errors informatively", {
     )
 })
 
+# ─── quasi_f method ───────────────────────────────────────────────────────────
+
+test_that("diffMethyl: method='quasi_f' returns commaData with correct columns", {
+    skip_if_not_installed("limma")
+    obj <- .make_dm_data()
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
+    expect_s4_class(dm, "commaData")
+    rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+    expect_true(all(c("dm_pvalue", "dm_padj", "dm_delta_beta",
+                      "dm_mean_beta_control", "dm_mean_beta_treatment") %in%
+                        colnames(rd)))
+    expect_equal(nrow(rd), nrow(SummarizedExperiment::rowData(obj)))
+})
+
+test_that("diffMethyl: method='quasi_f' produces valid p-values in [0, 1]", {
+    skip_if_not_installed("limma")
+    obj <- .make_dm_data()
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
+    rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
+    pvals <- rd$dm_pvalue[!is.na(rd$dm_pvalue)]
+    expect_true(length(pvals) > 0)
+    expect_true(all(pvals >= 0 & pvals <= 1))
+    expect_true(all(rd$dm_padj[!is.na(rd$dm_padj)] >=
+                        rd$dm_pvalue[!is.na(rd$dm_pvalue)]))
+})
+
+test_that("diffMethyl: quasi_f and beta_binomial delta_beta are highly correlated", {
+    skip_if_not_installed("limma")
+    obj  <- .make_dm_data(n_sites = 40L)
+    dm_q <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
+    dm_b <- diffMethyl(obj, formula = ~ condition, method = "beta_binomial")
+    db_q <- SummarizedExperiment::rowData(dm_q)$dm_delta_beta
+    db_b <- SummarizedExperiment::rowData(dm_b)$dm_delta_beta
+    ok   <- !is.na(db_q) & !is.na(db_b)
+    expect_true(sum(ok) > 0)
+    expect_gt(cor(db_q[ok], db_b[ok]), 0.99)
+})
+
+test_that("diffMethyl: quasi_f has more power than beta_binomial on ground-truth data", {
+    skip_if_not_installed("limma")
+    data(comma_example_data)
+    dm_q  <- diffMethyl(comma_example_data, formula = ~ condition,
+                        method = "quasi_f", mod_type = "6mA")
+    dm_b  <- diffMethyl(comma_example_data, formula = ~ condition,
+                        method = "beta_binomial", mod_type = "6mA")
+    is_diff <- as.data.frame(SummarizedExperiment::rowData(comma_example_data))$is_diff
+    pq <- SummarizedExperiment::rowData(dm_q)$dm_pvalue[is_diff]
+    pb <- SummarizedExperiment::rowData(dm_b)$dm_pvalue[is_diff]
+    # quasi_f should produce lower mean p-value for true positives
+    expect_lt(mean(pq, na.rm = TRUE), mean(pb, na.rm = TRUE))
+})
+
+test_that("diffMethyl: method='quasi_f' records method in metadata", {
+    skip_if_not_installed("limma")
+    obj <- .make_dm_data()
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
+    expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$method, "quasi_f")
+})
+
+test_that("diffMethyl: method='quasi_f' errors informatively if limma absent", {
+    skip_if(requireNamespace("limma", quietly = TRUE),
+            "limma is installed; skipping absent-package test")
+    obj <- .make_dm_data()
+    expect_error(
+        diffMethyl(obj, formula = ~ condition, method = "quasi_f"),
+        "limma"
+    )
+})
+
 # ─── .applyMultipleTesting() direct tests ────────────────────────────────────
 
 test_that("applyMultipleTesting: BH correction returns values in [0, 1]", {
