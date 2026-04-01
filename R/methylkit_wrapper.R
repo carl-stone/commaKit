@@ -83,42 +83,43 @@ NULL
 
     # ── Build methylKit objects per sample ─────────────────────────────────────
     if (requireNamespace("methylKit", quietly = TRUE)) {
+      # Construct methylRaw objects directly — bypasses methRead() which only
+      # accepts file paths, not in-memory data frames
       sample_list <- lapply(seq_len(ncol(methyl_mat)), function(j) {
         beta_j <- methyl_mat[, j]
         cov_j  <- as.integer(coverage_mat[, j])
 
         # Replace NA with 0 coverage for methylKit (it handles 0-coverage sites
         # via unite() with min.per.group)
-        cov_j[is.na(cov_j)]   <- 0L
-        cov_j[is.na(beta_j)]  <- 0L
+        cov_j[is.na(cov_j)]  <- 0L
+        cov_j[is.na(beta_j)] <- 0L
 
         n_meth <- as.integer(round(beta_j * cov_j))
         n_meth[is.na(n_meth)] <- 0L
         n_meth <- pmax(0L, pmin(n_meth, cov_j))
 
-        methylKit::methRead(
-          data.frame(
-            chr      = chroms,
-            start    = positions,
-            end      = positions,
-            strand   = strands,
-            coverage = cov_j,
-            numCs    = n_meth,
-            numTs    = cov_j - n_meth,
-            stringsAsFactors = FALSE
-          ),
-          sample.id  = colnames(methyl_mat)[[j]],
-          assembly   = "custom",
-          context    = "none",
-          resolution = "base"
+        df <- data.frame(
+          chr      = chroms,
+          start    = positions,
+          end      = positions,
+          strand   = strands,
+          coverage = cov_j,
+          numCs    = n_meth,
+          numTs    = cov_j - n_meth,
+          stringsAsFactors = FALSE
         )
+
+        # methylRaw extends data.frame; pass df as first positional arg
+        methods::new("methylRaw", df,
+                     sample.id  = colnames(methyl_mat)[[j]],
+                     assembly   = "custom",
+                     context    = "none",
+                     resolution = "base")
       })
 
-      mk_list <- methylKit::methRead(
-        sample_list,
-        treatment = treatment
-      )
-
+      mk_list <- methods::new("methylRawList",
+                              .Data     = sample_list,
+                              treatment = as.integer(treatment))
     }
 
     # ── Unite and test ────────────────────────────────────────────────────────
@@ -131,7 +132,9 @@ NULL
       )
 
       mk_diff <- tryCatch(
-        methylKit::calculateDiffMeth(mk_united),
+        suppressWarnings(
+          methylKit::calculateDiffMeth(mk_united, weighted.mean = FALSE)
+        ),
         error = function(e) {
           stop("methylKit::calculateDiffMeth() failed: ", e$message)
         }

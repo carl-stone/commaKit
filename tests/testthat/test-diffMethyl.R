@@ -243,6 +243,73 @@ test_that("diffMethyl: method='methylkit' errors with informative message if met
     )
 })
 
+# ─── limma method ─────────────────────────────────────────────────────────────
+
+test_that("diffMethyl: method='limma' returns commaData with correct columns", {
+    skip_if_not_installed("limma")
+    obj <- .make_dm_data()
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "limma")
+    expect_s4_class(dm, "commaData")
+    rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+    expect_true(all(c("dm_pvalue", "dm_padj", "dm_delta_beta",
+                      "dm_mean_beta_control", "dm_mean_beta_treatment") %in%
+                        colnames(rd)))
+    expect_equal(nrow(rd), nrow(SummarizedExperiment::rowData(obj)))
+})
+
+test_that("diffMethyl: method='limma' produces valid p-values in [0, 1]", {
+    skip_if_not_installed("limma")
+    obj <- .make_dm_data()
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "limma")
+    rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
+    pvals <- rd$dm_pvalue[!is.na(rd$dm_pvalue)]
+    expect_true(length(pvals) > 0)
+    expect_true(all(pvals >= 0 & pvals <= 1))
+    expect_true(all(rd$dm_padj[!is.na(rd$dm_padj)] >= rd$dm_pvalue[!is.na(rd$dm_pvalue)]))
+})
+
+test_that("diffMethyl: limma and beta_binomial delta_beta values are highly correlated", {
+    skip_if_not_installed("limma")
+    obj  <- .make_dm_data(n_sites = 40L)
+    dm_l <- diffMethyl(obj, formula = ~ condition, method = "limma")
+    dm_b <- diffMethyl(obj, formula = ~ condition, method = "beta_binomial")
+    db_l <- SummarizedExperiment::rowData(dm_l)$dm_delta_beta
+    db_b <- SummarizedExperiment::rowData(dm_b)$dm_delta_beta
+    ok   <- !is.na(db_l) & !is.na(db_b)
+    expect_true(sum(ok) > 0)
+    expect_gt(cor(db_l[ok], db_b[ok]), 0.95)
+})
+
+test_that("diffMethyl: method='limma' records alpha in metadata", {
+    skip_if_not_installed("limma")
+    obj <- .make_dm_data()
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "limma", alpha = 1.0)
+    expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$alpha, 1.0)
+})
+
+test_that("diffMethyl: method='limma' errors with informative message if limma absent", {
+    skip_if(requireNamespace("limma", quietly = TRUE),
+            "limma is installed; skipping absent-package test")
+    obj <- .make_dm_data()
+    expect_error(
+        diffMethyl(obj, formula = ~ condition, method = "limma"),
+        "limma"
+    )
+})
+
+test_that("diffMethyl: non-positive alpha errors informatively", {
+    skip_if_not_installed("limma")
+    obj <- .make_dm_data()
+    expect_error(
+        diffMethyl(obj, formula = ~ condition, method = "limma", alpha = 0),
+        "alpha"
+    )
+    expect_error(
+        diffMethyl(obj, formula = ~ condition, method = "limma", alpha = -1),
+        "alpha"
+    )
+})
+
 # ─── .applyMultipleTesting() direct tests ────────────────────────────────────
 
 test_that("applyMultipleTesting: BH correction returns values in [0, 1]", {

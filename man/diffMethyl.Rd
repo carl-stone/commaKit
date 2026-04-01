@@ -7,10 +7,11 @@
 diffMethyl(
   object,
   formula = ~condition,
-  method = c("beta_binomial", "methylkit"),
+  method = c("beta_binomial", "methylkit", "limma"),
   mod_type = NULL,
   motif = NULL,
   min_coverage = 5L,
+  alpha = 0.5,
   p_adjust_method = "BH",
   ...
 )
@@ -25,6 +26,9 @@ Default is \code{~ condition}.}
 
 \item{method}{Character string selecting the statistical backend.
 \code{"beta_binomial"} (default) uses a quasibinomial GLM via base R.
+\code{"limma"} applies empirical Bayes variance shrinkage via
+\code{\link[limma]{eBayes}} on M-value-transformed data; recommended when
+replicates are few (n < 3 per group). Requires \pkg{limma}.
 \code{"methylkit"} wraps \code{methylKit::calculateDiffMeth()}, requiring
 \pkg{methylKit} to be installed.}
 
@@ -40,6 +44,11 @@ Uses \code{\link{motifs}} to validate the requested values. If \code{NULL}
 \item{min_coverage}{Integer. Minimum per-sample read depth required to
 include a site in testing. Sites where any sample has coverage below
 this threshold are treated as \code{NA} in that sample. Default \code{5L}.}
+
+\item{alpha}{Positive numeric pseudocount used to compute M-values when
+\code{method = "limma"}:
+\eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))}.
+Default \code{0.5} (a Beta(0.5, 0.5) prior). Ignored for other methods.}
 
 \item{p_adjust_method}{Character string. Multiple testing correction method,
 passed to \code{\link[stats]{p.adjust}}. Default \code{"BH"}
@@ -73,6 +82,17 @@ where \eqn{n_{\text{mod}} = \text{round}(\beta \times \text{coverage})} and
 for overdispersion. P-values are extracted from the Wald t-test on the
 contrast coefficient. This method requires no additional packages beyond
 base R.
+
+\strong{Alternative model (\code{method = "limma"}):}
+Beta values are transformed to M-values via
+\eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))},
+then \code{\link[limma]{lmFit}} fits an OLS model per site and
+\code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage —
+borrowing information across all sites to stabilize the per-site variance
+estimate. This gives substantially more power than \code{"beta_binomial"}
+when replicates are few (n < 3 per group). Requires \pkg{limma}
+(\code{BiocManager::install("limma")}). Effect sizes are reported on the
+original beta scale.
 
 \strong{Alternative model (\code{method = "methylkit"}):}
 Wraps \code{methylKit::calculateDiffMeth()}, which uses logistic regression.
