@@ -1,24 +1,2 @@
-CJS 2026-04-01
-  TODO: Implement composite key methylation schema - Modify the commaData schema
-  with a composite mod_type-motif key. This is the core methylation ontology to
-  automatically separate analyses by: adenine methylation at a GATC motif arises
-  by a different biological process than cytosine methylation at CCWGG motifs;
-  furthermore, cytosine methylation calls at GATC motifs is likely spurious and
-  we want to make sure they can never be included in intended 6mA at GATC
-  calculations. Retain mod_type and motif columns so users can filter by them,
-  but by default all analyses should be run separately by mod_type-motif groups.
-  Call the key what you want, something like "mod_context," and format it like
-  "6mA_GATC" or "4mC_CCWGG" or whatever. Also note that 21839 mod_types are 4mC.
-
-CJS 2026-04-01
-  TODO: Implement a way when constructing the commaData object to input expected
-  modification type--motif pairs. The default should be "all" so that nothing
-  is filtered, but from my experience I know I only want 6mA at GATC sites and
-  5mC at CCWGG sites, and a 6mA at CCWGG or 5mC at GATC is likely spurious. In
-  the future, I think an option to identify "real" methylated motifs using
-  something like MicrobeMod would be a good idea; I don't want to implement this
-  now, but keep it in mind when developing the schema for this so commaData can
-  be extended later. For now, something like a named list would be good to have
-  like list(6mA = c("GATC", "ACCACC"), 5mC = "CCWGG") as there are always more
-  motifs than types of methylation, so then it will filter the object to keep
-  only 6mA at GATC and ACCACC, as well as 5mC at CCWGG.
+CJS 2026-04-02
+  TODO: Change plot_methylation_distribution() so that with no filter arguments it plots all mod_contexts and facets by mod_context. If mod_context is used to filter for a single mod_context, then don't facet and just make the one plot. If mod_type or motif arguments are used to filter and it matches more than one mod_context, then facet by mod_context.

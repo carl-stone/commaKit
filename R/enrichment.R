@@ -51,13 +51,14 @@ NULL
     site_keys      <- paste(res_sub$chrom, res_sub$position,
                             res_sub$strand, sep = ":")
 
-    data.frame(
+    result <- data.frame(
         gene_id       = unlist(gene_lists_sub, use.names = FALSE),
         site_key      = rep(site_keys, lens_sub),
         dm_padj       = rep(res_sub$dm_padj, lens_sub),
         dm_delta_beta = rep(res_sub$dm_delta_beta, lens_sub),
         stringsAsFactors = FALSE
     )
+    result[!is.na(result$gene_id), , drop = FALSE]
 }
 
 
@@ -86,11 +87,20 @@ NULL
     )
 
     genes <- unique(df$gene_id)
+    genes <- genes[!is.na(genes)]
+
+    if (length(genes) == 0L) {
+        return(setNames(numeric(0L), character(0L)))
+    }
+
     gene_scores <- vapply(genes, function(g) {
         s <- df$site_score[df$gene_id == g]
+        s <- s[!is.na(s)]
+        if (length(s) == 0L) return(NA_real_)
         if (agg == "max") s[which.max(abs(s))] else mean(s)
     }, FUN.VALUE = numeric(1L))
     names(gene_scores) <- genes
+    gene_scores <- gene_scores[!is.na(gene_scores)]
 
     sort(gene_scores, decreasing = TRUE)
 }
@@ -177,6 +187,13 @@ NULL
 #' @param gene_col Character string; the \code{rowData} column containing gene
 #'   identifiers per site (a \code{CharacterList} or \code{list} column added
 #'   by \code{\link{annotateSites}}).  Default \code{"feature_names"}.
+#' @param feature_type Character vector or \code{NULL}. When non-\code{NULL},
+#'   only sites whose \code{feature_types} annotation (added by
+#'   \code{\link{annotateSites}}) contains at least one entry matching
+#'   \code{feature_type} are used, and \code{gene_col} is subset to the
+#'   matching names only.  Default \code{"gene"} — restricts enrichment to
+#'   gene-body sites, which is required by most pathway databases.  Set to
+#'   \code{NULL} to include all annotated sites regardless of feature type.
 #' @param padj_threshold Numeric; adjusted p-value threshold for classifying
 #'   a site as differentially methylated in ORA.  Default \code{0.05}.
 #' @param delta_beta_threshold Numeric; minimum absolute effect size
@@ -241,6 +258,7 @@ enrichMethylation <- function(object,
                                TERM2GENE            = NULL,
                                TERM2NAME            = NULL,
                                gene_col             = "feature_names",
+                               feature_type         = "gene",
                                padj_threshold       = 0.05,
                                delta_beta_threshold = 0.1,
                                score_metric         = "combined",
@@ -284,6 +302,42 @@ enrichMethylation <- function(object,
             "Run diffMethyl() first:\n",
             "  dm <- diffMethyl(object, formula = ~ condition)"
         )
+    }
+
+    # ── Feature-type filtering ────────────────────────────────────────────────
+    if (!is.null(feature_type)) {
+        if (!"feature_types" %in% colnames(res_df)) {
+            warning(
+                "'feature_type' filtering requested but 'feature_types' column ",
+                "not found in results. Run annotateSites() first. ",
+                "Proceeding without filtering."
+            )
+        } else {
+            ft       <- res_df$feature_types
+            type_idx <- lapply(ft, function(x) {
+                if (length(x) == 0L || all(is.na(x))) integer(0L)
+                else which(x %in% feature_type)
+            })
+            has_match <- lengths(type_idx) > 0L
+
+            if (!any(has_match)) {
+                warning(
+                    "No sites with feature_type %in% c(",
+                    paste(dQuote(feature_type), collapse = ", "),
+                    "). Returning NULL. Use feature_type = NULL to include all features."
+                )
+                return(list(go = NULL, kegg = NULL))
+            }
+
+            res_df       <- res_df[has_match, , drop = FALSE]
+            type_idx_sub <- type_idx[has_match]
+            gn           <- res_df[[gene_col]]
+            res_df[[gene_col]] <- mapply(
+                function(nms, idx) nms[idx],
+                gn, type_idx_sub,
+                SIMPLIFY = FALSE
+            )
+        }
     }
 
     # ── Site-to-gene mapping ──────────────────────────────────────────────────

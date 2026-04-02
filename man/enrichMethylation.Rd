@@ -14,6 +14,7 @@ enrichMethylation(
   TERM2GENE = NULL,
   TERM2NAME = NULL,
   gene_col = "feature_names",
+  feature_type = "gene",
   padj_threshold = 0.05,
   delta_beta_threshold = 0.1,
   score_metric = "combined",
@@ -65,6 +66,14 @@ term IDs in \code{TERM2GENE}.}
 \item{gene_col}{Character string; the \code{rowData} column containing gene
 identifiers per site (a \code{CharacterList} or \code{list} column added
 by \code{\link{annotateSites}}).  Default \code{"feature_names"}.}
+
+\item{feature_type}{Character vector or \code{NULL}. When non-\code{NULL},
+only sites whose \code{feature_types} annotation (added by
+\code{\link{annotateSites}}) contains at least one entry matching
+\code{feature_type} are used, and \code{gene_col} is subset to the
+matching names only.  Default \code{"gene"} — restricts enrichment to
+gene-body sites, which is required by most pathway databases.  Set to
+\code{NULL} to include all annotated sites regardless of feature type.}
 
 \item{padj_threshold}{Numeric; adjusted p-value threshold for classifying
 a site as differentially methylated in ORA.  Default \code{0.05}.}
