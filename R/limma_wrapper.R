@@ -58,7 +58,8 @@ NULL
 #'   }
 #'
 #' @keywords internal
-.runLimma <- function(methyl_mat, coverage_mat, coldata, formula, alpha = 0.5) {
+.runLimma <- function(methyl_mat, coverage_mat, coldata, formula, alpha = 0.5,
+                      ref_level = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("limma", quietly = TRUE)) {
         stop(
@@ -89,17 +90,20 @@ NULL
     }
 
     cond        <- as.character(coldata[[primary_var]])
-    cond_levels <- sort(unique(cond))
+    all_levels  <- sort(unique(cond))
 
-    if (length(cond_levels) < 2L) {
+    if (length(all_levels) < 2L) {
         stop(
             "Differential methylation requires at least 2 distinct levels of '",
-            primary_var, "'. Found only: '", cond_levels[[1L]], "'."
+            primary_var, "'. Found only: '", all_levels[[1L]], "'."
         )
     }
 
-    # Reference level = first alphabetically (consistent with glm default)
-    ref_level   <- cond_levels[[1L]]
+    # Use provided ref_level, or fall back to alphabetically first
+    if (is.null(ref_level)) {
+        ref_level <- all_levels[[1L]]
+    }
+    cond_levels <- c(ref_level, setdiff(all_levels, ref_level))
     treat_level <- cond_levels[[2L]]
 
     n_sites <- nrow(methyl_mat)
@@ -157,6 +161,12 @@ NULL
     M_complete <- M_mat[complete_sites, , drop = FALSE]
 
     # ── Build design matrix ───────────────────────────────────────────────────
+    # Relevel the primary variable so model.matrix() encodes contrasts against
+    # ref_level, regardless of whether the original column was a factor or char.
+    coldata[[primary_var]] <- relevel(
+        factor(coldata[[primary_var]]),
+        ref = ref_level
+    )
     design <- stats::model.matrix(formula, data = coldata)
 
     # ── Fit linear model + eBayes ─────────────────────────────────────────────

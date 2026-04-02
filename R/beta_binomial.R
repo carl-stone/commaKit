@@ -55,7 +55,8 @@ NULL
 #'   }
 #'
 #' @keywords internal
-.betaBinomialTest <- function(methyl_mat, coverage_mat, coldata, formula) {
+.betaBinomialTest <- function(methyl_mat, coverage_mat, coldata, formula,
+                              ref_level = NULL) {
     # ── Parse formula ─────────────────────────────────────────────────────────
     rhs_vars <- all.vars(formula)
     if (length(rhs_vars) == 0L) {
@@ -71,15 +72,22 @@ NULL
         )
     }
 
-    cond       <- as.character(coldata[[primary_var]])
-    cond_levels <- unique(cond)
+    cond        <- as.character(coldata[[primary_var]])
+    all_levels  <- unique(cond)
 
-    if (length(cond_levels) < 2L) {
+    if (length(all_levels) < 2L) {
         stop(
             "Differential methylation requires at least 2 distinct levels of '",
-            primary_var, "'. Found only: '", cond_levels, "'."
+            primary_var, "'. Found only: '", all_levels, "'."
         )
     }
+
+    # Use provided ref_level, or fall back to alphabetically first
+    if (is.null(ref_level)) {
+        ref_level <- sort(all_levels)[[1L]]
+    }
+    cond_levels <- c(ref_level, setdiff(sort(all_levels), ref_level))
+    treat_level <- cond_levels[[2L]]
 
     n_sites   <- nrow(methyl_mat)
     n_samples <- ncol(methyl_mat)
@@ -106,11 +114,7 @@ NULL
     # group_means is n_sites × n_levels; NaN where all samples are NA
     group_means[is.nan(group_means)] <- NA_real_
 
-    # Reference level = first level alphabetically (consistent with glm default)
-    ref_level <- sort(cond_levels)[[1L]]
-    treat_levels <- setdiff(sort(cond_levels), ref_level)
     # delta_beta = treat - ref (if exactly 2 groups); or treat1 - ref for >2
-    treat_level <- treat_levels[[1L]]
     delta_beta_vec <- group_means[, treat_level] - group_means[, ref_level]
 
     # ── Per-site GLM ─────────────────────────────────────────────────────────
@@ -141,7 +145,11 @@ NULL
             n_unmod = n_unmod,
             stringsAsFactors = FALSE
         )
-        df_glm[[primary_var]] <- cond_ok
+        # Set factor levels so GLM encodes contrasts against ref_level
+        df_glm[[primary_var]] <- factor(
+            cond_ok,
+            levels = c(ref_level, setdiff(unique(cond_ok), ref_level))
+        )
 
         fit <- tryCatch(
             glm(

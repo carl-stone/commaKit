@@ -4,7 +4,14 @@
 \alias{.runLimma}
 \title{Per-site moderated t-test via limma eBayes for differential methylation}
 \usage{
-.runLimma(methyl_mat, coverage_mat, coldata, formula, alpha = 0.5)
+.runLimma(
+  methyl_mat,
+  coverage_mat,
+  coldata,
+  formula,
+  alpha = 0.5,
+  ref_level = NULL
+)
 }
 \arguments{
 \item{methyl_mat}{Numeric matrix (sites × samples) of beta values.

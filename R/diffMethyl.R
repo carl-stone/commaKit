@@ -122,6 +122,13 @@ NULL
 #' @param min_coverage Integer. Minimum per-sample read depth required to
 #'   include a site in testing. Sites where any sample has coverage below
 #'   this threshold are treated as \code{NA} in that sample. Default \code{5L}.
+#' @param reference Character string or \code{NULL}. The reference (control)
+#'   level for the primary formula variable. When provided, it must match one of
+#'   the values present in the corresponding \code{colData} column. When
+#'   \code{NULL} (default), the reference level is determined automatically: if
+#'   the column is a factor, its first factor level is used; otherwise the
+#'   alphabetically first value is used (matching R's default contrast
+#'   behaviour).
 #' @param p_adjust_method Character string. Multiple testing correction method,
 #'   passed to \code{\link[stats]{p.adjust}}. Default \code{"BH"}
 #'   (Benjamini-Hochberg). Other options: \code{"bonferroni"}, \code{"holm"},
@@ -151,6 +158,7 @@ NULL
 diffMethyl <- function(
     object,
     formula         = ~ condition,
+    reference       = NULL,
     method          = c("beta_binomial", "methylkit", "limma", "quasi_f"),
     mod_context     = NULL,
     mod_type        = NULL,
@@ -256,6 +264,26 @@ diffMethyl <- function(
         )
     }
 
+    # ── Resolve reference level ───────────────────────────────────────────────
+    if (!is.null(reference)) {
+        if (!is.character(reference) || length(reference) != 1L) {
+            stop("'reference' must be a single character string or NULL.")
+        }
+        all_vals <- unique(as.character(cd[[primary_var]]))
+        if (!reference %in% all_vals) {
+            stop(
+                "'reference' value '", reference, "' not found in column '",
+                primary_var, "'. Available values: ",
+                paste(sort(all_vals), collapse = ", ")
+            )
+        }
+        ref_level <- reference
+    } else if (is.factor(cd[[primary_var]])) {
+        ref_level <- levels(cd[[primary_var]])[1L]
+    } else {
+        ref_level <- sort(unique(as.character(cd[[primary_var]])))[1L]
+    }
+
     # ── Determine which mod contexts to test ──────────────────────────────────
     # Loop by mod_context (mod_type × motif combination) rather than mod_type
     # alone, so that e.g. "6mA_GATC" and "5mC_GATC" are always tested
@@ -277,7 +305,9 @@ diffMethyl <- function(
     } else {
         test_contexts <- modContexts(object)
     }
-    cond_levels <- sort(unique(cd[[primary_var]]))
+    cond_levels <- c(ref_level,
+                     setdiff(sort(unique(as.character(cd[[primary_var]]))),
+                             ref_level))
 
     # ── Extract full matrices ─────────────────────────────────────────────────
     methyl_full  <- methylation(object)
@@ -306,13 +336,17 @@ diffMethyl <- function(
         # Dispatch to statistical backend
         res_sub <- tryCatch(
             if (method == "beta_binomial") {
-                .betaBinomialTest(methyl_sub, cov_sub, cd, formula)
+                .betaBinomialTest(methyl_sub, cov_sub, cd, formula,
+                                  ref_level = ref_level)
             } else if (method == "limma") {
-                .runLimma(methyl_sub, cov_sub, cd, formula, alpha = alpha)
+                .runLimma(methyl_sub, cov_sub, cd, formula, alpha = alpha,
+                          ref_level = ref_level)
             } else if (method == "quasi_f") {
-                .runQuasiF(methyl_sub, cov_sub, cd, formula)
+                .runQuasiF(methyl_sub, cov_sub, cd, formula,
+                           ref_level = ref_level)
             } else {
-                .runMethylKit(methyl_sub, cov_sub, cd, formula)
+                .runMethylKit(methyl_sub, cov_sub, cd, formula,
+                              ref_level = ref_level)
             },
             error = function(e) {
                 warning(
@@ -370,6 +404,7 @@ diffMethyl <- function(
     S4Vectors::metadata(out)$diffMethyl_result_cols <- result_cols
     S4Vectors::metadata(out)$diffMethyl_params <- list(
         formula         = deparse(formula),
+        reference       = ref_level,
         method          = method,
         mod_context     = mod_context,
         mod_type        = mod_type,

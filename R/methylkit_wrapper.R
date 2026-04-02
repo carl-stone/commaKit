@@ -33,7 +33,8 @@ NULL
 #'   per condition level. Row names are site keys.
 #'
 #' @keywords internal
-.runMethylKit <- function(methyl_mat, coverage_mat, coldata, formula) {
+.runMethylKit <- function(methyl_mat, coverage_mat, coldata, formula,
+                          ref_level = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("methylKit", quietly = TRUE)) {
         stop(
@@ -58,18 +59,22 @@ NULL
     }
 
     cond        <- as.character(coldata[[primary_var]])
-    cond_levels <- sort(unique(cond))
+    all_levels  <- sort(unique(cond))
 
-    if (length(cond_levels) < 2L) {
+    if (length(all_levels) < 2L) {
         stop(
             "Differential methylation requires at least 2 distinct levels of '",
-            primary_var, "'. Found only: '", cond_levels[[1L]], "'."
+            primary_var, "'. Found only: '", all_levels[[1L]], "'."
         )
     }
 
     # methylKit requires integer treatment codes: 0 = reference, 1 = treatment
-    ref_level   <- cond_levels[[1L]]   # alphabetical reference
-    treat_level <- cond_levels[[2L]]   # first non-reference level
+    # Use provided ref_level, or fall back to alphabetically first
+    if (is.null(ref_level)) {
+        ref_level <- all_levels[[1L]]
+    }
+    cond_levels <- c(ref_level, setdiff(all_levels, ref_level))
+    treat_level <- cond_levels[[2L]]
     treatment   <- as.integer(cond != ref_level)  # 0/1
 
     # ── Parse site keys into components ───────────────────────────────────────

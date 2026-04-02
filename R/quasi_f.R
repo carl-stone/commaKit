@@ -68,7 +68,8 @@ NULL
 #'   }
 #'
 #' @keywords internal
-.runQuasiF <- function(methyl_mat, coverage_mat, coldata, formula) {
+.runQuasiF <- function(methyl_mat, coverage_mat, coldata, formula,
+                       ref_level = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("limma", quietly = TRUE)) {
         stop(
@@ -93,17 +94,20 @@ NULL
     }
 
     cond        <- as.character(coldata[[primary_var]])
-    cond_levels <- sort(unique(cond))
+    all_levels  <- sort(unique(cond))
 
-    if (length(cond_levels) < 2L) {
+    if (length(all_levels) < 2L) {
         stop(
             "Differential methylation requires at least 2 distinct levels of '",
-            primary_var, "'. Found only: '", cond_levels[[1L]], "'."
+            primary_var, "'. Found only: '", all_levels[[1L]], "'."
         )
     }
 
-    # Reference level = first alphabetically (consistent with glm default)
-    ref_level   <- cond_levels[[1L]]
+    # Use provided ref_level, or fall back to alphabetically first
+    if (is.null(ref_level)) {
+        ref_level <- all_levels[[1L]]
+    }
+    cond_levels <- c(ref_level, setdiff(all_levels, ref_level))
     treat_level <- cond_levels[[2L]]
 
     n_sites   <- nrow(methyl_mat)
@@ -158,7 +162,11 @@ NULL
             n_unmod = n_unmod,
             stringsAsFactors = FALSE
         )
-        df_glm[[primary_var]] <- cond_ok
+        # Set factor levels so GLM encodes contrasts against ref_level
+        df_glm[[primary_var]] <- factor(
+            cond_ok,
+            levels = c(ref_level, setdiff(unique(cond_ok), ref_level))
+        )
 
         fit <- tryCatch(
             glm(

@@ -4,7 +4,7 @@
 \alias{.betaBinomialTest}
 \title{Per-site quasibinomial GLM for differential methylation}
 \usage{
-.betaBinomialTest(methyl_mat, coverage_mat, coldata, formula)
+.betaBinomialTest(methyl_mat, coverage_mat, coldata, formula, ref_level = NULL)
 }
 \arguments{
 \item{methyl_mat}{Numeric matrix (sites × samples) of beta values.

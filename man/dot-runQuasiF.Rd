@@ -4,7 +4,7 @@
 \alias{.runQuasiF}
 \title{Per-site quasi-likelihood F-test for differential methylation}
 \usage{
-.runQuasiF(methyl_mat, coverage_mat, coldata, formula)
+.runQuasiF(methyl_mat, coverage_mat, coldata, formula, ref_level = NULL)
 }
 \arguments{
 \item{methyl_mat}{Numeric matrix (sites × samples) of beta values.

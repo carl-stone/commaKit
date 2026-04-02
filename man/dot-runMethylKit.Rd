@@ -4,7 +4,7 @@
 \alias{.runMethylKit}
 \title{Run differential methylation via methylKit}
 \usage{
-.runMethylKit(methyl_mat, coverage_mat, coldata, formula)
+.runMethylKit(methyl_mat, coverage_mat, coldata, formula, ref_level = NULL)
 }
 \arguments{
 \item{methyl_mat}{Numeric matrix (sites × samples) of beta values.}

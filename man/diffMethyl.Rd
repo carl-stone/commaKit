@@ -7,6 +7,7 @@
 diffMethyl(
   object,
   formula = ~condition,
+  reference = NULL,
   method = c("beta_binomial", "methylkit", "limma", "quasi_f"),
   mod_context = NULL,
   mod_type = NULL,
@@ -24,6 +25,14 @@ distinct conditions.}
 \item{formula}{A one-sided formula specifying the design. The RHS variable
 must match a column in \code{sampleInfo(object)} (e.g., \code{~ condition}).
 Default is \code{~ condition}.}
+
+\item{reference}{Character string or \code{NULL}. The reference (control)
+level for the primary formula variable. When provided, it must match one of
+the values present in the corresponding \code{colData} column. When
+\code{NULL} (default), the reference level is determined automatically: if
+the column is a factor, its first factor level is used; otherwise the
+alphabetically first value is used (matching R's default contrast
+behaviour).}
 
 \item{method}{Character string selecting the statistical backend.
 \code{"beta_binomial"} (default) uses a quasibinomial GLM via base R.
