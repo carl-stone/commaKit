@@ -22,6 +22,7 @@ Suggests:
     BSgenome,
     Biostrings,
     BiocStyle,
+    clusterProfiler,
     ComplexHeatmap,
     ggrepel,
     limma,
@@ -44,6 +45,7 @@ Collate:
     'comma_example_data.R'
     'coverage_analysis.R'
     'diffMethyl.R'
+    'enrichment.R'
     'find_motif_sites.R'
     'genome_utils.R'
     'limma_wrapper.R'

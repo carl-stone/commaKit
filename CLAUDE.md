@@ -81,7 +81,8 @@ CoMMA/
 │   ├── m_values.R               # ✅ v0.6.0: mValues() — M-value transformation from beta + coverage
 │   ├── plot_pca.R               # ✅ Phase 5: plot_pca() with M-value transform + return_data (~196 lines)
 │   ├── plot_coverage.R          # ✅ Phase 5: plot_coverage() (~147 lines)
-│   └── plot_tss_profile.R       # ✅ v0.7.x: plot_tss_profile() — TSS-centered methylation profile (~391 lines)
+│   ├── plot_tss_profile.R       # ✅ v0.7.x: plot_tss_profile() — TSS-centered methylation profile (~391 lines)
+│   └── enrichment.R             # ✅ v0.9.0: enrichMethylation() — GO/KEGG ORA and GSEA via clusterProfiler (~290 lines)
 ├── vignettes/
 │   ├── getting-started.Rmd           # ✅ End-to-end workflow (~214 lines)
 │   └── multiple-modification-types.Rmd  # ✅ Joint 6mA + 5mC analysis (~173 lines)
@@ -119,7 +120,8 @@ CoMMA/
 │   ├── test-m_values.R                # ✅ mValues() tests (~24 tests: formula, NA propagation, alpha, mod_type)
 │   ├── test-plot_pca.R                # ✅ Phase 5: plot_pca() tests, including return_data (~22 tests)
 │   ├── test-plot_coverage.R           # ✅ Phase 5: plot_coverage() tests (~117 lines)
-│   └── test-plot_tss_profile.R        # ✅ v0.7.x: plot_tss_profile() tests (~303 lines)
+│   ├── test-plot_tss_profile.R        # ✅ v0.7.x: plot_tss_profile() tests (~303 lines)
+│   └── test-enrichment.R              # ✅ v0.9.0: enrichMethylation() tests (~34 tests)
 ├── man/                          # Roxygen2-generated docs (all current)
 ├── .github/workflows/
 │   ├── r.yml                     # rcmdcheck on push/PR (R 3.6.3 + 4.1.1, macOS-latest)
@@ -204,6 +206,10 @@ CoMMA/
 - **`subset(object, mod_context = ...)`** — `mod_context` added as filter parameter in `subset()`; works alongside existing `mod_type`, `condition`, `chrom` filters
 - **`diffMethyl()` loops by `mod_context`** — analysis now runs independently per `mod_context` group (not per `mod_type`); prevents spurious pooling of e.g. 6mA@GATC with 6mA@other-motif; `mod_context` parameter takes precedence over `mod_type`
 - **`mod_context` filter on all analysis + plot functions** — `mod_context = NULL` parameter added to `methylomeSummary()`, `slidingWindow()`, `mValues()`, `writeBED()`, `results()`, `filterResults()`, and all 8 `plot_*()` functions; `plot_tss_profile()` additionally supports `color_by = "mod_context"` and `facet_by = "mod_context"`
+
+### Added in v0.9.0 (current dev)
+
+- **`enrichMethylation()`** — gene set enrichment analysis of differential methylation results; maps per-site `dm_padj` / `dm_delta_beta` values up to gene level using the `feature_names` CharacterList from `annotateSites()` and runs GO and/or KEGG enrichment via `clusterProfiler`; supports ORA (`method = "ora"`) and GSEA (`method = "gsea"`) independently or together; gene-to-term mapping can be supplied as an OrgDb object + KEGG organism code (for model organisms) or as a custom `TERM2GENE` data frame (for any organism); returns `list(go=..., kegg=...)` containing clusterProfiler `enrichResult`/`gseaResult` objects
 
 ### Breaking changes in v0.8.0
 
@@ -293,6 +299,7 @@ This section records what was built in each version. It is a reference for under
 | 0.6.0 | `mValues()`, `motifs()` accessor, M-value transform in `plot_pca()`, R CMD check clean |
 | 0.7.x | `plot_tss_profile()`, `diffMethyl(method="limma"|"quasi_f")` |
 | 0.8.0 | `mod_context` rowData column + `modContexts()` accessor + `expected_mod_contexts` constructor filter; `diffMethyl()` loops by mod_context; `mod_context` param on all analysis/plot functions |
+| 0.9.0 | `enrichMethylation()` — GO and KEGG ORA + GSEA enrichment of DM results via clusterProfiler; flexible gene-to-term mapping (OrgDb, KEGG organism code, or custom TERM2GENE) |
 
 ---
 
@@ -355,6 +362,7 @@ Any function that touches genomic positions must be vectorized:
 | Package | Purpose |
 |---|---|
 | `BSgenome` | Genome sequence access for `findMotifSites()` |
+| `clusterProfiler` | GO/KEGG enrichment analysis in `enrichMethylation()` |
 | `Biostrings` | Sequence pattern matching for motif search |
 | `BiocStyle` | Vignette styling (Bioconductor standard) |
 | `ComplexHeatmap` | Available as alternative heatmap backend (not currently used — `plot_heatmap()` uses ggplot2) |
@@ -444,6 +452,7 @@ Use `comma_example_data` — a synthetic `commaData` object created in Phase 1 (
 | `test-plot_pca.R` | plot_pca(): returns ggplot, color_by/shape_by, return_data data.frame + percentVar attr — ~22 tests |
 | `test-plot_coverage.R` | plot_coverage() returns ggplot, per_sample mode |
 | `test-plot_tss_profile.R` | plot_tss_profile(): TSS window, color_by modes, regulatory_element fallback, loess smooth, faceting, error conditions — ~16 tests |
+| `test-enrichment.R` | .siteToGeneMap() explosion/exclusion, .computeGeneScores() metric/aggregation/NA handling, enrichMethylation() ORA+GSEA, error conditions, mod_type filter — ~34 tests |
 
 ### Required coverage
 
@@ -700,6 +709,26 @@ diffMethyl(object, formula, method, mod_type, mod_context, min_coverage, alpha, 
                                               # → commaData with dm_* results in rowData
 results(object, mod_type, mod_context)        # mod_context filter NEW v0.8.0
 filterResults(object, padj, delta_beta, ...)  # → filtered data.frame
+
+# Enrichment analysis (v0.9.0)
+# Requires annotateSites() + diffMethyl() to have been run first.
+enrichMethylation(object,
+  method,               # "ora" | "gsea" | c("ora","gsea")
+  OrgDb,                # Bioconductor OrgDb for GO (e.g., org.EcK12.eg.db)
+  keyType,              # gene ID type in OrgDb matching gene_col values
+  ont,                  # GO ontology: "BP" | "MF" | "CC" | "ALL"
+  organism,             # KEGG organism code (e.g., "eco"); requires internet
+  TERM2GENE,            # custom data.frame(term, gene) — overrides OrgDb for GO
+  TERM2NAME,            # optional data.frame(term, name) for term descriptions
+  gene_col,             # rowData column with gene IDs (default "feature_names")
+  padj_threshold,       # ORA site significance cutoff (default 0.05)
+  delta_beta_threshold, # ORA effect size cutoff (default 0.1)
+  score_metric,         # GSEA ranking: "combined" | "padj" | "delta_beta"
+  gene_score_agg,       # site→gene aggregation: "max" | "mean"
+  mod_type, mod_context,
+  pvalueCutoff, qvalueCutoff, minGSSize, maxGSSize)
+# Returns list(go=..., kegg=...); each slot is enrichResult/gseaResult or NULL.
+# When both methods requested: list(go=list(ora=...,gsea=...), kegg=list(...))
 
 # Visualization (Phase 5 + v0.8.0 mod_context param added throughout)
 plot_methylation_distribution(object, mod_type, mod_context, per_sample)
