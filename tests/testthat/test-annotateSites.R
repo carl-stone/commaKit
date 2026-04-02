@@ -114,29 +114,40 @@ test_that("annotateSites: type='proximity' adds correct list-typed columns", {
     data(comma_example_data)
     result <- annotateSites(comma_example_data, type = "proximity", window = 10000L)
     si <- siteInfo(result)
-    expect_true("nearby_features" %in% colnames(si))
-    expect_true("distances_to_features" %in% colnames(si))
-    expect_true("rel_positions" %in% colnames(si))
-    expect_true(is(si$nearby_features,       "CharacterList"))
-    expect_true(is(si$distances_to_features, "IntegerList"))
-    expect_true(is(si$rel_positions,         "IntegerList"))
+    expect_true("nearby_features"  %in% colnames(si))
+    expect_true("rel_positions"    %in% colnames(si))
+    expect_false("distances_to_features" %in% colnames(si))
+    expect_true(is(si$nearby_features, "CharacterList"))
+    expect_true(is(si$rel_positions,   "IntegerList"))
 })
 
-test_that("annotateSites: type='proximity' distances are non-negative", {
+test_that("annotateSites: type='proximity' sites inside a feature have rel_positions == 0", {
+    # Feature covering 45000-55000; sites inside should get rel_positions = 0
+    features <- GenomicRanges::GRanges(
+        seqnames     = "chr_sim",
+        ranges       = IRanges::IRanges(start = 45000L, end = 55000L),
+        strand       = "+",
+        feature_type = "gene",
+        name         = "geneX"
+    )
     data(comma_example_data)
-    result <- annotateSites(comma_example_data, type = "proximity", window = 100000L)
-    si     <- siteInfo(result)
-    all_dists <- unlist(si$distances_to_features)
-    expect_true(all(all_dists >= 0L))
+    si  <- siteInfo(comma_example_data)
+    idx <- which(si$position >= 45000L & si$position <= 55000L)
+    if (length(idx) == 0L) skip("No sites inside 45000-55000 for rel_positions=0 test")
+    sub_obj <- comma_example_data[idx, ]
+    result  <- annotateSites(sub_obj, features = features, type = "proximity", window = 500L)
+    res_si  <- siteInfo(result)
+    all_rp  <- unlist(res_si$rel_positions)
+    expect_true(all(all_rp == 0L))
 })
 
-test_that("annotateSites: type='proximity' all distances are within window", {
+test_that("annotateSites: type='proximity' abs(rel_positions) are within window", {
     window <- 5000L
     data(comma_example_data)
-    result <- annotateSites(comma_example_data, type = "proximity", window = window)
-    si     <- siteInfo(result)
-    all_dists <- unlist(si$distances_to_features)
-    expect_true(all(all_dists <= window))
+    result    <- annotateSites(comma_example_data, type = "proximity", window = window)
+    si        <- siteInfo(result)
+    all_rp    <- unlist(si$rel_positions)
+    expect_true(all(abs(all_rp) <= window))
 })
 
 test_that("annotateSites: type='proximity' sites beyond window get length-0 elements", {
@@ -158,11 +169,12 @@ test_that("annotateSites: type='proximity' rel_positions contain both positive a
 
 # ── metagene mode ─────────────────────────────────────────────────────────────
 
-test_that("annotateSites: type='metagene' adds metagene_features and metagene_positions columns", {
+test_that("annotateSites: type='metagene' adds metagene_features, metagene_frac, metagene_positions columns", {
     data(comma_example_data)
     result <- annotateSites(comma_example_data, type = "metagene")
     si <- siteInfo(result)
     expect_true("metagene_features"  %in% colnames(si))
+    expect_true("metagene_frac"      %in% colnames(si))
     expect_true("metagene_positions" %in% colnames(si))
 })
 
@@ -171,16 +183,25 @@ test_that("annotateSites: type='metagene' columns are list-typed", {
     result <- annotateSites(comma_example_data, type = "metagene")
     si <- siteInfo(result)
     expect_true(is(si$metagene_features,  "CharacterList"))
-    expect_true(is(si$metagene_positions, "NumericList") ||
-                    is(si$metagene_positions, "List"))
+    expect_true(is(si$metagene_frac,      "NumericList") || is(si$metagene_frac, "List"))
+    expect_true(is(si$metagene_positions, "IntegerList") || is(si$metagene_positions, "List"))
 })
 
-test_that("annotateSites: type='metagene' all metagene_positions values are in [0, 1]", {
+test_that("annotateSites: type='metagene' all metagene_frac values are in [0, 1]", {
     data(comma_example_data)
-    result <- annotateSites(comma_example_data, type = "metagene")
-    si     <- siteInfo(result)
+    result  <- annotateSites(comma_example_data, type = "metagene")
+    si      <- siteInfo(result)
+    all_frac <- unlist(si$metagene_frac)
+    expect_true(all(all_frac >= 0 & all_frac <= 1))
+})
+
+test_that("annotateSites: type='metagene' metagene_positions are non-negative integers", {
+    data(comma_example_data)
+    result  <- annotateSites(comma_example_data, type = "metagene")
+    si      <- siteInfo(result)
     all_pos <- unlist(si$metagene_positions)
-    expect_true(all(all_pos >= 0 & all_pos <= 1))
+    expect_true(is.integer(all_pos))
+    expect_true(all(all_pos >= 0L))
 })
 
 test_that("annotateSites: type='metagene' non-overlapping sites get length-0 elements", {
@@ -188,10 +209,10 @@ test_that("annotateSites: type='metagene' non-overlapping sites get length-0 ele
     result <- annotateSites(comma_example_data, type = "metagene")
     si <- siteInfo(result)
     expect_true(any(lengths(si$metagene_features) == 0L))
-    expect_true(any(lengths(si$metagene_positions) == 0L))
+    expect_true(any(lengths(si$metagene_frac)      == 0L))
 })
 
-test_that("annotateSites: type='metagene' strand-aware: + strand site at feature start → ~0", {
+test_that("annotateSites: type='metagene' strand-aware: + strand site at feature start → frac ~0, pos ~0", {
     features <- GenomicRanges::GRanges(
         seqnames     = "chr_sim",
         ranges       = IRanges::IRanges(start = 1000L, end = 2000L),
@@ -206,12 +227,14 @@ test_that("annotateSites: type='metagene' strand-aware: + strand site at feature
     sub_obj <- comma_example_data[idx[1L], ]
     result  <- annotateSites(sub_obj, features = features, type = "metagene")
     res_si  <- siteInfo(result)
-    pos_vals <- unlist(res_si$metagene_positions)
-    expect_true(length(pos_vals) > 0L)
-    expect_true(all(pos_vals < 0.1))  # near start of + strand feature
+    frac_vals <- unlist(res_si$metagene_frac)
+    pos_vals  <- unlist(res_si$metagene_positions)
+    expect_true(length(frac_vals) > 0L)
+    expect_true(all(frac_vals < 0.1))   # near start of + strand feature
+    expect_true(all(pos_vals  < 51L))   # within 50 bp of TSS
 })
 
-test_that("annotateSites: type='metagene' - strand site at high coordinate → ~0", {
+test_that("annotateSites: type='metagene' - strand site at high coordinate → frac ~0, pos ~0", {
     # For - strand, 0 = high coordinate (biological TSS)
     features <- GenomicRanges::GRanges(
         seqnames     = "chr_sim",
@@ -227,9 +250,11 @@ test_that("annotateSites: type='metagene' - strand site at high coordinate → ~
     sub_obj <- comma_example_data[idx[1L], ]
     result  <- annotateSites(sub_obj, features = features, type = "metagene")
     res_si  <- siteInfo(result)
-    pos_vals <- unlist(res_si$metagene_positions)
-    expect_true(length(pos_vals) > 0L)
-    expect_true(all(pos_vals < 0.1))  # near start of - strand feature (high coord)
+    frac_vals <- unlist(res_si$metagene_frac)
+    pos_vals  <- unlist(res_si$metagene_positions)
+    expect_true(length(frac_vals) > 0L)
+    expect_true(all(frac_vals < 0.1))   # near start of - strand feature (high coord)
+    expect_true(all(pos_vals  < 51L))   # within 50 bp of TSS
 })
 
 test_that("annotateSites: type='metagene' site overlapping 2 features gets 2 positions", {
@@ -248,6 +273,7 @@ test_that("annotateSites: type='metagene' site overlapping 2 features gets 2 pos
     sub_obj <- comma_example_data[idx[1L], ]
     result  <- annotateSites(sub_obj, features = features, type = "metagene")
     res_si  <- siteInfo(result)
+    expect_equal(length(res_si$metagene_frac[[1L]]),      2L)
     expect_equal(length(res_si$metagene_positions[[1L]]), 2L)
     expect_equal(length(res_si$metagene_features[[1L]]),  2L)
 })

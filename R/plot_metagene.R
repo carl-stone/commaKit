@@ -104,8 +104,8 @@ plot_metagene <- function(object,
     annotated <- annotateSites(object, features = feat_gr, type = "metagene")
     rd        <- as.data.frame(SummarizedExperiment::rowData(annotated))
 
-    ## metagene_positions is a NumericList (one list element per site)
-    pos_list <- rd$metagene_positions
+    ## metagene_frac is a NumericList (one list element per site)
+    pos_list <- rd$metagene_frac
     site_lengths <- lengths(pos_list)
 
     ## Keep only sites with at least one metagene position

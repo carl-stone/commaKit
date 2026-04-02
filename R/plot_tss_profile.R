@@ -164,6 +164,21 @@ plot_tss_profile <- function(object,
              paste(available_types, collapse = ", "), ".")
     }
 
+    ## Narrow features to 1-bp TSS points so that rel_positions from
+    ## annotateSites(type = "proximity") measures distance from the TSS itself
+    ## rather than from the nearest feature boundary.
+    feat_strand <- as.character(GenomicRanges::strand(tss_gr))
+    tss_pos <- ifelse(feat_strand == "-",
+                      GenomicRanges::end(tss_gr),
+                      GenomicRanges::start(tss_gr))
+    tss_1bp <- GenomicRanges::GRanges(
+        seqnames = GenomicRanges::seqnames(tss_gr),
+        ranges   = IRanges::IRanges(start = tss_pos, width = 1L),
+        strand   = GenomicRanges::strand(tss_gr)
+    )
+    GenomicRanges::mcols(tss_1bp) <- GenomicRanges::mcols(tss_gr)
+    tss_gr <- tss_1bp
+
     ## ── C. Filter by mod_type / motif / mod_context ──────────────────────────
     if (!is.null(mod_type)) {
         available <- modTypes(object)
@@ -184,8 +199,8 @@ plot_tss_profile <- function(object,
     }
 
     ## ── D. Proximity annotation ───────────────────────────────────────────────
-    ## annotateSites(type = "proximity") adds rel_positions (IntegerList) where
-    ## negative = upstream of TSS, positive = downstream.
+    ## annotateSites(type = "proximity") on 1-bp TSS GRanges adds rel_positions
+    ## (IntegerList): negative = upstream of TSS, positive = downstream.
     annotated <- annotateSites(object, features = tss_gr, type = "proximity",
                                window = window)
     rd <- as.data.frame(SummarizedExperiment::rowData(annotated))

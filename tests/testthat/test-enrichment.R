@@ -350,3 +350,84 @@ test_that("enrichMethylation mod_type filter errors on unknown type", {
         "mod_type"
     )
 })
+
+# ── .siteToGeneMap() — NA gene_id handling ───────────────────────────────────
+
+test_that(".siteToGeneMap drops NA gene IDs silently", {
+    res_df <- data.frame(
+        chrom         = c("chr1", "chr1"),
+        position      = c(100L, 200L),
+        strand        = "+",
+        dm_padj       = c(0.01, 0.02),
+        dm_delta_beta = c(-0.3, 0.2),
+        feature_names = I(list(c(NA_character_, "geneA"), c("geneB"))),
+        stringsAsFactors = FALSE
+    )
+    sg <- comma:::.siteToGeneMap(res_df, "feature_names")
+
+    expect_false(any(is.na(sg$gene_id)))
+    expect_true("geneA" %in% sg$gene_id)
+    expect_true("geneB" %in% sg$gene_id)
+})
+
+# ── .computeGeneScores() — NA gene_id robustness ────────────────────────────
+
+test_that(".computeGeneScores 'max' does not crash when gene_ids contain NA", {
+    sg <- data.frame(
+        gene_id       = c(NA_character_, "geneA", "geneA"),
+        site_key      = c("chr1:100:+", "chr1:200:+", "chr1:300:+"),
+        dm_padj       = c(0.01, 0.01, 0.05),
+        dm_delta_beta = c(0.4, -0.5, -0.2),
+        stringsAsFactors = FALSE
+    )
+    expect_no_error(
+        scores <- comma:::.computeGeneScores(sg, "combined", "max")
+    )
+    expect_false(is.null(names(scores)))
+    expect_false(any(is.na(names(scores))))
+})
+
+test_that(".computeGeneScores 'mean' does not return empty when gene_ids contain NA", {
+    sg <- data.frame(
+        gene_id       = c(NA_character_, "geneA"),
+        site_key      = c("chr1:100:+", "chr1:200:+"),
+        dm_padj       = c(0.01, 0.01),
+        dm_delta_beta = c(0.4, 0.5),
+        stringsAsFactors = FALSE
+    )
+    scores <- comma:::.computeGeneScores(sg, "delta_beta", "mean")
+    expect_true(length(scores) > 0L)
+    expect_true("geneA" %in% names(scores))
+})
+
+# ── enrichMethylation() — feature_type argument ───────────────────────────────
+
+test_that("enrichMethylation feature_type = 'gene' runs without error", {
+    skip_if_not_installed("clusterProfiler")
+    ann <- make_annotated_dm()
+    expect_no_error(
+        enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g,
+                          feature_type = "gene")
+    )
+})
+
+test_that("enrichMethylation feature_type = NULL includes all features", {
+    skip_if_not_installed("clusterProfiler")
+    ann <- make_annotated_dm()
+    expect_no_error(
+        enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g,
+                          feature_type = NULL)
+    )
+})
+
+test_that("enrichMethylation warns and returns NULL for unmatched feature_type", {
+    skip_if_not_installed("clusterProfiler")
+    ann <- make_annotated_dm()
+    expect_warning(
+        res <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g,
+                                 feature_type = "nonexistent_type"),
+        "No sites with feature_type"
+    )
+    expect_null(res$go)
+    expect_null(res$kegg)
+})

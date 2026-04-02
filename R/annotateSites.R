@@ -34,14 +34,19 @@ NULL
 #'       overlapping feature types and names. Sites that overlap no feature
 #'       receive length-0 \code{CharacterList} elements.}
 #'     \item{\code{"proximity"}}{Each site is assigned all features
-#'       within \code{window} bp: their names, absolute distances, and signed
-#'       relative positions (negative = upstream; positive = downstream of the
-#'       feature TSS). Sites with no nearby features receive length-0 elements.}
+#'       within \code{window} bp: their names and signed relative positions.
+#'       Relative positions are 0 when the site is inside the feature,
+#'       negative when upstream (before the feature in biological orientation),
+#'       and positive when downstream. Range is \eqn{[-W, W]} where \eqn{W}
+#'       is \code{window}. Sites with no nearby features receive length-0
+#'       elements.}
 #'     \item{\code{"metagene"}}{Each site that overlaps a feature is assigned
-#'       a fractional position within that feature (0 = feature start, 1 =
-#'       feature end) for every overlapping feature. Strand-aware: for
-#'       \code{"-"} strand features, 0 is at the feature end (highest
-#'       coordinate) and 1 is at the feature start (lowest coordinate).
+#'       both a fractional position (\code{metagene_frac}, in \eqn{[0, 1]})
+#'       and a base-pair offset from the biological feature start
+#'       (\code{metagene_positions}) for every overlapping feature.
+#'       Strand-aware: for \code{"-"} strand features, position 0 is at
+#'       the feature end (highest coordinate, the biological TSS) and
+#'       increases toward lower coordinates.
 #'       Non-overlapping sites receive length-0 elements.}
 #'   }
 #' @param feature_col Character string. Name of the \code{mcols} column in
@@ -63,14 +68,14 @@ NULL
 #'       — all overlapping feature types and names per site.
 #'       Intergenic sites: \code{lengths(feature_types) == 0}.}
 #'     \item{For \code{type = "proximity"}:}{\code{nearby_features}
-#'       (\code{CharacterList}), \code{distances_to_features}
-#'       (\code{IntegerList}), and \code{rel_positions} (\code{IntegerList})
-#'       — all features within \code{window} bp. Sites with none:
-#'       \code{lengths(nearby_features) == 0}.}
+#'       (\code{CharacterList}) and \code{rel_positions} (\code{IntegerList})
+#'       — all features within \code{window} bp and their signed distances.
+#'       Sites with none: \code{lengths(nearby_features) == 0}.}
 #'     \item{For \code{type = "metagene"}:}{\code{metagene_features}
-#'       (\code{CharacterList}) and \code{metagene_positions}
-#'       (\code{NumericList}) — all overlapping feature names and their
-#'       fractional positions in \eqn{[0, 1]}. Non-overlapping sites:
+#'       (\code{CharacterList}), \code{metagene_frac} (\code{NumericList}),
+#'       and \code{metagene_positions} (\code{IntegerList}) — overlapping
+#'       feature names, fractional positions in \eqn{[0, 1]}, and base-pair
+#'       offsets from the biological feature start. Non-overlapping sites:
 #'       \code{lengths(metagene_features) == 0}.}
 #'   }
 #'
@@ -89,7 +94,8 @@ NULL
 #' # Metagene annotation
 #' mg <- annotateSites(comma_example_data, type = "metagene")
 #' si_mg <- siteInfo(mg)
-#' # Metagene positions for the first overlapping site:
+#' # Fractional and bp positions for the first overlapping site:
+#' si_mg$metagene_frac[[which(lengths(si_mg$metagene_frac) > 0)[1]]]
 #' si_mg$metagene_positions[[which(lengths(si_mg$metagene_positions) > 0)[1]]]
 #'
 #' @export
@@ -200,9 +206,8 @@ annotateSites <- function(object,
     empty_il    <- S4Vectors::splitAsList(integer(0),   site_factor)
 
     if (length(hits) == 0L) {
-        rd$nearby_features      <- empty_cl
-        rd$distances_to_features <- empty_il
-        rd$rel_positions        <- empty_il
+        rd$nearby_features <- empty_cl
+        rd$rel_positions   <- empty_il
         return(rd)
     }
 
@@ -215,17 +220,24 @@ annotateSites <- function(object,
     feat_names  <- as.character(GenomicRanges::mcols(features)[[name_col]][s_idx])
     site_pos    <- rd$position[q_idx]
 
-    # Absolute distance: 0 if site is inside feature, else distance to nearest edge
-    dist_raw <- as.integer(pmax(0L, pmax(feat_starts - site_pos, site_pos - feat_ends)))
-
-    # Signed position relative to TSS (start for + strand, end for - strand)
-    tss         <- ifelse(feat_strand == "-", feat_ends, feat_starts)
-    signed_dist <- as.integer(ifelse(feat_strand == "-", tss - site_pos, site_pos - tss))
+    # Signed distance from nearest feature boundary, strand-aware.
+    # 0 when site is inside the feature.
+    # For + strand: negative = upstream (lower coord), positive = downstream.
+    # For - strand: negative = upstream (higher coord), positive = downstream.
+    inside     <- site_pos >= feat_starts & site_pos <= feat_ends
+    pos_signed <- ifelse(inside, 0L,
+                      ifelse(site_pos < feat_starts,
+                             site_pos - feat_starts,   # negative (upstream)
+                             site_pos - feat_ends))    # positive (downstream)
+    neg_signed <- ifelse(inside, 0L,
+                      ifelse(site_pos > feat_ends,
+                             feat_ends - site_pos,     # negative (upstream on - strand)
+                             feat_starts - site_pos))  # positive (downstream on - strand)
+    rel_pos    <- as.integer(ifelse(feat_strand == "-", neg_signed, pos_signed))
 
     site_factor <- factor(q_idx, levels = seq_len(n_sites))
-    rd$nearby_features       <- S4Vectors::splitAsList(feat_names,  site_factor)
-    rd$distances_to_features <- S4Vectors::splitAsList(dist_raw,    site_factor)
-    rd$rel_positions         <- S4Vectors::splitAsList(signed_dist, site_factor)
+    rd$nearby_features <- S4Vectors::splitAsList(feat_names, site_factor)
+    rd$rel_positions   <- S4Vectors::splitAsList(rel_pos,    site_factor)
     rd
 }
 
@@ -240,10 +252,12 @@ annotateSites <- function(object,
     site_factor <- factor(integer(0), levels = seq_len(n_sites))
     empty_cl    <- S4Vectors::splitAsList(character(0), site_factor)
     empty_nl    <- S4Vectors::splitAsList(numeric(0),   site_factor)
+    empty_il    <- S4Vectors::splitAsList(integer(0),   site_factor)
 
     if (length(hits) == 0L) {
         rd$metagene_features  <- empty_cl
-        rd$metagene_positions <- empty_nl
+        rd$metagene_frac      <- empty_nl
+        rd$metagene_positions <- empty_il
         return(rd)
     }
 
@@ -257,8 +271,7 @@ annotateSites <- function(object,
     feat_names  <- as.character(GenomicRanges::mcols(features)[[name_col]][s_idx])
     site_pos    <- rd$position[q_idx]
 
-    # Fractional position [0, 1]: 0 = TSS, 1 = TTS
-    # For - strand: 0 = high coordinate (TTS on genome), 1 = low coordinate (TSS on genome)
+    # Fractional position [0, 1]: 0 = biological TSS, 1 = biological TTS.
     # For 1-bp features feat_widths - 1L == 0; use pmax(..., 1L) to avoid
     # division by zero producing NaN (which pmax/pmin do not clamp).
     denom <- pmax(feat_widths - 1L, 1L)
@@ -270,8 +283,17 @@ annotateSites <- function(object,
     # Clamp to [0, 1] in case of rounding
     frac <- pmax(0, pmin(1, frac))
 
+    # Integer bp offset from the biological feature start (strand-aware TSS):
+    # 0 at the TSS, increases toward the 3' end inside the feature.
+    bp_pos <- as.integer(ifelse(
+        feat_strand == "-",
+        feat_ends - site_pos,    # 0 at feat_end (biological TSS on - strand)
+        site_pos - feat_starts   # 0 at feat_start (biological TSS on + strand)
+    ))
+
     site_factor <- factor(q_idx, levels = seq_len(n_sites))
     rd$metagene_features  <- S4Vectors::splitAsList(feat_names, site_factor)
-    rd$metagene_positions <- S4Vectors::splitAsList(frac,       site_factor)
+    rd$metagene_frac      <- S4Vectors::splitAsList(frac,       site_factor)
+    rd$metagene_positions <- S4Vectors::splitAsList(bp_pos,     site_factor)
     rd
 }

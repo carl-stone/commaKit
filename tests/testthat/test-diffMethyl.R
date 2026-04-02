@@ -542,3 +542,87 @@ test_that("diffMethyl: mod_context stored in metadata params", {
     params <- S4Vectors::metadata(dm)$diffMethyl_params
     expect_equal(params$mod_context, "6mA_GATC")
 })
+
+# ─── reference argument and factor-level tests ───────────────────────────────
+
+# Helper: build a commaData where WT has lower methylation than HNS
+.make_ref_test_data <- function(as_factor = FALSE) {
+    set.seed(7L)
+    n_sites <- 20L
+    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 100L, ":+:6mA:GATC")
+    # WT (n=2) ~ 0.2 methylation, HNS (n=2) ~ 0.8 methylation
+    # delta_beta (HNS - WT) should be positive
+    methyl_mat <- cbind(
+        matrix(pmax(0, pmin(1, rnorm(n_sites * 2L, 0.2, 0.03))),
+               nrow = n_sites, ncol = 2L),
+        matrix(pmax(0, pmin(1, rnorm(n_sites * 2L, 0.8, 0.03))),
+               nrow = n_sites, ncol = 2L)
+    )
+    colnames(methyl_mat) <- c("wt_1", "wt_2", "hns_1", "hns_2")
+    rownames(methyl_mat) <- site_keys
+    cov_mat <- matrix(30L, nrow = n_sites, ncol = 4L,
+                      dimnames = list(site_keys, colnames(methyl_mat)))
+    rd <- S4Vectors::DataFrame(
+        chrom       = rep("chr_sim", n_sites),
+        position    = seq_len(n_sites) * 100L,
+        strand      = rep("+", n_sites),
+        mod_type    = rep("6mA", n_sites),
+        motif       = rep("GATC", n_sites),
+        mod_context = rep("6mA_GATC", n_sites),
+        row.names   = site_keys
+    )
+    cond_vals <- c("WT", "WT", "HNS", "HNS")
+    if (as_factor) {
+        cond_vals <- factor(cond_vals, levels = c("WT", "HNS"))
+    }
+    cd <- S4Vectors::DataFrame(
+        sample_name = colnames(methyl_mat),
+        condition   = cond_vals,
+        replicate   = 1:4,
+        row.names   = colnames(methyl_mat)
+    )
+    se <- SummarizedExperiment::SummarizedExperiment(
+        assays  = list(methylation = methyl_mat, coverage = cov_mat),
+        rowData = rd,
+        colData = cd
+    )
+    new("commaData", se,
+        genomeInfo = c(chr_sim = 100000L),
+        annotation = GenomicRanges::GRanges(),
+        motifSites = GenomicRanges::GRanges())
+}
+
+test_that("diffMethyl: factor condition uses first factor level as reference", {
+    # WT is first factor level, HNS is second; WT has lower methylation.
+    # delta_beta = HNS - WT should be positive.
+    obj <- .make_ref_test_data(as_factor = TRUE)
+    dm  <- diffMethyl(obj, formula = ~ condition)
+    rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
+    db  <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
+    expect_true(mean(db) > 0,
+                info = "Expected delta_beta > 0 (HNS - WT) with factor levels")
+    # Verify reference recorded in metadata
+    params <- S4Vectors::metadata(dm)$diffMethyl_params
+    expect_equal(params$reference, "WT")
+})
+
+test_that("diffMethyl: reference argument overrides alphabetical default", {
+    # Without reference, alphabetical ordering picks HNS as ref (H < W).
+    # With reference = "WT", delta_beta should be positive (HNS - WT).
+    obj <- .make_ref_test_data(as_factor = FALSE)
+    dm  <- diffMethyl(obj, formula = ~ condition, reference = "WT")
+    rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
+    db  <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
+    expect_true(mean(db) > 0,
+                info = "Expected delta_beta > 0 (HNS - WT) with reference = 'WT'")
+    params <- S4Vectors::metadata(dm)$diffMethyl_params
+    expect_equal(params$reference, "WT")
+})
+
+test_that("diffMethyl: invalid reference value produces informative error", {
+    obj <- .make_ref_test_data(as_factor = FALSE)
+    expect_error(
+        diffMethyl(obj, formula = ~ condition, reference = "CTRL"),
+        regexp = "'reference' value 'CTRL' not found"
+    )
+})

@@ -27,14 +27,19 @@ Must have mcols columns named by \code{feature_col} and \code{name_col}.}
 overlapping feature types and names. Sites that overlap no feature
 receive length-0 \code{CharacterList} elements.}
 \item{\code{"proximity"}}{Each site is assigned all features
-within \code{window} bp: their names, absolute distances, and signed
-relative positions (negative = upstream; positive = downstream of the
-feature TSS). Sites with no nearby features receive length-0 elements.}
+within \code{window} bp: their names and signed relative positions.
+Relative positions are 0 when the site is inside the feature,
+negative when upstream (before the feature in biological orientation),
+and positive when downstream. Range is \eqn{[-W, W]} where \eqn{W}
+is \code{window}. Sites with no nearby features receive length-0
+elements.}
 \item{\code{"metagene"}}{Each site that overlaps a feature is assigned
-a fractional position within that feature (0 = feature start, 1 =
-feature end) for every overlapping feature. Strand-aware: for
-\code{"-"} strand features, 0 is at the feature end (highest
-coordinate) and 1 is at the feature start (lowest coordinate).
+both a fractional position (\code{metagene_frac}, in \eqn{[0, 1]})
+and a base-pair offset from the biological feature start
+(\code{metagene_positions}) for every overlapping feature.
+Strand-aware: for \code{"-"} strand features, position 0 is at
+the feature end (highest coordinate, the biological TSS) and
+increases toward lower coordinates.
 Non-overlapping sites receive length-0 elements.}
 }}
 
@@ -60,14 +65,14 @@ columns:
 — all overlapping feature types and names per site.
 Intergenic sites: \code{lengths(feature_types) == 0}.}
 \item{For \code{type = "proximity"}:}{\code{nearby_features}
-(\code{CharacterList}), \code{distances_to_features}
-(\code{IntegerList}), and \code{rel_positions} (\code{IntegerList})
-— all features within \code{window} bp. Sites with none:
-\code{lengths(nearby_features) == 0}.}
+(\code{CharacterList}) and \code{rel_positions} (\code{IntegerList})
+— all features within \code{window} bp and their signed distances.
+Sites with none: \code{lengths(nearby_features) == 0}.}
 \item{For \code{type = "metagene"}:}{\code{metagene_features}
-(\code{CharacterList}) and \code{metagene_positions}
-(\code{NumericList}) — all overlapping feature names and their
-fractional positions in \eqn{[0, 1]}. Non-overlapping sites:
+(\code{CharacterList}), \code{metagene_frac} (\code{NumericList}),
+and \code{metagene_positions} (\code{IntegerList}) — overlapping
+feature names, fractional positions in \eqn{[0, 1]}, and base-pair
+offsets from the biological feature start. Non-overlapping sites:
 \code{lengths(metagene_features) == 0}.}
 }
 }
@@ -104,7 +109,8 @@ sum(lengths(si$feature_types) == 0)
 # Metagene annotation
 mg <- annotateSites(comma_example_data, type = "metagene")
 si_mg <- siteInfo(mg)
-# Metagene positions for the first overlapping site:
+# Fractional and bp positions for the first overlapping site:
+si_mg$metagene_frac[[which(lengths(si_mg$metagene_frac) > 0)[1]]]
 si_mg$metagene_positions[[which(lengths(si_mg$metagene_positions) > 0)[1]]]
 
 }
