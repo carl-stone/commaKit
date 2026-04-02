@@ -68,15 +68,17 @@ NULL
 #'       — all overlapping feature types and names per site.
 #'       Intergenic sites: \code{lengths(feature_types) == 0}.}
 #'     \item{For \code{type = "proximity"}:}{\code{nearby_features}
-#'       (\code{CharacterList}) and \code{rel_positions} (\code{IntegerList})
-#'       — all features within \code{window} bp and their signed distances.
-#'       Sites with none: \code{lengths(nearby_features) == 0}.}
+#'       (\code{CharacterList}), \code{nearby_feature_types}
+#'       (\code{CharacterList}), and \code{rel_positions} (\code{IntegerList})
+#'       — all features within \code{window} bp, their types, and signed
+#'       distances. Sites with none: \code{lengths(nearby_features) == 0}.}
 #'     \item{For \code{type = "metagene"}:}{\code{metagene_features}
+#'       (\code{CharacterList}), \code{metagene_feature_types}
 #'       (\code{CharacterList}), \code{metagene_frac} (\code{NumericList}),
 #'       and \code{metagene_positions} (\code{IntegerList}) — overlapping
-#'       feature names, fractional positions in \eqn{[0, 1]}, and base-pair
-#'       offsets from the biological feature start. Non-overlapping sites:
-#'       \code{lengths(metagene_features) == 0}.}
+#'       feature names, types, fractional positions in \eqn{[0, 1]}, and
+#'       base-pair offsets from the biological feature start.
+#'       Non-overlapping sites: \code{lengths(metagene_features) == 0}.}
 #'   }
 #'
 #' @examples
@@ -206,8 +208,9 @@ annotateSites <- function(object,
     empty_il    <- S4Vectors::splitAsList(integer(0),   site_factor)
 
     if (length(hits) == 0L) {
-        rd$nearby_features <- empty_cl
-        rd$rel_positions   <- empty_il
+        rd$nearby_features      <- empty_cl
+        rd$nearby_feature_types <- empty_cl
+        rd$rel_positions        <- empty_il
         return(rd)
     }
 
@@ -218,6 +221,7 @@ annotateSites <- function(object,
     feat_ends   <- GenomicRanges::end(features)[s_idx]
     feat_strand <- as.character(GenomicRanges::strand(features))[s_idx]
     feat_names  <- as.character(GenomicRanges::mcols(features)[[name_col]][s_idx])
+    feat_types  <- as.character(GenomicRanges::mcols(features)[[feature_col]][s_idx])
     site_pos    <- rd$position[q_idx]
 
     # Signed distance from nearest feature boundary, strand-aware.
@@ -236,8 +240,9 @@ annotateSites <- function(object,
     rel_pos    <- as.integer(ifelse(feat_strand == "-", neg_signed, pos_signed))
 
     site_factor <- factor(q_idx, levels = seq_len(n_sites))
-    rd$nearby_features <- S4Vectors::splitAsList(feat_names, site_factor)
-    rd$rel_positions   <- S4Vectors::splitAsList(rel_pos,    site_factor)
+    rd$nearby_features      <- S4Vectors::splitAsList(feat_names,  site_factor)
+    rd$nearby_feature_types <- S4Vectors::splitAsList(feat_types,  site_factor)
+    rd$rel_positions        <- S4Vectors::splitAsList(rel_pos,     site_factor)
     rd
 }
 
@@ -255,9 +260,10 @@ annotateSites <- function(object,
     empty_il    <- S4Vectors::splitAsList(integer(0),   site_factor)
 
     if (length(hits) == 0L) {
-        rd$metagene_features  <- empty_cl
-        rd$metagene_frac      <- empty_nl
-        rd$metagene_positions <- empty_il
+        rd$metagene_features      <- empty_cl
+        rd$metagene_feature_types <- empty_cl
+        rd$metagene_frac          <- empty_nl
+        rd$metagene_positions     <- empty_il
         return(rd)
     }
 
@@ -269,6 +275,7 @@ annotateSites <- function(object,
     feat_widths <- GenomicRanges::width(features)[s_idx]
     feat_strand <- as.character(GenomicRanges::strand(features))[s_idx]
     feat_names  <- as.character(GenomicRanges::mcols(features)[[name_col]][s_idx])
+    feat_types  <- as.character(GenomicRanges::mcols(features)[[feature_col]][s_idx])
     site_pos    <- rd$position[q_idx]
 
     # Fractional position [0, 1]: 0 = biological TSS, 1 = biological TTS.
@@ -292,8 +299,9 @@ annotateSites <- function(object,
     ))
 
     site_factor <- factor(q_idx, levels = seq_len(n_sites))
-    rd$metagene_features  <- S4Vectors::splitAsList(feat_names, site_factor)
-    rd$metagene_frac      <- S4Vectors::splitAsList(frac,       site_factor)
-    rd$metagene_positions <- S4Vectors::splitAsList(bp_pos,     site_factor)
+    rd$metagene_features      <- S4Vectors::splitAsList(feat_names,  site_factor)
+    rd$metagene_feature_types <- S4Vectors::splitAsList(feat_types,  site_factor)
+    rd$metagene_frac          <- S4Vectors::splitAsList(frac,        site_factor)
+    rd$metagene_positions     <- S4Vectors::splitAsList(bp_pos,      site_factor)
     rd
 }

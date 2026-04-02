@@ -114,11 +114,13 @@ test_that("annotateSites: type='proximity' adds correct list-typed columns", {
     data(comma_example_data)
     result <- annotateSites(comma_example_data, type = "proximity", window = 10000L)
     si <- siteInfo(result)
-    expect_true("nearby_features"  %in% colnames(si))
-    expect_true("rel_positions"    %in% colnames(si))
+    expect_true("nearby_features"        %in% colnames(si))
+    expect_true("nearby_feature_types"   %in% colnames(si))
+    expect_true("rel_positions"          %in% colnames(si))
     expect_false("distances_to_features" %in% colnames(si))
-    expect_true(is(si$nearby_features, "CharacterList"))
-    expect_true(is(si$rel_positions,   "IntegerList"))
+    expect_true(is(si$nearby_features,      "CharacterList"))
+    expect_true(is(si$nearby_feature_types, "CharacterList"))
+    expect_true(is(si$rel_positions,        "IntegerList"))
 })
 
 test_that("annotateSites: type='proximity' sites inside a feature have rel_positions == 0", {
@@ -169,22 +171,24 @@ test_that("annotateSites: type='proximity' rel_positions contain both positive a
 
 # ── metagene mode ─────────────────────────────────────────────────────────────
 
-test_that("annotateSites: type='metagene' adds metagene_features, metagene_frac, metagene_positions columns", {
+test_that("annotateSites: type='metagene' adds metagene_features, metagene_feature_types, metagene_frac, metagene_positions columns", {
     data(comma_example_data)
     result <- annotateSites(comma_example_data, type = "metagene")
     si <- siteInfo(result)
-    expect_true("metagene_features"  %in% colnames(si))
-    expect_true("metagene_frac"      %in% colnames(si))
-    expect_true("metagene_positions" %in% colnames(si))
+    expect_true("metagene_features"       %in% colnames(si))
+    expect_true("metagene_feature_types"  %in% colnames(si))
+    expect_true("metagene_frac"           %in% colnames(si))
+    expect_true("metagene_positions"      %in% colnames(si))
 })
 
 test_that("annotateSites: type='metagene' columns are list-typed", {
     data(comma_example_data)
     result <- annotateSites(comma_example_data, type = "metagene")
     si <- siteInfo(result)
-    expect_true(is(si$metagene_features,  "CharacterList"))
-    expect_true(is(si$metagene_frac,      "NumericList") || is(si$metagene_frac, "List"))
-    expect_true(is(si$metagene_positions, "IntegerList") || is(si$metagene_positions, "List"))
+    expect_true(is(si$metagene_features,      "CharacterList"))
+    expect_true(is(si$metagene_feature_types, "CharacterList"))
+    expect_true(is(si$metagene_frac,          "NumericList") || is(si$metagene_frac, "List"))
+    expect_true(is(si$metagene_positions,     "IntegerList") || is(si$metagene_positions, "List"))
 })
 
 test_that("annotateSites: type='metagene' all metagene_frac values are in [0, 1]", {

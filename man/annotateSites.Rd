@@ -65,15 +65,17 @@ columns:
 — all overlapping feature types and names per site.
 Intergenic sites: \code{lengths(feature_types) == 0}.}
 \item{For \code{type = "proximity"}:}{\code{nearby_features}
-(\code{CharacterList}) and \code{rel_positions} (\code{IntegerList})
-— all features within \code{window} bp and their signed distances.
-Sites with none: \code{lengths(nearby_features) == 0}.}
+(\code{CharacterList}), \code{nearby_feature_types}
+(\code{CharacterList}), and \code{rel_positions} (\code{IntegerList})
+— all features within \code{window} bp, their types, and signed
+distances. Sites with none: \code{lengths(nearby_features) == 0}.}
 \item{For \code{type = "metagene"}:}{\code{metagene_features}
+(\code{CharacterList}), \code{metagene_feature_types}
 (\code{CharacterList}), \code{metagene_frac} (\code{NumericList}),
 and \code{metagene_positions} (\code{IntegerList}) — overlapping
-feature names, fractional positions in \eqn{[0, 1]}, and base-pair
-offsets from the biological feature start. Non-overlapping sites:
-\code{lengths(metagene_features) == 0}.}
+feature names, types, fractional positions in \eqn{[0, 1]}, and
+base-pair offsets from the biological feature start.
+Non-overlapping sites: \code{lengths(metagene_features) == 0}.}
 }
 }
 \description{
