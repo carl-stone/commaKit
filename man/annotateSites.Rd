@@ -7,10 +7,11 @@
 annotateSites(
   object,
   features = NULL,
-  type = c("overlap", "proximity", "metagene"),
   feature_col = "feature_type",
   name_col = "name",
-  window = 500L
+  window = 50L,
+  keep = c("all", "overlap", "proximity", "metagene"),
+  metadata_cols = NULL
 )
 }
 \arguments{
@@ -21,98 +22,93 @@ to annotate against. If \code{NULL} (default), the annotation stored in
 \code{object} via \code{\link[BiocGenerics]{annotation}(object)} is used.
 Must have mcols columns named by \code{feature_col} and \code{name_col}.}
 
-\item{type}{Character string specifying the annotation mode. One of:
-\describe{
-\item{\code{"overlap"}}{(default) Each site is assigned all
-overlapping feature types and names. Sites that overlap no feature
-receive length-0 \code{CharacterList} elements.}
-\item{\code{"proximity"}}{Each site is assigned all features
-within \code{window} bp: their names and signed relative positions.
-Relative positions are 0 when the site is inside the feature,
-negative when upstream (before the feature in biological orientation),
-and positive when downstream. Range is \eqn{[-W, W]} where \eqn{W}
-is \code{window}. Sites with no nearby features receive length-0
-elements.}
-\item{\code{"metagene"}}{Each site that overlaps a feature is assigned
-both a fractional position (\code{metagene_frac}, in \eqn{[0, 1]})
-and a base-pair offset from the biological feature start
-(\code{metagene_positions}) for every overlapping feature.
-Strand-aware: for \code{"-"} strand features, position 0 is at
-the feature end (highest coordinate, the biological TSS) and
-increases toward lower coordinates.
-Non-overlapping sites receive length-0 elements.}
-}}
-
 \item{feature_col}{Character string. Name of the \code{mcols} column in
-\code{features} that contains the feature type (e.g.,
-\code{"feature_type"}). Default: \code{"feature_type"}.}
+\code{features} that contains the feature type. Default:
+\code{"feature_type"}.}
 
 \item{name_col}{Character string. Name of the \code{mcols} column in
-\code{features} that contains the feature name (e.g., \code{"name"}).
-Default: \code{"name"}.}
+\code{features} that contains the feature name. Default: \code{"name"}.}
 
-\item{window}{Integer. Window size in base pairs for
-\code{type = "proximity"}. All features within this distance are
-returned. Default: \code{500L}.}
+\item{window}{Integer. Search window in base pairs. All features within
+this distance of each site are returned. Default: \code{50L}.}
+
+\item{keep}{Character string controlling which output columns are retained:
+\describe{
+\item{\code{"all"}}{(default) Return all four columns for all
+associations — including sites within the window but not inside a
+feature.}
+\item{\code{"overlap"}}{Subset each site's associations to features
+where \code{rel_position == 0} (inside the feature). Drop the
+\code{rel_position} and \code{frac_position} columns.}
+\item{\code{"proximity"}}{Keep all associations. Drop the
+\code{frac_position} column.}
+\item{\code{"metagene"}}{Subset to \code{rel_position == 0}. Drop the
+\code{rel_position} column. Retain \code{frac_position}.}
+}}
+
+\item{metadata_cols}{Character vector or \code{NULL}. Names of additional
+\code{mcols} columns in \code{features} to pass through as parallel list
+columns in \code{rowData}. Each column \code{X} is stored as
+\code{X_values} (\code{CharacterList}). Default: \code{NULL}.}
 }
 \value{
 A \code{\link{commaData}} object identical to \code{object} except
-that \code{rowData} has been extended with new list-valued annotation
-columns:
+that \code{rowData} has been extended with annotation list columns.
+With \code{keep = "all"} (default):
 \describe{
-\item{For \code{type = "overlap"}:}{\code{feature_types}
-(\code{CharacterList}) and \code{feature_names} (\code{CharacterList})
-— all overlapping feature types and names per site.
-Intergenic sites: \code{lengths(feature_types) == 0}.}
-\item{For \code{type = "proximity"}:}{\code{nearby_features}
-(\code{CharacterList}), \code{nearby_feature_types}
-(\code{CharacterList}), and \code{rel_positions} (\code{IntegerList})
-— all features within \code{window} bp, their types, and signed
-distances. Sites with none: \code{lengths(nearby_features) == 0}.}
-\item{For \code{type = "metagene"}:}{\code{metagene_features}
-(\code{CharacterList}), \code{metagene_feature_types}
-(\code{CharacterList}), \code{metagene_frac} (\code{NumericList}),
-and \code{metagene_positions} (\code{IntegerList}) — overlapping
-feature names, types, fractional positions in \eqn{[0, 1]}, and
-base-pair offsets from the biological feature start.
-Non-overlapping sites: \code{lengths(metagene_features) == 0}.}
+\item{\code{feature_types}}{CharacterList. Feature type for each
+association per site.}
+\item{\code{feature_names}}{CharacterList. Feature name for each
+association per site.}
+\item{\code{rel_position}}{IntegerList. Signed relative position
+(bp): 0 inside, negative upstream, positive downstream.}
+\item{\code{frac_position}}{NumericList. Fractional position in
+\eqn{[0, 1]} inside features; \code{NA} outside.}
 }
+Intergenic sites (no features within \code{window}) receive length-0
+list elements in all columns.
 }
 \description{
 Assigns genomic feature annotations to methylation sites stored in a
 \code{\link{commaData}} object using
 \code{\link[GenomicRanges]{findOverlaps}}.
-Three annotation modes are available: \code{"overlap"} assigns all
-overlapping feature identities to each site, \code{"proximity"} reports
-all features within a distance window and their signed offsets, and
-\code{"metagene"} reports fractional positions within every overlapping
-feature.
 }
 \details{
-All three modes return every matching feature per site. Results are stored as
-\code{\link[IRanges]{CharacterList}},
-\code{\link[IRanges]{IntegerList}}, or \code{NumericList} columns in
-\code{rowData}.
-Sites with no overlapping/nearby features receive length-0 list elements;
-test for them with \code{lengths(col) == 0}.
+The function searches within \code{window} bp of each site and returns
+every feature found. Four parallel list columns are added to
+\code{rowData}: feature types, feature names, signed relative position,
+and fractional position within the feature.
+
+Signed \code{rel_position} convention (strand-aware):
+\itemize{
+\item \strong{0} — site is \emph{inside} the feature.
+\item \strong{negative} — site is upstream (before the feature in the
+direction of transcription).
+\item \strong{positive} — site is downstream (after the feature).
+}
+
+\code{frac_position} is in \eqn{[0, 1]} when the site is inside a feature
+(TSS = 0, TTS = 1, strand-aware) and \code{NA} when the site is outside.
+
+All list columns are strictly parallel: element \eqn{j} in
+\code{feature_types[[i]]} corresponds to element \eqn{j} in
+\code{feature_names[[i]]}, \code{rel_position[[i]]}, and
+\code{frac_position[[i]]}. This invariant is preserved by any metadata
+columns added via \code{metadata_cols}.
 }
 \examples{
 data(comma_example_data)
-# Overlap annotation using built-in annotation
+# Default: unified output with all four columns
 annotated <- annotateSites(comma_example_data)
 si <- siteInfo(annotated)
-# All overlapping feature types for the first site:
-si$feature_types[[1]]
-# Number of sites that overlap at least one feature:
-sum(lengths(si$feature_types) > 0)
-# Intergenic sites:
-sum(lengths(si$feature_types) == 0)
+# Sites inside at least one feature (rel_position == 0):
+sum(sapply(as.list(si$rel_position), function(x) any(x == 0L)))
+# Fractional position of first inside site:
+inside_idx <- which(lengths(si$frac_position) > 0)[1]
+si$frac_position[[inside_idx]]
 
-# Metagene annotation
-mg <- annotateSites(comma_example_data, type = "metagene")
-si_mg <- siteInfo(mg)
-# Fractional and bp positions for the first overlapping site:
-si_mg$metagene_frac[[which(lengths(si_mg$metagene_frac) > 0)[1]]]
-si_mg$metagene_positions[[which(lengths(si_mg$metagene_positions) > 0)[1]]]
+# Backward-compatible overlap output (no rel_position / frac_position):
+ann_ov <- annotateSites(comma_example_data, keep = "overlap")
+siteInfo(ann_ov)$feature_names[[1]]
 
 }

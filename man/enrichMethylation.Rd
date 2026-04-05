@@ -15,6 +15,8 @@ enrichMethylation(
   TERM2NAME = NULL,
   gene_col = "feature_names",
   feature_type = "gene",
+  gene_role = c("target", "regulator", "both"),
+  overlap_only = NULL,
   padj_threshold = 0.05,
   delta_beta_threshold = 0.1,
   score_metric = "combined",
@@ -29,94 +31,89 @@ enrichMethylation(
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object on which
-\code{\link{diffMethyl}} \strong{and} \code{\link{annotateSites}} have
-been run.}
+\code{\link{diffMethyl}} and \code{\link{annotateSites}} have been run,
+\strong{or} a \code{data.frame} produced by \code{\link{results}()}.}
 
 \item{method}{Character vector; one or both of \code{"ora"} (over-
 representation analysis) and \code{"gsea"} (gene set enrichment
 analysis).  Default \code{"ora"}.}
 
 \item{OrgDb}{A Bioconductor \code{OrgDb} annotation object for GO
-enrichment (e.g., \code{org.EcK12.eg.db}).  If \code{NULL} and no
-\code{TERM2GENE} is provided, GO analysis is skipped.}
+enrichment (e.g., \code{org.EcK12.eg.db}).  \code{NULL} skips GO
+analysis unless \code{TERM2GENE} is provided.}
 
-\item{keyType}{Character string specifying the key type used for gene IDs
-in \code{OrgDb} (e.g., \code{"SYMBOL"}, \code{"ENTREZID"}).
-Must match the identifiers stored in \code{gene_col}.  Default
-\code{"SYMBOL"}.}
+\item{keyType}{Character string; key type for gene IDs in \code{OrgDb}
+(e.g., \code{"SYMBOL"}, \code{"ENTREZID"}).  Default \code{"SYMBOL"}.}
 
-\item{ont}{Character string specifying the GO ontology to use when
-\code{OrgDb} is provided.  One of \code{"BP"}, \code{"MF"}, \code{"CC"},
-or \code{"ALL"}.  Default \code{"BP"}.}
+\item{ont}{Character string; GO ontology.  One of \code{"BP"},
+\code{"MF"}, \code{"CC"}, or \code{"ALL"}.  Default \code{"BP"}.}
 
 \item{organism}{Character string; KEGG organism code (e.g., \code{"eco"}).
-If \code{NULL}, KEGG analysis is skipped.  Requires internet access.}
+\code{NULL} skips KEGG.  Requires internet access.}
 
 \item{TERM2GENE}{A two-column \code{data.frame} with columns \code{term}
-and \code{gene} mapping pathway/term identifiers to gene identifiers.
-When provided, this is used for GO analysis via
-\code{\link[clusterProfiler]{enricher}} (ORA) or
-\code{\link[clusterProfiler]{GSEA}} and takes precedence over
-\code{OrgDb}.  Ignored for KEGG (use \code{organism} for KEGG).}
+and \code{gene}.  Takes precedence over \code{OrgDb}.}
 
-\item{TERM2NAME}{An optional two-column \code{data.frame} with columns
-\code{term} and \code{name} providing human-readable descriptions of
-term IDs in \code{TERM2GENE}.}
+\item{TERM2NAME}{Optional two-column \code{data.frame} with columns
+\code{term} and \code{name}.}
 
 \item{gene_col}{Character string; the \code{rowData} column containing gene
-identifiers per site (a \code{CharacterList} or \code{list} column added
-by \code{\link{annotateSites}}).  Default \code{"feature_names"}.}
+identifiers per site.  Default \code{"feature_names"}.}
 
-\item{feature_type}{Character vector or \code{NULL}. When non-\code{NULL},
-only sites whose \code{feature_types} annotation (added by
-\code{\link{annotateSites}}) contains at least one entry matching
-\code{feature_type} are used, and \code{gene_col} is subset to the
-matching names only.  Default \code{"gene"} — restricts enrichment to
-gene-body sites, which is required by most pathway databases.  Set to
-\code{NULL} to include all annotated sites regardless of feature type.}
+\item{feature_type}{Character vector or \code{NULL}. Feature type(s) to
+analyse.  When more than one type is given, each is run separately and
+results are returned as a named list.  Default \code{"gene"}.  Set
+\code{NULL} to include all annotated sites.}
 
-\item{padj_threshold}{Numeric; adjusted p-value threshold for classifying
-a site as differentially methylated in ORA.  Default \code{0.05}.}
+\item{gene_role}{Character string; which role to test.  One of
+\code{"target"} (default), \code{"regulator"}, or \code{"both"}.
+See Details.}
 
-\item{delta_beta_threshold}{Numeric; minimum absolute effect size
-(\eqn{|\Delta\beta|}) for classifying a site as differentially methylated
-in ORA.  Default \code{0.1}.}
+\item{overlap_only}{Logical, \code{NULL}, or a named logical vector.
+When \code{TRUE}, only sites where \code{rel_position == 0} (inside the
+feature) contribute.  \code{NULL} (default) auto-detects: \code{TRUE}
+for large region features (gene, CDS, etc.), \code{FALSE} for small
+regulatory features (promoter, binding sites, etc.).}
 
-\item{score_metric}{Character string controlling the per-site scoring
-function used for GSEA ranking.  One of \code{"combined"} (default),
-\code{"padj"}, or \code{"delta_beta"}.  See Details.}
+\item{padj_threshold}{Numeric; ORA significance threshold. Default
+\code{0.05}.}
 
-\item{gene_score_agg}{Character string; how to aggregate per-site scores to
-a per-gene score when multiple sites map to the same gene.  Either
-\code{"max"} (default; largest absolute score, sign preserved) or
-\code{"mean"}.}
+\item{delta_beta_threshold}{Numeric; minimum \eqn{|\Delta\beta|} for ORA.
+Default \code{0.1}.}
 
-\item{mod_type}{Character string or \code{NULL}; passed to
-\code{\link{results}} for modification-type filtering before enrichment.}
+\item{score_metric}{Character string; GSEA ranking metric.  One of
+\code{"combined"} (default), \code{"padj"}, or \code{"delta_beta"}.}
 
-\item{mod_context}{Character string or \code{NULL}; passed to
-\code{\link{results}} for modification-context filtering.}
+\item{gene_score_agg}{Character string; aggregation across sites per gene.
+Either \code{"max"} (default) or \code{"mean"}.}
 
-\item{pvalueCutoff}{Numeric; p-value cutoff passed to
-\pkg{clusterProfiler}.  Default \code{0.05}.}
+\item{mod_type}{Character string or \code{NULL}; modification-type filter
+passed to \code{\link{results}}.  Ignored when \code{object} is a
+\code{data.frame}.}
 
-\item{qvalueCutoff}{Numeric; q-value cutoff passed to
-\pkg{clusterProfiler} (ORA only).  Default \code{0.2}.}
+\item{mod_context}{Character string or \code{NULL}; mod-context filter
+passed to \code{\link{results}}.  Ignored for \code{data.frame} input.}
 
-\item{minGSSize}{Integer; minimum gene set size passed to
-\pkg{clusterProfiler}.  Default \code{10}.}
+\item{pvalueCutoff}{Numeric; p-value cutoff for \pkg{clusterProfiler}.
+Default \code{0.05}.}
 
-\item{maxGSSize}{Integer; maximum gene set size passed to
-\pkg{clusterProfiler}.  Default \code{500}.}
+\item{qvalueCutoff}{Numeric; q-value cutoff (ORA only). Default
+\code{0.2}.}
+
+\item{minGSSize}{Integer; minimum gene set size. Default \code{10}.}
+
+\item{maxGSSize}{Integer; maximum gene set size. Default \code{500}.}
 }
 \value{
-A named list with elements \code{$go} and \code{$kegg} (either or
-both may be \code{NULL} if the corresponding analysis was not requested or
-not possible).  When a single \code{method} is requested, each element is
-a \pkg{clusterProfiler} \code{enrichResult} (ORA) or \code{gseaResult}
-(GSEA), or \code{NULL}.  When both \code{"ora"} and \code{"gsea"} are
-requested, each element is itself a named list with \code{$ora} and
-\code{$gsea} slots.
+When a single \code{feature_type} and \code{gene_role != "both"}
+are requested: a named list \code{list(go = ..., kegg = ...)}
+(backward-compatible).  Each element is a \pkg{clusterProfiler}
+\code{enrichResult} (ORA) or \code{gseaResult} (GSEA), or \code{NULL}.
+When both ORA and GSEA are requested, each element is a nested list
+\code{list(ora = ..., gsea = ...)}.  When multiple \code{feature_type}
+values are given, a named list per feature type is returned.  When
+\code{gene_role = "both"}, each feature type's result is a list
+\code{list(target = ..., regulator = ...)}.
 }
 \description{
 Maps per-site differential methylation statistics up to the gene level and
@@ -125,15 +122,31 @@ Supports both over-representation analysis (ORA) and gene set enrichment
 analysis (GSEA).  Works with model organisms via standard Bioconductor
 databases, or with any organism via a custom \code{TERM2GENE} mapping.
 }
+\details{
+Different feature types ask different biological questions, and the
+appropriate comparison universe changes accordingly.  Use \code{gene_role}
+to specify which perspective to test:
+\describe{
+\item{\code{"target"}}{(default) Which target genes have methylated
+sites in/near this feature type?  Universe = all genes with site
+coverage.}
+\item{\code{"regulator"}}{Which regulators (sigma factors, TFs, RNA
+regulators) have methylated binding sites?  Universe = all regulators
+of the same type found in the annotation for this feature type.}
+\item{\code{"both"}}{Run target and regulator enrichments separately,
+returning a named sub-list \code{list(target=..., regulator=...)}.}
+}
+}
 \section{Prerequisites}{
 
 Before calling \code{enrichMethylation()}, you must:
 \enumerate{
 \item Run \code{\link{diffMethyl}} to compute per-site \code{dm_padj}
 and \code{dm_delta_beta} values.
-\item Run \code{\link{annotateSites}} (with \code{type = "overlap"}) to
-assign gene identifiers to each site.  The resulting
-\code{feature_names} column (a \code{CharacterList}) is used by default.
+\item Run \code{\link{annotateSites}} to assign feature identifiers to
+each site.  For regulatory feature types, pass
+\code{metadata_cols = c("feature_subtype", "transcription_unit")}
+to capture sigma factor identity and target gene information.
 }
 }
 
@@ -151,6 +164,26 @@ provided; takes precedence over \code{OrgDb}.}
 \item{\code{organism}}{A KEGG organism code (e.g., \code{"eco"} for
 \emph{E. coli} K-12).  Requires internet access; see
 \code{\link[clusterProfiler]{enrichKEGG}}.}
+}
+}
+
+\section{Feature-type-specific parsing}{
+
+Gene names are extracted from the annotation using feature-type-aware rules:
+\describe{
+\item{\code{"gene"}, CDS, etc.}{Feature name is used directly.}
+\item{\code{"promoter"}, \code{"minus_10_signal"},
+\code{"minus_35_signal"}, \code{"transcription_factor_binding_site"}}{
+Strip trailing \code{p} or \code{p\eqn{N}} suffix, then split on
+\code{"-"} for operonic promoters.}
+\item{\code{"protein_binding_site"}}{Target gene from
+\code{transcription_unit} attribute (if available via
+\code{metadata_cols}) or from \emph{"... of \{promoter\}"} pattern.
+Regulator gene from binding-protein name.}
+\item{\code{"RNA_binding_site"}}{Target from \code{transcription_unit}
+or \emph{"regulating \{gene\}"} pattern.  Regulator from first word if
+it matches a gene-name pattern.}
+\item{\code{"terminator"}}{Strip \emph{" terminator"} suffix.}
 }
 }
 
@@ -177,8 +210,8 @@ with the largest absolute score, preserving its sign) or \code{"mean"}.
 # Requires clusterProfiler and a custom TERM2GENE mapping
 if (requireNamespace("clusterProfiler", quietly = TRUE)) {
   data(comma_example_data)
-  dm <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
-  ann <- annotateSites(dm, annotation(comma_example_data), type = "overlap")
+  dm  <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+  ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
 
   # Custom TERM2GENE (works without network access or OrgDb)
   fake_t2g <- data.frame(

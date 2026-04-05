@@ -24,7 +24,7 @@ NULL
 #'   normalized feature position \eqn{[0, 1]} into. Default \code{50}.
 #'
 #' @details
-#' Internally calls \code{\link{annotateSites}(type = "metagene")} to compute
+#' Internally calls \code{\link{annotateSites}(keep = "metagene")} to compute
 #' normalized positions (0 = TSS, 1 = TTS) for each methylation site that
 #' overlaps a feature of the requested type. Sites that do not overlap any
 #' feature are excluded from the plot. The mean beta value is then computed
@@ -101,11 +101,11 @@ plot_metagene <- function(object,
     }
 
     ## --- Run metagene annotation -------------------------------------------
-    annotated <- annotateSites(object, features = feat_gr, type = "metagene")
+    annotated <- annotateSites(object, features = feat_gr, keep = "metagene")
     rd        <- as.data.frame(SummarizedExperiment::rowData(annotated))
 
-    ## metagene_frac is a NumericList (one list element per site)
-    pos_list <- rd$metagene_frac
+    ## frac_position is a NumericList (one list element per site)
+    pos_list <- rd$frac_position
     site_lengths <- lengths(pos_list)
 
     ## Keep only sites with at least one metagene position

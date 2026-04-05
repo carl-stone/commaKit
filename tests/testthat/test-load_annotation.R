@@ -187,3 +187,55 @@ test_that("loadAnnotation() errors when a vector of paths is supplied", {
         regexp = "character string"
     )
 })
+
+# ─────────────────────────────────────────────────────────────────────────────
+# loadAnnotation() — feature_subtype preservation (EcoCyc-style GFF3)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Write a minimal GFF3 with a 'feature_type' attribute in column 9 (as used by
+# EcoCyc to encode sigma factor identity for TF binding sites).
+.write_sigma_gff3 <- function(file = tempfile(fileext = ".gff3")) {
+    lines <- c(
+        "##gff-version 3",
+        paste("U00096.3", "EcoCyc", "transcription_factor_binding_site",
+              "138", "143", ".", "+", ".",
+              "Name=thrLp;feature_type=Sigma70", sep = "\t"),
+        paste("U00096.3", "EcoCyc", "transcription_factor_binding_site",
+              "6594", "6600", ".", "-", ".",
+              "Name=yaaAp3;feature_type=Sigma24", sep = "\t"),
+        paste("U00096.3", "EcoCyc", "gene",
+              "200", "1000", ".", "+", ".",
+              "Name=thrL;ID=thrL", sep = "\t")
+    )
+    writeLines(lines, file)
+    file
+}
+
+test_that("loadAnnotation() preserves feature_type GFF3 attribute as feature_subtype", {
+    skip_if_not_installed("rtracklayer")
+    f      <- .write_sigma_gff3()
+    result <- loadAnnotation(f)
+    expect_true("feature_subtype" %in% names(mcols(result)))
+    # TFBS records should have Sigma70 / Sigma24 in feature_subtype
+    tfbs <- result[result$feature_type == "transcription_factor_binding_site"]
+    expect_true(all(tfbs$feature_subtype %in% c("Sigma70", "Sigma24")))
+})
+
+test_that("loadAnnotation() feature_type column contains GFF3 type column value, not attribute", {
+    skip_if_not_installed("rtracklayer")
+    f      <- .write_sigma_gff3()
+    result <- loadAnnotation(f)
+    tfbs <- result[result$feature_type == "transcription_factor_binding_site"]
+    # feature_type must be the GFF3 type column, not the attribute value
+    expect_true(all(tfbs$feature_type == "transcription_factor_binding_site"))
+    expect_false(any(tfbs$feature_type == "Sigma70"))
+})
+
+test_that("loadAnnotation() feature_subtype is absent when GFF3 has no feature_type attribute", {
+    skip_if_not_installed("rtracklayer")
+    gff    <- system.file("extdata", "example.gff3", package = "comma")
+    skip_if(gff == "", message = "extdata not available")
+    result <- loadAnnotation(gff)
+    # example.gff3 has no 'feature_type' attribute in column 9
+    expect_false("feature_subtype" %in% names(mcols(result)))
+})

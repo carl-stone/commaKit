@@ -1,6 +1,6 @@
 #' @importFrom GenomicRanges GRanges findOverlaps start end width strand resize mcols
 #' @importFrom IRanges IRanges CharacterList IntegerList NumericList
-#' @importFrom S4Vectors DataFrame queryHits subjectHits splitAsList
+#' @importFrom S4Vectors DataFrame queryHits subjectHits splitAsList mendoapply
 #' @importFrom SummarizedExperiment rowData "rowData<-"
 #' @importFrom methods is
 NULL
@@ -10,108 +10,103 @@ NULL
 #' Assigns genomic feature annotations to methylation sites stored in a
 #' \code{\link{commaData}} object using
 #' \code{\link[GenomicRanges]{findOverlaps}}.
-#' Three annotation modes are available: \code{"overlap"} assigns all
-#' overlapping feature identities to each site, \code{"proximity"} reports
-#' all features within a distance window and their signed offsets, and
-#' \code{"metagene"} reports fractional positions within every overlapping
-#' feature.
 #'
-#' All three modes return every matching feature per site. Results are stored as
-#' \code{\link[IRanges]{CharacterList}},
-#' \code{\link[IRanges]{IntegerList}}, or \code{NumericList} columns in
-#' \code{rowData}.
-#' Sites with no overlapping/nearby features receive length-0 list elements;
-#' test for them with \code{lengths(col) == 0}.
+#' The function searches within \code{window} bp of each site and returns
+#' every feature found. Four parallel list columns are added to
+#' \code{rowData}: feature types, feature names, signed relative position,
+#' and fractional position within the feature.
+#'
+#' Signed \code{rel_position} convention (strand-aware):
+#' \itemize{
+#'   \item \strong{0} — site is \emph{inside} the feature.
+#'   \item \strong{negative} — site is upstream (before the feature in the
+#'     direction of transcription).
+#'   \item \strong{positive} — site is downstream (after the feature).
+#' }
+#'
+#' \code{frac_position} is in \eqn{[0, 1]} when the site is inside a feature
+#' (TSS = 0, TTS = 1, strand-aware) and \code{NA} when the site is outside.
+#'
+#' All list columns are strictly parallel: element \eqn{j} in
+#' \code{feature_types[[i]]} corresponds to element \eqn{j} in
+#' \code{feature_names[[i]]}, \code{rel_position[[i]]}, and
+#' \code{frac_position[[i]]}. This invariant is preserved by any metadata
+#' columns added via \code{metadata_cols}.
 #'
 #' @param object A \code{\link{commaData}} object.
 #' @param features A \code{\link[GenomicRanges]{GRanges}} of genomic features
 #'   to annotate against. If \code{NULL} (default), the annotation stored in
 #'   \code{object} via \code{\link[BiocGenerics]{annotation}(object)} is used.
 #'   Must have mcols columns named by \code{feature_col} and \code{name_col}.
-#' @param type Character string specifying the annotation mode. One of:
-#'   \describe{
-#'     \item{\code{"overlap"}}{(default) Each site is assigned all
-#'       overlapping feature types and names. Sites that overlap no feature
-#'       receive length-0 \code{CharacterList} elements.}
-#'     \item{\code{"proximity"}}{Each site is assigned all features
-#'       within \code{window} bp: their names and signed relative positions.
-#'       Relative positions are 0 when the site is inside the feature,
-#'       negative when upstream (before the feature in biological orientation),
-#'       and positive when downstream. Range is \eqn{[-W, W]} where \eqn{W}
-#'       is \code{window}. Sites with no nearby features receive length-0
-#'       elements.}
-#'     \item{\code{"metagene"}}{Each site that overlaps a feature is assigned
-#'       both a fractional position (\code{metagene_frac}, in \eqn{[0, 1]})
-#'       and a base-pair offset from the biological feature start
-#'       (\code{metagene_positions}) for every overlapping feature.
-#'       Strand-aware: for \code{"-"} strand features, position 0 is at
-#'       the feature end (highest coordinate, the biological TSS) and
-#'       increases toward lower coordinates.
-#'       Non-overlapping sites receive length-0 elements.}
-#'   }
 #' @param feature_col Character string. Name of the \code{mcols} column in
-#'   \code{features} that contains the feature type (e.g.,
-#'   \code{"feature_type"}). Default: \code{"feature_type"}.
+#'   \code{features} that contains the feature type. Default:
+#'   \code{"feature_type"}.
 #' @param name_col Character string. Name of the \code{mcols} column in
-#'   \code{features} that contains the feature name (e.g., \code{"name"}).
-#'   Default: \code{"name"}.
-#' @param window Integer. Window size in base pairs for
-#'   \code{type = "proximity"}. All features within this distance are
-#'   returned. Default: \code{500L}.
+#'   \code{features} that contains the feature name. Default: \code{"name"}.
+#' @param window Integer. Search window in base pairs. All features within
+#'   this distance of each site are returned. Default: \code{50L}.
+#' @param keep Character string controlling which output columns are retained:
+#'   \describe{
+#'     \item{\code{"all"}}{(default) Return all four columns for all
+#'       associations — including sites within the window but not inside a
+#'       feature.}
+#'     \item{\code{"overlap"}}{Subset each site's associations to features
+#'       where \code{rel_position == 0} (inside the feature). Drop the
+#'       \code{rel_position} and \code{frac_position} columns.}
+#'     \item{\code{"proximity"}}{Keep all associations. Drop the
+#'       \code{frac_position} column.}
+#'     \item{\code{"metagene"}}{Subset to \code{rel_position == 0}. Drop the
+#'       \code{rel_position} column. Retain \code{frac_position}.}
+#'   }
+#' @param metadata_cols Character vector or \code{NULL}. Names of additional
+#'   \code{mcols} columns in \code{features} to pass through as parallel list
+#'   columns in \code{rowData}. Each column \code{X} is stored as
+#'   \code{X_values} (\code{CharacterList}). Default: \code{NULL}.
 #'
 #' @return A \code{\link{commaData}} object identical to \code{object} except
-#'   that \code{rowData} has been extended with new list-valued annotation
-#'   columns:
+#'   that \code{rowData} has been extended with annotation list columns.
+#'   With \code{keep = "all"} (default):
 #'   \describe{
-#'     \item{For \code{type = "overlap"}:}{\code{feature_types}
-#'       (\code{CharacterList}) and \code{feature_names} (\code{CharacterList})
-#'       — all overlapping feature types and names per site.
-#'       Intergenic sites: \code{lengths(feature_types) == 0}.}
-#'     \item{For \code{type = "proximity"}:}{\code{nearby_features}
-#'       (\code{CharacterList}), \code{nearby_feature_types}
-#'       (\code{CharacterList}), and \code{rel_positions} (\code{IntegerList})
-#'       — all features within \code{window} bp, their types, and signed
-#'       distances. Sites with none: \code{lengths(nearby_features) == 0}.}
-#'     \item{For \code{type = "metagene"}:}{\code{metagene_features}
-#'       (\code{CharacterList}), \code{metagene_feature_types}
-#'       (\code{CharacterList}), \code{metagene_frac} (\code{NumericList}),
-#'       and \code{metagene_positions} (\code{IntegerList}) — overlapping
-#'       feature names, types, fractional positions in \eqn{[0, 1]}, and
-#'       base-pair offsets from the biological feature start.
-#'       Non-overlapping sites: \code{lengths(metagene_features) == 0}.}
+#'     \item{\code{feature_types}}{CharacterList. Feature type for each
+#'       association per site.}
+#'     \item{\code{feature_names}}{CharacterList. Feature name for each
+#'       association per site.}
+#'     \item{\code{rel_position}}{IntegerList. Signed relative position
+#'       (bp): 0 inside, negative upstream, positive downstream.}
+#'     \item{\code{frac_position}}{NumericList. Fractional position in
+#'       \eqn{[0, 1]} inside features; \code{NA} outside.}
 #'   }
+#'   Intergenic sites (no features within \code{window}) receive length-0
+#'   list elements in all columns.
 #'
 #' @examples
 #' data(comma_example_data)
-#' # Overlap annotation using built-in annotation
+#' # Default: unified output with all four columns
 #' annotated <- annotateSites(comma_example_data)
 #' si <- siteInfo(annotated)
-#' # All overlapping feature types for the first site:
-#' si$feature_types[[1]]
-#' # Number of sites that overlap at least one feature:
-#' sum(lengths(si$feature_types) > 0)
-#' # Intergenic sites:
-#' sum(lengths(si$feature_types) == 0)
+#' # Sites inside at least one feature (rel_position == 0):
+#' sum(sapply(as.list(si$rel_position), function(x) any(x == 0L)))
+#' # Fractional position of first inside site:
+#' inside_idx <- which(lengths(si$frac_position) > 0)[1]
+#' si$frac_position[[inside_idx]]
 #'
-#' # Metagene annotation
-#' mg <- annotateSites(comma_example_data, type = "metagene")
-#' si_mg <- siteInfo(mg)
-#' # Fractional and bp positions for the first overlapping site:
-#' si_mg$metagene_frac[[which(lengths(si_mg$metagene_frac) > 0)[1]]]
-#' si_mg$metagene_positions[[which(lengths(si_mg$metagene_positions) > 0)[1]]]
+#' # Backward-compatible overlap output (no rel_position / frac_position):
+#' ann_ov <- annotateSites(comma_example_data, keep = "overlap")
+#' siteInfo(ann_ov)$feature_names[[1]]
 #'
 #' @export
 annotateSites <- function(object,
-                          features    = NULL,
-                          type        = c("overlap", "proximity", "metagene"),
-                          feature_col = "feature_type",
-                          name_col    = "name",
-                          window      = 500L) {
+                          features     = NULL,
+                          feature_col  = "feature_type",
+                          name_col     = "name",
+                          window       = 50L,
+                          keep         = c("all", "overlap", "proximity", "metagene"),
+                          metadata_cols = NULL) {
     # ── Input validation ──────────────────────────────────────────────────────
     if (!is(object, "commaData")) {
         stop("'object' must be a commaData object.")
     }
-    type <- match.arg(type)
+    keep <- match.arg(keep)
 
     # Resolve feature set
     if (is.null(features)) {
@@ -129,141 +124,84 @@ annotateSites <- function(object,
     }
 
     # Validate required mcols columns
-    if (!feature_col %in% names(GenomicRanges::mcols(features))) {
+    feat_mcols <- names(GenomicRanges::mcols(features))
+    if (!feature_col %in% feat_mcols) {
         stop(
             "Column '", feature_col, "' not found in mcols(features). ",
-            "Available columns: ",
-            paste(names(GenomicRanges::mcols(features)), collapse = ", ")
+            "Available columns: ", paste(feat_mcols, collapse = ", ")
         )
     }
-    if (!name_col %in% names(GenomicRanges::mcols(features))) {
+    if (!name_col %in% feat_mcols) {
         stop(
             "Column '", name_col, "' not found in mcols(features). ",
-            "Available columns: ",
-            paste(names(GenomicRanges::mcols(features)), collapse = ", ")
+            "Available columns: ", paste(feat_mcols, collapse = ", ")
         )
+    }
+    if (!is.null(metadata_cols)) {
+        missing_meta <- setdiff(metadata_cols, feat_mcols)
+        if (length(missing_meta) > 0L) {
+            stop(
+                "metadata_cols not found in mcols(features): ",
+                paste(missing_meta, collapse = ", ")
+            )
+        }
     }
 
     # ── Build GRanges for sites ───────────────────────────────────────────────
-    rd        <- rowData(object)
-    sites_gr  <- GenomicRanges::GRanges(
+    rd       <- rowData(object)
+    sites_gr <- GenomicRanges::GRanges(
         seqnames = rd$chrom,
         ranges   = IRanges::IRanges(start = rd$position, width = 1L),
         strand   = rd$strand
     )
 
-    # ── Dispatch annotation mode ──────────────────────────────────────────────
-    if (type == "overlap") {
-        rd <- .annotateSites_overlap(rd, sites_gr, features, feature_col, name_col)
-    } else if (type == "proximity") {
-        rd <- .annotateSites_proximity(rd, sites_gr, features, feature_col, name_col, window)
-    } else {
-        rd <- .annotateSites_metagene(rd, sites_gr, features, feature_col, name_col)
-    }
+    # ── Unified annotation ────────────────────────────────────────────────────
+    rd <- .annotateSites_unified(rd, sites_gr, features, feature_col, name_col,
+                                 window, metadata_cols)
+
+    # ── Post-annotation keep filter ───────────────────────────────────────────
+    meta_out_cols <- if (!is.null(metadata_cols)) paste0(metadata_cols, "_values") else character(0)
+    rd <- .applyKeepFilter(rd, keep, meta_out_cols)
 
     # ── Return updated commaData ──────────────────────────────────────────────
     rowData(object) <- rd
     object
 }
 
-# ── Internal: overlap annotation ─────────────────────────────────────────────
-# Retains ALL overlapping features per site as CharacterList columns.
-# This is a deliberate design choice for bacterial genomes where features
-# are highly overlapping. Do NOT revert to single-match (!duplicated) behavior.
+# ── Internal: unified annotation backend ──────────────────────────────────────
+# Computes all four parallel list columns (feature_types, feature_names,
+# rel_position, frac_position) from a single findOverlaps call using the
+# proximity-style expanded window. All columns are strictly parallel:
+# element j in feature_types[[i]] corresponds to element j in all other
+# list columns for site i. This invariant must be preserved throughout.
 
-.annotateSites_overlap <- function(rd, sites_gr, features, feature_col, name_col) {
-    n_sites <- nrow(rd)
-    hits    <- GenomicRanges::findOverlaps(sites_gr, features, ignore.strand = TRUE)
-
-    q_idx <- S4Vectors::queryHits(hits)
-    s_idx <- S4Vectors::subjectHits(hits)
-
-    feat_types_raw <- as.character(GenomicRanges::mcols(features)[[feature_col]][s_idx])
-    feat_names_raw <- as.character(GenomicRanges::mcols(features)[[name_col]][s_idx])
-
-    # splitAsList groups values by site index; sites with no hit get character(0)
-    site_factor <- factor(q_idx, levels = seq_len(n_sites))
-    rd$feature_types <- S4Vectors::splitAsList(feat_types_raw, site_factor)
-    rd$feature_names <- S4Vectors::splitAsList(feat_names_raw, site_factor)
-    rd
-}
-
-# ── Internal: proximity annotation ───────────────────────────────────────────
-# Returns ALL features within 'window' bp per site as IntegerList/CharacterList.
-# This is a deliberate design choice. Do NOT revert to distanceToNearest()
-# (single-match) behavior.
-
-.annotateSites_proximity <- function(rd, sites_gr, features, feature_col, name_col, window) {
+.annotateSites_unified <- function(rd, sites_gr, features, feature_col, name_col,
+                                   window, metadata_cols) {
     n_sites <- nrow(rd)
     window  <- as.integer(window)
+
+    # Empty list factories for the no-hit early return
+    site_factor0 <- factor(integer(0), levels = seq_len(n_sites))
+    empty_cl     <- S4Vectors::splitAsList(character(0), site_factor0)
+    empty_il     <- S4Vectors::splitAsList(integer(0),   site_factor0)
+    empty_nl     <- S4Vectors::splitAsList(numeric(0),   site_factor0)
 
     # Expand a search window around each site; clip start to 1
     sites_expanded <- GenomicRanges::resize(sites_gr, width = 2L * window + 1L, fix = "center")
     GenomicRanges::start(sites_expanded) <- pmax(GenomicRanges::start(sites_expanded), 1L)
 
-    hits  <- GenomicRanges::findOverlaps(sites_expanded, features, ignore.strand = TRUE)
-
-    site_factor <- factor(integer(0), levels = seq_len(n_sites))  # empty default
-    empty_cl    <- S4Vectors::splitAsList(character(0), site_factor)
-    empty_il    <- S4Vectors::splitAsList(integer(0),   site_factor)
+    hits <- GenomicRanges::findOverlaps(sites_expanded, features, ignore.strand = TRUE)
 
     if (length(hits) == 0L) {
-        rd$nearby_features      <- empty_cl
-        rd$nearby_feature_types <- empty_cl
-        rd$rel_positions        <- empty_il
-        return(rd)
-    }
-
-    q_idx <- S4Vectors::queryHits(hits)
-    s_idx <- S4Vectors::subjectHits(hits)
-
-    feat_starts <- GenomicRanges::start(features)[s_idx]
-    feat_ends   <- GenomicRanges::end(features)[s_idx]
-    feat_strand <- as.character(GenomicRanges::strand(features))[s_idx]
-    feat_names  <- as.character(GenomicRanges::mcols(features)[[name_col]][s_idx])
-    feat_types  <- as.character(GenomicRanges::mcols(features)[[feature_col]][s_idx])
-    site_pos    <- rd$position[q_idx]
-
-    # Signed distance from nearest feature boundary, strand-aware.
-    # 0 when site is inside the feature.
-    # For + strand: negative = upstream (lower coord), positive = downstream.
-    # For - strand: negative = upstream (higher coord), positive = downstream.
-    inside     <- site_pos >= feat_starts & site_pos <= feat_ends
-    pos_signed <- ifelse(inside, 0L,
-                      ifelse(site_pos < feat_starts,
-                             site_pos - feat_starts,   # negative (upstream)
-                             site_pos - feat_ends))    # positive (downstream)
-    neg_signed <- ifelse(inside, 0L,
-                      ifelse(site_pos > feat_ends,
-                             feat_ends - site_pos,     # negative (upstream on - strand)
-                             feat_starts - site_pos))  # positive (downstream on - strand)
-    rel_pos    <- as.integer(ifelse(feat_strand == "-", neg_signed, pos_signed))
-
-    site_factor <- factor(q_idx, levels = seq_len(n_sites))
-    rd$nearby_features      <- S4Vectors::splitAsList(feat_names,  site_factor)
-    rd$nearby_feature_types <- S4Vectors::splitAsList(feat_types,  site_factor)
-    rd$rel_positions        <- S4Vectors::splitAsList(rel_pos,     site_factor)
-    rd
-}
-
-# ── Internal: metagene annotation ────────────────────────────────────────────
-# Returns fractional position within ALL overlapping features per site.
-# This is a deliberate design choice. Do NOT revert to single-match behavior.
-
-.annotateSites_metagene <- function(rd, sites_gr, features, feature_col, name_col) {
-    n_sites <- nrow(rd)
-    hits    <- GenomicRanges::findOverlaps(sites_gr, features, ignore.strand = TRUE)
-
-    site_factor <- factor(integer(0), levels = seq_len(n_sites))
-    empty_cl    <- S4Vectors::splitAsList(character(0), site_factor)
-    empty_nl    <- S4Vectors::splitAsList(numeric(0),   site_factor)
-    empty_il    <- S4Vectors::splitAsList(integer(0),   site_factor)
-
-    if (length(hits) == 0L) {
-        rd$metagene_features      <- empty_cl
-        rd$metagene_feature_types <- empty_cl
-        rd$metagene_frac          <- empty_nl
-        rd$metagene_positions     <- empty_il
+        rd$feature_types <- empty_cl
+        rd$feature_names <- empty_cl
+        rd$rel_position  <- empty_il
+        rd$frac_position <- empty_nl
+        if (!is.null(metadata_cols)) {
+            for (col in metadata_cols) {
+                rd[[paste0(col, "_values")]] <- empty_cl
+            }
+        }
         return(rd)
     }
 
@@ -274,34 +212,90 @@ annotateSites <- function(object,
     feat_ends   <- GenomicRanges::end(features)[s_idx]
     feat_widths <- GenomicRanges::width(features)[s_idx]
     feat_strand <- as.character(GenomicRanges::strand(features))[s_idx]
-    feat_names  <- as.character(GenomicRanges::mcols(features)[[name_col]][s_idx])
     feat_types  <- as.character(GenomicRanges::mcols(features)[[feature_col]][s_idx])
+    feat_names  <- as.character(GenomicRanges::mcols(features)[[name_col]][s_idx])
     site_pos    <- rd$position[q_idx]
 
-    # Fractional position [0, 1]: 0 = biological TSS, 1 = biological TTS.
-    # For 1-bp features feat_widths - 1L == 0; use pmax(..., 1L) to avoid
-    # division by zero producing NaN (which pmax/pmin do not clamp).
-    denom <- pmax(feat_widths - 1L, 1L)
-    frac <- ifelse(
+    # ── rel_position: signed, strand-aware ────────────────────────────────────
+    # 0 when site is inside the feature.
+    # For + strand (and *): negative = upstream (lower coord), positive = downstream.
+    # For - strand: negative = upstream (higher coord, biological), positive = downstream.
+    inside     <- site_pos >= feat_starts & site_pos <= feat_ends
+    pos_signed <- ifelse(inside, 0L,
+                      ifelse(site_pos < feat_starts,
+                             site_pos - feat_starts,   # negative: upstream
+                             site_pos - feat_ends))    # positive: downstream
+    neg_signed <- ifelse(inside, 0L,
+                      ifelse(site_pos > feat_ends,
+                             feat_ends - site_pos,     # negative: upstream on -
+                             feat_starts - site_pos))  # positive: downstream on -
+    rel_pos <- as.integer(ifelse(feat_strand == "-", neg_signed, pos_signed))
+
+    # ── frac_position: [0, 1] inside features, NA outside ────────────────────
+    # TSS = 0, TTS = 1 (strand-aware).
+    # For 1-bp features: pmax(..., 1L) avoids division by zero.
+    denom    <- pmax(feat_widths - 1L, 1L)
+    frac_raw <- ifelse(
         feat_strand == "-",
-        (feat_ends - site_pos) / denom,
-        (site_pos - feat_starts) / denom
+        (feat_ends - site_pos) / denom,      # TSS at feat_end on - strand
+        (site_pos - feat_starts) / denom     # TSS at feat_start on + strand
     )
-    # Clamp to [0, 1] in case of rounding
-    frac <- pmax(0, pmin(1, frac))
+    frac_raw <- pmax(0, pmin(1, frac_raw))   # clamp [0, 1]
+    frac_pos <- ifelse(inside, frac_raw, NA_real_)
 
-    # Integer bp offset from the biological feature start (strand-aware TSS):
-    # 0 at the TSS, increases toward the 3' end inside the feature.
-    bp_pos <- as.integer(ifelse(
-        feat_strand == "-",
-        feat_ends - site_pos,    # 0 at feat_end (biological TSS on - strand)
-        site_pos - feat_starts   # 0 at feat_start (biological TSS on + strand)
-    ))
+    # ── Split into parallel list columns ──────────────────────────────────────
+    site_factor      <- factor(q_idx, levels = seq_len(n_sites))
+    rd$feature_types <- S4Vectors::splitAsList(feat_types, site_factor)
+    rd$feature_names <- S4Vectors::splitAsList(feat_names, site_factor)
+    rd$rel_position  <- S4Vectors::splitAsList(rel_pos,    site_factor)
+    rd$frac_position <- S4Vectors::splitAsList(frac_pos,   site_factor)
 
-    site_factor <- factor(q_idx, levels = seq_len(n_sites))
-    rd$metagene_features      <- S4Vectors::splitAsList(feat_names,  site_factor)
-    rd$metagene_feature_types <- S4Vectors::splitAsList(feat_types,  site_factor)
-    rd$metagene_frac          <- S4Vectors::splitAsList(frac,        site_factor)
-    rd$metagene_positions     <- S4Vectors::splitAsList(bp_pos,      site_factor)
+    # ── Optional additional metadata columns ──────────────────────────────────
+    if (!is.null(metadata_cols)) {
+        for (col in metadata_cols) {
+            meta_vals <- as.character(GenomicRanges::mcols(features)[[col]][s_idx])
+            rd[[paste0(col, "_values")]] <- S4Vectors::splitAsList(meta_vals, site_factor)
+        }
+    }
+
+    rd
+}
+
+# ── Internal: post-annotation keep filter ─────────────────────────────────────
+# Applies the 'keep' filter to rowData after unified annotation.
+# Uses S4Vectors::mendoapply() to preserve typed List subclasses (CharacterList,
+# NumericList) while subsetting all list columns in parallel.
+
+.applyKeepFilter <- function(rd, keep, meta_out_cols) {
+    if (keep == "all") return(rd)
+
+    if (keep %in% c("overlap", "metagene")) {
+        # Subset all list columns to indices where rel_position == 0
+        keep_idx <- S4Vectors::mendoapply(function(rp) which(rp == 0L), rd$rel_position)
+
+        rd$feature_types <- S4Vectors::mendoapply(function(x, idx) x[idx], rd$feature_types, keep_idx)
+        rd$feature_names <- S4Vectors::mendoapply(function(x, idx) x[idx], rd$feature_names, keep_idx)
+
+        if (keep == "metagene") {
+            # Keep frac_position (now NA-free since all are inside)
+            rd$frac_position <- S4Vectors::mendoapply(function(x, idx) x[idx], rd$frac_position, keep_idx)
+        }
+
+        # Subset metadata columns too
+        for (col in meta_out_cols) {
+            rd[[col]] <- S4Vectors::mendoapply(function(x, idx) x[idx], rd[[col]], keep_idx)
+        }
+
+        # Drop position columns per keep mode
+        rd$rel_position <- NULL
+        if (keep == "overlap") {
+            rd$frac_position <- NULL
+        }
+
+    } else if (keep == "proximity") {
+        # Keep all associations, just drop frac_position
+        rd$frac_position <- NULL
+    }
+
     rd
 }

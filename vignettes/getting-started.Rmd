@@ -143,14 +143,21 @@ attr(pca_df, "percentVar")  # variance explained by PC1 and PC2
 
 # Annotating Sites
 
-`annotateSites()` maps methylation sites to genomic features using three modes:
+`annotateSites()` maps methylation sites to genomic features, always computing
+four parallel list columns in `rowData`:
 
-- `"overlap"` — which features overlap each site.
-- `"proximity"` — the nearest feature to each site.
-- `"metagene"` — normalized position within features (TSS = 0, TTS = 1).
+- `feature_types` — GFF3 feature type for each association (e.g., `"gene"`, `"promoter"`).
+- `feature_names` — feature name for each association.
+- `rel_position` — signed distance from the feature (0 = inside; negative = upstream; positive = downstream, strand-aware).
+- `frac_position` — normalized position within the feature ([0, 1]; `NA` for sites outside).
+
+Use the `keep` argument to filter which associations are retained: `"all"`
+(default), `"overlap"` (only overlapping features), `"proximity"` (retains
+`rel_position`, drops `frac_position`), or `"metagene"` (only overlapping
+features with `frac_position`).
 
 ```{r annotate}
-annotated <- annotateSites(comma_example_data, type = "overlap")
+annotated <- annotateSites(comma_example_data)
 si <- siteInfo(annotated)
 
 # Proportion of sites overlapping at least one annotated feature

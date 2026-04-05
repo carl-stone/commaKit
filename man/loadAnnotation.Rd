@@ -26,7 +26,16 @@ always include:
 \item{\code{name}}{Character. Feature name or identifier (from GFF3
 \code{Name} or \code{ID} attribute, or BED \code{name} column).}
 }
-Additional metadata columns from the source file are preserved.
+GFF3 files may also produce:
+\describe{
+\item{\code{feature_subtype}}{Character. The \code{feature_type} GFF3
+\emph{attribute} (column 9), if present. For EcoCyc annotations this
+encodes sigma factor identity (\code{"Sigma70"}, \code{"Sigma24"},
+etc.) for \code{transcription_factor_binding_site} features.}
+\item{\code{transcription_unit}}{Character. The regulated transcription
+unit(s) for protein and RNA binding sites (EcoCyc format).}
+}
+All other metadata columns from the source file are preserved.
 }
 \description{
 Reads a GFF3 or BED annotation file and returns a

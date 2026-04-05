@@ -46,7 +46,7 @@ profile. Useful for assessing whether methylation is enriched at particular
 positions within a feature class.
 }
 \details{
-Internally calls \code{\link{annotateSites}(type = "metagene")} to compute
+Internally calls \code{\link{annotateSites}(keep = "metagene")} to compute
 normalized positions (0 = TSS, 1 = TTS) for each methylation site that
 overlaps a feature of the requested type. Sites that do not overlap any
 feature are excluded from the plot. The mean beta value is then computed

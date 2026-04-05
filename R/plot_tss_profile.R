@@ -64,7 +64,7 @@ NULL
 #' the absolute spacing of promoter elements relative to the start of
 #' transcription.
 #'
-#' Internally calls \code{\link{annotateSites}(type = "proximity")} to
+#' Internally calls \code{\link{annotateSites}(keep = "proximity")} to
 #' compute signed TSS distances. Strand awareness follows the same
 #' convention: for \code{+} strand features, position 0 is the lowest
 #' coordinate; for \code{-} strand features, position 0 is the highest
@@ -199,14 +199,14 @@ plot_tss_profile <- function(object,
     }
 
     ## ── D. Proximity annotation ───────────────────────────────────────────────
-    ## annotateSites(type = "proximity") on 1-bp TSS GRanges adds rel_positions
+    ## annotateSites(keep = "proximity") on 1-bp TSS GRanges adds rel_position
     ## (IntegerList): negative = upstream of TSS, positive = downstream.
-    annotated <- annotateSites(object, features = tss_gr, type = "proximity",
+    annotated <- annotateSites(object, features = tss_gr, keep = "proximity",
                                window = window)
     rd <- as.data.frame(SummarizedExperiment::rowData(annotated))
 
     ## ── E. Nearest TSS offset per site (vectorized) ───────────────────────────
-    pos_list      <- rd$rel_positions
+    pos_list      <- rd$rel_position
     has_nearby    <- lengths(pos_list) > 0L
 
     nearest_rel_pos               <- rep(NA_integer_, nrow(rd))

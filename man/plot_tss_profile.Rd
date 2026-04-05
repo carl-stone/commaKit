@@ -88,7 +88,7 @@ nearest TSS (negative = upstream, positive = downstream). This preserves
 the absolute spacing of promoter elements relative to the start of
 transcription.
 
-Internally calls \code{\link{annotateSites}(type = "proximity")} to
+Internally calls \code{\link{annotateSites}(keep = "proximity")} to
 compute signed TSS distances. Strand awareness follows the same
 convention: for \code{+} strand features, position 0 is the lowest
 coordinate; for \code{-} strand features, position 0 is the highest
