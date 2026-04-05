@@ -365,19 +365,36 @@ plot_tss_profile <- function(object,
 
     ## ── J. Optional loess smooth overlay ─────────────────────────────────────
     if (show_smooth) {
-        groups <- unique(df[[color_var]])
+        groups          <- unique(df[[color_var]])
+        sparse_groups   <- character(0L)
+        unstable_groups <- character(0L)
         smooth_rows <- lapply(groups, function(g) {
             sub <- df[df[[color_var]] == g & !is.na(df$beta), ]
             if (nrow(sub) < 10L) {
-                warning("Fewer than 10 data points for group '", g,
-                        "'; loess smooth not drawn for this group.")
+                sparse_groups <<- c(sparse_groups, g)
                 return(NULL)
             }
-            fit  <- stats::loess(beta ~ rel_pos, data = sub,
-                                 span = smooth_span,
-                                 na.action = stats::na.exclude)
+            loess_warns <- character(0L)
+            fit <- withCallingHandlers(
+                stats::loess(beta ~ rel_pos, data = sub,
+                             span = smooth_span,
+                             na.action = stats::na.exclude),
+                warning = function(w) {
+                    loess_warns <<- c(loess_warns, conditionMessage(w))
+                    invokeRestart("muffleWarning")
+                }
+            )
             xseq <- seq(-window, window, length.out = 200L)
-            yhat <- stats::predict(fit, newdata = data.frame(rel_pos = xseq))
+            yhat <- withCallingHandlers(
+                stats::predict(fit, newdata = data.frame(rel_pos = xseq)),
+                warning = function(w) {
+                    loess_warns <<- c(loess_warns, conditionMessage(w))
+                    invokeRestart("muffleWarning")
+                }
+            )
+            if (length(loess_warns) > 0L) {
+                unstable_groups <<- c(unstable_groups, g)
+            }
             out  <- data.frame(
                 rel_pos     = xseq,
                 beta_smooth = as.numeric(yhat),
@@ -388,6 +405,16 @@ plot_tss_profile <- function(object,
             out
         })
         smooth_df <- do.call(rbind, Filter(Negate(is.null), smooth_rows))
+
+        if (length(sparse_groups) > 0L)
+            warning("Fewer than 10 data points for group(s) ",
+                    paste0("'", sparse_groups, "'", collapse = ", "),
+                    "; loess smooth not drawn for these group(s).")
+        if (length(unstable_groups) > 0L)
+            warning("LOESS smooth for group(s) ",
+                    paste0("'", unstable_groups, "'", collapse = ", "),
+                    " encountered numerical instability; the smooth may be unreliable. ",
+                    "Consider adjusting smooth_span or increasing data density near this feature.")
 
         if (!is.null(smooth_df) && nrow(smooth_df) > 0L) {
             p <- p + ggplot2::geom_line(

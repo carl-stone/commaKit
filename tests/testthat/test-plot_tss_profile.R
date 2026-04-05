@@ -175,12 +175,24 @@ test_that("facet_by = 'mod_type' produces FacetWrap layer", {
 
 test_that("show_smooth = TRUE adds a geom_line layer", {
     obj          <- .make_tss_data()
-    p            <- plot_tss_profile(obj, feature_type = "gene",
-                                      window = 500L, show_smooth = TRUE,
-                                      smooth_span = 0.5)
+    p            <- suppressWarnings(
+        plot_tss_profile(obj, feature_type = "gene",
+                         window = 500L, show_smooth = TRUE,
+                         smooth_span = 0.5)
+    )
     expect_s3_class(p, "ggplot")
     layer_classes <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
     expect_true(any(layer_classes == "GeomLine"))
+})
+
+test_that("show_smooth = TRUE warns on numerically unstable LOESS fit", {
+    obj <- .make_tss_data()
+    expect_warning(
+        plot_tss_profile(obj, feature_type = "gene",
+                         window = 500L, show_smooth = TRUE,
+                         smooth_span = 0.5),
+        "LOESS.*numerical instability"
+    )
 })
 
 test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
