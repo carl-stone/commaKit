@@ -38,10 +38,10 @@ Synthetic `commaData` created by `data-raw/create_example_data.R` (`set.seed(42)
 | `test-parsers.R` | Modkit column mapping, mod codes, coverage filter — ~15 tests |
 | `test-accessors.R` | Matrix shape, value ranges, multi-mod-type, subsetting — ~20 tests |
 | `test-genome_utils.R` | `.validateGenomeInfo()`, `.circularIndex()`, `.makeSeqinfo()` |
-| `test-load_annotation.R` | GFF3/BED parsing, feature_type filtering |
+| `test-load_annotation.R` | GFF3/BED parsing, feature_type filtering, feature_subtype preservation from GFF3 attribute |
 | `test-find_motif_sites.R` | Motif search, both strands, palindromic motifs |
 | `test-parse_megalodon.R` | `.parseMegalodon()` aggregation, mod_type requirement |
-| `test-annotateSites.R` | overlap/proximity/metagene modes, edge cases — ~20 tests |
+| `test-annotateSites.R` | unified keep="all/overlap/proximity/metagene", strand-aware rel_position, frac_position NA for outside, metadata_cols parallel column — ~20 tests |
 | `test-slidingWindow.R` | stat modes, circular wrap, genome-size inference — ~15 tests |
 | `test-methylomeSummary.R` | per-sample stats, mod_type filtering, all-NA sample — ~11 tests |
 | `test-coverageAnalysis.R` | `coverageDepth()` windowing, `varianceByDepth()` bins — ~8 tests |
@@ -58,7 +58,7 @@ Synthetic `commaData` created by `data-raw/create_example_data.R` (`set.seed(42)
 | `test-plot_pca.R` | `plot_pca()`: returns ggplot, color_by/shape_by, return_data — ~22 tests |
 | `test-plot_coverage.R` | `plot_coverage()`: returns ggplot, per_sample mode |
 | `test-plot_tss_profile.R` | TSS window, color_by modes, regulatory_element fallback, loess, faceting — ~16 tests |
-| `test-enrichment.R` | `.siteToGeneMap()`, `.computeGeneScores()`, ORA+GSEA, error conditions — ~34 tests |
+| `test-enrichment.R` | `.siteToGeneMap()`, `.computeGeneScores()`, `.parseTargetGenes()`, `.parseRegulatorGenes()`, `.extractGeneRoles()`, ORA+GSEA, gene_role, multi-feature_type, data.frame input — ~60 tests |
 
 ## Required Coverage
 

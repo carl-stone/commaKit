@@ -45,6 +45,24 @@ commaData(
 
 `annotateSites()` stores **all** overlapping/nearby features per site as `CharacterList`/`IntegerList`/`NumericList` columns in `rowData` — not just the first or closest. This reflects the highly overlapping nature of bacterial genome annotations (genes, promoters, TF binding sites). Do NOT revert to single-match (`!duplicated()` or `distanceToNearest()`) behavior. Intergenic sites receive length-0 list elements; test with `lengths(col) == 0`.
 
+Four parallel list columns are always computed by the unified backend (`.annotateSites_unified()`):
+- `feature_types`: GFF3 type per association (`CharacterList`)
+- `feature_names`: feature name per association (`CharacterList`)
+- `rel_position`: signed distance from feature; 0 = inside, negative = upstream, positive = downstream, strand-aware (`IntegerList`)
+- `frac_position`: normalized position [0,1] inside feature (TSS=0); `NA` outside (`NumericList`)
+
+Additional metadata columns can be passed through via `metadata_cols` — stored as `{col}_values` CharacterList columns, parallel to the above.
+
+`keep` post-filter:
+- `"all"` — all four columns
+- `"overlap"` — subset to `rel_position==0`; drops `rel_position`/`frac_position`
+- `"proximity"` — keep all associations; drops `frac_position`
+- `"metagene"` — subset to `rel_position==0`; keeps `frac_position`
+
+### loadAnnotation() — feature_subtype preservation
+
+EcoCyc GFF3 files encode sigma factor identity as a `feature_type=Sigma70` attribute in GFF3 column 9. `.standardizeAnnotationMcols()` now saves this to `feature_subtype` **before** overwriting `feature_type` with the GFF3 type column. Result: `feature_subtype` in mcols holds sigma factor/binding-protein identity (e.g., `"Sigma70"`, `"DnaA-binding site"`); `feature_type` holds the SO type (e.g., `"transcription_factor_binding_site"`). The `transcription_unit` attribute (for binding sites encoding regulated operons) is preserved as-is by `rtracklayer::import()`.
+
 ---
 
 ## Dependencies
@@ -143,7 +161,10 @@ loadAnnotation(file, feature_types)   # GFF3/BED → GRanges
 findMotifSites(genome, motif)         # genome + motif → GRanges
 
 # Analysis
-annotateSites(object, features, type, ...)    # type = "overlap"|"proximity"|"metagene"
+annotateSites(object, features, feature_col, name_col, window, keep, metadata_cols)
+# keep = "all"|"overlap"|"proximity"|"metagene" (default "all")
+# always produces: feature_types, feature_names, rel_position, frac_position
+# metadata_cols: GFF3 attribute names to pass through as {col}_values CharacterList columns
 slidingWindow(object, window, stat, mod_context, ...)
 methylomeSummary(object, mod_type, mod_context)
 coverageDepth(object, window, method, ...)
@@ -159,10 +180,28 @@ filterResults(object, padj, delta_beta, ...)
 
 # Enrichment (requires annotateSites() + diffMethyl() first)
 enrichMethylation(object, method, OrgDb, keyType, ont, organism, TERM2GENE, TERM2NAME,
-                  gene_col, padj_threshold, delta_beta_threshold, score_metric,
+                  gene_col, feature_type, gene_role, overlap_only,
+                  padj_threshold, delta_beta_threshold, score_metric,
                   gene_score_agg, mod_type, mod_context,
                   pvalueCutoff, qvalueCutoff, minGSSize, maxGSSize)
-# Returns list(go=..., kegg=...)
+# object: commaData OR data.frame from results()
+# feature_type: character vector (run separately per type); NULL = all
+# gene_role: "target"|"regulator"|"both" (see below)
+# Returns: list(go=..., kegg=...)   [single feature_type, gene_role != "both"]
+#          list(gene=list(go,kegg), promoter=...) [multiple feature_types]
+#          list(target=..., regulator=...) [gene_role="both"]
+#
+# gene_role semantics:
+#   "target"    → universe = all target genes in data
+#   "regulator" → universe = only regulators of that type in annotation
+#   "both"      → runs both separately, returns named sub-list
+#
+# .COMMA_REGION_FEATURE_TYPES: c("gene","CDS","mRNA","tRNA","rRNA","ncRNA",
+#   "operon","repeat_region","prophage","region","insertion_sequence")
+#   overlap_only auto-defaults to TRUE for these types
+#
+# .SIGMA_FACTOR_GENE_MAP: Sigma70→rpoD, Sigma24→rpoE, Sigma32→rpoH,
+#   Sigma28→fliA, Sigma38→rpoS, Sigma54→rpoN, Sigma19→fecI
 
 # Visualization (all return ggplot/patchwork; all accept mod_context filter)
 plot_methylation_distribution(object, mod_type, mod_context, per_sample)
