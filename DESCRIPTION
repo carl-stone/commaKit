@@ -41,7 +41,6 @@ Collate:
     'commaData_constructor.R'
     'accessors.R'
     'annotateSites.R'
-    'beta_binomial.R'
     'comma_example_data.R'
     'coverage_analysis.R'
     'diffMethyl.R'

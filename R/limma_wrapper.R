@@ -65,7 +65,7 @@ NULL
         stop(
             "Package 'limma' is required for method = \"limma\".\n",
             "Install it with: BiocManager::install(\"limma\")\n",
-            "Alternatively, use method = \"beta_binomial\" (no extra packages needed)."
+            "Alternatively, use method = \"methylkit\" if methylKit is available."
         )
     }
 

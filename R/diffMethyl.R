@@ -14,29 +14,20 @@ NULL
 #' as new columns in \code{rowData}.
 #'
 #' @details
-#' \strong{Statistical model (\code{method = "beta_binomial"}):}
-#' A per-site quasibinomial GLM is fitted using \code{\link[stats]{glm}}:
-#' \deqn{
-#'   \text{Binomial}(n_{\text{mod}},\ n_{\text{total}}) \sim \text{condition}
-#' }
-#' where \eqn{n_{\text{mod}} = \text{round}(\beta \times \text{coverage})} and
-#' \eqn{n_{\text{total}} = \text{coverage}}. The quasibinomial family accounts
-#' for overdispersion. P-values are extracted from the Wald t-test on the
-#' contrast coefficient. This method requires no additional packages beyond
-#' base R.
+#' \strong{Default method (\code{method = "methylkit"}):}
+#' Wraps \code{methylKit::calculateDiffMeth()}, which uses logistic regression
+#' with SLIM p-value correction. Robust for small n, produces calibrated
+#' relative p-values suitable for downstream filtering. Requires \pkg{methylKit}
+#' (\code{BiocManager::install("methylKit")}).
 #'
 #' \strong{Alternative model (\code{method = "quasi_f"}):}
-#' A two-pass extension of \code{"beta_binomial"} that adds empirical Bayes
-#' shrinkage of the per-site quasibinomial dispersion estimates, analogous to
-#' the quasi-likelihood F-test of \pkg{edgeR}. Pass 1 fits the same
-#' quasibinomial GLM per site and collects the per-site dispersion
-#' \eqn{\hat\phi_j} and residual df \eqn{df_j}. Pass 2 calls
-#' \code{\link[limma]{squeezeVar}} to estimate a log-normal prior on
-#' \eqn{\{\hat\phi_j\}} and compute posterior estimates
-#' \eqn{\{\tilde\phi_j\}}. Pass 3 recomputes the t-statistic using
-#' \eqn{\tilde\phi_j} and evaluates it against a t-distribution with
-#' \eqn{d_0 + df_j} degrees of freedom (where \eqn{d_0} is the estimated prior
-#' df). Requires \pkg{limma}.
+#' A per-site quasibinomial GLM with empirical Bayes shrinkage of dispersion
+#' estimates, analogous to the quasi-likelihood F-test of \pkg{edgeR}. Fits the
+#' quasibinomial GLM per site, collects per-site dispersion \eqn{\hat\phi_j}
+#' and residual df \eqn{df_j}, then calls \code{\link[limma]{squeezeVar}} to
+#' compute posterior dispersion estimates \eqn{\{\tilde\phi_j\}}. T-statistics
+#' are evaluated against a t-distribution with \eqn{d_0 + df_j} degrees of
+#' freedom. Requires \pkg{limma}.
 #'
 #' \strong{Alternative model (\code{method = "limma"}):}
 #' Beta values are transformed to M-values via
@@ -44,16 +35,9 @@ NULL
 #' then \code{\link[limma]{lmFit}} fits an OLS model per site and
 #' \code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage —
 #' borrowing information across all sites to stabilize the per-site variance
-#' estimate. This gives substantially more power than \code{"beta_binomial"}
-#' when replicates are few (n < 3 per group). Requires \pkg{limma}
-#' (\code{BiocManager::install("limma")}). Effect sizes are reported on the
-#' original beta scale.
-#'
-#' \strong{Alternative model (\code{method = "methylkit"}):}
-#' Wraps \code{methylKit::calculateDiffMeth()}, which uses logistic regression.
-#' Requires \pkg{methylKit} to be installed
-#' (\code{BiocManager::install("methylKit")}). Returns results in the same
-#' standardised format.
+#' estimate. Recommended when replicates are few (n < 3 per group). Requires
+#' \pkg{limma} (\code{BiocManager::install("limma")}). Effect sizes are
+#' reported on the original beta scale.
 #'
 #' \strong{Multiple mod contexts:} When \code{mod_context = NULL} (default),
 #' all modification contexts (mod_type × motif combinations) present in the
@@ -89,15 +73,16 @@ NULL
 #'   must match a column in \code{sampleInfo(object)} (e.g., \code{~ condition}).
 #'   Default is \code{~ condition}.
 #' @param method Character string selecting the statistical backend.
-#'   \code{"beta_binomial"} (default) uses a quasibinomial GLM via base R.
+#'   \code{"methylkit"} (default) wraps \code{methylKit::calculateDiffMeth()}
+#'   with logistic regression and SLIM p-value correction; robust for small n
+#'   and produces calibrated relative p-values suitable for downstream
+#'   filtering. Requires \pkg{methylKit} (Bioconductor).
 #'   \code{"quasi_f"} applies empirical Bayes shrinkage of quasibinomial
 #'   dispersions via \code{\link[limma]{squeezeVar}} (quasi-likelihood F-test;
 #'   count-data EB, recommended for small n). Requires \pkg{limma}.
 #'   \code{"limma"} applies empirical Bayes variance shrinkage via
 #'   \code{\link[limma]{eBayes}} on M-value-transformed data; recommended when
 #'   replicates are few (n < 3 per group). Requires \pkg{limma}.
-#'   \code{"methylkit"} wraps \code{methylKit::calculateDiffMeth()}, requiring
-#'   \pkg{methylKit} to be installed.
 #' @param alpha Positive numeric pseudocount used to compute M-values when
 #'   \code{method = "limma"}:
 #'   \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))}.
@@ -159,7 +144,7 @@ diffMethyl <- function(
     object,
     formula         = ~ condition,
     reference       = NULL,
-    method          = c("beta_binomial", "methylkit", "limma", "quasi_f"),
+    method          = c("methylkit", "limma", "quasi_f"),
     mod_context     = NULL,
     mod_type        = NULL,
     motif           = NULL,
@@ -321,6 +306,13 @@ diffMethyl <- function(
     mean_beta_cols <- lapply(cond_levels, function(lv) rep(NA_real_, n_sites_all))
     names(mean_beta_cols) <- paste0("dm_mean_beta_", cond_levels)
 
+    # ── Report comparison direction ───────────────────────────────────────────
+    treat_level_dm <- cond_levels[[2L]]
+    message(
+        "diffMethyl: testing '", primary_var, "' — '",
+        treat_level_dm, "' vs '", ref_level, "' (reference)"
+    )
+
     # ── Test each mod context independently ──────────────────────────────────
     for (mc in test_contexts) {
         site_idx <- which(rd_full$mod_context == mc)
@@ -335,10 +327,7 @@ diffMethyl <- function(
 
         # Dispatch to statistical backend
         res_sub <- tryCatch(
-            if (method == "beta_binomial") {
-                .betaBinomialTest(methyl_sub, cov_sub, cd, formula,
-                                  ref_level = ref_level)
-            } else if (method == "limma") {
+            if (method == "limma") {
                 .runLimma(methyl_sub, cov_sub, cd, formula, alpha = alpha,
                           ref_level = ref_level)
             } else if (method == "quasi_f") {

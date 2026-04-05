@@ -40,7 +40,7 @@ NULL
         stop(
             "Package 'methylKit' is required for method = \"methylkit\".\n",
             "Install it with: BiocManager::install(\"methylKit\")\n",
-            "Alternatively, use method = \"beta_binomial\" (no extra packages needed)."
+            "Install it with: BiocManager::install(\"methylKit\"), or use method = \"quasi_f\" or \"limma\"."
         )
     }
 
@@ -76,6 +76,11 @@ NULL
     cond_levels <- c(ref_level, setdiff(all_levels, ref_level))
     treat_level <- cond_levels[[2L]]
     treatment   <- as.integer(cond != ref_level)  # 0/1
+
+    message(
+        "methylKit: comparing '", treat_level, "' (treatment) vs '",
+        ref_level, "' (reference/control)"
+    )
 
     # ── Parse site keys into components ───────────────────────────────────────
     site_keys <- rownames(methyl_mat)
@@ -136,14 +141,24 @@ NULL
         }
       )
 
+      mk_warn_counts <- list()
       mk_diff <- tryCatch(
-        suppressWarnings(
-          methylKit::calculateDiffMeth(mk_united, weighted.mean = FALSE)
+        withCallingHandlers(
+          suppressMessages(   # suppress only the "group: 0/1" message we've replaced
+            methylKit::calculateDiffMeth(mk_united, weighted.mean = FALSE)
+          ),
+          warning = function(w) {
+            key <- trimws(conditionMessage(w))
+            n_prev <- mk_warn_counts[[key]]
+            mk_warn_counts[[key]] <<- (if (is.null(n_prev)) 0L else n_prev) + 1L
+            invokeRestart("muffleWarning")
+          }
         ),
         error = function(e) {
           stop("methylKit::calculateDiffMeth() failed: ", e$message)
         }
       )
+      .emitMethylKitWarnings(mk_warn_counts)
     }
 
     # ── Extract results and standardise format ────────────────────────────────
@@ -154,7 +169,7 @@ NULL
     # Build a lookup from position (as character) back to site key
     mk_key <- paste0(diff_df$chr, ":", diff_df$start, ":", diff_df$strand)
 
-    # Pre-compute group means from our matrices (same logic as beta_binomial)
+    # Pre-compute group means from our matrices (mirroring quasi_f/limma wrappers)
     group_idx  <- lapply(cond_levels, function(lv) which(cond == lv))
     names(group_idx) <- cond_levels
 
@@ -195,4 +210,40 @@ NULL
     }
 
     result
+}
+
+# ─── Warning translation helper ───────────────────────────────────────────────
+
+#' Translate and emit collected methylKit warnings as informative summaries
+#'
+#' Called after \code{methylKit::calculateDiffMeth()} to emit one summarized
+#' warning per unique warning type rather than per-site spam. Unknown warning
+#' types are re-emitted verbatim so nothing is silently lost.
+#'
+#' @param warn_counts Named list mapping warning message text to integer counts.
+#' @keywords internal
+.emitMethylKitWarnings <- function(warn_counts) {
+    if (length(warn_counts) == 0L) return(invisible(NULL))
+    for (msg in names(warn_counts)) {
+        n <- warn_counts[[msg]]
+        if (grepl("fitted probabilities numerically 0 or 1", msg)) {
+            warning(
+                "methylKit: ", n, " site(s) had fitted probabilities at 0 or 1. ",
+                "This typically occurs when methylation fractions are at boundary ",
+                "values (fully methylated or unmethylated), common in 6mA datasets ",
+                "with few replicates. GLM estimates may be unreliable for these sites. ",
+                "Consider method = \"limma\" if many sites are affected.",
+                call. = FALSE
+            )
+        } else if (grepl("algorithm did not converge", msg)) {
+            warning(
+                "methylKit: GLM failed to converge for ", n, " site(s). ",
+                "Results at these sites may be unreliable.",
+                call. = FALSE
+            )
+        } else {
+            # Unknown warning type — re-emit verbatim so nothing is silently lost
+            warning("methylKit (", n, "x): ", msg, call. = FALSE)
+        }
+    }
 }

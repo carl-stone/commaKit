@@ -58,19 +58,19 @@
 
 test_that("diffMethyl: returns a commaData object", {
     obj <- .make_dm_data()
-    dm  <- diffMethyl(obj, formula = ~ condition)
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     expect_s4_class(dm, "commaData")
 })
 
 test_that("diffMethyl: dimension unchanged after running", {
     obj <- .make_dm_data()
-    dm  <- diffMethyl(obj, formula = ~ condition)
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     expect_equal(dim(dm), dim(obj))
 })
 
 test_that("diffMethyl: rowData gains dm_ result columns", {
     obj <- .make_dm_data()
-    dm  <- diffMethyl(obj, formula = ~ condition)
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
     expect_true("dm_pvalue"     %in% colnames(rd))
     expect_true("dm_padj"       %in% colnames(rd))
@@ -79,7 +79,7 @@ test_that("diffMethyl: rowData gains dm_ result columns", {
 
 test_that("diffMethyl: per-condition mean_beta columns added", {
     obj <- .make_dm_data()
-    dm  <- diffMethyl(obj, formula = ~ condition)
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     rd  <- colnames(SummarizedExperiment::rowData(dm))
     expect_true("dm_mean_beta_control"   %in% rd)
     expect_true("dm_mean_beta_treatment" %in% rd)
@@ -87,7 +87,7 @@ test_that("diffMethyl: per-condition mean_beta columns added", {
 
 test_that("diffMethyl: metadata records result_cols", {
     obj <- .make_dm_data()
-    dm  <- diffMethyl(obj, formula = ~ condition)
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     md  <- S4Vectors::metadata(dm)
     expect_true(!is.null(md$diffMethyl_result_cols))
     expect_true("dm_pvalue" %in% md$diffMethyl_result_cols)
@@ -96,16 +96,16 @@ test_that("diffMethyl: metadata records result_cols", {
 
 test_that("diffMethyl: metadata params recorded correctly", {
     obj <- .make_dm_data()
-    dm  <- diffMethyl(obj, formula = ~ condition, method = "beta_binomial",
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f",
                       p_adjust_method = "BH")
     params <- S4Vectors::metadata(dm)$diffMethyl_params
-    expect_equal(params$method, "beta_binomial")
+    expect_equal(params$method, "quasi_f")
     expect_equal(params$p_adjust_method, "BH")
 })
 
 test_that("diffMethyl: existing rowData columns preserved", {
     obj <- .make_dm_data()
-    dm  <- diffMethyl(obj, formula = ~ condition)
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     rd  <- SummarizedExperiment::rowData(dm)
     expect_true("is_diff" %in% colnames(rd))
     expect_true("mod_type" %in% colnames(rd))
@@ -115,7 +115,7 @@ test_that("diffMethyl: existing rowData columns preserved", {
 
 test_that("diffMethyl: dm_pvalue in [0, 1] for non-NA sites", {
     obj    <- .make_dm_data()
-    dm     <- diffMethyl(obj, formula = ~ condition)
+    dm     <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     pvals  <- SummarizedExperiment::rowData(dm)$dm_pvalue
     nonNA  <- pvals[!is.na(pvals)]
     expect_true(all(nonNA >= 0 & nonNA <= 1))
@@ -123,7 +123,7 @@ test_that("diffMethyl: dm_pvalue in [0, 1] for non-NA sites", {
 
 test_that("diffMethyl: dm_padj >= dm_pvalue for all non-NA sites", {
     obj    <- .make_dm_data()
-    dm     <- diffMethyl(obj, formula = ~ condition)
+    dm     <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     rd     <- as.data.frame(SummarizedExperiment::rowData(dm))
     ok     <- !is.na(rd$dm_pvalue) & !is.na(rd$dm_padj)
     expect_true(all(rd$dm_padj[ok] >= rd$dm_pvalue[ok] - 1e-10))
@@ -132,7 +132,7 @@ test_that("diffMethyl: dm_padj >= dm_pvalue for all non-NA sites", {
 test_that("diffMethyl: true positive enrichment in ground truth diff sites", {
     # Truly differential sites should have lower padj than non-diff sites
     obj <- .make_dm_data(n_sites = 30L, n_ctrl = 2L, n_treat = 1L)
-    dm  <- diffMethyl(obj, formula = ~ condition)
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
     median_padj_diff    <- median(rd$dm_padj[rd$is_diff  & !is.na(rd$dm_padj)])
     median_padj_nondiff <- median(rd$dm_padj[!rd$is_diff & !is.na(rd$dm_padj)])
@@ -141,7 +141,7 @@ test_that("diffMethyl: true positive enrichment in ground truth diff sites", {
 
 test_that("diffMethyl: delta_beta sign matches direction (treat - ctrl)", {
     obj <- .make_dm_data(n_sites = 10L)
-    dm  <- diffMethyl(obj, formula = ~ condition)
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
     # First sites are diff (control high, treatment low) → delta_beta < 0
     delta <- rd$dm_delta_beta[1:5]
@@ -152,7 +152,8 @@ test_that("diffMethyl: delta_beta sign matches direction (treat - ctrl)", {
 
 test_that("diffMethyl: mod_type = '6mA' tests only 6mA sites", {
     data(comma_example_data)
-    dm <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+    dm <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA",
+                     method = "quasi_f")
     rd <- as.data.frame(SummarizedExperiment::rowData(dm))
 
     # 6mA sites should have non-NA p-values
@@ -164,7 +165,7 @@ test_that("diffMethyl: mod_type = '6mA' tests only 6mA sites", {
 
 test_that("diffMethyl: all mod types tested when mod_type = NULL", {
     data(comma_example_data)
-    dm <- diffMethyl(comma_example_data, formula = ~ condition)
+    dm <- diffMethyl(comma_example_data, formula = ~ condition, method = "quasi_f")
     rd <- as.data.frame(SummarizedExperiment::rowData(dm))
     expect_true(any(!is.na(rd$dm_pvalue[rd$mod_type == "6mA"])))
     expect_true(any(!is.na(rd$dm_pvalue[rd$mod_type == "5mC"])))
@@ -174,7 +175,8 @@ test_that("diffMethyl: all mod types tested when mod_type = NULL", {
 
 test_that("diffMethyl: min_coverage = 1000 → all NA p-values", {
     obj <- .make_dm_data()
-    dm  <- diffMethyl(obj, formula = ~ condition, min_coverage = 1000L)
+    dm  <- diffMethyl(obj, formula = ~ condition, min_coverage = 1000L,
+                      method = "quasi_f")
     pvals <- SummarizedExperiment::rowData(dm)$dm_pvalue
     expect_true(all(is.na(pvals)))
 })
@@ -184,13 +186,15 @@ test_that("diffMethyl: min_coverage = 1000 → all NA p-values", {
 test_that("diffMethyl: p_adjust_method = 'bonferroni' is accepted", {
     obj <- .make_dm_data()
     expect_no_error(
-        diffMethyl(obj, formula = ~ condition, p_adjust_method = "bonferroni")
+        diffMethyl(obj, formula = ~ condition, method = "quasi_f",
+                   p_adjust_method = "bonferroni")
     )
 })
 
 test_that("diffMethyl: p_adjust_method = 'none' gives padj equal to pvalue", {
     obj  <- .make_dm_data()
-    dm   <- diffMethyl(obj, formula = ~ condition, p_adjust_method = "none")
+    dm   <- diffMethyl(obj, formula = ~ condition, method = "quasi_f",
+                       p_adjust_method = "none")
     rd   <- as.data.frame(SummarizedExperiment::rowData(dm))
     ok   <- !is.na(rd$dm_pvalue) & !is.na(rd$dm_padj)
     expect_equal(rd$dm_pvalue[ok], rd$dm_padj[ok], tolerance = 1e-10)
@@ -228,7 +232,8 @@ test_that("diffMethyl: method argument must be valid", {
 test_that("diffMethyl: works with comma_example_data", {
     data(comma_example_data)
     expect_no_error(
-        diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+        diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA",
+                   method = "quasi_f")
     )
 })
 
@@ -242,6 +247,26 @@ test_that("diffMethyl: method='methylkit' errors with informative message if met
         diffMethyl(obj, formula = ~ condition, method = "methylkit"),
         "methylKit"
     )
+})
+
+test_that("diffMethyl: method='methylkit' message uses actual level names", {
+    skip_if_not(requireNamespace("methylKit", quietly = TRUE),
+                "methylKit not installed")
+    obj <- .make_dm_data()
+    msgs <- character(0)
+    withCallingHandlers(
+        diffMethyl(obj, formula = ~ condition, method = "methylkit"),
+        message = function(m) {
+            msgs <<- c(msgs, conditionMessage(m))
+            invokeRestart("muffleMessage")
+        }
+    )
+    # The replacement message should name the actual levels
+    expect_true(any(grepl("treatment", msgs, fixed = TRUE)))
+    expect_true(any(grepl("control", msgs, fixed = TRUE)))
+    # The generic methylKit "group: 0" / "group: 1" message must NOT appear
+    expect_false(any(grepl("group: 0", msgs, fixed = TRUE)))
+    expect_false(any(grepl("group: 1", msgs, fixed = TRUE)))
 })
 
 # ─── limma method ─────────────────────────────────────────────────────────────
@@ -269,16 +294,16 @@ test_that("diffMethyl: method='limma' produces valid p-values in [0, 1]", {
     expect_true(all(rd$dm_padj[!is.na(rd$dm_padj)] >= rd$dm_pvalue[!is.na(rd$dm_pvalue)]))
 })
 
-test_that("diffMethyl: limma and beta_binomial delta_beta values are highly correlated", {
+test_that("diffMethyl: limma and quasi_f delta_beta values are highly correlated", {
     skip_if_not_installed("limma")
     obj  <- .make_dm_data(n_sites = 40L)
     dm_l <- diffMethyl(obj, formula = ~ condition, method = "limma")
-    dm_b <- diffMethyl(obj, formula = ~ condition, method = "beta_binomial")
+    dm_q <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     db_l <- SummarizedExperiment::rowData(dm_l)$dm_delta_beta
-    db_b <- SummarizedExperiment::rowData(dm_b)$dm_delta_beta
-    ok   <- !is.na(db_l) & !is.na(db_b)
+    db_q <- SummarizedExperiment::rowData(dm_q)$dm_delta_beta
+    ok   <- !is.na(db_l) & !is.na(db_q)
     expect_true(sum(ok) > 0)
-    expect_gt(cor(db_l[ok], db_b[ok]), 0.95)
+    expect_gt(cor(db_l[ok], db_q[ok]), 0.95)
 })
 
 test_that("diffMethyl: method='limma' records alpha in metadata", {
@@ -337,30 +362,29 @@ test_that("diffMethyl: method='quasi_f' produces valid p-values in [0, 1]", {
                         rd$dm_pvalue[!is.na(rd$dm_pvalue)]))
 })
 
-test_that("diffMethyl: quasi_f and beta_binomial delta_beta are highly correlated", {
+test_that("diffMethyl: quasi_f and limma delta_beta are highly correlated", {
     skip_if_not_installed("limma")
     obj  <- .make_dm_data(n_sites = 40L)
     dm_q <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
-    dm_b <- diffMethyl(obj, formula = ~ condition, method = "beta_binomial")
+    dm_l <- diffMethyl(obj, formula = ~ condition, method = "limma")
     db_q <- SummarizedExperiment::rowData(dm_q)$dm_delta_beta
-    db_b <- SummarizedExperiment::rowData(dm_b)$dm_delta_beta
-    ok   <- !is.na(db_q) & !is.na(db_b)
+    db_l <- SummarizedExperiment::rowData(dm_l)$dm_delta_beta
+    ok   <- !is.na(db_q) & !is.na(db_l)
     expect_true(sum(ok) > 0)
-    expect_gt(cor(db_q[ok], db_b[ok]), 0.99)
+    expect_gt(cor(db_q[ok], db_l[ok]), 0.95)
 })
 
-test_that("diffMethyl: quasi_f has more power than beta_binomial on ground-truth data", {
+test_that("diffMethyl: quasi_f recovers majority of ground-truth diff sites", {
     skip_if_not_installed("limma")
     data(comma_example_data)
     dm_q  <- diffMethyl(comma_example_data, formula = ~ condition,
                         method = "quasi_f", mod_type = "6mA")
-    dm_b  <- diffMethyl(comma_example_data, formula = ~ condition,
-                        method = "beta_binomial", mod_type = "6mA")
-    is_diff <- as.data.frame(SummarizedExperiment::rowData(comma_example_data))$is_diff
-    pq <- SummarizedExperiment::rowData(dm_q)$dm_pvalue[is_diff]
-    pb <- SummarizedExperiment::rowData(dm_b)$dm_pvalue[is_diff]
-    # quasi_f should produce lower mean p-value for true positives
-    expect_lt(mean(pq, na.rm = TRUE), mean(pb, na.rm = TRUE))
+    rd    <- as.data.frame(SummarizedExperiment::rowData(dm_q))
+    rd6   <- rd[rd$mod_type == "6mA", ]
+    n_true_diff <- sum(rd6$is_diff, na.rm = TRUE)
+    n_detected  <- sum(rd6$is_diff & !is.na(rd6$dm_pvalue) & rd6$dm_pvalue < 0.2,
+                       na.rm = TRUE)
+    expect_gte(n_detected, floor(n_true_diff * 0.5))
 })
 
 test_that("diffMethyl: method='quasi_f' records method in metadata", {
@@ -411,7 +435,7 @@ test_that("applyMultipleTesting: bonferroni method accepted without error", {
     expect_no_error(comma:::.applyMultipleTesting(pvals, method = "bonferroni"))
 })
 
-# ─── .betaBinomialTest() edge cases (via diffMethyl) ─────────────────────────
+# ─── Edge cases ───────────────────────────────────────────────────────────────
 
 test_that("diffMethyl: site with single condition after NA removal gets NA p-value", {
     # Set all treatment sample methylation to NA → only 'control' group present
@@ -420,7 +444,7 @@ test_that("diffMethyl: site with single condition after NA removal gets NA p-val
     methyl <- SummarizedExperiment::assay(obj, "methylation")
     methyl[, "treat_1"] <- NA_real_
     SummarizedExperiment::assay(obj, "methylation") <- methyl
-    dm  <- diffMethyl(obj, formula = ~ condition)
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
     expect_true(all(is.na(rd$dm_pvalue)))
 })
@@ -435,7 +459,9 @@ test_that("diffMethyl: perfect separation (ctrl=0, treat=1) does not crash", {
     methyl[, "treat_1"] <- 1.0
     SummarizedExperiment::assay(obj, "methylation") <- methyl
     # suppress the expected GLM non-convergence warnings
-    dm <- expect_no_error(suppressWarnings(diffMethyl(obj, formula = ~ condition)))
+    dm <- expect_no_error(suppressWarnings(
+        diffMethyl(obj, formula = ~ condition, method = "quasi_f")
+    ))
     rd <- as.data.frame(SummarizedExperiment::rowData(dm))
     pv <- rd$dm_pvalue
     expect_true(all(is.na(pv) | (pv >= 0 & pv <= 1)))
@@ -450,7 +476,7 @@ test_that("diffMethyl: site with zero coverage in all samples gets NA p-value", 
     methyl <- SummarizedExperiment::assay(obj, "methylation")
     methyl[1L, ] <- NA_real_
     SummarizedExperiment::assay(obj, "methylation") <- methyl
-    dm <- diffMethyl(obj, formula = ~ condition)
+    dm <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     rd <- as.data.frame(SummarizedExperiment::rowData(dm))
     expect_true(is.na(rd$dm_pvalue[1]))
 })
@@ -462,7 +488,8 @@ test_that("diffMethyl: dm_delta_beta is strongly negative for is_diff 6mA sites 
     # so dm_delta_beta (treatment - control) should be substantially negative.
     # Non-diff sites have both conditions at ~0.90, so delta_beta should be near 0.
     data(comma_example_data)
-    dm   <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+    dm   <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA",
+                       method = "quasi_f")
     rd   <- as.data.frame(SummarizedExperiment::rowData(dm))
     rd6  <- rd[rd$mod_type == "6mA", ]
 
@@ -483,7 +510,8 @@ test_that("diffMethyl: majority of is_diff 6mA sites recovered at pvalue < 0.2 i
     # achievable with this few replicates. We use the raw p-value at a lenient
     # threshold (0.2) to verify the model correctly ranks differential sites.
     data(comma_example_data)
-    dm  <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+    dm  <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA",
+                      method = "quasi_f")
     rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
     rd6 <- rd[rd$mod_type == "6mA", ]
 
@@ -499,7 +527,8 @@ test_that("diffMethyl: significant hits are enriched for is_diff sites in comma_
     # Among sites called significant (padj < 0.05, |delta_beta| > 0.2), the majority
     # should be ground-truth is_diff = TRUE — i.e., precision >= 50%.
     data(comma_example_data)
-    dm  <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+    dm  <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA",
+                      method = "quasi_f")
     sig <- filterResults(dm, padj = 0.05, delta_beta = 0.2, mod_type = "6mA")
 
     if (nrow(sig) > 0L) {
@@ -517,7 +546,7 @@ test_that("diffMethyl: significant hits are enriched for is_diff sites in comma_
 test_that("diffMethyl: mod_context parameter filters to matching contexts", {
     data(comma_example_data)
     dm_6mA <- diffMethyl(comma_example_data, formula = ~ condition,
-                          mod_context = "6mA_GATC")
+                          mod_context = "6mA_GATC", method = "quasi_f")
     rd <- SummarizedExperiment::rowData(dm_6mA)
     # Only 6mA_GATC sites in result
     expect_true(all(rd$mod_context[!is.na(rd$dm_pvalue)] == "6mA_GATC"))
@@ -526,7 +555,7 @@ test_that("diffMethyl: mod_context parameter filters to matching contexts", {
 test_that("diffMethyl: loops separately over each mod_context", {
     data(comma_example_data)
     # comma_example_data has 2 contexts: 6mA_GATC and 5mC_CCWGG
-    dm <- diffMethyl(comma_example_data, formula = ~ condition)
+    dm <- diffMethyl(comma_example_data, formula = ~ condition, method = "quasi_f")
     rd <- SummarizedExperiment::rowData(dm)
     # Both contexts should have results (non-NA pvalues)
     has_6mA <- any(!is.na(rd$dm_pvalue[rd$mod_context == "6mA_GATC"]))
@@ -538,7 +567,7 @@ test_that("diffMethyl: loops separately over each mod_context", {
 test_that("diffMethyl: mod_context stored in metadata params", {
     data(comma_example_data)
     dm <- diffMethyl(comma_example_data, formula = ~ condition,
-                     mod_context = "6mA_GATC")
+                     mod_context = "6mA_GATC", method = "quasi_f")
     params <- S4Vectors::metadata(dm)$diffMethyl_params
     expect_equal(params$mod_context, "6mA_GATC")
 })
@@ -596,7 +625,7 @@ test_that("diffMethyl: factor condition uses first factor level as reference", {
     # WT is first factor level, HNS is second; WT has lower methylation.
     # delta_beta = HNS - WT should be positive.
     obj <- .make_ref_test_data(as_factor = TRUE)
-    dm  <- diffMethyl(obj, formula = ~ condition)
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
     rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
     db  <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
     expect_true(mean(db) > 0,
@@ -610,7 +639,8 @@ test_that("diffMethyl: reference argument overrides alphabetical default", {
     # Without reference, alphabetical ordering picks HNS as ref (H < W).
     # With reference = "WT", delta_beta should be positive (HNS - WT).
     obj <- .make_ref_test_data(as_factor = FALSE)
-    dm  <- diffMethyl(obj, formula = ~ condition, reference = "WT")
+    dm  <- diffMethyl(obj, formula = ~ condition, reference = "WT",
+                      method = "quasi_f")
     rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
     db  <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
     expect_true(mean(db) > 0,
