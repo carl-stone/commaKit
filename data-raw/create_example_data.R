@@ -8,34 +8,59 @@
 ##
 ## Design:
 ##   - Simulated 100 kb single-chromosome genome ("chr_sim")
-##   - 3 samples: ctrl_1, ctrl_2 (condition "control"), treat_1 ("treatment")
-##   - Two modification types: 6mA (GATC-like, ~200 sites) and 5mC (~100 sites)
+##   - 6 samples: ctrl_1/2/3 (control), treat_1/2/3 (treatment)
+##   - Two modification types: 6mA (~393 GATC sites) and 5mC (~195 CCWGG sites)
 ##   - ~30 differentially methylated 6mA sites between control and treatment
-##   - Random coverage 10–50 per site per sample
+##   - Site positions: deterministic evenly-spaced backbone + random complement +
+##     anchor positions guaranteeing coverage of all position-sensitive test windows
+##   - Random coverage 10–150 per site per sample
 ##   - Object constructed directly (no file I/O) to avoid round-trip artifacts
 
 set.seed(1312)
 
 # ── Parameters ────────────────────────────────────────────────────────────────
-GENOME_SIZE  <- 100000L
-CHR_NAME     <- "chr_sim"
-SAMPLES      <- c("ctrl_1", "ctrl_2", "ctrl_3", "treat_1", "treat_2", "treat_3")
-CONDITIONS   <- c("control", "control", "control", "treatment", "treatment", "treatment")
-REPLICATES   <- c(1L, 2L, 3L, 1L, 2L, 3L)
-N_6MA_SITES  <- 200L
-N_5MC_SITES  <- 100L
-N_DIFF_SITES <- 30L   # 6mA sites that are differentially methylated
-MOTIF_6MA    <- "GATC"   # simulated Dam methyltransferase motif for 6mA sites
-MOTIF_5MC    <- "CCWGG"  # simulated Dcm methyltransferase motif for 5mC sites
+GENOME_SIZE   <- 100000L
+CHR_NAME      <- "chr_sim"
+SAMPLES       <- c("ctrl_1", "ctrl_2", "ctrl_3", "treat_1", "treat_2", "treat_3")
+CONDITIONS    <- c("control", "control", "control", "treatment", "treatment", "treatment")
+REPLICATES    <- c(1L, 2L, 3L, 1L, 2L, 3L)
+GATC_SPACING  <- 512L    # deterministic backbone interval for 6mA sites (~195 sites)
+CCWGG_SPACING <- 1024L   # deterministic backbone interval for 5mC sites (~97 sites)
+N_RANDOM_6MA  <- 195L    # random sites added on top of backbone
+N_RANDOM_5MC  <- 98L     # random sites added on top of backbone
+N_DIFF_SITES  <- 30L     # 6mA sites that are differentially methylated
+MOTIF_6MA     <- "GATC"  # simulated Dam methyltransferase motif for 6mA sites
+MOTIF_5MC     <- "CCWGG" # simulated Dcm methyltransferase motif for 5mC sites
+# Anchor positions that MUST be present so position-sensitive tests never skip.
+# 1024 (= 512x2) is already on the backbone and covers the [1000, 1050] window.
+GATC_ANCHORS  <- c(1984L, 49984L, 60032L)
 
 # ── Simulate site positions ───────────────────────────────────────────────────
-# 6mA sites (mimic GATC motif spacing — roughly every 256 bp on average)
-gatc_positions <- sort(sample.int(GENOME_SIZE - 4L, N_6MA_SITES)) + 1L
-# 5mC sites (mimic CCGG motif — slightly less frequent)
-ccgg_positions <- sort(sample.int(GENOME_SIZE - 4L, N_5MC_SITES)) + 1L
+# Strategy: deterministic evenly-spaced backbone + random complement + anchors.
+# Combined, backbone + random gives ~GENOME_SIZE/256 GATC sites and
+# ~GENOME_SIZE/512 5mC sites, matching expected biological motif frequencies.
+
+# 6mA (GATC): backbone every 512 bp → ~195 sites
+gatc_backbone  <- seq(GATC_SPACING, GENOME_SIZE - 4L, by = GATC_SPACING)
+gatc_taken     <- sort(unique(c(gatc_backbone, GATC_ANCHORS)))
+gatc_pool      <- setdiff(seq_len(GENOME_SIZE - 4L), gatc_taken)
+gatc_random    <- sample(gatc_pool, N_RANDOM_6MA)
+gatc_positions <- sort(unique(c(gatc_backbone, GATC_ANCHORS, gatc_random)))
+
+# 5mC (CCWGG): backbone every 1024 bp → ~97 sites
+ccgg_backbone  <- seq(CCWGG_SPACING, GENOME_SIZE - 4L, by = CCWGG_SPACING)
+ccgg_taken     <- sort(unique(c(ccgg_backbone, gatc_positions)))
+ccgg_pool      <- setdiff(seq_len(GENOME_SIZE - 4L), ccgg_taken)
+ccgg_random    <- sample(ccgg_pool, N_RANDOM_5MC)
+ccgg_positions <- sort(unique(c(ccgg_backbone, ccgg_random)))
+
+# Derive final site counts used everywhere downstream
+N_6MA_SITES <- length(gatc_positions)
+N_5MC_SITES <- length(ccgg_positions)
+
 # Assign strands
-gatc_strands   <- sample(c("+", "-"), N_6MA_SITES, replace = TRUE)
-ccgg_strands   <- sample(c("+", "-"), N_5MC_SITES, replace = TRUE)
+gatc_strands  <- sample(c("+", "-"), N_6MA_SITES, replace = TRUE)
+ccgg_strands  <- sample(c("+", "-"), N_5MC_SITES, replace = TRUE)
 
 # ── Simulate methylation beta values ──────────────────────────────────────────
 # 6mA: control samples highly methylated (~0.9), treatment mostly methylated

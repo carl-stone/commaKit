@@ -747,9 +747,7 @@ test_that("enrichMethylation accepts data.frame input and warns on mod_type", {
     ann    <- make_annotated_dm()
     res_df <- results(ann)
     expect_warning(
-        suppressWarnings(
-            enrichMethylation(res_df, TERM2GENE = fake_t2g, mod_type = "6mA")
-        ),
+        enrichMethylation(res_df, TERM2GENE = fake_t2g, mod_type = "6mA"),
         "mod_type.*ignored|ignored.*mod_type"
     )
 })

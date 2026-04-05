@@ -19,14 +19,15 @@ There is **no** `tests/testthat/helper-fixtures.R` — fixtures are defined inli
 
 ## Test Fixture: `comma_example_data`
 
-Synthetic `commaData` created by `data-raw/create_example_data.R` (`set.seed(42)`):
+Synthetic `commaData` created by `data-raw/create_example_data.R` (`set.seed(1312)`):
 
-- **300 sites**: 200 × 6mA, 100 × 5mC
-- **3 samples**: ctrl_1, ctrl_2, treat_1
-- **2 conditions**: control (n=2), treatment (n=1)
+- **588 sites**: 393 × 6mA (GATC), 195 × 5mC (CCWGG)
+- **6 samples**: ctrl_1, ctrl_2, ctrl_3, treat_1, treat_2, treat_3
+- **2 conditions**: control (n=3), treatment (n=3)
 - **Genome**: chr_sim, 100 kb
-- **Ground truth**: ~30 of 200 6mA sites are differentially methylated (control ~0.9, treatment ~0.25); marked in `rowData$is_diff`
-- **Annotation**: 5 simulated genes (GRanges)
+- **Ground truth**: 30 of 393 6mA sites are differentially methylated (control ~0.9, treatment ~0.25); marked in `rowData$is_diff`
+- **Annotation**: 5 simulated features (GRanges)
+- **Site generation**: deterministic backbone (every 512 bp for 6mA, every 1024 bp for 5mC) + random complement + explicit anchors at 1024, 1984, 49984, 60032 to guarantee position-sensitive tests never skip
 
 ## Test File Coverage
 

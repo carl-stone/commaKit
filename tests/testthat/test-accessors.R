@@ -373,7 +373,7 @@ test_that("comma_example_data loads and accessors work correctly", {
     expect_true(is(comma_example_data, "commaData"))
     expect_equal(sort(modTypes(comma_example_data)), c("5mC", "6mA"))
     expect_equal(ncol(comma_example_data), 6L)
-    expect_equal(nrow(comma_example_data), 300L)
+    expect_equal(nrow(comma_example_data), 588L)
     expect_equal(genome(comma_example_data), c(chr_sim = 100000L))
 })
 
