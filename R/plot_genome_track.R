@@ -3,10 +3,10 @@
 #'   element_text element_blank
 NULL
 
-#' Genome browser–style methylation track plot
+#' Genome browser-style methylation track plot
 #'
 #' Plots methylation beta values for individual sites along a chromosome
-#' region in a genome browser–style layout, with one panel per sample.
+#' region in a genome browser-style layout, with one panel per sample.
 #' Optionally overlays genomic feature annotations as colored rectangles
 #' in a separate track below the methylation data.
 #'

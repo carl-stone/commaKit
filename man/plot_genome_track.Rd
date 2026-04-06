@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_genome_track.R
 \name{plot_genome_track}
 \alias{plot_genome_track}
-\title{Genome browser–style methylation track plot}
+\title{Genome browser-style methylation track plot}
 \usage{
 plot_genome_track(
   object,
@@ -55,7 +55,7 @@ annotation panel below.
 }
 \description{
 Plots methylation beta values for individual sites along a chromosome
-region in a genome browser–style layout, with one panel per sample.
+region in a genome browser-style layout, with one panel per sample.
 Optionally overlays genomic feature annotations as colored rectangles
 in a separate track below the methylation data.
 }

@@ -76,7 +76,7 @@ to \code{\link[stats]{loess}}. Default \code{0.3}.}
 \value{
 A \code{\link[ggplot2]{ggplot}} object. The x-axis shows signed
 position relative to the TSS in base pairs; the y-axis shows methylation
-beta value (0–1). A dashed vertical line marks the TSS at x = 0.
+beta value (0--1). A dashed vertical line marks the TSS at x = 0.
 }
 \description{
 Plots individual methylation sites at their absolute base-pair position
