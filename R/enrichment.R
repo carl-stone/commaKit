@@ -654,7 +654,7 @@ NULL
 #'   \item{\code{"gene"}, CDS, etc.}{Feature name is used directly.}
 #'   \item{\code{"promoter"}, \code{"minus_10_signal"},
 #'     \code{"minus_35_signal"}, \code{"transcription_factor_binding_site"}}{
-#'     Strip trailing \code{p} or \code{p\eqn{N}} suffix, then split on
+#'     Strip trailing \code{p} or \code{p}\eqn{N} suffix, then split on
 #'     \code{"-"} for operonic promoters.}
 #'   \item{\code{"protein_binding_site"}}{Target gene from
 #'     \code{transcription_unit} attribute (if available via
