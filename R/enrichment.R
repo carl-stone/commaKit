@@ -1,6 +1,7 @@
 #' @importFrom methods is
 #' @importFrom SummarizedExperiment rowData
 #' @importFrom S4Vectors metadata
+#' @importFrom stats setNames
 NULL
 
 # --- Constants ----------------------------------------------------------------

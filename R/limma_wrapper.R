@@ -1,4 +1,4 @@
-#' @importFrom stats model.matrix
+#' @importFrom stats model.matrix relevel
 NULL
 
 # ─── limma eBayes wrapper ─────────────────────────────────────────────────────
