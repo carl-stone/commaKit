@@ -16,3 +16,4 @@
 ^docs$
 ^pkgdown$
 ^.DS_Store&
+^.claude/
