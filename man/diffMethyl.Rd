@@ -116,14 +116,14 @@ freedom. Requires \pkg{limma}.
 Beta values are transformed to M-values via
 \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))},
 then \code{\link[limma]{lmFit}} fits an OLS model per site and
-\code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage —
+\code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage,
 borrowing information across all sites to stabilize the per-site variance
 estimate. Recommended when replicates are few (n < 3 per group). Requires
 \pkg{limma} (\code{BiocManager::install("limma")}). Effect sizes are
 reported on the original beta scale.
 
 \strong{Multiple mod contexts:} When \code{mod_context = NULL} (default),
-all modification contexts (mod_type × motif combinations) present in the
+all modification contexts (mod_type x motif combinations) present in the
 object are tested independently and results are combined. Sites not belonging
 to a tested context receive \code{NA} in all \code{dm_*} columns. Testing by
 \code{mod_context} rather than just \code{mod_type} prevents spurious pooling

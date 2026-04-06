@@ -3,7 +3,7 @@
 #' @importFrom S4Vectors metadata
 NULL
 
-# ─── diffMethyl() ─────────────────────────────────────────────────────────────
+# --- diffMethyl() -------------------------------------------------------------
 
 #' Identify differentially methylated sites between conditions
 #'
@@ -33,14 +33,14 @@ NULL
 #' Beta values are transformed to M-values via
 #' \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))},
 #' then \code{\link[limma]{lmFit}} fits an OLS model per site and
-#' \code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage —
+#' \code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage,
 #' borrowing information across all sites to stabilize the per-site variance
 #' estimate. Recommended when replicates are few (n < 3 per group). Requires
 #' \pkg{limma} (\code{BiocManager::install("limma")}). Effect sizes are
 #' reported on the original beta scale.
 #'
 #' \strong{Multiple mod contexts:} When \code{mod_context = NULL} (default),
-#' all modification contexts (mod_type × motif combinations) present in the
+#' all modification contexts (mod_type x motif combinations) present in the
 #' object are tested independently and results are combined. Sites not belonging
 #' to a tested context receive \code{NA} in all \code{dm_*} columns. Testing by
 #' \code{mod_context} rather than just \code{mod_type} prevents spurious pooling
@@ -153,7 +153,7 @@ diffMethyl <- function(
     p_adjust_method = "BH",
     ...
 ) {
-    # ── Input validation ──────────────────────────────────────────────────────
+    # -- Input validation ------------------------------------------------------
     if (!is(object, "commaData")) {
         stop("'object' must be a commaData object.")
     }
@@ -249,7 +249,7 @@ diffMethyl <- function(
         )
     }
 
-    # ── Resolve reference level ───────────────────────────────────────────────
+    # -- Resolve reference level -----------------------------------------------
     if (!is.null(reference)) {
         if (!is.character(reference) || length(reference) != 1L) {
             stop("'reference' must be a single character string or NULL.")
@@ -269,8 +269,8 @@ diffMethyl <- function(
         ref_level <- sort(unique(as.character(cd[[primary_var]])))[1L]
     }
 
-    # ── Determine which mod contexts to test ──────────────────────────────────
-    # Loop by mod_context (mod_type × motif combination) rather than mod_type
+    # -- Determine which mod contexts to test ----------------------------------
+    # Loop by mod_context (mod_type x motif combination) rather than mod_type
     # alone, so that e.g. "6mA_GATC" and "5mC_GATC" are always tested
     # independently.  When mod_context was explicitly provided, the object has
     # already been filtered above; modContexts() now returns only those groups.
@@ -294,26 +294,26 @@ diffMethyl <- function(
                      setdiff(sort(unique(as.character(cd[[primary_var]]))),
                              ref_level))
 
-    # ── Extract full matrices ─────────────────────────────────────────────────
+    # -- Extract full matrices -------------------------------------------------
     methyl_full  <- methylation(object)
     cov_full     <- coverage(object)
     rd_full      <- as.data.frame(rowData(object))
     n_sites_all  <- nrow(methyl_full)
 
-    # ── Initialise result columns (all NA) ───────────────────────────────────
+    # -- Initialise result columns (all NA) ------------------------------------
     pvalue_all     <- rep(NA_real_, n_sites_all)
     delta_beta_all <- rep(NA_real_, n_sites_all)
     mean_beta_cols <- lapply(cond_levels, function(lv) rep(NA_real_, n_sites_all))
     names(mean_beta_cols) <- paste0("dm_mean_beta_", cond_levels)
 
-    # ── Report comparison direction ───────────────────────────────────────────
+    # -- Report comparison direction -------------------------------------------
     treat_level_dm <- cond_levels[[2L]]
     message(
-        "diffMethyl: testing '", primary_var, "' — '",
+        "diffMethyl: testing '", primary_var, "' -- '",
         treat_level_dm, "' vs '", ref_level, "' (reference)"
     )
 
-    # ── Test each mod context independently ──────────────────────────────────
+    # -- Test each mod context independently -----------------------------------
     for (mc in test_contexts) {
         site_idx <- which(rd_full$mod_context == mc)
         if (length(site_idx) == 0L) next
@@ -361,10 +361,10 @@ diffMethyl <- function(
         }
     }
 
-    # ── Apply genome-wide multiple testing correction ─────────────────────────
+    # -- Apply genome-wide multiple testing correction -------------------------
     padj_all <- .applyMultipleTesting(pvalue_all, method = p_adjust_method)
 
-    # ── Update rowData ────────────────────────────────────────────────────────
+    # -- Update rowData --------------------------------------------------------
     rd_new <- rowData(object)
     rd_new$dm_pvalue     <- pvalue_all
     rd_new$dm_padj       <- padj_all
@@ -376,7 +376,7 @@ diffMethyl <- function(
     result_cols <- c("dm_pvalue", "dm_padj", "dm_delta_beta",
                      names(mean_beta_cols))
 
-    # ── Build returned object ─────────────────────────────────────────────────
+    # -- Build returned object -------------------------------------------------
     # Reconstruct commaData with updated rowData
     se_new <- SummarizedExperiment::SummarizedExperiment(
         assays  = SummarizedExperiment::assays(object),

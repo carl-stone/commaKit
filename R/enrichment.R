@@ -3,7 +3,7 @@
 #' @importFrom S4Vectors metadata
 NULL
 
-# ─── Constants ────────────────────────────────────────────────────────────────
+# --- Constants ----------------------------------------------------------------
 
 # Feature types that are large regions; overlap_only defaults to TRUE for these.
 .COMMA_REGION_FEATURE_TYPES <- c(
@@ -19,11 +19,11 @@ NULL
     Sigma19 = "fecI"
 )
 
-# ─── Existing internal helpers (kept for backward compatibility) ───────────────
+# --- Existing internal helpers (kept for backward compatibility) ---------------
 
 # Map differential methylation results from sites to genes.
 #
-# Explodes the CharacterList/list annotation column so each site × gene
+# Explodes the CharacterList/list annotation column so each site x gene
 # combination becomes its own row.  Intergenic sites (length-0 entries) are
 # silently excluded.
 #
@@ -121,7 +121,7 @@ NULL
     sort(gene_scores, decreasing = TRUE)
 }
 
-# ─── New internal helpers for regulatory role extraction ──────────────────────
+# --- New internal helpers for regulatory role extraction ----------------------
 
 # Parse target gene names from feature names based on feature type.
 #
@@ -319,7 +319,7 @@ NULL
         stop("Column 'feature_types' not found. Run annotateSites() first.")
     }
 
-    # ── Step 1: Find per-site indices matching ft ──────────────────────────────
+    # -- Step 1: Find per-site indices matching ft ------------------------------
     ft_lists <- if (is(res_df[[ft_col]], "CharacterList")) {
         as.list(res_df[[ft_col]])
     } else {
@@ -336,7 +336,7 @@ NULL
     res_sub      <- res_df[has_match, , drop = FALSE]
     type_idx_sub <- type_idx[has_match]
 
-    # ── Step 2: Optional overlap_only filter ──────────────────────────────────
+    # -- Step 2: Optional overlap_only filter ----------------------------------
     if (isTRUE(overlap_only) && rel_position_col %in% colnames(res_df)) {
         rp_all <- if (is(res_sub[[rel_position_col]], "IntegerList")) {
             as.list(res_sub[[rel_position_col]])
@@ -358,7 +358,7 @@ NULL
         type_idx_sub <- type_idx_sub[still_match]
     }
 
-    # ── Step 3: Extract raw feature names for this ft ─────────────────────────
+    # -- Step 3: Extract raw feature names for this ft -------------------------
     gn_lists <- if (is(res_sub[[gene_col]], "CharacterList")) {
         as.list(res_sub[[gene_col]])
     } else {
@@ -367,7 +367,7 @@ NULL
     raw_per_site <- mapply(function(nms, idx) as.character(nms[idx]),
                            gn_lists, type_idx_sub, SIMPLIFY = FALSE)
 
-    # ── Step 4: Extract optional metadata columns ──────────────────────────────
+    # -- Step 4: Extract optional metadata columns ------------------------------
     sub_col     <- "feature_subtype_values"
     tu_col      <- "transcription_unit_values"
     has_subtype <- sub_col %in% colnames(res_sub)
@@ -393,7 +393,7 @@ NULL
                tu_lists, type_idx_sub, SIMPLIFY = FALSE)
     } else NULL
 
-    # ── Step 5: Parse target and regulator genes ───────────────────────────────
+    # -- Step 5: Parse target and regulator genes -------------------------------
     site_keys <- paste(res_sub$chrom, res_sub$position, res_sub$strand, sep = ":")
     n_sites   <- nrow(res_sub)
 
@@ -469,14 +469,14 @@ NULL
 # Run ORA and/or GSEA for a prepared site-gene data.frame.
 #
 # This is the refactored ORA+GSEA block from enrichMethylation(), now callable
-# once per feature_type × gene_role combination.
+# once per feature_type x gene_role combination.
 #
 # @param sg           data.frame with columns gene_id, site_key, dm_padj,
 #                     dm_delta_beta
 # @param universe     character vector of universe gene IDs
 # @param method, OrgDb, keyType, ont, organism, TERM2GENE, TERM2NAME,
 #   padj_threshold, delta_beta_threshold, score_metric, gene_score_agg,
-#   pvalueCutoff, qvalueCutoff, minGSSize, maxGSSize — same as enrichMethylation()
+#   pvalueCutoff, qvalueCutoff, minGSSize, maxGSSize -- same as enrichMethylation()
 # @return list(go = ..., kegg = ...)
 .runEnrichmentForGeneMap <- function(sg, universe, method, OrgDb, keyType, ont,
                                       organism, TERM2GENE, TERM2NAME,
@@ -491,7 +491,7 @@ NULL
     keg_ora  <- NULL
     keg_gsea <- NULL
 
-    # ── ORA ───────────────────────────────────────────────────────────────────
+    # -- ORA -------------------------------------------------------------------
     if ("ora" %in% method) {
         sig_mask <- !is.na(sg$dm_padj) & !is.na(sg$dm_delta_beta) &
                     sg$dm_padj <= padj_threshold &
@@ -547,7 +547,7 @@ NULL
         }
     }
 
-    # ── GSEA ──────────────────────────────────────────────────────────────────
+    # -- GSEA ------------------------------------------------------------------
     if ("gsea" %in% method) {
         gene_scores <- .computeGeneScores(sg, score_metric, gene_score_agg)
 
@@ -598,7 +598,7 @@ NULL
     }
 }
 
-# ─── enrichMethylation() ──────────────────────────────────────────────────────
+# --- enrichMethylation() ------------------------------------------------------
 
 #' Gene set enrichment analysis of differential methylation results
 #'
@@ -790,14 +790,14 @@ enrichMethylation <- function(object,
                                minGSSize            = 10L,
                                maxGSSize            = 500L) {
 
-    # ── Validate inputs ───────────────────────────────────────────────────────
+    # -- Validate inputs -------------------------------------------------------
     method         <- match.arg(method, choices = c("ora", "gsea"), several.ok = TRUE)
     gene_role      <- match.arg(gene_role)
     ont            <- match.arg(ont,            c("BP", "MF", "CC", "ALL"))
     score_metric   <- match.arg(score_metric,   c("combined", "padj", "delta_beta"))
     gene_score_agg <- match.arg(gene_score_agg, c("max", "mean"))
 
-    # ── Validate object type first (before dependency checks) ─────────────────
+    # -- Validate object type first (before dependency checks) -----------------
     if (!is(object, "commaData") && !is.data.frame(object)) {
         stop("'object' must be a commaData object or a data.frame from results().")
     }
@@ -818,7 +818,7 @@ enrichMethylation <- function(object,
         )
     }
 
-    # ── Extract results data.frame ────────────────────────────────────────────
+    # -- Extract results data.frame --------------------------------------------
     if (is(object, "commaData")) {
         res_df <- results(object, mod_type = mod_type, mod_context = mod_context)
     } else {
@@ -839,7 +839,7 @@ enrichMethylation <- function(object,
         )
     }
 
-    # ── Build the per-feature-type loop ───────────────────────────────────────
+    # -- Build the per-feature-type loop ---------------------------------------
     ft_loop   <- if (is.null(feature_type)) list(NULL) else as.list(feature_type)
     is_single <- length(ft_loop) == 1L
 
@@ -861,7 +861,7 @@ enrichMethylation <- function(object,
             # NULL feature_type: use legacy siteToGeneMap (no role information)
             sg_all <- .siteToGeneMap(res_df, gene_col)
             if (is.null(sg_all) || nrow(sg_all) == 0L) {
-                warning("Gene map is empty — returning NULL.")
+                warning("Gene map is empty -- returning NULL.")
                 return(list(go = NULL, kegg = NULL))
             }
             universe <- unique(sg_all$gene_id[!is.na(sg_all$gene_id)])
@@ -930,6 +930,6 @@ enrichMethylation <- function(object,
         names(results_by_ft) <- feature_type
     }
 
-    # Backward compatibility: single feature_type → unwrap
+    # Backward compatibility: single feature_type -> unwrap
     if (is_single) results_by_ft[[1L]] else results_by_ft
 }
