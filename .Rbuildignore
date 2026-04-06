@@ -1,6 +1,6 @@
 ^renv$
 ^renv\.lock$
-^CoMMA\.Rproj$
+^comma\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.Rmd$
@@ -16,4 +16,3 @@
 ^docs$
 ^pkgdown$
 ^\.DS_Store$
-^.claude/
