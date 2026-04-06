@@ -258,7 +258,8 @@ plot_tss_profile <- function(object,
     ## Rename mod_type_col → mod_type (avoid clash with parameter name)
     names(df)[names(df) == "mod_type_col"] <- "mod_type"
 
-    df <- df[!is.na(df$beta), , drop = FALSE]
+    df_keep <- !is.na(df$beta)
+    df <- df[df_keep, , drop = FALSE]
     if (nrow(df) == 0L) {
         stop("All sites within the window have NA beta values.")
     }
@@ -300,7 +301,7 @@ plot_tss_profile <- function(object,
             )
             reg_label <- factor(reg_label, levels = reg_levels)
             ## Expand across samples
-            df$regulatory_element <- rep(reg_label, times = n_samples)
+            df$regulatory_element <- rep(reg_label, times = n_samples)[df_keep]
         }
     }
 
