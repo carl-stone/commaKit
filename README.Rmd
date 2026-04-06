@@ -273,3 +273,4 @@ Two vignettes are included:
 
 Stone CJ et al. (2022). Genome-wide adenine methylation in *Escherichia coli*
 K-12 reveals methylation patterns associated with gene regulation. *bioRxiv*.
+
