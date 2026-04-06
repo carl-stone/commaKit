@@ -1,14 +1,26 @@
 #' @importFrom ggplot2 ggplot aes geom_point geom_line geom_vline
 #'   scale_x_continuous scale_y_continuous scale_color_manual
-#'   facet_wrap labs theme_bw
+#'   facet_wrap labs theme_bw after_scale stage
 #' @importFrom GenomicRanges GRanges findOverlaps mcols
 #' @importFrom IRanges IRanges
 #' @importFrom S4Vectors queryHits subjectHits
 #' @importFrom SummarizedExperiment rowData
 #' @importFrom stats loess predict na.exclude
-#' @importFrom grDevices hcl
+#' @importFrom grDevices hcl col2rgb rgb
 #' @importFrom methods is
 NULL
+
+.lighten_color <- function(col, amount = 0.3) {
+    m <- grDevices::col2rgb(col) / 255
+    m <- m + (1 - m) * amount
+    grDevices::rgb(t(m))
+}
+
+.darken_color <- function(col, amount = 0.3) {
+    m <- grDevices::col2rgb(col) / 255
+    m <- m * (1 - amount)
+    grDevices::rgb(t(m))
+}
 
 #' TSS-centered methylation profile
 #'
@@ -336,7 +348,16 @@ plot_tss_profile <- function(object,
         )
     }
     p <- ggplot2::ggplot(df, base_aes) +
-        ggplot2::geom_point(alpha = alpha, size = 0.8) +
+        ggplot2::geom_point(
+            mapping = if (!is.null(color_var))
+                ggplot2::aes(color = ggplot2::stage(
+                    start       = .data[[color_var]],
+                    after_scale = .lighten_color(color, 0.4)
+                ))
+            else NULL,
+            alpha = alpha, size = 0.8,
+            color = if (is.null(color_var)) "black" else NULL
+        ) +
         ggplot2::geom_vline(
             xintercept = 0L,
             linetype   = "dashed",
@@ -465,24 +486,37 @@ plot_tss_profile <- function(object,
                     "Consider adjusting smooth_span or increasing data density near this feature.")
 
         if (!is.null(smooth_df) && nrow(smooth_df) > 0L) {
-            smooth_aes <- if (!is.null(color_var)) {
-                ggplot2::aes(
-                    x     = .data[["rel_pos"]],
-                    y     = .data[["beta_smooth"]],
-                    color = .data[[color_var]]
-                )
-            } else {
-                ggplot2::aes(
+            if (is.null(color_var)) {
+                ## color_by = "none": points are black, smooth is red
+                smooth_aes <- ggplot2::aes(
                     x = .data[["rel_pos"]],
                     y = .data[["beta_smooth"]]
                 )
+                p <- p + ggplot2::geom_line(
+                    data        = smooth_df,
+                    smooth_aes,
+                    color       = "red",
+                    linewidth   = 1.0,
+                    inherit.aes = FALSE
+                )
+            } else {
+                ## color_by != "none": points are lightened, smooth lines are
+                ## the same hue but darkened so they stand out above the points
+                smooth_aes <- ggplot2::aes(
+                    x     = .data[["rel_pos"]],
+                    y     = .data[["beta_smooth"]],
+                    color = ggplot2::stage(
+                        start       = .data[[color_var]],
+                        after_scale = .darken_color(color, 0.3)
+                    )
+                )
+                p <- p + ggplot2::geom_line(
+                    data        = smooth_df,
+                    smooth_aes,
+                    linewidth   = 1.0,
+                    inherit.aes = FALSE
+                )
             }
-            p <- p + ggplot2::geom_line(
-                data        = smooth_df,
-                smooth_aes,
-                linewidth   = 1.0,
-                inherit.aes = FALSE
-            )
         }
     }
 
