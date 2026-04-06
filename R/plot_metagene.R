@@ -119,7 +119,7 @@ plot_metagene <- function(object,
              "The metagene plot cannot be produced.")
     }
 
-    ## Build expanded data.frame: one row per (site × feature) pair
+    ## Build expanded data.frame: one row per (site x feature) pair
     ## site_idx is 1-based into the filtered object
     site_idx     <- rep(which(has_overlap), times = site_lengths[has_overlap])
     metagene_pos <- unlist(pos_list[has_overlap], use.names = FALSE)
