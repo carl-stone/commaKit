@@ -50,9 +50,11 @@ NULL
 #'       sites with no overlap are labelled \code{"None"} and shown in grey.
 #'       Requires \code{regulatory_feature_types}.}
 #'     \item{\code{"mod_type"}}{One colour per modification type.}
+#'     \item{\code{"mod_context"}}{One colour per modification context.}
 #'   }
 #' @param facet_by Character string controlling optional faceting:
-#'   \code{"none"} (default), \code{"sample"}, or \code{"mod_type"}.
+#'   \code{"none"} (default), \code{"sample"}, \code{"mod_type"}, or
+#'   \code{"mod_context"}.
 #' @param alpha Numeric in \eqn{(0, 1]}. Point transparency. Default
 #'   \code{0.4}.
 #' @param show_smooth Logical. If \code{TRUE}, a loess smoothing line is

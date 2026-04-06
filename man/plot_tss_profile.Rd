@@ -59,10 +59,12 @@ regulatory feature they overlap (from \code{regulatory_feature_types});
 sites with no overlap are labelled \code{"None"} and shown in grey.
 Requires \code{regulatory_feature_types}.}
 \item{\code{"mod_type"}}{One colour per modification type.}
+\item{\code{"mod_context"}}{One colour per modification context.}
 }}
 
 \item{facet_by}{Character string controlling optional faceting:
-\code{"none"} (default), \code{"sample"}, or \code{"mod_type"}.}
+\code{"none"} (default), \code{"sample"}, \code{"mod_type"}, or
+\code{"mod_context"}.}
 
 \item{alpha}{Numeric in \eqn{(0, 1]}. Point transparency. Default
 \code{0.4}.}
