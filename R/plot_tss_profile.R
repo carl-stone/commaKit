@@ -51,6 +51,8 @@ NULL
 #'       Requires \code{regulatory_feature_types}.}
 #'     \item{\code{"mod_type"}}{One colour per modification type.}
 #'     \item{\code{"mod_context"}}{One colour per modification context.}
+#'     \item{\code{"none"}}{No colour mapping; all points drawn in the default
+#'       colour. Useful when \code{facet_by} provides sufficient grouping.}
 #'   }
 #' @param facet_by Character string controlling optional faceting:
 #'   \code{"none"} (default), \code{"sample"}, \code{"mod_type"}, or
@@ -112,7 +114,8 @@ plot_tss_profile <- function(object,
                               color_by                 = c("sample",
                                                            "regulatory_element",
                                                            "mod_type",
-                                                           "mod_context"),
+                                                           "mod_context",
+                                                           "none"),
                               facet_by                 = c("none", "sample",
                                                            "mod_type",
                                                            "mod_context"),
@@ -306,18 +309,32 @@ plot_tss_profile <- function(object,
         sample             = "sample_name",
         regulatory_element = "regulatory_element",
         mod_type           = "mod_type",
-        mod_context        = "mod_context"
+        mod_context        = "mod_context",
+        none               = NULL
+    )
+
+    ## Map facet variable name (used in smooth grouping below)
+    facet_col <- switch(facet_by,
+        none        = NULL,
+        sample      = "sample_name",
+        mod_type    = "mod_type",
+        mod_context = "mod_context"
     )
 
     ## ── I. Build ggplot ───────────────────────────────────────────────────────
-    p <- ggplot2::ggplot(
-        df,
+    base_aes <- if (!is.null(color_var)) {
         ggplot2::aes(
             x     = .data[["rel_pos"]],
             y     = .data[["beta"]],
             color = .data[[color_var]]
         )
-    ) +
+    } else {
+        ggplot2::aes(
+            x = .data[["rel_pos"]],
+            y = .data[["beta"]]
+        )
+    }
+    p <- ggplot2::ggplot(df, base_aes) +
         ggplot2::geom_point(alpha = alpha, size = 0.8) +
         ggplot2::geom_vline(
             xintercept = 0L,
@@ -341,12 +358,12 @@ plot_tss_profile <- function(object,
         ggplot2::labs(
             title = paste0("TSS methylation profile: ", feature_type,
                            " (\u00b1", window, " bp)"),
-            color = switch(color_by,
+            color = if (!is.null(color_var)) switch(color_by,
                 sample             = "Sample",
                 regulatory_element = "Regulatory element",
                 mod_type           = "Modification type",
                 mod_context        = "Modification context"
-            )
+            ) else NULL
         ) +
         ggplot2::theme_bw()
 
@@ -371,13 +388,37 @@ plot_tss_profile <- function(object,
 
     ## ── J. Optional loess smooth overlay ─────────────────────────────────────
     if (show_smooth) {
-        groups          <- unique(df[[color_var]])
+        ## Build grouping columns: color variable (if any) + facet column (if any).
+        ## This ensures each panel gets its own smooth line(s).
+        group_cols <- c(
+            if (!is.null(color_var)) color_var,
+            if (!is.null(facet_col)) facet_col
+        )
+
+        if (length(group_cols) == 0L) {
+            ## No color, no facet — one global smooth
+            group_combos <- data.frame(.dummy = "all", stringsAsFactors = FALSE)
+        } else {
+            group_combos <- unique(df[, group_cols, drop = FALSE])
+            rownames(group_combos) <- NULL
+        }
+
         sparse_groups   <- character(0L)
         unstable_groups <- character(0L)
-        smooth_rows <- lapply(groups, function(g) {
-            sub <- df[df[[color_var]] == g & !is.na(df$beta), ]
+
+        smooth_rows <- lapply(seq_len(nrow(group_combos)), function(i) {
+            ## Filter df to this combination of grouping values
+            mask <- rep(TRUE, nrow(df))
+            for (col in group_cols) {
+                mask <- mask & (df[[col]] == group_combos[[col]][i])
+            }
+            sub <- df[mask & !is.na(df$beta), ]
+
+            g_label <- paste(unlist(group_combos[i, , drop = FALSE]),
+                             collapse = "/")
+
             if (nrow(sub) < 10L) {
-                sparse_groups <<- c(sparse_groups, g)
+                sparse_groups <<- c(sparse_groups, g_label)
                 return(NULL)
             }
             loess_warns <- character(0L)
@@ -399,15 +440,15 @@ plot_tss_profile <- function(object,
                 }
             )
             if (length(loess_warns) > 0L) {
-                unstable_groups <<- c(unstable_groups, g)
+                unstable_groups <<- c(unstable_groups, g_label)
             }
-            out  <- data.frame(
+            out <- data.frame(
                 rel_pos     = xseq,
                 beta_smooth = as.numeric(yhat),
-                color_group = g,
                 stringsAsFactors = FALSE
             )
-            names(out)[names(out) == "color_group"] <- color_var
+            ## Attach grouping columns so ggplot routes lines to correct panels
+            for (col in group_cols) out[[col]] <- group_combos[[col]][i]
             out
         })
         smooth_df <- do.call(rbind, Filter(Negate(is.null), smooth_rows))
@@ -423,13 +464,21 @@ plot_tss_profile <- function(object,
                     "Consider adjusting smooth_span or increasing data density near this feature.")
 
         if (!is.null(smooth_df) && nrow(smooth_df) > 0L) {
-            p <- p + ggplot2::geom_line(
-                data        = smooth_df,
+            smooth_aes <- if (!is.null(color_var)) {
                 ggplot2::aes(
                     x     = .data[["rel_pos"]],
                     y     = .data[["beta_smooth"]],
                     color = .data[[color_var]]
-                ),
+                )
+            } else {
+                ggplot2::aes(
+                    x = .data[["rel_pos"]],
+                    y = .data[["beta_smooth"]]
+                )
+            }
+            p <- p + ggplot2::geom_line(
+                data        = smooth_df,
+                smooth_aes,
                 linewidth   = 1.0,
                 inherit.aes = FALSE
             )

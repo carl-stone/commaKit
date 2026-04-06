@@ -12,7 +12,7 @@ plot_tss_profile(
   mod_type = NULL,
   motif = NULL,
   mod_context = NULL,
-  color_by = c("sample", "regulatory_element", "mod_type", "mod_context"),
+  color_by = c("sample", "regulatory_element", "mod_type", "mod_context", "none"),
   facet_by = c("none", "sample", "mod_type", "mod_context"),
   alpha = 0.4,
   show_smooth = FALSE,
@@ -60,6 +60,8 @@ sites with no overlap are labelled \code{"None"} and shown in grey.
 Requires \code{regulatory_feature_types}.}
 \item{\code{"mod_type"}}{One colour per modification type.}
 \item{\code{"mod_context"}}{One colour per modification context.}
+\item{\code{"none"}}{No colour mapping; all points drawn in the default
+colour. Useful when \code{facet_by} provides sufficient grouping.}
 }}
 
 \item{facet_by}{Character string controlling optional faceting:

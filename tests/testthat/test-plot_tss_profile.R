@@ -233,6 +233,47 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
     expect_s3_class(p, "ggplot")
 })
 
+test_that("color_by = 'none' returns ggplot with no colour aesthetic", {
+    obj <- .make_tss_data()
+    p   <- plot_tss_profile(obj, feature_type = "gene", color_by = "none")
+    expect_s3_class(p, "ggplot")
+    ## The global aes should not contain a colour mapping
+    global_aes_names <- names(p$mapping)
+    expect_false("colour" %in% global_aes_names)
+})
+
+test_that("color_by = 'none' + facet_by = 'mod_type' + show_smooth returns ggplot", {
+    obj <- .make_tss_data()
+    p   <- suppressWarnings(
+        plot_tss_profile(obj, feature_type = "gene",
+                         color_by = "none", facet_by = "mod_type",
+                         show_smooth = TRUE, smooth_span = 0.5)
+    )
+    expect_s3_class(p, "ggplot")
+    expect_s3_class(p$facet, "FacetWrap")
+    layer_classes <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
+    expect_true(any(layer_classes == "GeomLine"))
+})
+
+test_that("show_smooth = TRUE with facet_by = 'sample' produces separate smooth per panel", {
+    obj <- .make_tss_data()
+    p   <- suppressWarnings(
+        plot_tss_profile(obj, feature_type = "gene",
+                         facet_by = "sample", show_smooth = TRUE,
+                         smooth_span = 0.5)
+    )
+    expect_s3_class(p, "ggplot")
+    ## Find the geom_line layer (smooth)
+    layer_classes <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
+    line_idx <- which(layer_classes == "GeomLine")[1]
+    expect_true(!is.na(line_idx))
+    ## The smooth data must include sample_name so ggplot can route per-panel
+    smooth_data <- p$layers[[line_idx]]$data
+    expect_true("sample_name" %in% names(smooth_data))
+    ## One row set per sample
+    expect_gte(length(unique(smooth_data$sample_name)), 1L)
+})
+
 ## ── Error conditions ─────────────────────────────────────────────────────────
 
 test_that("error on non-commaData input", {
