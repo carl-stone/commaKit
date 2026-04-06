@@ -63,6 +63,6 @@ ms_6mA[, c("sample_name", "condition", "mean_beta", "n_covered")]
 
 }
 \seealso{
-\code{\link{methylation}}, \code{\link{coverage}},
+\code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
 \code{\link{sampleInfo}}
 }

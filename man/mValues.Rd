@@ -71,6 +71,6 @@ m_tight <- mValues(comma_example_data, alpha = 0.1)
 
 }
 \seealso{
-\code{\link{methylation}}, \code{\link{coverage}},
+\code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
 \code{\link{plot_pca}}
 }

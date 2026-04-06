@@ -53,7 +53,7 @@ NULL
 #' ms_6mA <- methylomeSummary(comma_example_data, mod_type = "6mA")
 #' ms_6mA[, c("sample_name", "condition", "mean_beta", "n_covered")]
 #'
-#' @seealso \code{\link{methylation}}, \code{\link{coverage}},
+#' @seealso \code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
 #'   \code{\link{sampleInfo}}
 #'
 #' @export
