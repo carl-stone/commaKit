@@ -46,6 +46,11 @@ are included.}
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with
 the specified sequence motif(s) are included.}
 
+\item{mod_context}{Character vector or \code{NULL}. If provided, only sites
+whose \code{mod_context} rowData column matches one of the supplied values
+are included. If \code{NULL} (default), all modification contexts are
+included.}
+
 \item{color_by}{Character string controlling the colour aesthetic:
 \describe{
 \item{\code{"sample"}}{One colour per sample (default).}

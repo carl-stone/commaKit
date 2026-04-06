@@ -23,6 +23,11 @@ from all modification types are included.}
 matching sequence context motif(s) are included (e.g., \code{"GATC"}).
 If \code{NULL} (default), all motifs are included.}
 
+\item{mod_context}{Character vector or \code{NULL}. If provided, only sites
+whose \code{mod_context} rowData column matches one of the supplied values
+are included. If \code{NULL} (default), all modification contexts are
+included.}
+
 \item{per_sample}{Logical. If \code{TRUE} (default), the plot is faceted by
 sample, producing one histogram panel per sample. If \code{FALSE}, all
 samples are overlaid on a single plot with per-sample colors.}

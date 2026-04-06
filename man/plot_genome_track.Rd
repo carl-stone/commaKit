@@ -36,6 +36,11 @@ all modification types are shown, colored differently.}
 matching sequence context motif(s) are displayed (e.g., \code{"GATC"}).
 If \code{NULL} (default), all motifs are included.}
 
+\item{mod_context}{Character vector or \code{NULL}. If provided, only sites
+whose \code{mod_context} rowData column matches one of the supplied values
+are included. If \code{NULL} (default), all modification contexts are
+included.}
+
 \item{annotation}{A \code{GRanges} object of genomic features to display in
 the annotation track, \code{NULL} (default, uses \code{annotation(object)}
 if available), or \code{FALSE} to suppress the annotation track entirely.}

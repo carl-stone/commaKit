@@ -24,6 +24,11 @@ modification types are included and the plot is faceted by
 matching sequence context motif(s) are included (e.g., \code{"GATC"}).
 If \code{NULL} (default), all motifs are included.}
 
+\item{mod_context}{Character vector or \code{NULL}. If provided, only sites
+whose \code{mod_context} rowData column matches one of the supplied values
+are included. If \code{NULL} (default), all modification contexts are
+included.}
+
 \item{per_sample}{Logical. If \code{TRUE} (default), a separate density
 curve is drawn for each sample. If \code{FALSE}, a single aggregate
 density curve is drawn per modification type.}
