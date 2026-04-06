@@ -33,7 +33,7 @@ jobs:
       - uses: r-lib/actions/setup-renv@v2
 
       - name: Install comma package
-        run: Rscript -e 'pak::pkg_install("carl-stone/comma")'
+        run: Rscript -e 'install.packages(".", repos = NULL, type = "source")'
 
       - name: Render Rmarkdown files and Commit Results
         run: |
