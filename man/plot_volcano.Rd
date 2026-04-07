@@ -4,7 +4,7 @@
 \alias{plot_volcano}
 \title{Volcano plot for differential methylation results}
 \usage{
-plot_volcano(results, delta_beta_threshold = 0.2, padj_threshold = 0.05)
+plot_volcano(results, delta_beta_threshold = NULL, padj_threshold = 0.05)
 }
 \arguments{
 \item{results}{A \code{data.frame} returned by \code{\link{results}()},
@@ -12,10 +12,12 @@ containing at minimum the columns \code{dm_delta_beta} (numeric, effect
 size as beta difference treatment minus control) and \code{dm_padj}
 (numeric, BH-adjusted p-value in \eqn{[0, 1]}).}
 
-\item{delta_beta_threshold}{Numeric scalar in (0, 1). Sites with
-\code{|dm_delta_beta| >= delta_beta_threshold} AND
-\code{dm_padj <= padj_threshold} are considered significant. Default
-\code{0.2}.}
+\item{delta_beta_threshold}{\code{NULL} (default) or a numeric scalar in
+(0, 1). When \code{NULL}, significance is determined by
+\code{padj_threshold} alone and no vertical lines are drawn. When numeric,
+sites must also satisfy \code{|dm_delta_beta| >= delta_beta_threshold} to
+be called significant, and dashed vertical lines are drawn at
+\eqn{\pm}\code{delta_beta_threshold}.}
 
 \item{padj_threshold}{Numeric scalar in (0, 1). Adjusted p-value cutoff for
 significance. Default \code{0.05}.}
@@ -26,8 +28,11 @@ A \code{\link[ggplot2]{ggplot}} object. The x-axis shows
 \code{-log10(dm_padj)} (significance). Sites are colored as
 \code{"Hypermethylated"} (positive delta-beta, significant),
 \code{"Hypomethylated"} (negative delta-beta, significant), or
-\code{"Not significant"}. Dashed lines mark the threshold boundaries.
-Sites with \code{NA} adjusted p-value are excluded from the plot.
+\code{"Not significant"}. A dashed horizontal line marks
+\code{padj_threshold}; dashed vertical lines at
+\eqn{\pm}\code{delta_beta_threshold} are added only when that argument is
+non-\code{NULL}. Sites with \code{NA} adjusted p-value are excluded from
+the plot.
 }
 \description{
 Produces a volcano plot from differential methylation results computed by

@@ -13,10 +13,12 @@ NULL
 #'   containing at minimum the columns \code{dm_delta_beta} (numeric, effect
 #'   size as beta difference treatment minus control) and \code{dm_padj}
 #'   (numeric, BH-adjusted p-value in \eqn{[0, 1]}).
-#' @param delta_beta_threshold Numeric scalar in (0, 1). Sites with
-#'   \code{|dm_delta_beta| >= delta_beta_threshold} AND
-#'   \code{dm_padj <= padj_threshold} are considered significant. Default
-#'   \code{0.2}.
+#' @param delta_beta_threshold \code{NULL} (default) or a numeric scalar in
+#'   (0, 1). When \code{NULL}, significance is determined by
+#'   \code{padj_threshold} alone and no vertical lines are drawn. When numeric,
+#'   sites must also satisfy \code{|dm_delta_beta| >= delta_beta_threshold} to
+#'   be called significant, and dashed vertical lines are drawn at
+#'   \eqn{\pm}\code{delta_beta_threshold}.
 #' @param padj_threshold Numeric scalar in (0, 1). Adjusted p-value cutoff for
 #'   significance. Default \code{0.05}.
 #'
@@ -25,8 +27,11 @@ NULL
 #'   \code{-log10(dm_padj)} (significance). Sites are colored as
 #'   \code{"Hypermethylated"} (positive delta-beta, significant),
 #'   \code{"Hypomethylated"} (negative delta-beta, significant), or
-#'   \code{"Not significant"}. Dashed lines mark the threshold boundaries.
-#'   Sites with \code{NA} adjusted p-value are excluded from the plot.
+#'   \code{"Not significant"}. A dashed horizontal line marks
+#'   \code{padj_threshold}; dashed vertical lines at
+#'   \eqn{\pm}\code{delta_beta_threshold} are added only when that argument is
+#'   non-\code{NULL}. Sites with \code{NA} adjusted p-value are excluded from
+#'   the plot.
 #'
 #' @examples
 #' data(comma_example_data)
@@ -42,7 +47,7 @@ NULL
 #'
 #' @export
 plot_volcano <- function(results,
-                         delta_beta_threshold = 0.2,
+                         delta_beta_threshold = NULL,
                          padj_threshold = 0.05) {
 
     ## --- Input validation ---------------------------------------------------
@@ -56,10 +61,12 @@ plot_volcano <- function(results,
              paste(missing_cols, collapse = ", "), ". ",
              "Ensure 'results' was produced by results() after diffMethyl().")
     }
-    if (!is.numeric(delta_beta_threshold) || length(delta_beta_threshold) != 1L ||
-        is.na(delta_beta_threshold) || delta_beta_threshold <= 0 ||
-        delta_beta_threshold >= 1) {
-        stop("'delta_beta_threshold' must be a single numeric value in (0, 1).")
+    if (!is.null(delta_beta_threshold)) {
+        if (!is.numeric(delta_beta_threshold) || length(delta_beta_threshold) != 1L ||
+            is.na(delta_beta_threshold) || delta_beta_threshold <= 0 ||
+            delta_beta_threshold >= 1) {
+            stop("'delta_beta_threshold' must be a single numeric value in (0, 1).")
+        }
     }
     if (!is.numeric(padj_threshold) || length(padj_threshold) != 1L ||
         is.na(padj_threshold) || padj_threshold <= 0 || padj_threshold >= 1) {
@@ -82,9 +89,14 @@ plot_volcano <- function(results,
     df$neg_log10_padj <- -log10(padj_clamped)
 
     ## Assign significance category
-    is_sig_p    <- df$dm_padj <= padj_threshold
-    is_sig_db_pos <- df$dm_delta_beta >= delta_beta_threshold
-    is_sig_db_neg <- df$dm_delta_beta <= -delta_beta_threshold
+    is_sig_p <- df$dm_padj <= padj_threshold
+    if (!is.null(delta_beta_threshold)) {
+        is_sig_db_pos <- df$dm_delta_beta >= delta_beta_threshold
+        is_sig_db_neg <- df$dm_delta_beta <= -delta_beta_threshold
+    } else {
+        is_sig_db_pos <- df$dm_delta_beta > 0
+        is_sig_db_neg <- df$dm_delta_beta < 0
+    }
 
     df$significance <- "Not significant"
     df$significance[is_sig_p & is_sig_db_pos] <- "Hypermethylated"
@@ -109,15 +121,21 @@ plot_volcano <- function(results,
             color = .data[["significance"]]
         )
     ) +
-        ggplot2::geom_point(alpha = 0.6, size = 1.2) +
-        ggplot2::geom_vline(
-            xintercept = -delta_beta_threshold,
-            linetype = "dashed", color = "grey40", linewidth = 0.5
-        ) +
-        ggplot2::geom_vline(
-            xintercept = delta_beta_threshold,
-            linetype = "dashed", color = "grey40", linewidth = 0.5
-        ) +
+        ggplot2::geom_point(alpha = 0.6, size = 1.2)
+
+    if (!is.null(delta_beta_threshold)) {
+        p <- p +
+            ggplot2::geom_vline(
+                xintercept = -delta_beta_threshold,
+                linetype = "dashed", color = "grey40", linewidth = 0.5
+            ) +
+            ggplot2::geom_vline(
+                xintercept = delta_beta_threshold,
+                linetype = "dashed", color = "grey40", linewidth = 0.5
+            )
+    }
+
+    p <- p +
         ggplot2::geom_hline(
             yintercept = -log10(padj_threshold),
             linetype = "dashed", color = "grey40", linewidth = 0.5

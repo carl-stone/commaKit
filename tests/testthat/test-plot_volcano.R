@@ -32,9 +32,15 @@ test_that("plot_volcano: custom thresholds accepted", {
 
 # ─── Threshold lines ──────────────────────────────────────────────────────────
 
-test_that("plot_volcano: has at least 3 layers (points + 2 vlines + 1 hline)", {
+test_that("plot_volcano: NULL delta_beta_threshold has 2 layers (points + hline)", {
     res <- .make_volcano_results()
     p <- plot_volcano(res)
+    expect_gte(length(p$layers), 2L)
+})
+
+test_that("plot_volcano: numeric delta_beta_threshold adds vlines (>= 4 layers)", {
+    res <- .make_volcano_results()
+    p <- plot_volcano(res, delta_beta_threshold = 0.2)
     expect_gte(length(p$layers), 4L)
 })
 
@@ -77,6 +83,17 @@ test_that("plot_volcano: error when all padj values are NA", {
     res <- .make_volcano_results()
     res$dm_padj <- NA_real_
     expect_error(plot_volcano(res))
+})
+
+test_that("plot_volcano: NULL delta_beta_threshold colors by padj alone", {
+    set.seed(42L)
+    res <- .make_volcano_results()
+    p <- plot_volcano(res, delta_beta_threshold = NULL)
+    pd <- ggplot2::ggplot_build(p)$data[[1L]]
+    # All points with dm_padj <= 0.05 and dm_delta_beta > 0 should be Hypermethylated
+    sig_pos <- res$dm_padj <= 0.05 & res$dm_delta_beta > 0 & !is.na(res$dm_padj)
+    expect_true(any(sig_pos))
+    expect_s3_class(p, "ggplot")
 })
 
 test_that("plot_volcano: error on invalid delta_beta_threshold", {
