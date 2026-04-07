@@ -476,11 +476,13 @@ NULL
 #                     dm_delta_beta
 # @param universe     character vector of universe gene IDs
 # @param method, OrgDb, keyType, ont, organism, TERM2GENE, TERM2NAME,
+#   kegg_term2gene, kegg_term2name,
 #   padj_threshold, delta_beta_threshold, score_metric, gene_score_agg,
 #   pvalueCutoff, qvalueCutoff, minGSSize, maxGSSize -- same as enrichMethylation()
 # @return list(go = ..., kegg = ...)
 .runEnrichmentForGeneMap <- function(sg, universe, method, OrgDb, keyType, ont,
                                       organism, TERM2GENE, TERM2NAME,
+                                      kegg_term2gene, kegg_term2name,
                                       padj_threshold, delta_beta_threshold,
                                       score_metric, gene_score_agg,
                                       pvalueCutoff, qvalueCutoff,
@@ -533,7 +535,20 @@ NULL
                 )
             }
 
-            if (!is.null(organism)) {
+            if (!is.null(kegg_term2gene)) {
+                keg_t2n <- if (!is.null(kegg_term2name) && nrow(kegg_term2name) > 0L)
+                               kegg_term2name else NULL
+                keg_ora <- clusterProfiler::enricher(
+                    gene         = sig_genes,
+                    universe     = universe,
+                    TERM2GENE    = kegg_term2gene,
+                    TERM2NAME    = keg_t2n,
+                    pvalueCutoff = pvalueCutoff,
+                    qvalueCutoff = qvalueCutoff,
+                    minGSSize    = minGSSize,
+                    maxGSSize    = maxGSSize
+                )
+            } else if (!is.null(organism)) {
                 keg_ora <- clusterProfiler::enrichKEGG(
                     gene         = sig_genes,
                     organism     = organism,
@@ -576,7 +591,18 @@ NULL
                 )
             }
 
-            if (!is.null(organism)) {
+            if (!is.null(kegg_term2gene)) {
+                keg_t2n <- if (!is.null(kegg_term2name) && nrow(kegg_term2name) > 0L)
+                               kegg_term2name else NULL
+                keg_gsea <- clusterProfiler::GSEA(
+                    geneList     = gene_scores,
+                    TERM2GENE    = kegg_term2gene,
+                    TERM2NAME    = keg_t2n,
+                    pvalueCutoff = pvalueCutoff,
+                    minGSSize    = minGSSize,
+                    maxGSSize    = maxGSSize
+                )
+            } else if (!is.null(organism)) {
                 keg_gsea <- clusterProfiler::gseKEGG(
                     geneList     = gene_scores,
                     organism     = organism,
@@ -597,6 +623,468 @@ NULL
     } else {
         list(go = go_gsea, kegg = keg_gsea)
     }
+}
+
+# --- buildKEGGTermGene() -------------------------------------------------------
+
+#' Build a KEGG term-to-gene mapping for use with enrichMethylation()
+#'
+#' Fetches all KEGG pathway-gene associations for an organism using only two
+#' API calls (\code{keggLink} and \code{keggList}), then returns the result as
+#' a pair of data frames that can be passed directly to
+#' \code{\link{enrichMethylation}()} via the \code{kegg_term2gene} and
+#' \code{kegg_term2name} arguments.  Optionally caches the result to an RDS
+#' file so that subsequent calls are fully offline.
+#'
+#' This function exists because \code{\link[clusterProfiler]{enrichKEGG}} and
+#' \code{\link[clusterProfiler]{gseKEGG}} fire one HTTP request per pathway
+#' when fetching gene lists, which quickly exceeds the KEGG API rate limit for
+#' organisms with many pathways.  \code{buildKEGGTermGene} retrieves the same
+#' data in two bulk calls — one for gene-pathway links and one for pathway
+#' names.
+#'
+#' @param organism Character string; KEGG organism code (e.g., \code{"eco"} for
+#'   \emph{Escherichia coli} K-12, \code{"hsa"} for \emph{Homo sapiens}).
+#'   Browse organism codes at
+#'   \url{https://www.genome.jp/kegg/catalog/org_list.html}.
+#' @param file Character string or \code{NULL}.  Path to an RDS cache file.
+#'   \itemize{
+#'     \item If \code{file} already exists, the cached object is loaded and
+#'       returned immediately — no network access occurs.
+#'     \item If \code{file} does not exist, KEGG is queried and the result is
+#'       saved to \code{file}.
+#'     \item \code{NULL} (default) disables caching.
+#'   }
+#'   A warning is issued when a cache file is older than 90 days, suggesting
+#'   the user refresh it to pick up pathway database updates.
+#' @param strip_prefix Logical; if \code{TRUE} (default), the organism prefix
+#'   is stripped from gene IDs (e.g., \code{"eco:b0001"} becomes
+#'   \code{"b0001"}) and the \code{"path:"} prefix is stripped from pathway IDs
+#'   (e.g., \code{"path:eco00010"} becomes \code{"eco00010"}).  The trailing
+#'   organism qualifier is also stripped from pathway names (e.g., \code{"...
+#'   - Escherichia coli K-12"} becomes \code{"..."}).
+#' @param id_map A \code{data.frame} with columns \code{symbol} and
+#'   \code{kegg_id} as returned by \code{\link{buildKEGGGeneIDMap}()}.
+#'   When provided, the \code{gene} column of \code{term2gene} is translated
+#'   from KEGG-internal IDs (e.g. b-numbers) to gene symbols before returning,
+#'   so that genes match the identifiers in your annotation data.  KEGG IDs
+#'   with no matching symbol are preserved as-is; no pathway genes are dropped.
+#'   \code{NULL} (default) leaves identifiers unchanged.
+#'
+#' @return A named list with two elements:
+#'   \describe{
+#'     \item{\code{term2gene}}{A \code{data.frame} with columns \code{term}
+#'       (KEGG pathway ID) and \code{gene} (gene ID matching the identifiers in
+#'       your annotation data).}
+#'     \item{\code{term2name}}{A \code{data.frame} with columns \code{term}
+#'       (KEGG pathway ID) and \code{name} (human-readable pathway
+#'       description).}
+#'   }
+#'   Pass these to \code{\link{enrichMethylation}()} as
+#'   \code{kegg_term2gene = result$term2gene, kegg_term2name = result$term2name}.
+#'
+#' @examples
+#' \donttest{
+#' if (requireNamespace("KEGGREST", quietly = TRUE)) {
+#'   # Fetch once and cache to disk
+#'   kegg <- buildKEGGTermGene("eco", file = "eco_kegg.rds")
+#'
+#'   # Load from cache on subsequent calls (no network)
+#'   kegg <- buildKEGGTermGene("eco", file = "eco_kegg.rds")
+#'
+#'   # Translate b-numbers to symbols with an id_map:
+#'   # id_map <- buildKEGGGeneIDMap("eco", OrgDb = org.EcK12.eg.db)
+#'   # kegg   <- buildKEGGTermGene("eco", file = "eco_kegg.rds", id_map = id_map)
+#'   # res    <- enrichMethylation(obj,
+#'   #             kegg_term2gene = kegg$term2gene,
+#'   #             kegg_term2name = kegg$term2name)
+#' }
+#' }
+#'
+#' @seealso \code{\link{buildKEGGGeneIDMap}}, \code{\link{enrichMethylation}}
+#' @export
+buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
+                               id_map = NULL) {
+    if (!is.character(organism) || length(organism) != 1L || nchar(organism) == 0L) {
+        stop("'organism' must be a non-empty character string (e.g., \"eco\").")
+    }
+
+    if (!requireNamespace("KEGGREST", quietly = TRUE)) {
+        stop(
+            "Package 'KEGGREST' is required for buildKEGGTermGene().\n",
+            "Install it with: BiocManager::install(\"KEGGREST\")"
+        )
+    }
+
+    # -- Load from cache if it exists ------------------------------------------
+    if (!is.null(file) && file.exists(file)) {
+        age_days <- as.numeric(difftime(Sys.time(), file.mtime(file), units = "days"))
+        if (age_days > 90) {
+            warning(
+                sprintf("KEGG cache file '%s' is %.0f days old. ", file, age_days),
+                "Consider refreshing it by deleting the file and re-running ",
+                "buildKEGGTermGene()."
+            )
+        }
+        message(sprintf("Loading KEGG data from cache: %s", file))
+        return(readRDS(file))
+    }
+
+    message(sprintf("Fetching KEGG pathway data for organism '%s' ...", organism))
+
+    # -- API call 1: gene-to-pathway links (one bulk request) ------------------
+    links <- tryCatch(
+        KEGGREST::keggLink("pathway", organism),
+        error = function(e) {
+            stop(
+                sprintf("KEGG API call failed for organism '%s'.\n", organism),
+                "Check the organism code at:\n",
+                "  https://www.genome.jp/kegg/catalog/org_list.html\n",
+                "Original error: ", conditionMessage(e)
+            )
+        }
+    )
+
+    if (length(links) == 0L) {
+        stop(sprintf(
+            "No KEGG pathway associations returned for organism '%s'. ",
+            organism
+        ), "Verify the organism code.")
+    }
+
+    # -- API call 2: pathway descriptions (one bulk request) -------------------
+    path_list <- tryCatch(
+        KEGGREST::keggList("pathway", organism),
+        error = function(e) {
+            warning(
+                "Could not fetch KEGG pathway names: ", conditionMessage(e),
+                "\nterm2name will be empty."
+            )
+            character(0)
+        }
+    )
+
+    # -- Reshape results -------------------------------------------------------
+    gene_ids    <- names(links)   # e.g. "eco:b0001"
+    pathway_ids <- unname(links)  # e.g. "path:eco00010"
+
+    if (strip_prefix) {
+        gene_ids    <- sub(paste0("^", organism, ":"), "", gene_ids)
+        pathway_ids <- sub("^path:", "", pathway_ids)
+    }
+
+    term2gene <- data.frame(
+        term = pathway_ids,
+        gene = gene_ids,
+        stringsAsFactors = FALSE
+    )
+    term2gene <- term2gene[!duplicated(term2gene), , drop = FALSE]
+    rownames(term2gene) <- NULL
+
+    # -- Optionally translate KEGG IDs to gene symbols -------------------------
+    if (!is.null(id_map)) {
+        .validateKEGGIDMap(id_map)
+        mapped <- id_map$symbol[match(term2gene$gene, id_map$kegg_id)]
+        term2gene$gene <- ifelse(is.na(mapped), term2gene$gene, mapped)
+    }
+
+    if (length(path_list) > 0L) {
+        pw_ids   <- names(path_list)   # e.g. "path:eco00010"
+        pw_names <- unname(path_list)  # e.g. "Glycolysis / Gluconeogenesis - Escherichia coli K-12"
+        if (strip_prefix) {
+            pw_ids   <- sub("^path:", "", pw_ids)
+            pw_names <- vapply(strsplit(pw_names, " - "), function(parts) {
+                if (length(parts) <= 1L) parts
+                else paste(parts[-length(parts)], collapse = " - ")
+            }, character(1L))
+        }
+        term2name <- data.frame(
+            term = pw_ids,
+            name = pw_names,
+            stringsAsFactors = FALSE
+        )
+    } else {
+        term2name <- data.frame(
+            term = character(0),
+            name = character(0),
+            stringsAsFactors = FALSE
+        )
+    }
+
+    result <- list(term2gene = term2gene, term2name = term2name)
+
+    # -- Save to cache ---------------------------------------------------------
+    if (!is.null(file)) {
+        saveRDS(result, file)
+        message(sprintf("KEGG data cached to: %s", file))
+    }
+
+    message(sprintf(
+        "Done. %d gene-pathway associations across %d pathways.",
+        nrow(term2gene), nrow(term2name)
+    ))
+
+    result
+}
+
+# --- buildKEGGGeneIDMap() -----------------------------------------------------
+
+# Validate that id_map is a data.frame with columns 'symbol' and 'kegg_id'.
+.validateKEGGIDMap <- function(id_map) {
+    if (!is.data.frame(id_map) ||
+            !all(c("symbol", "kegg_id") %in% colnames(id_map))) {
+        stop(
+            "'id_map' must be a data.frame with columns 'symbol' and 'kegg_id'.\n",
+            "Use buildKEGGGeneIDMap() to create it."
+        )
+    }
+}
+
+#' Build a KEGG gene ID map for symbol translation
+#'
+#' Fetches the complete NCBI Gene ID \eqn{\leftrightarrow} KEGG gene ID
+#' correspondence for an organism in a single API call
+#' (\code{KEGGREST::keggConv}), then joins it against a gene symbol table
+#' supplied either as a Bioconductor \code{OrgDb} object or as a plain
+#' \code{data.frame}.  The result maps each gene symbol to the organism's
+#' KEGG-internal gene identifier (e.g. b-numbers for \emph{E. coli} K-12),
+#' and can be passed to \code{\link{buildKEGGTermGene}()} to translate the
+#' \code{gene} column of \code{term2gene} from KEGG IDs to symbols that match
+#' your annotation data.
+#'
+#' @section Why this is needed:
+#' \code{\link{buildKEGGTermGene}()} returns pathway-gene associations where
+#' genes are identified by KEGG-internal IDs (b-numbers for \emph{E. coli},
+#' Entrez IDs for human, etc.).  Annotation data produced by
+#' \code{\link{loadAnnotation}()} uses gene symbols from the GFF3
+#' \code{Name=} attribute.  Without translation, no genes will match during
+#' enrichment.
+#'
+#' @section Input modes:
+#' Exactly one of \code{OrgDb} or \code{entrez2symbol} must be supplied:
+#' \describe{
+#'   \item{\code{OrgDb}}{A Bioconductor \code{OrgDb} annotation object (e.g.,
+#'     \code{org.EcK12.eg.db}).  NCBI Gene IDs (\code{id_col}) and gene symbols
+#'     (\code{keys_col}) are extracted via \code{AnnotationDbi::select()}.
+#'     Requires internet access only for the single \code{keggConv} call.}
+#'   \item{\code{entrez2symbol}}{A two-column \code{data.frame} with columns
+#'     \code{entrez_id} (character NCBI Gene IDs) and \code{symbol} (gene
+#'     symbols).  Use this when no \code{OrgDb} package is available, e.g.
+#'     when you have downloaded a mapping from NCBI's \code{gene_info} file.}
+#' }
+#'
+#' @param organism Character string; KEGG organism code (e.g., \code{"eco"}
+#'   for \emph{Escherichia coli} K-12).  See
+#'   \url{https://www.genome.jp/kegg/catalog/org_list.html}.
+#' @param OrgDb A Bioconductor \code{OrgDb} object for automatic symbol
+#'   lookup.  \code{NULL} (default) if \code{entrez2symbol} is provided
+#'   instead.
+#' @param entrez2symbol A \code{data.frame} with columns \code{entrez_id} and
+#'   \code{symbol}.  \code{NULL} (default) if \code{OrgDb} is provided.
+#' @param keys_col Character string; the \code{OrgDb} column containing gene
+#'   symbols.  Default \code{"SYMBOL"}.  Ignored when \code{entrez2symbol} is
+#'   provided.
+#' @param id_col Character string; the \code{OrgDb} column containing NCBI
+#'   Gene IDs.  Default \code{"ENTREZID"}.  Ignored when \code{entrez2symbol}
+#'   is provided.
+#' @param file Character string or \code{NULL}.  Path to an RDS cache file.
+#'   \itemize{
+#'     \item If \code{file} already exists, it is loaded and returned without
+#'       any API calls.
+#'     \item If \code{file} does not exist, the mapping is built and saved.
+#'     \item \code{NULL} (default) disables caching.
+#'   }
+#'   A warning is issued when the cache is older than 90 days.
+#'
+#' @return A \code{data.frame} with columns:
+#'   \describe{
+#'     \item{\code{symbol}}{Gene symbol matching identifiers in your annotation
+#'       data (e.g. \code{"lacZ"}, \code{"rpoD"}).}
+#'     \item{\code{kegg_id}}{Corresponding KEGG gene identifier after stripping
+#'       the organism prefix (e.g. \code{"b0344"} for \emph{E. coli} K-12).}
+#'   }
+#'   Pass this to \code{\link{buildKEGGTermGene}()} as \code{id_map = ...} to
+#'   translate the \code{gene} column of \code{term2gene} from KEGG IDs to
+#'   symbols.
+#'
+#' @examples
+#' \donttest{
+#' if (requireNamespace("KEGGREST", quietly = TRUE) &&
+#'     requireNamespace("org.EcK12.eg.db", quietly = TRUE)) {
+#'   id_map <- buildKEGGGeneIDMap("eco",
+#'                                OrgDb = org.EcK12.eg.db,
+#'                                file  = "eco_id_map.rds")
+#'
+#'   # Apply when building pathway map:
+#'   kegg <- buildKEGGTermGene("eco", file = "eco_kegg.rds", id_map = id_map)
+#'   # kegg$term2gene$gene now contains symbols instead of b-numbers
+#' }
+#'
+#' # Manual table alternative:
+#' if (requireNamespace("KEGGREST", quietly = TRUE)) {
+#'   ent2sym <- data.frame(
+#'     entrez_id = c("945076", "945803"),
+#'     symbol    = c("lacZ",   "lacY"),
+#'     stringsAsFactors = FALSE
+#'   )
+#'   id_map <- buildKEGGGeneIDMap("eco", entrez2symbol = ent2sym)
+#' }
+#' }
+#'
+#' @seealso \code{\link{buildKEGGTermGene}}, \code{\link{enrichMethylation}}
+#' @export
+buildKEGGGeneIDMap <- function(organism,
+                                OrgDb         = NULL,
+                                entrez2symbol = NULL,
+                                keys_col      = "SYMBOL",
+                                id_col        = "ENTREZID",
+                                file          = NULL) {
+    # -- Input validation ------------------------------------------------------
+    if (!is.character(organism) || length(organism) != 1L || nchar(organism) == 0L) {
+        stop("'organism' must be a non-empty character string (e.g., \"eco\").")
+    }
+    if (is.null(OrgDb) && is.null(entrez2symbol)) {
+        stop(
+            "Provide at least one of:\n",
+            "  OrgDb         -- a Bioconductor OrgDb object\n",
+            "  entrez2symbol -- a data.frame(entrez_id, symbol)"
+        )
+    }
+    if (!is.null(entrez2symbol)) {
+        if (!is.data.frame(entrez2symbol) ||
+                !all(c("entrez_id", "symbol") %in% colnames(entrez2symbol))) {
+            stop(
+                "'entrez2symbol' must be a data.frame with columns ",
+                "'entrez_id' and 'symbol'."
+            )
+        }
+    }
+
+    if (!requireNamespace("KEGGREST", quietly = TRUE)) {
+        stop(
+            "Package 'KEGGREST' is required.\n",
+            "Install it with: BiocManager::install(\"KEGGREST\")"
+        )
+    }
+
+    # -- Load from cache -------------------------------------------------------
+    if (!is.null(file) && file.exists(file)) {
+        age_days <- as.numeric(difftime(Sys.time(), file.mtime(file), units = "days"))
+        if (age_days > 90) {
+            warning(
+                sprintf("KEGG ID map cache '%s' is %.0f days old. ", file, age_days),
+                "Consider refreshing it by deleting the file and re-running ",
+                "buildKEGGGeneIDMap()."
+            )
+        }
+        message(sprintf("Loading KEGG ID map from cache: %s", file))
+        return(readRDS(file))
+    }
+
+    message(sprintf(
+        "Fetching KEGG gene ID map for organism '%s' ...", organism
+    ))
+
+    # -- API call: NCBI Gene ID <-> KEGG gene ID (one bulk request) ------------
+    conv <- tryCatch(
+        KEGGREST::keggConv(organism, "ncbi-geneid"),
+        error = function(e) {
+            stop(
+                sprintf("KEGG API call failed for organism '%s'.\n", organism),
+                "Check the organism code at:\n",
+                "  https://www.genome.jp/kegg/catalog/org_list.html\n",
+                "Original error: ", conditionMessage(e)
+            )
+        }
+    )
+
+    if (length(conv) == 0L) {
+        stop(sprintf(
+            "keggConv returned no entries for organism '%s'. ",
+            organism
+        ), "Verify the organism code.")
+    }
+
+    # conv: names = "ncbi-geneid:945076", values = "eco:b0344"
+    entrez_ids <- sub("^ncbi-geneid:", "", names(conv))
+    kegg_ids   <- sub(paste0("^", organism, ":"), "", unname(conv))
+
+    kegg_conv_df <- data.frame(
+        entrez_id = entrez_ids,
+        kegg_id   = kegg_ids,
+        stringsAsFactors = FALSE
+    )
+
+    # -- Get ENTREZID <-> SYMBOL map -------------------------------------------
+    if (!is.null(entrez2symbol)) {
+        sym_df <- entrez2symbol[, c("entrez_id", "symbol"), drop = FALSE]
+        sym_df$entrez_id <- as.character(sym_df$entrez_id)
+    } else {
+        # OrgDb path
+        if (!requireNamespace("AnnotationDbi", quietly = TRUE)) {
+            stop(
+                "Package 'AnnotationDbi' is required when using OrgDb.\n",
+                "Install it with: BiocManager::install(\"AnnotationDbi\")"
+            )
+        }
+        avail_cols <- AnnotationDbi::columns(OrgDb)
+        for (col in c(id_col, keys_col)) {
+            if (!col %in% avail_cols) {
+                stop(sprintf(
+                    "Column '%s' not found in OrgDb. Available columns:\n  %s",
+                    col, paste(avail_cols, collapse = ", ")
+                ))
+            }
+        }
+        sym_raw <- AnnotationDbi::select(
+            OrgDb,
+            keys    = AnnotationDbi::keys(OrgDb, keytype = id_col),
+            columns = c(id_col, keys_col),
+            keytype = id_col
+        )
+        sym_df <- data.frame(
+            entrez_id = as.character(sym_raw[[id_col]]),
+            symbol    = as.character(sym_raw[[keys_col]]),
+            stringsAsFactors = FALSE
+        )
+    }
+
+    # Drop NA rows from symbol table
+    sym_df <- sym_df[!is.na(sym_df$entrez_id) & !is.na(sym_df$symbol), ,
+                     drop = FALSE]
+
+    # -- Join kegg_conv_df with sym_df on entrez_id ----------------------------
+    matched_symbol <- sym_df$symbol[match(kegg_conv_df$entrez_id,
+                                          sym_df$entrez_id)]
+    result_df <- data.frame(
+        symbol  = matched_symbol,
+        kegg_id = kegg_conv_df$kegg_id,
+        stringsAsFactors = FALSE
+    )
+    result_df <- result_df[!is.na(result_df$symbol), , drop = FALSE]
+    result_df <- result_df[!duplicated(result_df), , drop = FALSE]
+    rownames(result_df) <- NULL
+
+    if (nrow(result_df) == 0L) {
+        warning(
+            "No symbol matches found after joining KEGG and ",
+            if (is.null(entrez2symbol)) "OrgDb" else "entrez2symbol",
+            " data. Check that gene identifiers overlap."
+        )
+    }
+
+    # -- Save to cache ---------------------------------------------------------
+    if (!is.null(file)) {
+        saveRDS(result_df, file)
+        message(sprintf("KEGG ID map cached to: %s", file))
+    }
+
+    message(sprintf(
+        "Done. %d gene symbols mapped to KEGG IDs.",
+        nrow(result_df)
+    ))
+
+    result_df
 }
 
 # --- enrichMethylation() ------------------------------------------------------
@@ -637,16 +1125,18 @@ NULL
 #' @section Gene-to-pathway mapping:
 #' Supply at least one of the following:
 #' \describe{
-#'   \item{\code{TERM2GENE}}{A two-column \code{data.frame} with columns
-#'     \code{term} (pathway/GO term ID) and \code{gene} (gene identifier
-#'     matching values in \code{gene_col}).  Used for the GO slot when
-#'     provided; takes precedence over \code{OrgDb}.}
+#'   \item{\code{kegg_term2gene}}{(Recommended for KEGG) A two-column
+#'     \code{data.frame} pre-built by \code{\link{buildKEGGTermGene}()}.
+#'     No network access is required at analysis time; results appear in the
+#'     \code{$kegg} slot.}
+#'   \item{\code{TERM2GENE}}{A two-column \code{data.frame} for custom GO
+#'     enrichment.  Results appear in the \code{$go} slot.}
 #'   \item{\code{OrgDb}}{A Bioconductor \code{OrgDb} annotation object (e.g.,
 #'     \code{org.EcK12.eg.db}) for GO enrichment.  Ignored when
 #'     \code{TERM2GENE} is supplied.}
-#'   \item{\code{organism}}{A KEGG organism code (e.g., \code{"eco"} for
-#'     \emph{E. coli} K-12).  Requires internet access; see
-#'     \code{\link[clusterProfiler]{enrichKEGG}}.}
+#'   \item{\code{organism}}{A KEGG organism code (e.g., \code{"eco"}).
+#'     Makes one live HTTP request per KEGG pathway; may exceed the API rate
+#'     limit.  Ignored when \code{kegg_term2gene} is provided.}
 #' }
 #'
 #' @section Feature-type-specific parsing:
@@ -697,11 +1187,29 @@ NULL
 #' @param ont Character string; GO ontology.  One of \code{"BP"},
 #'   \code{"MF"}, \code{"CC"}, or \code{"ALL"}.  Default \code{"BP"}.
 #' @param organism Character string; KEGG organism code (e.g., \code{"eco"}).
-#'   \code{NULL} skips KEGG.  Requires internet access.
+#'   \code{NULL} skips KEGG.  Requires internet access and fires one HTTP
+#'   request per KEGG pathway, which can exceed the API rate limit for
+#'   organisms with many pathways.  Prefer \code{kegg_term2gene} (built once
+#'   via \code{\link{buildKEGGTermGene}()}) for reliable KEGG analysis.
 #' @param TERM2GENE A two-column \code{data.frame} with columns \code{term}
-#'   and \code{gene}.  Takes precedence over \code{OrgDb}.
+#'   and \code{gene}.  When provided, takes precedence over \code{OrgDb} for
+#'   GO analysis; results appear in the \code{$go} slot.  To supply a
+#'   pre-built KEGG mapping, use \code{kegg_term2gene} instead so that results
+#'   land in the \code{$kegg} slot.
 #' @param TERM2NAME Optional two-column \code{data.frame} with columns
-#'   \code{term} and \code{name}.
+#'   \code{term} and \code{name}.  Paired with \code{TERM2GENE} for GO
+#'   enrichment.
+#' @param kegg_term2gene A two-column \code{data.frame} with columns
+#'   \code{term} and \code{gene} containing pre-fetched KEGG pathway-gene
+#'   associations.  Build it once per organism with
+#'   \code{\link{buildKEGGTermGene}()} and reuse across analyses — no live
+#'   KEGG API calls are made.  Results appear in the \code{$kegg} slot,
+#'   consistent with the \code{organism} path.  Takes precedence over
+#'   \code{organism} when both are supplied.
+#' @param kegg_term2name Optional two-column \code{data.frame} with columns
+#'   \code{term} and \code{name} containing KEGG pathway descriptions.
+#'   Returned by \code{\link{buildKEGGTermGene}()} alongside
+#'   \code{kegg_term2gene}.
 #' @param gene_col Character string; the \code{rowData} column containing gene
 #'   identifiers per site.  Default \code{"feature_names"}.
 #' @param feature_type Character vector or \code{NULL}. Feature type(s) to
@@ -776,6 +1284,8 @@ enrichMethylation <- function(object,
                                organism             = NULL,
                                TERM2GENE            = NULL,
                                TERM2NAME            = NULL,
+                               kegg_term2gene       = NULL,
+                               kegg_term2name       = NULL,
                                gene_col             = "feature_names",
                                feature_type         = "gene",
                                gene_role            = c("target", "regulator", "both"),
@@ -803,13 +1313,33 @@ enrichMethylation <- function(object,
         stop("'object' must be a commaData object or a data.frame from results().")
     }
 
-    if (is.null(OrgDb) && is.null(organism) && is.null(TERM2GENE)) {
+    if (is.null(OrgDb) && is.null(organism) && is.null(TERM2GENE) &&
+            is.null(kegg_term2gene)) {
         stop(
             "No gene-to-term mapping supplied. Provide at least one of:\n",
-            "  OrgDb     -- Bioconductor OrgDb object for GO (e.g., org.EcK12.eg.db)\n",
-            "  organism  -- KEGG organism code (e.g., \"eco\")\n",
-            "  TERM2GENE -- custom data.frame(term, gene)"
+            "  kegg_term2gene -- pre-built KEGG mapping from buildKEGGTermGene()\n",
+            "  OrgDb          -- Bioconductor OrgDb object for GO (e.g., org.EcK12.eg.db)\n",
+            "  organism       -- KEGG organism code (e.g., \"eco\") [live API]\n",
+            "  TERM2GENE      -- custom data.frame(term, gene)"
         )
+    }
+
+    if (!is.null(kegg_term2gene)) {
+        if (!is.data.frame(kegg_term2gene) ||
+                !all(c("term", "gene") %in% colnames(kegg_term2gene))) {
+            stop(
+                "'kegg_term2gene' must be a data.frame with columns 'term' and 'gene'.\n",
+                "Use buildKEGGTermGene() to create it."
+            )
+        }
+    }
+    if (!is.null(kegg_term2name)) {
+        if (!is.data.frame(kegg_term2name) ||
+                !all(c("term", "name") %in% colnames(kegg_term2name))) {
+            stop(
+                "'kegg_term2name' must be a data.frame with columns 'term' and 'name'."
+            )
+        }
     }
 
     if (!requireNamespace("clusterProfiler", quietly = TRUE)) {
@@ -869,6 +1399,7 @@ enrichMethylation <- function(object,
             return(.runEnrichmentForGeneMap(sg_all, universe, method,
                                             OrgDb, keyType, ont, organism,
                                             TERM2GENE, TERM2NAME,
+                                            kegg_term2gene, kegg_term2name,
                                             padj_threshold, delta_beta_threshold,
                                             score_metric, gene_score_agg,
                                             pvalueCutoff, qvalueCutoff,
@@ -910,6 +1441,7 @@ enrichMethylation <- function(object,
             .runEnrichmentForGeneMap(sg, universe, method,
                                      OrgDb, keyType, ont, organism,
                                      TERM2GENE, TERM2NAME,
+                                     kegg_term2gene, kegg_term2name,
                                      padj_threshold, delta_beta_threshold,
                                      score_metric, gene_score_agg,
                                      pvalueCutoff, qvalueCutoff,

@@ -60,6 +60,7 @@ Synthetic `commaData` created by `data-raw/create_example_data.R` (`set.seed(131
 | `test-plot_coverage.R` | `plot_coverage()`: returns ggplot, per_sample mode |
 | `test-plot_tss_profile.R` | TSS window, color_by modes, regulatory_element fallback, loess, faceting — ~16 tests |
 | `test-enrichment.R` | `.siteToGeneMap()`, `.computeGeneScores()`, `.parseTargetGenes()`, `.parseRegulatorGenes()`, `.extractGeneRoles()`, ORA+GSEA, gene_role, multi-feature_type, data.frame input — ~60 tests |
+| `test-buildKEGGTermGene.R` | `buildKEGGTermGene()`: output shape, prefix stripping, caching, stale-cache warning, API error handling, empty term2name; `enrichMethylation()` kegg_term2gene/kegg_term2name routing; `buildKEGGGeneIDMap()`: entrez2symbol path, OrgDb path, caching, validation; `buildKEGGTermGene(id_map=)` translation — ~55 tests |
 
 ## Required Coverage
 

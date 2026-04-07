@@ -13,6 +13,8 @@ enrichMethylation(
   organism = NULL,
   TERM2GENE = NULL,
   TERM2NAME = NULL,
+  kegg_term2gene = NULL,
+  kegg_term2name = NULL,
   gene_col = "feature_names",
   feature_type = "gene",
   gene_role = c("target", "regulator", "both"),
@@ -49,13 +51,33 @@ analysis unless \code{TERM2GENE} is provided.}
 \code{"MF"}, \code{"CC"}, or \code{"ALL"}.  Default \code{"BP"}.}
 
 \item{organism}{Character string; KEGG organism code (e.g., \code{"eco"}).
-\code{NULL} skips KEGG.  Requires internet access.}
+\code{NULL} skips KEGG.  Requires internet access and fires one HTTP
+request per KEGG pathway, which can exceed the API rate limit for
+organisms with many pathways.  Prefer \code{kegg_term2gene} (built once
+via \code{\link{buildKEGGTermGene}()}) for reliable KEGG analysis.}
 
 \item{TERM2GENE}{A two-column \code{data.frame} with columns \code{term}
-and \code{gene}.  Takes precedence over \code{OrgDb}.}
+and \code{gene}.  When provided, takes precedence over \code{OrgDb} for
+GO analysis; results appear in the \code{$go} slot.  To supply a
+pre-built KEGG mapping, use \code{kegg_term2gene} instead so that results
+land in the \code{$kegg} slot.}
 
 \item{TERM2NAME}{Optional two-column \code{data.frame} with columns
-\code{term} and \code{name}.}
+\code{term} and \code{name}.  Paired with \code{TERM2GENE} for GO
+enrichment.}
+
+\item{kegg_term2gene}{A two-column \code{data.frame} with columns
+\code{term} and \code{gene} containing pre-fetched KEGG pathway-gene
+associations.  Build it once per organism with
+\code{\link{buildKEGGTermGene}()} and reuse across analyses — no live
+KEGG API calls are made.  Results appear in the \code{$kegg} slot,
+consistent with the \code{organism} path.  Takes precedence over
+\code{organism} when both are supplied.}
+
+\item{kegg_term2name}{Optional two-column \code{data.frame} with columns
+\code{term} and \code{name} containing KEGG pathway descriptions.
+Returned by \code{\link{buildKEGGTermGene}()} alongside
+\code{kegg_term2gene}.}
 
 \item{gene_col}{Character string; the \code{rowData} column containing gene
 identifiers per site.  Default \code{"feature_names"}.}
@@ -154,16 +176,18 @@ to capture sigma factor identity and target gene information.
 
 Supply at least one of the following:
 \describe{
-\item{\code{TERM2GENE}}{A two-column \code{data.frame} with columns
-\code{term} (pathway/GO term ID) and \code{gene} (gene identifier
-matching values in \code{gene_col}).  Used for the GO slot when
-provided; takes precedence over \code{OrgDb}.}
+\item{\code{kegg_term2gene}}{(Recommended for KEGG) A two-column
+\code{data.frame} pre-built by \code{\link{buildKEGGTermGene}()}.
+No network access is required at analysis time; results appear in the
+\code{$kegg} slot.}
+\item{\code{TERM2GENE}}{A two-column \code{data.frame} for custom GO
+enrichment.  Results appear in the \code{$go} slot.}
 \item{\code{OrgDb}}{A Bioconductor \code{OrgDb} annotation object (e.g.,
 \code{org.EcK12.eg.db}) for GO enrichment.  Ignored when
 \code{TERM2GENE} is supplied.}
-\item{\code{organism}}{A KEGG organism code (e.g., \code{"eco"} for
-\emph{E. coli} K-12).  Requires internet access; see
-\code{\link[clusterProfiler]{enrichKEGG}}.}
+\item{\code{organism}}{A KEGG organism code (e.g., \code{"eco"}).
+Makes one live HTTP request per KEGG pathway; may exceed the API rate
+limit.  Ignored when \code{kegg_term2gene} is provided.}
 }
 }
 

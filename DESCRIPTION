@@ -23,6 +23,7 @@ Suggests:
     Biostrings,
     BiocStyle,
     clusterProfiler,
+    KEGGREST,
     ComplexHeatmap,
     ggrepel,
     limma,

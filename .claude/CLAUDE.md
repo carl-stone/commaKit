@@ -23,6 +23,8 @@ This is an R package (Bioconductor ecosystem). Use R/Bioconductor idioms: S4 cla
 | 0.7.x | `plot_tss_profile()`, `diffMethyl(method="limma"\|"quasi_f")` |
 | 0.8.0 | `mod_context` rowData column + `modContexts()` + `expected_mod_contexts`; `diffMethyl()` loops by mod_context |
 | 0.9.0 | `enrichMethylation()` — GO/KEGG ORA + GSEA via clusterProfiler |
+| 0.9.1 | `buildKEGGTermGene()` — bulk KEGG fetch (2 API calls) + RDS cache; `enrichMethylation(kegg_term2gene=)` offline KEGG path |
+| 0.9.2 | `buildKEGGGeneIDMap()` — symbol ↔ KEGG ID map (1 API call) via OrgDb or manual `entrez2symbol`; `buildKEGGTermGene(id_map=)` b-number→symbol translation |
 
 ## Naming Conventions
 

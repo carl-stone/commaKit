@@ -92,6 +92,8 @@ EcoCyc GFF3 files encode sigma factor identity as a `feature_type=Sigma70` attri
 |---|---|
 | `BSgenome` | Genome sequence for `findMotifSites()` |
 | `clusterProfiler` | GO/KEGG enrichment in `enrichMethylation()` |
+| `KEGGREST` | Bulk KEGG API calls in `buildKEGGTermGene()` and `buildKEGGGeneIDMap()` |
+| `AnnotationDbi` | OrgDb symbol lookup in `buildKEGGGeneIDMap()` (Bioconductor core) |
 | `Biostrings` | Sequence pattern matching for motif search |
 | `BiocStyle` | Vignette styling |
 | `limma` | eBayes for `diffMethyl(method="limma"\|"quasi_f")` |
@@ -179,7 +181,24 @@ results(object, mod_type, mod_context)
 filterResults(object, padj, delta_beta, ...)
 
 # Enrichment (requires annotateSites() + diffMethyl() first)
-enrichMethylation(object, method, OrgDb, keyType, ont, organism, TERM2GENE, TERM2NAME,
+buildKEGGGeneIDMap(organism, OrgDb, entrez2symbol, keys_col, id_col, file)
+# organism: KEGG org code; OrgDb or entrez2symbol required (at least one)
+# Returns: data.frame(symbol, kegg_id) — gene symbol <-> KEGG ID mapping
+# Uses 1 API call (keggConv); cache to avoid repeated network use.
+# Pass to buildKEGGTermGene(id_map=...) to translate b-numbers → symbols.
+
+buildKEGGTermGene(organism, file, strip_prefix, id_map)
+# organism: KEGG org code (e.g. "eco"); file: optional RDS cache path
+# id_map: optional data.frame(symbol, kegg_id) from buildKEGGGeneIDMap()
+#         when provided, translates gene column from KEGG IDs to symbols
+# Returns: list(term2gene = data.frame(term, gene),
+#               term2name = data.frame(term, name))
+# Uses 2 API calls total (keggLink + keggList); cache to avoid repeated network use.
+# Pass result to enrichMethylation() via kegg_term2gene/kegg_term2name.
+
+enrichMethylation(object, method, OrgDb, keyType, ont, organism,
+                  TERM2GENE, TERM2NAME,
+                  kegg_term2gene, kegg_term2name,
                   gene_col, feature_type, gene_role, overlap_only,
                   padj_threshold, delta_beta_threshold, score_metric,
                   gene_score_agg, mod_type, mod_context,
@@ -187,6 +206,10 @@ enrichMethylation(object, method, OrgDb, keyType, ont, organism, TERM2GENE, TERM
 # object: commaData OR data.frame from results()
 # feature_type: character vector (run separately per type); NULL = all
 # gene_role: "target"|"regulator"|"both" (see below)
+# kegg_term2gene: pre-built KEGG mapping (avoids live API rate limits)
+#   → routes results to $kegg slot via enricher()/GSEA()
+# organism: live KEGG API path (one req/pathway; may hit rate limit)
+#   → ignored when kegg_term2gene is provided
 # Returns: list(go=..., kegg=...)   [single feature_type, gene_role != "both"]
 #          list(gene=list(go,kegg), promoter=...) [multiple feature_types]
 #          list(target=..., regulator=...) [gene_role="both"]
