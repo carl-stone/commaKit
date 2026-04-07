@@ -1,5 +1,5 @@
 #' @importFrom ggplot2 ggplot aes geom_point geom_vline geom_hline
-#'   scale_color_manual labs theme_bw
+#'   scale_color_manual labs theme_bw facet_wrap
 NULL
 
 #' Volcano plot for differential methylation results
@@ -21,6 +21,10 @@ NULL
 #'   \eqn{\pm}\code{delta_beta_threshold}.
 #' @param padj_threshold Numeric scalar in (0, 1). Adjusted p-value cutoff for
 #'   significance. Default \code{0.05}.
+#' @param facet Logical. Default \code{TRUE}. When \code{TRUE} and
+#'   \code{results} contains a \code{mod_context} column with more than one
+#'   level, the plot is faceted by \code{mod_context}. Set to \code{FALSE} to
+#'   suppress faceting.
 #'
 #' @return A \code{\link[ggplot2]{ggplot}} object. The x-axis shows
 #'   \code{dm_delta_beta} (effect size), the y-axis shows
@@ -30,7 +34,9 @@ NULL
 #'   \code{"Not significant"}. A dashed horizontal line marks
 #'   \code{padj_threshold}; dashed vertical lines at
 #'   \eqn{\pm}\code{delta_beta_threshold} are added only when that argument is
-#'   non-\code{NULL}. Sites with \code{NA} adjusted p-value are excluded from
+#'   non-\code{NULL}. When \code{facet = TRUE} and multiple \code{mod_context}
+#'   levels are present, panels are split by \code{mod_context} via
+#'   \code{facet_wrap}. Sites with \code{NA} adjusted p-value are excluded from
 #'   the plot.
 #'
 #' @examples
@@ -48,7 +54,8 @@ NULL
 #' @export
 plot_volcano <- function(results,
                          delta_beta_threshold = NULL,
-                         padj_threshold = 0.05) {
+                         padj_threshold = 0.05,
+                         facet = TRUE) {
 
     ## --- Input validation ---------------------------------------------------
     if (!is.data.frame(results)) {
@@ -72,9 +79,16 @@ plot_volcano <- function(results,
         is.na(padj_threshold) || padj_threshold <= 0 || padj_threshold >= 1) {
         stop("'padj_threshold' must be a single numeric value in (0, 1).")
     }
+    if (!is.logical(facet) || length(facet) != 1L || is.na(facet)) {
+        stop("'facet' must be a single logical value (TRUE or FALSE).")
+    }
 
     ## --- Build plot data ----------------------------------------------------
-    df <- results[, c("dm_delta_beta", "dm_padj"), drop = FALSE]
+    keep_cols <- c("dm_delta_beta", "dm_padj")
+    if ("mod_context" %in% colnames(results)) {
+        keep_cols <- c(keep_cols, "mod_context")
+    }
+    df <- results[, keep_cols, drop = FALSE]
 
     ## Exclude rows with NA padj
     df <- df[!is.na(df$dm_padj), , drop = FALSE]
@@ -133,6 +147,13 @@ plot_volcano <- function(results,
                 xintercept = delta_beta_threshold,
                 linetype = "dashed", color = "grey40", linewidth = 0.5
             )
+    }
+
+    has_multi_context <- "mod_context" %in% colnames(df) &&
+        length(unique(df$mod_context)) > 1L
+
+    if (facet && has_multi_context) {
+        p <- p + ggplot2::facet_wrap("mod_context")
     }
 
     p <- p +

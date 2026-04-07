@@ -4,7 +4,12 @@
 \alias{plot_volcano}
 \title{Volcano plot for differential methylation results}
 \usage{
-plot_volcano(results, delta_beta_threshold = NULL, padj_threshold = 0.05)
+plot_volcano(
+  results,
+  delta_beta_threshold = NULL,
+  padj_threshold = 0.05,
+  facet = TRUE
+)
 }
 \arguments{
 \item{results}{A \code{data.frame} returned by \code{\link{results}()},
@@ -21,6 +26,11 @@ be called significant, and dashed vertical lines are drawn at
 
 \item{padj_threshold}{Numeric scalar in (0, 1). Adjusted p-value cutoff for
 significance. Default \code{0.05}.}
+
+\item{facet}{Logical. Default \code{TRUE}. When \code{TRUE} and
+\code{results} contains a \code{mod_context} column with more than one
+level, the plot is faceted by \code{mod_context}. Set to \code{FALSE} to
+suppress faceting.}
 }
 \value{
 A \code{\link[ggplot2]{ggplot}} object. The x-axis shows
@@ -31,7 +41,9 @@ A \code{\link[ggplot2]{ggplot}} object. The x-axis shows
 \code{"Not significant"}. A dashed horizontal line marks
 \code{padj_threshold}; dashed vertical lines at
 \eqn{\pm}\code{delta_beta_threshold} are added only when that argument is
-non-\code{NULL}. Sites with \code{NA} adjusted p-value are excluded from
+non-\code{NULL}. When \code{facet = TRUE} and multiple \code{mod_context}
+levels are present, panels are split by \code{mod_context} via
+\code{facet_wrap}. Sites with \code{NA} adjusted p-value are excluded from
 the plot.
 }
 \description{

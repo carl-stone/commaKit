@@ -8,12 +8,19 @@
         position      = seq(1000L, 20000L, by = 1000L),
         strand        = rep("+", 20L),
         mod_type      = rep("6mA", 20L),
+        mod_context   = rep("GATC", 20L),
         dm_pvalue     = c(runif(15L, 0, 0.1), runif(5L, 0.1, 1)),
         dm_padj       = c(runif(5L, 0, 0.05), runif(10L, 0.05, 0.5), runif(5L, 0.5, 1)),
         dm_delta_beta = c(runif(5L, 0.2, 0.8), runif(5L, -0.8, -0.2),
                           runif(10L, -0.1, 0.1)),
         stringsAsFactors = FALSE
     )
+}
+
+.make_volcano_results_multicontext <- function() {
+    res <- rbind(.make_volcano_results(), .make_volcano_results())
+    res$mod_context <- rep(c("GATC", "CCWGG"), each = 20L)
+    res
 }
 
 # ─── Basic return type ────────────────────────────────────────────────────────
@@ -42,6 +49,32 @@ test_that("plot_volcano: numeric delta_beta_threshold adds vlines (>= 4 layers)"
     res <- .make_volcano_results()
     p <- plot_volcano(res, delta_beta_threshold = 0.2)
     expect_gte(length(p$layers), 4L)
+})
+
+# ─── Faceting ─────────────────────────────────────────────────────────────────
+
+test_that("plot_volcano: single mod_context does not facet", {
+    res <- .make_volcano_results()
+    p <- plot_volcano(res)
+    expect_false(inherits(p$facet, "FacetWrap"))
+})
+
+test_that("plot_volcano: multiple mod_context levels facet when facet = TRUE", {
+    res <- .make_volcano_results_multicontext()
+    p <- plot_volcano(res, facet = TRUE)
+    expect_true(inherits(p$facet, "FacetWrap"))
+})
+
+test_that("plot_volcano: facet = FALSE suppresses faceting for multi-context results", {
+    res <- .make_volcano_results_multicontext()
+    p <- plot_volcano(res, facet = FALSE)
+    expect_false(inherits(p$facet, "FacetWrap"))
+})
+
+test_that("plot_volcano: error on invalid facet argument", {
+    res <- .make_volcano_results()
+    expect_error(plot_volcano(res, facet = "yes"), "facet")
+    expect_error(plot_volcano(res, facet = NA), "facet")
 })
 
 # ─── NA handling ─────────────────────────────────────────────────────────────
