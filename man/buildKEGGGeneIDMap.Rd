@@ -96,7 +96,7 @@ if (requireNamespace("KEGGREST", quietly = TRUE) &&
     requireNamespace("org.EcK12.eg.db", quietly = TRUE)) {
   id_file  <- file.path(tempdir(), "eco_id_map.rds")
   id_map <- buildKEGGGeneIDMap("eco",
-                               OrgDb = org.EcK12.eg.db,
+                               OrgDb = org.EcK12.eg.db::org.EcK12.eg.db,
                                file  = id_file)
 
   # Apply when building pathway map:
