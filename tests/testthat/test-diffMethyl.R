@@ -481,6 +481,33 @@ test_that("diffMethyl: site with zero coverage in all samples gets NA p-value", 
     expect_true(is.na(rd$dm_pvalue[1]))
 })
 
+test_that("diffMethyl methylkit: all-zero-coverage site does not crash calculateDiffMeth", {
+    # Regression test: glm.fit inside methylKit's logReg crashes with
+    # 'object of type closure is not subsettable' when a site has
+    # zero coverage across ALL samples. Verify the wrapper filters
+    # such sites before calling calculateDiffMeth.
+    skip_if_not(requireNamespace("methylKit", quietly = TRUE), "methylKit not installed")
+    obj  <- .make_dm_data(n_sites = 3L, n_ctrl = 3L, n_treat = 3L)
+    cov  <- SummarizedExperiment::assay(obj, "coverage")
+    cov[2L, ] <- 0L
+    SummarizedExperiment::assay(obj, "coverage") <- cov
+    mth  <- SummarizedExperiment::assay(obj, "methylation")
+    mth[2L, ] <- NA_real_
+    SummarizedExperiment::assay(obj, "methylation") <- mth
+    expect_no_error(
+        dm <- suppressWarnings(
+            diffMethyl(obj, formula = ~ condition, method = "methylkit")
+        )
+    )
+    rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+    # The all-zero site (row 2) gets p = 1 (assigned by skip_idx; no
+    # evidence against the null).  The critical check is no crash.
+    expect_equal(rd$dm_pvalue[2L], 1)
+    # Other sites should have p-values (not NA or 1 from skip_idx)
+    expect_false(is.na(rd$dm_pvalue[1L]))
+    expect_false(is.na(rd$dm_pvalue[3L]))
+})
+
 # ─── Ground-truth recovery on comma_example_data ─────────────────────────────
 
 test_that("diffMethyl: dm_delta_beta is strongly negative for is_diff 6mA sites in comma_example_data", {

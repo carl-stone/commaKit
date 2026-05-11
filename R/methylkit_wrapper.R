@@ -191,6 +191,25 @@ NULL
         }
       )
 
+      # methylKit's unite() does not filter sites where ALL samples have
+      # zero coverage (e.g. when every sample had coverage below min_coverage
+      # and was set to 0).  glm.fit inside logReg crashes with
+      # "object of type 'closure' is not subsettable" when all weights are 0.
+      # Remove such sites from the united object before calling
+      # calculateDiffMeth; they retain p = 1 via the skip_idx path above.
+      united_df  <- methylKit::getData(mk_united)
+      cov_cols   <- seq(5L, ncol(united_df), by = 3L)
+      site_total_cov <- rowSums(as.matrix(united_df[, cov_cols, drop = FALSE]))
+      keep_united <- which(site_total_cov > 0L)
+      n_dropped   <- nrow(united_df) - length(keep_united)
+      if (n_dropped > 0L) {
+        message(
+          "methylKit: ", n_dropped, " site(s) with zero total coverage across ",
+          "all samples removed before testing (p = 1 assigned)."
+        )
+        mk_united <- mk_united[keep_united, ]
+      }
+
       mk_warn_counts <- list()
       mk_diff <- tryCatch(
         withCallingHandlers(
