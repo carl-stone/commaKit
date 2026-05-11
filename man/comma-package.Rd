@@ -70,5 +70,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Carl Stone \email{carl.j.stone@vanderbilt.edu} (\href{https://orcid.org/0000-0003-0232-5223}{ORCID})
 
+Authors:
+\itemize{
+  \item Carl Stone \email{carl.j.stone@vanderbilt.edu} (\href{https://orcid.org/0000-0003-0232-5223}{ORCID})
+}
+
 }
 \keyword{package}

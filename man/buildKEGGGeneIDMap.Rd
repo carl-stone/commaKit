@@ -94,12 +94,14 @@ when you have downloaded a mapping from NCBI's \code{gene_info} file.}
 \donttest{
 if (requireNamespace("KEGGREST", quietly = TRUE) &&
     requireNamespace("org.EcK12.eg.db", quietly = TRUE)) {
+  id_file  <- file.path(tempdir(), "eco_id_map.rds")
   id_map <- buildKEGGGeneIDMap("eco",
                                OrgDb = org.EcK12.eg.db,
-                               file  = "eco_id_map.rds")
+                               file  = id_file)
 
   # Apply when building pathway map:
-  kegg <- buildKEGGTermGene("eco", file = "eco_kegg.rds", id_map = id_map)
+  kegg_file <- file.path(tempdir(), "eco_kegg.rds")
+  kegg <- buildKEGGTermGene("eco", file = kegg_file, id_map = id_map)
   # kegg$term2gene$gene now contains symbols instead of b-numbers
 }
 

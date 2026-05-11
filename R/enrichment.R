@@ -686,15 +686,16 @@ NULL
 #' @examples
 #' \donttest{
 #' if (requireNamespace("KEGGREST", quietly = TRUE)) {
-#'   # Fetch once and cache to disk
-#'   kegg <- buildKEGGTermGene("eco", file = "eco_kegg.rds")
+#'   # Fetch once and cache to disk (use tempdir() so check directory stays clean)
+#'   kegg_file <- file.path(tempdir(), "eco_kegg.rds")
+#'   kegg <- buildKEGGTermGene("eco", file = kegg_file)
 #'
 #'   # Load from cache on subsequent calls (no network)
-#'   kegg <- buildKEGGTermGene("eco", file = "eco_kegg.rds")
+#'   kegg <- buildKEGGTermGene("eco", file = kegg_file)
 #'
 #'   # Translate b-numbers to symbols with an id_map:
 #'   # id_map <- buildKEGGGeneIDMap("eco", OrgDb = org.EcK12.eg.db)
-#'   # kegg   <- buildKEGGTermGene("eco", file = "eco_kegg.rds", id_map = id_map)
+#'   # kegg   <- buildKEGGTermGene("eco", file = kegg_file, id_map = id_map)
 #'   # res    <- enrichMethylation(obj,
 #'   #             kegg_term2gene = kegg$term2gene,
 #'   #             kegg_term2name = kegg$term2name)
@@ -911,12 +912,14 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
 #' \donttest{
 #' if (requireNamespace("KEGGREST", quietly = TRUE) &&
 #'     requireNamespace("org.EcK12.eg.db", quietly = TRUE)) {
+#'   id_file  <- file.path(tempdir(), "eco_id_map.rds")
 #'   id_map <- buildKEGGGeneIDMap("eco",
 #'                                OrgDb = org.EcK12.eg.db,
-#'                                file  = "eco_id_map.rds")
+#'                                file  = id_file)
 #'
 #'   # Apply when building pathway map:
-#'   kegg <- buildKEGGTermGene("eco", file = "eco_kegg.rds", id_map = id_map)
+#'   kegg_file <- file.path(tempdir(), "eco_kegg.rds")
+#'   kegg <- buildKEGGTermGene("eco", file = kegg_file, id_map = id_map)
 #'   # kegg$term2gene$gene now contains symbols instead of b-numbers
 #' }
 #'

@@ -91,13 +91,63 @@ NULL
     strands   <- vapply(key_parts, `[[`, character(1), 3L)
     n_sites   <- length(site_keys)
 
+    # ── Filter zero-variance sites ───────────────────────────────────────────
+    # methylKit's calculateDiffMeth() crashes when any site has identical
+    # counts across all samples (all methylated or all unmethylated). The
+    # internal mgcv::uniquecombs() returns a vector instead of a matrix, and
+    # methylKit's reshape logic hardcodes ncol = 4 (2-sample assumption),
+    # producing garbage that cascades into a split() error. Filter these sites
+    # out before building methylRaw objects and assign p = 1: the data is
+    # perfectly consistent with the null (no differential methylation), so
+    # we cannot reject it.
+    all_meth  <- apply(methyl_mat, 1L, function(x) all(x == 1, na.rm = TRUE))
+    all_unmeth <- apply(methyl_mat, 1L, function(x) all(x == 0, na.rm = TRUE))
+    skip_idx  <- which(all_meth | all_unmeth)
+    n_skipped <- length(skip_idx)
+
+    if (n_skipped > 0L) {
+        message(
+            "methylKit: ", n_skipped, " site(s) with all samples at ",
+            "beta = 1 or beta = 0 excluded (zero within-group variance; ",
+            "methylKit GLM cannot estimate). Assigned p = 1."
+        )
+    }
+
+    keep_idx <- if (n_skipped > 0L) setdiff(seq_len(n_sites), skip_idx) else seq_len(n_sites)
+
+    # If all sites are zero-variance, return early with p = 1
+    if (length(keep_idx) == 0L) {
+        group_idx  <- lapply(cond_levels, function(lv) which(cond == lv))
+        names(group_idx) <- cond_levels
+        group_means <- vapply(cond_levels, function(lv) {
+            idx <- group_idx[[lv]]
+            if (length(idx) == 1L) methyl_mat[, idx]
+            else rowMeans(methyl_mat[, idx, drop = FALSE], na.rm = TRUE)
+        }, numeric(n_sites))
+        if (is.null(dim(group_means))) {
+            group_means <- matrix(group_means, nrow = 1L,
+                                  dimnames = list(rownames(methyl_mat), cond_levels))
+        }
+        group_means[is.nan(group_means)] <- NA_real_
+        result <- data.frame(
+            pvalue     = rep(1, n_sites),
+            delta_beta = group_means[, treat_level] - group_means[, ref_level],
+            row.names  = site_keys,
+            stringsAsFactors = FALSE
+        )
+        for (lv in cond_levels) {
+            result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
+        }
+        return(result)
+    }
+
     # ── Build methylKit objects per sample ─────────────────────────────────────
     if (requireNamespace("methylKit", quietly = TRUE)) {
       # Construct methylRaw objects directly — bypasses methRead() which only
       # accepts file paths, not in-memory data frames
       sample_list <- lapply(seq_len(ncol(methyl_mat)), function(j) {
-        beta_j <- methyl_mat[, j]
-        cov_j  <- as.integer(coverage_mat[, j])
+        beta_j <- methyl_mat[keep_idx, j]
+        cov_j  <- as.integer(coverage_mat[keep_idx, j])
 
         # Replace NA with 0 coverage for methylKit (it handles 0-coverage sites
         # via unite() with min.per.group)
@@ -109,10 +159,10 @@ NULL
         n_meth <- pmax(0L, pmin(n_meth, cov_j))
 
         df <- data.frame(
-          chr      = chroms,
-          start    = positions,
-          end      = positions,
-          strand   = strands,
+          chr      = chroms[keep_idx],
+          start    = positions[keep_idx],
+          end      = positions[keep_idx],
+          strand   = strands[keep_idx],
           coverage = cov_j,
           numCs    = n_meth,
           numTs    = cov_j - n_meth,
@@ -188,7 +238,9 @@ NULL
     group_means[is.nan(group_means)] <- NA_real_
 
     delta_beta_vec <- group_means[, treat_level] - group_means[, ref_level]
-    pvalue_vec     <- rep(NA_real_, n_sites)
+    # Initialise p = 1 for all sites; zero-variance sites (skip_idx) retain
+    # p = 1 since the data is perfectly consistent with the null.
+    pvalue_vec     <- rep(1, n_sites)
 
     # Match methylKit results back to original site order by key
     our_key_for_match <- paste0(chroms, ":", positions, ":", strands)

@@ -15,10 +15,10 @@ URL: https://github.com/carl-stone/CoMMA, https://carl-stone.github.io/CoMMA/
 BugReports: https://github.com/carl-stone/CoMMA/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 biocViews: Sequencing, Epigenetics, Coverage, DifferentialMethylation,
     GenomeAnnotation, DataImport, Visualization
 Suggests:
+    AnnotationDbi,
     BSgenome,
     Biostrings,
     BiocStyle,
@@ -28,6 +28,7 @@ Suggests:
     ggrepel,
     limma,
     methylKit,
+    org.EcK12.eg.db,
     patchwork,
     rtracklayer,
     testthat (>= 3.0.0),
@@ -86,3 +87,4 @@ Imports:
     methods,
     stats,
     utils
+Config/roxygen2/version: 8.0.0

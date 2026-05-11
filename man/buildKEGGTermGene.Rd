@@ -28,7 +28,7 @@ is stripped from gene IDs (e.g., \code{"eco:b0001"} becomes
 \code{"b0001"}) and the \code{"path:"} prefix is stripped from pathway IDs
 (e.g., \code{"path:eco00010"} becomes \code{"eco00010"}).  The trailing
 organism qualifier is also stripped from pathway names (e.g., \code{"...
-  - Escherichia coli K-12"} becomes \code{"..."}).}
+- Escherichia coli K-12"} becomes \code{"..."}).}
 
 \item{id_map}{A \code{data.frame} with columns \code{symbol} and
 \code{kegg_id} as returned by \code{\link{buildKEGGGeneIDMap}()}.
@@ -70,15 +70,16 @@ names.
 \examples{
 \donttest{
 if (requireNamespace("KEGGREST", quietly = TRUE)) {
-  # Fetch once and cache to disk
-  kegg <- buildKEGGTermGene("eco", file = "eco_kegg.rds")
+  # Fetch once and cache to disk (use tempdir() so check directory stays clean)
+  kegg_file <- file.path(tempdir(), "eco_kegg.rds")
+  kegg <- buildKEGGTermGene("eco", file = kegg_file)
 
   # Load from cache on subsequent calls (no network)
-  kegg <- buildKEGGTermGene("eco", file = "eco_kegg.rds")
+  kegg <- buildKEGGTermGene("eco", file = kegg_file)
 
   # Translate b-numbers to symbols with an id_map:
   # id_map <- buildKEGGGeneIDMap("eco", OrgDb = org.EcK12.eg.db)
-  # kegg   <- buildKEGGTermGene("eco", file = "eco_kegg.rds", id_map = id_map)
+  # kegg   <- buildKEGGTermGene("eco", file = kegg_file, id_map = id_map)
   # res    <- enrichMethylation(obj,
   #             kegg_term2gene = kegg$term2gene,
   #             kegg_term2name = kegg$term2name)

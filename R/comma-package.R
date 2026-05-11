@@ -53,4 +53,6 @@
 
 ## Suppress R CMD check NOTEs for rlang .data pronoun used in ggplot2 aes()
 ## calls throughout the plot_* functions.
-utils::globalVariables(".data")
+## 'color' is a ggplot2 computed aesthetic passed to stage(after_scale = ...)
+## in plot_tss_profile(); it is not a column in the data.
+utils::globalVariables(c(".data", "color"))

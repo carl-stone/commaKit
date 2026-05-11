@@ -59,7 +59,7 @@ and is \code{NA} for Dorado and Megalodon callers.}
 specifies which modification type / sequence motif combinations to retain.
 Names must be modification type strings (e.g., \code{"6mA"}, \code{"5mC"}).
 Values are character vectors of motif strings (e.g., \code{c("GATC",
-  "ACCACC")}). Sites whose \code{mod_context}
+"ACCACC")}). Sites whose \code{mod_context}
 (\code{paste(mod_type, motif, sep = "_")}) does not match any name–value
 pair are dropped before the object is assembled. A message is emitted
 reporting the number of sites dropped per modification type. Use

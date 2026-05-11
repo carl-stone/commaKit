@@ -36,7 +36,7 @@ are excluded. Default \code{500L}.}
 types from \code{annotation(object)} used to label sites when
 \code{color_by = "regulatory_element"} (e.g.,
 \code{c("sigma_binding", "promoter_-10", "promoter_-35",
-  "TF_binding")}). Required when \code{color_by = "regulatory_element"};
+"TF_binding")}). Required when \code{color_by = "regulatory_element"};
 ignored otherwise.}
 
 \item{mod_type}{Character string or \code{NULL}. If provided, only sites
