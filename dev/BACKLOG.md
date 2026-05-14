@@ -31,6 +31,7 @@ Items are sorted by priority. Top = most important.
 | **B-003** | Add NEWS.md 0.99.0 entry | 16 | proposed | S | Pre-submission |
 | **B-004** | Submit to contributions.bioconductor.org | 17 | proposed | S | Pre-submission |
 | **P-009** | Clean up `.codex/` directory | 18 | proposed | S | ROADMAP N5 |
+| **P-010** | Fix `\donttest{}` examples that reference external files | 19 | done | S | CI failure on PR #59 |
 
 ---
 
@@ -286,6 +287,20 @@ Should cover:
 **Proposed solution:** Remove `.codex/` or document why it exists.
 
 **Size:** S (small) — cleanup
+
+---
+
+### P-010: Fix `\donttest{}` examples that reference external files
+
+**Problem:** Four roxygen examples used `\donttest{}` but referenced files not included in the package. CI runs `--run-donttest`, so these examples executed and crashed during R CMD check.
+
+**Affected functions:** `commaData()`, `loadAnnotation()`, `findMotifSites()` (2 examples).
+
+**Fix applied:** Changed `\donttest{}` to `\dontrun{}` for all four. PR #60, commit dd27a75.
+
+**Lesson:** This was already documented in conventions gotcha #9 but was not in the backlog or known-issues until CI exposed it. commaBot should have proactively audited and created a backlog item before CI caught it.
+
+**Size:** S (small) — documentation
 
 **Dependencies:** None
 

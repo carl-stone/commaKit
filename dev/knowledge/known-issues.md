@@ -93,7 +93,24 @@ None confirmed at this time. All known issues are potential or unverified.
 
 ---
 
-### G-006: `gene_role` default uses match-arg pattern
+### G-006: `\donttest{}` examples that reference external files — FIXED
+
+**What:** Four roxygen examples used `\donttest{}` but referenced files not included in the package. CI runs `--run-donttest`, so these examples executed and crashed during R CMD check.
+
+**Affected functions:**
+- `commaData()` — referenced `ctrl_1_modkit.bed`, `treat_1_modkit.bed`
+- `loadAnnotation()` — referenced `my_genome.gff3`
+- `findMotifSites()` — referenced `MG1655.fa` and `BSgenome.Ecoli.NCBI.20080805`
+
+**Fix:** Changed `\donttest{}` to `\dontrun{}` for all four. `\dontrun{}` means "show in docs but never execute," which is correct for examples that need user-provided files.
+
+**Fixed in:** PR #60, commit dd27a75.
+
+**Lesson:** `\donttest{}` is not safe for examples that need external files. Use `\dontrun{}` instead. This was already documented in conventions gotcha #9 but was not in the backlog or known-issues until CI exposed it.
+
+---
+
+### G-007: `gene_role` default uses match-arg pattern
 
 **What:** The default is `gene_role = c("target", "regulator", "both")` with `match.arg()`.
 
