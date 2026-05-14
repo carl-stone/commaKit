@@ -104,7 +104,11 @@ their beta value set to \code{NA} (but coverage is preserved).
 }
 }
 \examples{
-\dontrun{
+# Construct a commaData object from built-in example data
+data(comma_example_data)
+comma_example_data
+
+\donttest{
 # Load two modkit BED files
 cd <- commaData(
   files   = c(

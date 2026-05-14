@@ -51,7 +51,7 @@ NULL
 #'   ann <- loadAnnotation(gff_file, feature_types = "gene")
 #' }
 #'
-#' \dontrun{
+#' \donttest{
 #' # Load only genes and CDS from your own file
 #' ann <- loadAnnotation("my_genome.gff3", feature_types = c("gene", "CDS"))
 #' }

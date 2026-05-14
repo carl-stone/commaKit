@@ -22,7 +22,4 @@
 ^\.DS_Store$
 ^\.Rhistory$
 ^\.Rprofile$
-^AGENTS\.md$
-^PRD\.md$
-^VISION\.md$
 ^dev$

@@ -1,7 +1,5 @@
-#' @importFrom methods new setClass setGeneric setMethod setValidity validObject
-#'   is isVirtualClass
-#' @importFrom SummarizedExperiment SummarizedExperiment assay assayNames
-#'   rowData colData
+#' @importFrom methods new setClass setGeneric setMethod setValidity validObject is isVirtualClass
+#' @importFrom SummarizedExperiment SummarizedExperiment assay assayNames rowData colData
 #' @importFrom S4Vectors DataFrame
 #' @importFrom GenomicRanges GRanges
 NULL

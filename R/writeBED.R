@@ -32,9 +32,9 @@ NULL
 #' The BED score field (column 5) contains the beta value multiplied by 1000
 #' and rounded to the nearest integer (range 0–1000), which is the standard
 #' convention for methylation BED files. The \code{itemRGB} colour gradient
-#' transitions as follows: score ≤ 200 = blue (0,0,255), score ≤ 400 =
-#' blue-purple (83,0,172), score ≤ 600 = purple (167,0,85), score ≤ 800 =
-#' red-purple (222,0,28), score ≤ 1000 = red (250,0,0).
+#' transitions as follows: score <= 200 = blue (0,0,255), score <= 400 =
+#' blue-purple (83,0,172), score <= 600 = purple (167,0,85), score <= 800 =
+#' red-purple (222,0,28), score <= 1000 = red (250,0,0).
 #'
 #' Sites with \code{NA} methylation (below the coverage threshold) are
 #' excluded from the output.

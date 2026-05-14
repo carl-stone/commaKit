@@ -1,9 +1,11 @@
 Package: comma
 Title: comma: for microbial methylation analysis
-Version: 0.7.3.9000
+Version: 0.8.0.9000
 Authors@R:
     person("Carl", "Stone", , "carl.j.stone@vanderbilt.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-0232-5223"))
+Author: Carl Stone [aut, cre] (ORCID: 0000-0003-0232-5223)
+Maintainer: Carl Stone <carl.j.stone@vanderbilt.edu>
 Description: Analyze bacterial DNA methylation from Oxford Nanopore sequencing
     data. Supports genome-wide characterization of methylation patterns across
     multiple modification types (6mA, 5mC, 4mC), annotation of methylation

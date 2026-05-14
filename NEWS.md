@@ -1,17 +1,4 @@
-# comma 0.7.3
-
-## Bug fixes
-
-* `diffMethyl(method = "methylkit")` no longer crashes with
-  "object of type 'closure' is not subsettable" when a modification context
-  contains sites where all samples have zero coverage after filtering.
-  `methylKit::unite()` retains such sites in the united object;
-  `calculateDiffMeth()` then calls `glm.fit` with all-zero weights and
-  all-NaN response, which crashes. The wrapper now filters those sites out
-  before calling `calculateDiffMeth` and assigns them `p = 1` (consistent
-  with the null hypothesis). Regression test added.
-
-# comma 0.8.0
+# comma 0.8.0.9000
 
 ## New features
 
@@ -51,6 +38,38 @@
   `mod_context` character column. Objects created with earlier versions will
   fail `validObject()`. Re-create from source files using the updated
   constructor.
+
+## Bug fixes
+
+* `diffMethyl(method = "methylkit")` no longer crashes with
+  "object of type 'closure' is not subsettable" when a modification context
+  contains sites where all samples have zero coverage after filtering.
+  `methylKit::unite()` retains such sites in the united object;
+  `calculateDiffMeth()` then calls `glm.fit` with all-zero weights and
+  all-NaN response, which crashes. The wrapper now filters those sites out
+  before calling `calculateDiffMeth` and assigns them `p = 1` (consistent
+  with the null hypothesis). Regression test added.
+
+## Package improvements
+
+* Added explicit `Author` and `Maintainer` fields to DESCRIPTION for
+  R 4.6.0 compatibility.
+* Replaced non-ASCII character in `writeBED()` documentation with
+  ASCII equivalent.
+* Updated `.Rbuildignore` to exclude development files (`.claude/`,
+  `.codex/`, `.letta/`, `.lteams/`, `AGENTS.md`, `PRD.md`, `VISION.md`,
+  `ROADMAP.md`, `SPECS.md`).
+* Renamed test files to match `test-functionName.R` convention:
+  `test-coverageAnalysis.R` → `test-coverageDepth.R` +
+  `test-varianceByDepth.R`, `test-enrichment.R` →
+  `test-enrichMethylation.R`, `test-find_motif_sites.R` →
+  `test-findMotifSites.R`, `test-load_annotation.R` →
+  `test-loadAnnotation.R`, `test-m_values.R` → `test-mValues.R`,
+  `test-plot_distribution.R` → `test-plot_methylation_distribution.R`.
+* Updated README: corrected example data size (588 sites), added
+  enrichment analysis and TSS profile workflow sections, updated
+  feature list (eight plot functions, four DM backends, enrichment
+  analysis), and expanded roadmap table.
 
 ---
 
