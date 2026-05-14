@@ -87,8 +87,8 @@ NULL
 #' data(comma_example_data)
 #' comma_example_data
 #'
-#' \donttest{
-#' # Load two modkit BED files
+#' \dontrun{
+#' # Load two modkit BED files (requires user-provided files)
 #' cd <- commaData(
 #'   files   = c(
 #'     ctrl_1  = "ctrl_1_modkit.bed",
