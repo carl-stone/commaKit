@@ -1,5 +1,4 @@
-#' @importFrom ggplot2 ggplot aes geom_histogram geom_vline facet_wrap
-#'   scale_x_log10 labs theme_bw waiver
+#' @importFrom ggplot2 ggplot aes geom_histogram geom_vline facet_wrap scale_x_log10 labs theme_bw waiver
 NULL
 
 #' Plot coverage depth distribution

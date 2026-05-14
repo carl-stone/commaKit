@@ -1,5 +1,4 @@
-#' @importFrom ggplot2 ggplot aes geom_point geom_text scale_shape_discrete
-#'   labs theme_bw
+#' @importFrom ggplot2 ggplot aes geom_point geom_text scale_shape_discrete labs theme_bw
 NULL
 
 #' PCA of methylation profiles

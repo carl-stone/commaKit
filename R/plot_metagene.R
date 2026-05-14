@@ -1,5 +1,4 @@
-#' @importFrom ggplot2 ggplot aes geom_line geom_vline scale_x_continuous
-#'   scale_y_continuous labs theme_bw
+#' @importFrom ggplot2 ggplot aes geom_line geom_vline scale_x_continuous scale_y_continuous labs theme_bw
 NULL
 
 #' Metagene plot of methylation across genomic features

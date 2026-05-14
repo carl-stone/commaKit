@@ -1,6 +1,4 @@
-#' @importFrom ggplot2 ggplot aes geom_point geom_rect scale_color_manual
-#'   scale_x_continuous scale_y_continuous facet_wrap labs theme_bw theme
-#'   element_text element_blank
+#' @importFrom ggplot2 ggplot aes geom_point geom_rect scale_color_manual scale_x_continuous scale_y_continuous facet_wrap labs theme_bw theme element_text element_blank
 NULL
 
 #' Genome browser-style methylation track plot

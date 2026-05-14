@@ -1,5 +1,4 @@
-#' @importFrom ggplot2 ggplot aes geom_density scale_x_continuous facet_wrap
-#'   labs theme_bw
+#' @importFrom ggplot2 ggplot aes geom_density scale_x_continuous facet_wrap labs theme_bw
 NULL
 
 #' Plot methylation beta value distributions

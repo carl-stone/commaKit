@@ -1,5 +1,4 @@
-#' @importFrom ggplot2 ggplot aes geom_point geom_vline geom_hline
-#'   scale_color_manual labs theme_bw facet_wrap
+#' @importFrom ggplot2 ggplot aes geom_point geom_vline geom_hline scale_color_manual labs theme_bw facet_wrap
 NULL
 
 #' Volcano plot for differential methylation results

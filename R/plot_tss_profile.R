@@ -1,6 +1,4 @@
-#' @importFrom ggplot2 ggplot aes geom_point geom_line geom_vline
-#'   scale_x_continuous scale_y_continuous scale_color_manual
-#'   facet_wrap labs theme_bw after_scale stage
+#' @importFrom ggplot2 ggplot aes geom_point geom_line geom_vline scale_x_continuous scale_y_continuous scale_color_manual facet_wrap labs theme_bw after_scale stage
 #' @importFrom GenomicRanges GRanges findOverlaps mcols
 #' @importFrom IRanges IRanges
 #' @importFrom S4Vectors queryHits subjectHits

@@ -21,23 +21,31 @@ testing, and publication-quality visualization.
 - **`commaData` S4 class** — extends `SummarizedExperiment`; stores beta
   values, coverage, sample metadata, genome info, and annotations
   together.
-- **Three parsers** — modkit pileup BED (primary), Dorado BAM (full
+- **Three input types** — modkit pileup BED (primary), Dorado BAM (full
   MM/ML tag decoding), and Megalodon (legacy).
-- **Vectorized annotation** via `GenomicRanges::findOverlaps()`; three
+- **Genome annotation** via `GenomicRanges::findOverlaps()`; three
   modes: overlap, proximity, and metagene (normalized position within
   feature bodies).
-- **Differential methylation** — quasibinomial GLM per site with a
-  DESeq2-style interface (`diffMethyl()` → `results()` →
-  `filterResults()`).
-- **Seven `plot_*()` functions** — coverage QC, beta distributions, PCA, genome
-  tracks, metagene profiles, volcano plots, and heatmaps; all return `ggplot`
-  objects for further customization. PCA uses variance-stabilized M-values
-  internally and supports `return_data = TRUE` for custom plotting.
+- **Differential methylation** — four statistical backends
+  ([`methylKit`](https://doi.org/doi:10.18129/B9.bioc.methylKit),
+  beta-binomial GLM,
+  [`limma`](https://doi.org/doi:10.18129/B9.bioc.limma), and
+  quasi-binomial F-test), with a DESeq2-style interface (`diffMethyl()`
+  → `results()` → `filterResults()`).
+- **Enrichment analysis** — GO and KEGG over-representation analysis
+  (ORA) and gene set enrichment analysis (GSEA) via
+  [`clusterProfiler`](https://doi.org/doi:10.18129/B9.bioc.clusterProfiler),
+  with offline KEGG support and gene role semantics (target/regulator).
+- **Eight `plot_*()` functions** — coverage QC, beta distributions, PCA,
+  genome tracks, metagene profiles, TSS profiles, volcano plots, and
+  heatmaps; all return `ggplot` objects for further customization. PCA
+  uses variance-stabilized M-values internally and supports
+  `return_data = TRUE` for custom plotting.
 - **`mValues()`** — converts beta values and read depths to M-values
-  (`log2((M + α) / (U + α))`), useful for distance-based analyses and custom
-  plots.
-- **Any bacterial genome** — no organism-specific values are hardcoded
-  anywhere.
+  (`log2((M + α) / (U + α))`), useful for distance-based analyses and
+  custom plots.
+- **Compatible with any monoploid genome** — genome annotations can be
+  loaded as GFF3 or BED files. Supports linear or circular chromosomes.
 - **Multi-modification-type** — 6mA, 5mC, and 4mC coexist in one object;
   every function accepts a `mod_type` argument to work with individual
   types.
@@ -46,21 +54,9 @@ testing, and publication-quality visualization.
 
 ``` r
 # Development version from GitHub:
-devtools::install_github("carl-stone/CoMMA")
-#> ── R CMD build ─────────────────────────────────────────────────────────────────
-#> * checking for file ‘/private/var/folders/3k/ldfp2j0n0f14b16ghvbmqcp00000gn/T/RtmpaBvRfl/remotesec493f429421/carl-stone-CoMMA-b5db7c0/DESCRIPTION’ ... OK
-#> * preparing ‘comma’:
-#> * checking DESCRIPTION meta-information ... OK
-#> * checking for LF line-endings in source and make files and shell scripts
-#> * checking for empty or unneeded directories
-#> Removed empty directory ‘comma/.claude/worktrees/cranky-dhawan’
-#> Removed empty directory ‘comma/.claude/worktrees’
-#> Removed empty directory ‘comma/.claude’
-#> * looking to see if a ‘data/datalist’ file should be added
-#> * building ‘comma_0.6.0.tar.gz’
+devtools::install_github("carl-stone/comma")
 
-# Bioconductor (upcoming v1.0.0):
-# BiocManager::install("comma")
+# Bioconductor release forthcoming
 ```
 
 ## The `commaData` Object
@@ -75,14 +71,16 @@ library(comma)
 files <- c(
   ctrl_1  = "path/to/ctrl_rep1.bed",
   ctrl_2  = "path/to/ctrl_rep2.bed",
+  ctrl_3  = "path/to/ctrl_rep3.bed",
   treat_1 = "path/to/treat_rep1.bed",
-  treat_2 = "path/to/treat_rep2.bed"
+  treat_2 = "path/to/treat_rep2.bed",
+  treat_3 = "path/to/treat_rep3.bed"
 )
 
 col_data <- data.frame(
-  sample_name = c("ctrl_1",    "ctrl_2",    "treat_1",    "treat_2"),
-  condition   = c("control",   "control",   "treatment", "treatment"),
-  replicate   = c(1L,          2L,          1L,          2L)
+  sample_name = c("ctrl_1",    "ctrl_2",    "ctrl_3",    "treat_1",    "treat_2",   "treat_3"),
+  condition   = c("control",   "control",   "control",   "treatment",  "treatment", "treatment"),
+  replicate   = c(1L,          2L,          3L,          1L,           2L,          3L)
 )
 
 obj <- commaData(
@@ -96,7 +94,7 @@ obj <- commaData(
 )
 ```
 
-A built-in synthetic dataset (300 sites, 3 samples, 100 kb genome) is
+A built-in synthetic dataset (588 sites, 6 samples, 100 kb genome) is
 included for testing and demonstrations:
 
 ``` r
@@ -104,8 +102,10 @@ library(comma)
 data(comma_example_data)
 comma_example_data
 #> class: commaData
-#> sites: 300 | samples: 6 
+#> sites: 588 | samples: 6 
 #> mod types: 5mC, 6mA 
+#> motifs: CCWGG, GATC 
+#> mod contexts: 5mC_CCWGG, 6mA_GATC 
 #> conditions: control, treatment 
 #> genome: 1 chromosome (100,000 bp total) 
 #> annotation: 5 features 
@@ -123,12 +123,12 @@ ms <- methylomeSummary(comma_example_data)
 ms[, c("sample_name", "condition", "mean_beta", "median_beta",
        "frac_methylated", "n_covered")]
 #>   sample_name condition mean_beta median_beta frac_methylated n_covered
-#> 1      ctrl_1   control 0.8678843   0.8881436       0.9900000       300
-#> 2      ctrl_2   control 0.8728354   0.8951648       0.9966667       300
-#> 3      ctrl_3   control 0.8781476   0.8966108       1.0000000       300
-#> 4     treat_1 treatment 0.8135452   0.8829561       0.9166667       300
-#> 5     treat_2 treatment 0.8136529   0.8867238       0.9000000       300
-#> 6     treat_3 treatment 0.8004998   0.8694701       0.9066667       300
+#> 1      ctrl_1   control 0.8654839   0.8929141       0.9897959       588
+#> 2      ctrl_2   control 0.8705692   0.8959600       0.9948980       588
+#> 3      ctrl_3   control 0.8638033   0.8918851       0.9897959       588
+#> 4     treat_1 treatment 0.8357998   0.8864176       0.9421769       588
+#> 5     treat_2 treatment 0.8369054   0.8893089       0.9404762       588
+#> 6     treat_3 treatment 0.8388398   0.8866568       0.9455782       588
 ```
 
 `plot_coverage()` shows the sequencing depth distribution per sample:
@@ -149,10 +149,10 @@ plot_methylation_distribution(comma_example_data)
 
 <img src="man/figures/README-plot-dist-1.png" alt="Beta value density per sample, faceted by modification type." width="100%" />
 
-`plot_pca()` runs PCA on per-sample methylation profiles for sample-level QC.
-Beta values are converted to M-values before PCA for better variance
-stabilization. Use `return_data = TRUE` to retrieve the scores data frame for
-custom plotting:
+`plot_pca()` runs PCA on per-sample methylation profiles for
+sample-level QC. Beta values are converted to M-values before PCA for
+better variance stabilization. Use `return_data = TRUE` to retrieve the
+scores data frame for custom plotting:
 
 ``` r
 plot_pca(comma_example_data, color_by = "condition")
@@ -171,12 +171,12 @@ attr(pca_df, "percentVar")  # variance explained by PC1, PC2
 `GenomicRanges::findOverlaps()` — vectorized, no nested loops:
 
 ``` r
-annotated <- annotateSites(comma_example_data, type = "overlap")
+annotated <- annotateSites(comma_example_data, keep = "overlap")
 
 # Fraction of sites overlapping at least one annotated feature
 si <- siteInfo(annotated)
 mean(lengths(si$feature_names) > 0)
-#> [1] 0.02333333
+#> [1] 0.02891156
 ```
 
 Three annotation modes are available: `"overlap"`, `"proximity"`
@@ -199,10 +199,10 @@ methylation along a chromosomal region:
 
 ``` r
 plot_genome_track(comma_example_data, chromosome = "chr_sim",
-                  start = 1L, end = 50000L, mod_type = "6mA")
+                  start = 1L, end = 10000L, mod_type = "6mA")
 ```
 
-<img src="man/figures/README-plot-track-1.png" alt="Genome track for the first 50 kb of chr_sim, 6mA sites." width="100%" />
+<img src="man/figures/README-plot-track-1.png" alt="Genome track for the first 10 kb of chr_sim" width="100%" />
 
 ### Step 4 — Differential Methylation
 
@@ -222,20 +222,20 @@ Extract results as a tidy data frame and filter to significant sites:
 res <- results(cd_dm)
 sig <- filterResults(cd_dm, padj = 0.05, delta_beta = 0.2)
 cat("Total 6mA sites tested:", nrow(res), "\n")
-#> Total 6mA sites tested: 300
+#> Total 6mA sites tested: 588
 cat("Significant sites (padj < 0.05, |Δβ| ≥ 0.2):", nrow(sig), "\n")
-#> Significant sites (padj < 0.05, |Δβ| ≥ 0.2): 7
+#> Significant sites (padj < 0.05, |Δβ| ≥ 0.2): 31
 
 # Top hits
 head(res[order(res$dm_padj),
          c("chrom", "position", "dm_delta_beta", "dm_padj")])
-#>                       chrom position dm_delta_beta     dm_padj
-#> chr_sim:8907:-:6mA  chr_sim     8907    -0.6097199 0.009737468
-#> chr_sim:52014:+:6mA chr_sim    52014    -0.7591100 0.009737468
-#> chr_sim:69527:+:6mA chr_sim    69527    -0.6702704 0.009737468
-#> chr_sim:72824:-:6mA chr_sim    72824    -0.1353157 0.009737468
-#> chr_sim:62293:-:6mA chr_sim    62293    -0.6522237 0.012869199
-#> chr_sim:9028:-:6mA  chr_sim     9028    -0.6850134 0.018361742
+#>                            chrom position dm_delta_beta      dm_padj
+#> chr_sim:50176:-:6mA:GATC chr_sim    50176    -0.7336497 1.849154e-75
+#> chr_sim:70003:-:6mA:GATC chr_sim    70003    -0.7050844 3.896483e-68
+#> chr_sim:63550:+:6mA:GATC chr_sim    63550    -0.7799241 5.006897e-66
+#> chr_sim:61440:+:6mA:GATC chr_sim    61440    -0.7090099 1.178364e-64
+#> chr_sim:86016:+:6mA:GATC chr_sim    86016    -0.6743832 3.661541e-62
+#> chr_sim:2180:-:6mA:GATC  chr_sim     2180    -0.7543758 4.024452e-60
 ```
 
 `plot_volcano()` displays the differential methylation landscape —
@@ -256,7 +256,47 @@ plot_heatmap(res, cd_dm, n_sites = 30L)
 
 <img src="man/figures/README-plot-heatmap-1.png" alt="Heatmap of top 30 differentially methylated 6mA sites." width="100%" />
 
-### Step 5 — Export to BED
+### Step 5 — Enrichment Analysis
+
+`enrichMethylation()` performs gene set enrichment on differentially
+methylated genes. It supports GO and KEGG ontologies, ORA and GSEA
+methods, and distinguishes target genes (where DM sites overlap) from
+regulator genes (whose products bind near DM sites):
+
+``` r
+# Annotate sites first (required for enrichment)
+cd_dm <- annotateSites(cd_dm, keep = "overlap")
+
+# GO enrichment on target genes
+enr <- enrichMethylation(cd_dm, ont = "BP", gene_role = "target")
+```
+
+For KEGG enrichment, use the offline path to avoid API rate limits:
+
+``` r
+# Build KEGG term2gene mapping (2 API calls, cache to RDS)
+kegg_t2g <- buildKEGGTermGene("eco", file = "kegg_eco.rds")
+
+# Build gene ID map (symbol <-> KEGG ID)
+id_map <- buildKEGGGeneIDMap("eco", OrgDb = org.EcK12.eg.db::org.EcK12.eg.db)
+
+# Run KEGG enrichment with offline mapping
+enr_kegg <- enrichMethylation(cd_dm, kegg_term2gene = kegg_t2g$term2gene,
+                              kegg_term2name = kegg_t2g$term2name)
+```
+
+### Step 6 — TSS Profiles
+
+`plot_tss_profile()` shows methylation centered on transcription start
+sites, with optional regulatory element coloring:
+
+``` r
+plot_tss_profile(comma_example_data, feature_type = "gene")
+```
+
+<img src="man/figures/README-plot-tss-1.png" alt="TSS-centered methylation profile." width="100%" />
+
+### Step 7 — Export to BED
 
 ``` r
 writeBED(cd_dm, file = "results_6mA.bed", sample = "ctrl_1", mod_type = "6mA")
@@ -273,12 +313,18 @@ function:
 modTypes(comma_example_data)
 #> [1] "5mC" "6mA"
 
+# Modification contexts (combines mod_type and motif)
+modContexts(comma_example_data)
+#> [1] "5mC_CCWGG" "6mA_GATC"
+
 # Subset to a single type
 obj_6mA <- subset(comma_example_data, mod_type = "6mA")
 obj_6mA
 #> class: commaData
-#> sites: 200 | samples: 6 
+#> sites: 393 | samples: 6 
 #> mod types: 6mA 
+#> motifs: GATC 
+#> mod contexts: 6mA_GATC 
 #> conditions: control, treatment 
 #> genome: 1 chromosome (100,000 bp total) 
 #> annotation: 5 features 
@@ -313,7 +359,11 @@ Two vignettes are included:
 | 0.2.0 | Data infrastructure — `commaData` S4 class, modkit parser | ✅ Complete |
 | 0.3.0 | Refactored analysis — `annotateSites`, `slidingWindow`, QC utilities | ✅ Complete |
 | 0.4.0 | Differential methylation — `diffMethyl()`, beta-binomial GLM | ✅ Complete |
-| 0.5.0 | Visualization — seven `plot_*()` functions, vignettes, package docs | ✅ Complete |
+| 0.5.0 | Visualization — eight `plot_*()` functions, vignettes, package docs | ✅ Complete |
+| 0.6.0 | M-value PCA, `motifs()` accessor | ✅ Complete |
+| 0.7.x | `plot_tss_profile()`, `diffMethyl(method="limma"|"quasi_f")` | ✅ Complete |
+| 0.8.0 | `mod_context` rowData column, `modContexts()`, per-context DM testing | ✅ Complete |
+| 0.9.x | `enrichMethylation()`, GO/KEGG ORA + GSEA, offline KEGG path | ✅ Complete |
 | 1.0.0 | Bioconductor submission | ⏳ In preparation |
 
 ## Citation
