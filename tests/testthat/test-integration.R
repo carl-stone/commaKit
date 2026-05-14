@@ -79,10 +79,13 @@ test_that("core workflow recovers ground-truth differential 6mA sites", {
                       na.rm = TRUE)
     expect_gte(n_detected, floor(n_true_diff * 0.5))
 
-    if (nrow(sig) > 0L) {
-        precision <- mean(sig$is_diff, na.rm = TRUE)
-        expect_gte(precision, 0.5)
-    } else {
-        skip("No significant sites found; cannot evaluate precision.")
-    }
+    # The pipeline should produce significant hits for this synthetic dataset.
+    # If filterResults() regresses to return zero rows, that is a test failure,
+    # not a skip — the whole point of this integration test is to verify the
+    # workflow produces non-vacuous filtered results.
+    expect_gt(nrow(sig), 0L)
+    expect_gt(sum(sig$is_diff, na.rm = TRUE), 0L)
+
+    precision <- mean(sig$is_diff, na.rm = TRUE)
+    expect_gte(precision, 0.5)
 })
