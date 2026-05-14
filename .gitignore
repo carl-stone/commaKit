@@ -10,3 +10,6 @@
 docs
 .claude/settings.local.json
 .claude/worktrees/
+.codex/
+.letta/
+.lteams/
