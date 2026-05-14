@@ -27,7 +27,7 @@ Items are sorted by priority. Top = most important.
 | **P-008** | Add "Getting Help" section to README | 12 | proposed | S | Package health audit |
 | **T-005** | Test parser edge cases with real data | 13 | proposed | L | Test audit |
 | **B-001** | Register Zenodo DOI | 14 | proposed | S | Pre-submission |
-| **B-002** | Version bump to 0.99.0 | 15 | proposed | S | Pre-submission |
+| **B-002** | Version bump to 0.99.0 for Bioconductor submission | 15 | proposed | S | Pre-submission |
 | **B-003** | Add NEWS.md 0.99.0 entry | 16 | proposed | S | Pre-submission |
 | **B-004** | Submit to contributions.bioconductor.org | 17 | proposed | S | Pre-submission |
 | **P-009** | Clean up `.codex/` directory | 18 | proposed | S | ROADMAP N5 |
@@ -245,7 +245,7 @@ Should cover:
 
 ### B-002: Version bump to 0.99.0
 
-**Problem:** Current version is 0.8.0.9000 (dev). Bioconductor requires 0.99.0 for new package submission.
+**Problem:** Current version is 0.1.0.9000 (fresh-start dev baseline). Bioconductor requires 0.99.0 for new package submission.
 
 **Proposed solution:** Update DESCRIPTION when ready to submit.
 
@@ -259,7 +259,7 @@ Should cover:
 
 **Problem:** NEWS.md needs an entry for the Bioconductor submission version.
 
-**Proposed solution:** Add 0.99.0 section summarizing changes since 0.8.0.
+**Proposed solution:** Add 0.99.0 section summarizing changes since the 0.1.0 fresh-start baseline.
 
 **Size:** S (small) — documentation
 

@@ -2,8 +2,8 @@
 
 **Package:** comma (Comparative Methylomics for Microbial Analysis)
 **Author:** Carl Stone, Vanderbilt University
-**Current version:** 0.8.0.9000
-**Target version:** 1.0.0 (Bioconductor submission)
+**Current version:** 0.1.0.9000
+**Target version:** 0.1.0 internal checkpoint; 0.99.0 for eventual Bioconductor submission
 **Date:** 2026-05-14
 
 ---
@@ -80,7 +80,7 @@ writeBED()           →  Export to BED
 | Megalodon parser (legacy) | ✅ Done | Per-read aggregation |
 | `commaData()` constructor | ✅ Done | Multi-sample, multi-mod-type |
 | `expected_mod_contexts` filtering | ✅ Done | Drops unexpected mod_type × motif combos |
-| `mod_context` rowData column | ✅ Done | Required since v0.8.0 |
+| `mod_context` rowData column | ✅ Done | Required in current data model |
 | All accessors (methylation, coverage, sampleInfo, siteInfo, modTypes, modContexts, motifs, genome, annotation, motifSites) | ✅ Done | S4 methods |
 | Subsetting (`[`, `subset()`) | ✅ Done | By mod_type, mod_context, condition, chrom |
 | `comma_example_data` | ✅ Done | 588 sites, 6 samples, 2 mod types |
@@ -148,7 +148,7 @@ writeBED()           →  Export to BED
 | `BiocCheck::BiocCheck()` zero errors | ⏳ Run | Run and fix |
 | Bundled data < 5 MB | ⏳ Verify | Check `data/` + `inst/extdata/` |
 | Zenodo DOI | ⏳ Register | Before submission |
-| Version bumped to 1.0.0 | ⏳ Pending | After all blockers resolved |
+| Version policy documented | ✅ Done | Reset to 0.1.0.9000; 0.99.0 reserved for Bioconductor submission |
 | `biocViews` complete | ⏳ Review | Current: Sequencing, Epigenetics, Coverage, DifferentialMethylation — may need more |
 | Submit at contributions.bioconductor.org | ⏳ Pending | Final step |
 
@@ -184,7 +184,7 @@ writeBED()           →  Export to BED
 |-------|--------|
 | README still says "300 sites" for example data | Update to 588 sites |
 | README roadmap is outdated (stops at 0.5.0) | Update to reflect current state |
-| AGENTS.md version says 0.9.0.9000 but DESCRIPTION says 0.8.0.9000 | Reconcile |
+| Historical version numbers were informal and overstated maturity | Reset to 0.1.0.9000 fresh-start baseline |
 | Vignettes don't cover enrichment workflow | Add enrichment section or vignette |
 | No vignette for KEGG offline path | Add or extend existing vignette |
 
@@ -211,7 +211,7 @@ The package ships when ALL of the following are true:
 6. **AGENTS.md version matches DESCRIPTION**
 7. **Bundled data < 5 MB**
 8. **Zenodo DOI registered**
-9. **Version bumped to 1.0.0** in DESCRIPTION and NEWS.md
+9. **Version policy documented** and DESCRIPTION/NEWS.md consistent
 
 ---
 

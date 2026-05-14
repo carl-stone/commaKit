@@ -1,4 +1,11 @@
-# comma 0.8.0.9000
+# comma 0.1.0.9000
+
+## Fresh-start version reset
+
+* Reset package versioning to `0.1.0.9000` on 2026-05-14. Earlier version
+  numbers were informal development labels from the script-to-package transition.
+  This marks the first serious phase of disciplined package development with
+  documented git, branching, PR, release, and project-management rules.
 
 ## New features
 

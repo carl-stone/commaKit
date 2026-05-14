@@ -2,8 +2,8 @@
 
 **Package:** `comma` (Comparative Methylomics for Microbial Analysis)
 **Author:** Carl Stone, Vanderbilt University (carl.j.stone@vanderbilt.edu)
-**Version:** 0.8.0 (dev) | **License:** MIT
-**Target:** Bioconductor submission at v1.0.0 (on hold — active feature development)
+**Version:** 0.1.0.9000 (fresh-start dev baseline) | **License:** MIT
+**Target:** Internal hardening first; eventual Bioconductor submission at v0.99.0
 
 This is an R package (Bioconductor ecosystem). Use R/Bioconductor idioms: S4 classes, tibbles over data.frames, check class compatibility before implementing.
 
@@ -11,7 +11,9 @@ This is an R package (Bioconductor ecosystem). Use R/Bioconductor idioms: S4 cla
 
 `comma` is **modification-type agnostic** — originally conceived for 6mA (GATC/Dam), but 4mC and 5mC have equally important roles. Dorado detects all three simultaneously. Every data structure, function signature, and analysis module must treat methylation type as a first-class parameter, never an assumption. The package must work equally well for 6mA, 4mC, 5mC, and any future modification type.
 
-## Build History (version → key deliverable)
+## Pre-reset Build History (informal labels → key deliverable)
+
+These earlier version labels predate the 2026-05-14 project reset and should not be treated as formal releases. Formal versioning restarts at `0.1.0.9000`.
 
 | Version | Deliverable |
 |---|---|

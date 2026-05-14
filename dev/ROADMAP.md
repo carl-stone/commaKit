@@ -1,7 +1,7 @@
 # comma Roadmap — Strategic Direction
 
 **Last updated:** 2026-05-14  
-**Current version:** 0.8.0.9000 (dev)  
+**Current version:** 0.1.0.9000 (fresh-start dev baseline)  
 **Submission target:** 0.99.0 when ready for Bioconductor
 
 This file is the strategic roadmap: where comma is going. Tactical work items live in `dev/BACKLOG.md`. Current work status lives in `dev/STATUS.md`.
@@ -23,7 +23,7 @@ Core principles:
 ## v1.0 Status
 
 **Engineering status:** Feature-complete for current v1.0 scope.  
-**Submission status:** Not submitting yet. Package remains at honest dev version `0.8.0.9000` until Carl decides it is ready.
+**Submission status:** Not submitting yet. Package reset to `0.1.0.9000` on 2026-05-14 to mark the first disciplined package-development phase. `0.99.0` is reserved for eventual Bioconductor submission.
 
 | Area | Status | Notes |
 |------|--------|-------|
@@ -55,7 +55,7 @@ When Carl decides comma is ready for Bioconductor submission:
 | NEWS.md | ✅ Done | commaBot | Needs 0.99.0 entry at submission time |
 | Carl registers on Bioc support site | ⏳ Pending | Carl | Required by Bioconductor |
 | Zenodo DOI | ⏳ Pending | Carl/commaBot | Before submission |
-| Version bump to 0.99.0 | ⏳ Pending | commaBot | Only when actually submitting |
+| Version bump to 0.99.0 | ⏳ Pending | commaBot | Only when actually submitting to Bioconductor |
 | Submit at contributions.bioconductor.org | ⏳ Pending | Carl/commaBot | Final step |
 
 Tactical submission tasks are tracked in `dev/BACKLOG.md` as B-series items.

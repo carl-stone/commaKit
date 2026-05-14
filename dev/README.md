@@ -22,6 +22,7 @@ If you want to know...
 | What bugs/gotchas/edge cases are known? | `knowledge/known-issues.md` |
 | Why is the package designed this way? | `knowledge/design-decisions.md` |
 | How should we use git? | `knowledge/git-discipline.md` |
+| How do branches, PRs, and releases work? | `knowledge/branching-releases.md` |
 | How should Claire learn the package? | `ONBOARDING.md` |
 
 ---
@@ -80,6 +81,7 @@ Organized by topic, not by date.
 - `known-issues.md` — bugs, gotchas, edge cases
 - `design-decisions.md` — why important decisions were made
 - `git-discipline.md` — how commits, staging, generated files, and local state are handled
+- `branching-releases.md` — branch, PR, release, tag, and version policy
 
 When commaBot learns something durable, it should update one of these files.
 

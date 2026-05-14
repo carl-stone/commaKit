@@ -310,15 +310,11 @@ Two vignettes are included:
 
 | Version | Phase | Status |
 |---|---|---|
-| 0.2.0 | Data infrastructure — `commaData` S4 class, modkit parser | ✅ Complete |
-| 0.3.0 | Refactored analysis — `annotateSites`, `slidingWindow`, QC utilities | ✅ Complete |
-| 0.4.0 | Differential methylation — `diffMethyl()`, beta-binomial GLM | ✅ Complete |
-| 0.5.0 | Visualization — eight `plot_*()` functions, vignettes, package docs | ✅ Complete |
-| 0.6.0 | M-value PCA, `motifs()` accessor | ✅ Complete |
-| 0.7.x | `plot_tss_profile()`, `diffMethyl(method="limma"|"quasi_f")` | ✅ Complete |
-| 0.8.0 | `mod_context` rowData column, `modContexts()`, per-context DM testing | ✅ Complete |
-| 0.9.x | `enrichMethylation()`, GO/KEGG ORA + GSEA, offline KEGG path | ✅ Complete |
-| 1.0.0 | Bioconductor submission | ⏳ In preparation |
+| 0.1.0.9000 | Fresh-start development baseline: current package functionality under disciplined project management | 🚧 Active development |
+| 0.1.0 | First internal release checkpoint | ⏳ Planned |
+| 0.x.y | Pre-Bioconductor hardening releases | ⏳ Planned |
+| 0.99.0 | Bioconductor submission version | ⏳ Future |
+| 1.0.0 | Stable public release after external confidence | ⏳ Future |
 
 ## Citation
 

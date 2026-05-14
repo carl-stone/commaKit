@@ -51,7 +51,7 @@ These are the highest-priority proposed tasks from `BACKLOG.md`. They are not st
 | 2026-05-14 | Package health audit | UX gaps identified: troubleshooting, method guidance, real-world example |
 | 2026-05-14 | Test quality audit | Strong core tests; weak plot tests; no full integration test |
 | 2026-05-14 | R CMD check clean | 0 errors, 0 warnings, 0 notes |
-| 2026-05-14 | Version restored to 0.8.0.9000 | Honest dev version; not premature 0.99.0 |
+| 2026-05-14 | Version reset to 0.1.0.9000 | Fresh-start baseline for serious package development |
 
 ---
 
@@ -64,7 +64,7 @@ These are the highest-priority proposed tasks from `BACKLOG.md`. They are not st
 | Tests | 🟡 Mixed | 938 passing; core stats strong; plots weak; integration missing |
 | Documentation sync | ✅ Good | Function docs match code |
 | User guidance | 🟡 Needs work | Troubleshooting and method-selection guidance missing |
-| Bioconductor readiness | 🟡 Not submitting yet | Technical blockers mostly resolved; administrative tasks remain |
+| Bioconductor readiness | 🟡 Not submitting yet | 0.99.0 reserved for future submission; current baseline is 0.1.0.9000 |
 
 ---
 
