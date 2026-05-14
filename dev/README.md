@@ -21,6 +21,7 @@ If you want to know...
 | What do we know about test quality? | `knowledge/test-quality.md` |
 | What bugs/gotchas/edge cases are known? | `knowledge/known-issues.md` |
 | Why is the package designed this way? | `knowledge/design-decisions.md` |
+| How should we use git? | `knowledge/git-discipline.md` |
 | How should Claire learn the package? | `ONBOARDING.md` |
 
 ---
@@ -78,6 +79,7 @@ Organized by topic, not by date.
 - `test-quality.md` — what tests are strong, weak, or missing
 - `known-issues.md` — bugs, gotchas, edge cases
 - `design-decisions.md` — why important decisions were made
+- `git-discipline.md` — how commits, staging, generated files, and local state are handled
 
 When commaBot learns something durable, it should update one of these files.
 
