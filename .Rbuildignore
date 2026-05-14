@@ -8,7 +8,11 @@
 ^data-raw$
 ^CLAUDE\.md$
 ^\.claude$
+^\.codex$
+^\.letta$
+^\.lteams$
 ^comma\.Rcheck$
+^\.\.Rcheck$
 ^comma\.BiocCheck$
 ^.*\.deb$
 ^.*\.tar\.gz$
@@ -16,3 +20,9 @@
 ^docs$
 ^pkgdown$
 ^\.DS_Store$
+^\.Rhistory$
+^\.Rprofile$
+^AGENTS\.md$
+^PRD\.md$
+^VISION\.md$
+^dev$
