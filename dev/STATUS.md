@@ -15,7 +15,9 @@ For the full prioritized work list, see `dev/BACKLOG.md`.
 
 ### In Progress
 
-Nothing currently in progress. Awaiting Carl review of the new PM structure and backlog.
+| ID | Task | Owner | Notes |
+|----|------|-------|-------|
+| T-001 | Add integration test across full pipeline | commaBot | Implemented on branch; awaiting PR review/merge |
 
 ---
 
@@ -25,7 +27,6 @@ These are the highest-priority proposed tasks from `BACKLOG.md`. They are not st
 
 | ID | Task | Why it matters | Size |
 |----|------|----------------|------|
-| T-001 | Add integration test across full pipeline | Proves core workflow works end-to-end | M |
 | P-001 | Add troubleshooting guide for data import | Helps users through the most likely failure point | M |
 | P-002 | Unify `mod_type` parameter type across functions | Reduces UX friction and confusion | M |
 | P-003 | Add method selection guidance for `diffMethyl()` | Helps users choose the right statistical backend | S |

@@ -13,7 +13,7 @@ Items are sorted by priority. Top = most important.
 
 | ID | Title | Priority | Status | Size | Source |
 |----|-------|----------|--------|------|--------|
-| **T-001** | Add integration test across full pipeline | 1 | proposed | M | Test audit |
+| **T-001** | Add integration test across full pipeline | 1 | in-progress | M | Test audit |
 | **P-001** | Add troubleshooting guide for data import | 2 | proposed | M | Package health audit |
 | **P-002** | Unify `mod_type` parameter type across functions | 3 | proposed | M | Package health audit |
 | **P-003** | Add method selection guidance for diffMethyl | 4 | proposed | S | Package health audit |
@@ -41,14 +41,14 @@ Items are sorted by priority. Top = most important.
 
 **Problem:** No test runs the full workflow end-to-end. A breaking change in one function's output format could silently break downstream consumers.
 
-**Proposed solution:** Write one test that:
+**Implemented on branch:** Added `tests/testthat/test-integration.R` with two workflow tests that:
 1. Takes `comma_example_data`
 2. Runs: `annotateSites() → diffMethyl() → results() → filterResults()`
 3. Verifies the 30 ground-truth diff sites are recovered
 
 **Size:** M (medium) — moderate effort, clear scope
 
-**Risk if skipped:** Unknown integration bugs could ship.
+**Status:** Implemented in branch `test/full-pipeline-integration`; awaiting PR review/merge.
 
 ---
 
