@@ -3,11 +3,11 @@
 > **ARCHIVED 2026-05-16** — This file is historical. Sprint tracking has been migrated to GitHub Issues/PRs on [carl-stone/CoMMA](https://github.com/carl-stone/CoMMA/issues). Do not update this file. See `dev/README.md` for the current project management workflow.
 
 **Last updated:** 2026-05-14  
-**Maintained by:** commaBot
+**Maintained by:** commaBot (historical — no longer updated)
 
-This is the daily project view: what is happening now, what is next, what is blocked, and what was recently completed.
+This file was the daily project view prior to the GitHub Issues migration on 2026-05-15. The content below is preserved for historical reference only.
 
-For the full prioritized work list, see `dev/BACKLOG.md`.
+For current work status, see [GitHub Issues](https://github.com/carl-stone/CoMMA/issues).
 
 ---
 
@@ -72,6 +72,8 @@ These are the highest-priority proposed tasks from `BACKLOG.md`. They are not st
 ---
 
 ## How to Use This File
+
+> **HISTORICAL** — This section described the workflow when this file was active. Do not follow these instructions. Current status is in [GitHub Issues](https://github.com/carl-stone/CoMMA/issues).
 
 - **Carl:** Open this file to see what is happening now.
 - **commaBot:** Keep this file updated whenever work starts, finishes, or gets blocked.
