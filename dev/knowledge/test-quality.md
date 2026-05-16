@@ -92,4 +92,4 @@ To move a function from "weak tests" to "strong tests":
 2. **Add integration test.** Run full pipeline on `comma_example_data`, verify the 30 ground-truth diff sites are recovered.
 3. **Add boundary tests.** For `slidingWindow`, test specific positions near chromosome ends with known expected values.
 
-See `BACKLOG.md` for prioritized work items.
+See [GitHub Issues](https://github.com/carl-stone/CoMMA/issues) for prioritized work items.

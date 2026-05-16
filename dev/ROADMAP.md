@@ -4,7 +4,7 @@
 **Current version:** 0.1.0.9000 (fresh-start dev baseline)  
 **Submission target:** 0.99.0 when ready for Bioconductor
 
-This file is the strategic roadmap: where comma is going. Tactical work items live in `dev/BACKLOG.md`. Current work status lives in `dev/STATUS.md`.
+This file is the strategic roadmap: where comma is going. Tactical work items are tracked in [GitHub Issues](https://github.com/carl-stone/CoMMA/issues).
 
 ---
 
@@ -37,7 +37,7 @@ Core principles:
 For detailed quality findings, see:
 - `dev/knowledge/test-quality.md`
 - `dev/knowledge/known-issues.md`
-- `dev/BACKLOG.md`
+- [GitHub Issues](https://github.com/carl-stone/CoMMA/issues)
 
 ---
 
@@ -58,7 +58,7 @@ When Carl decides comma is ready for Bioconductor submission:
 | Version bump to 0.99.0 | ⏳ Pending | commaBot | Only when actually submitting to Bioconductor |
 | Submit at contributions.bioconductor.org | ⏳ Pending | Carl/commaBot | Final step |
 
-Tactical submission tasks are tracked in `dev/BACKLOG.md` as B-series items.
+Tactical submission tasks are tracked in [GitHub Issues](https://github.com/carl-stone/CoMMA/issues) (previously B-series items in the archived backlog).
 
 ---
 
@@ -142,6 +142,6 @@ Why it matters:
 
 - `dev/PRD.md` — v1.0 product requirements and scope
 - `dev/VISION.md` — long-term dream package
-- `dev/BACKLOG.md` — tactical prioritized work items
-- `dev/STATUS.md` — current work status
+- [GitHub Issues](https://github.com/carl-stone/CoMMA/issues) — tactical work items and current status
+- `dev/archive/BACKLOG.md` — historical pre-GitHub-Issues backlog
 - `dev/knowledge/design-decisions.md` — why the package is designed this way
