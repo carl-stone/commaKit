@@ -1,5 +1,7 @@
 # comma Status Board
 
+> **ARCHIVED 2026-05-16** — This file is historical. Sprint tracking has been migrated to GitHub Issues/PRs on [carl-stone/CoMMA](https://github.com/carl-stone/CoMMA/issues). Do not update this file. See `dev/README.md` for the current project management workflow.
+
 **Last updated:** 2026-05-14  
 **Maintained by:** commaBot
 

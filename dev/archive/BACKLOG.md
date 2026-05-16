@@ -1,5 +1,7 @@
 # comma Backlog — All Work Items
 
+> **ARCHIVED 2026-05-16** — This file is historical. Work items have been migrated to GitHub Issues on [carl-stone/CoMMA](https://github.com/carl-stone/CoMMA/issues). Do not add new items here. See `dev/README.md` for the current project management workflow.
+
 **Last updated:** 2026-05-14
 **Maintained by:** commaBot
 
