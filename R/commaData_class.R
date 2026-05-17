@@ -102,12 +102,25 @@ setValidity("commaData", function(object) {
         ))
     }
 
+    # ── rowRanges must be 1-bp ranges (one per methylation site) ──────────
+    if (length(rr) > 0L && !is(rr, "GRangesList")) {
+        widths <- GenomicRanges::width(rr)
+        if (any(widths != 1L)) {
+            n_bad <- sum(widths != 1L)
+            errors <- c(errors, paste0(
+                "rowRanges must contain 1-bp ranges (one per site), ",
+                "but ", n_bad, " range(s) have width != 1. ",
+                "Downstream code treats each row as a single position."
+            ))
+        }
+    }
+
     # ── mod_type allowed values ─────────────────────────────────────────────
     if ("mod_type" %in% colnames(mc)) {
         bad_types <- setdiff(unique(mc$mod_type), .VALID_MOD_TYPES)
         if (length(bad_types) > 0) {
             errors <- c(errors, paste0(
-                "rowData$mod_type contains unrecognized values: ",
+                "rowRanges mcols$mod_type contains unrecognized values: ",
                 paste(bad_types, collapse = ", "),
                 ". Allowed values: ",
                 paste(.VALID_MOD_TYPES, collapse = ", ")
