@@ -2,6 +2,7 @@
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @importFrom S4Vectors DataFrame
 #' @importFrom GenomicRanges GRanges
+#' @importFrom IRanges IRanges
 NULL
 
 #' Create a commaData object from methylation calling output files
@@ -301,16 +302,16 @@ commaData <- function(files,
     below_threshold <- !is.na(coverage_mat) & coverage_mat < min_coverage
     methyl_mat[below_threshold] <- NA_real_
 
-    # ── Build rowData ───────────────────────────────────────────────────────
-    row_df <- S4Vectors::DataFrame(
-        chrom       = all_sites$chrom,
-        position    = all_sites$position,
-        strand      = all_sites$strand,
+    # ── Build rowRanges (GRanges) ──────────────────────────────────────────
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = all_sites$chrom,
+        ranges   = IRanges::IRanges(start = all_sites$position, width = 1L),
+        strand   = all_sites$strand,
         mod_type    = all_sites$mod_type,
         motif       = all_sites$motif,
-        mod_context = all_sites$mod_context,
-        row.names   = site_keys
+        mod_context = all_sites$mod_context
     )
+    names(site_gr) <- site_keys
 
     # ── Build colData ───────────────────────────────────────────────────────
     # Reorder colData to match sample_names order in files
@@ -364,16 +365,16 @@ commaData <- function(files,
         }
     }
 
-    # ── Assemble SummarizedExperiment ────────────────────────────────────────
-    se <- SummarizedExperiment::SummarizedExperiment(
-        assays  = list(methylation = methyl_mat, coverage = coverage_mat),
-        rowData = row_df,
-        colData = col_df
+    # ── Assemble RangedSummarizedExperiment ─────────────────────────────────
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays     = list(methylation = methyl_mat, coverage = coverage_mat),
+        rowRanges  = site_gr,
+        colData    = col_df
     )
 
     # ── Construct commaData ─────────────────────────────────────────────────
     obj <- new("commaData",
-               se,
+               rse,
                genomeInfo = genome_info,
                annotation = ann_gr,
                motifSites = motif_gr)

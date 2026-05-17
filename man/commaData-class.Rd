@@ -10,7 +10,7 @@ An object of class \code{commaData}. Use
 }
 \description{
 \code{commaData} is an S4 class that extends
-\code{\link[SummarizedExperiment]{SummarizedExperiment}} to store
+\code{\link[SummarizedExperiment]{RangedSummarizedExperiment}} to store
 genome-wide bacterial methylation data from Oxford Nanopore sequencing.
 It is the central object accepted and returned by all \code{comma}
 analysis functions.
@@ -20,14 +20,17 @@ The class stores methylation data in two assay matrices (accessible via
 \code{\link[SummarizedExperiment]{assay}}):
 \describe{
 \item{\code{"methylation"}}{Beta values (proportion of reads called
-methylated, range 0–1). Sites with coverage below the
+methylated, range 0-1). Sites with coverage below the
 \code{min_coverage} threshold are stored as \code{NA}.}
 \item{\code{"coverage"}}{Integer read depth at each site.}
 }
 
-Per-site metadata is in \code{rowData(object)} and includes at minimum:
-\code{chrom}, \code{position}, \code{strand}, \code{mod_type}, \code{motif},
-and \code{mod_context}. The \code{motif} column stores the sequence context
+Genomic positions are stored in
+\code{\link[SummarizedExperiment]{rowRanges}(object)}, a
+\code{\link[GenomicRanges]{GRanges}} with one 1-bp range per methylation
+site. Per-site metadata is in the \code{mcols} of this GRanges and
+includes at minimum: \code{mod_type}, \code{motif}, and
+\code{mod_context}. The \code{motif} column stores the sequence context
 of each site (e.g., \code{"GATC"} or \code{"CCWGG"}) as extracted from the
 modkit \code{mod_code} field. It is \code{NA} for Dorado and Megalodon
 callers. The \code{mod_context} column is a composite of modification type
@@ -36,6 +39,10 @@ and motif (e.g., \code{"6mA_GATC"}, \code{"5mC_CCWGG"}), or just
 Dorado/Megalodon data). All analyses default to running independently per
 \code{mod_context} group to prevent spurious mixing of biologically distinct
 methylation events.
+
+For convenience, \code{\link{siteInfo}(object)} returns a flat
+\code{DataFrame} combining the genomic coordinates (chrom, position,
+strand) with the mcols columns.
 
 Per-sample metadata is in \code{colData(object)} and includes at minimum:
 \code{sample_name}, \code{condition}, \code{replicate}.

@@ -1,5 +1,5 @@
 #' @importFrom methods new setClass setGeneric setMethod setValidity validObject is isVirtualClass
-#' @importFrom SummarizedExperiment SummarizedExperiment assay assayNames rowData colData
+#' @importFrom SummarizedExperiment SummarizedExperiment assay assayNames rowData colData rowRanges
 #' @importFrom S4Vectors DataFrame
 #' @importFrom GenomicRanges GRanges
 NULL
@@ -13,7 +13,7 @@ NULL
 #' commaData: the central data object for the comma package
 #'
 #' \code{commaData} is an S4 class that extends
-#' \code{\link[SummarizedExperiment]{SummarizedExperiment}} to store
+#' \code{\link[SummarizedExperiment]{RangedSummarizedExperiment}} to store
 #' genome-wide bacterial methylation data from Oxford Nanopore sequencing.
 #' It is the central object accepted and returned by all \code{comma}
 #' analysis functions.
@@ -32,14 +32,17 @@ NULL
 #' \code{\link[SummarizedExperiment]{assay}}):
 #' \describe{
 #'   \item{\code{"methylation"}}{Beta values (proportion of reads called
-#'     methylated, range 0–1). Sites with coverage below the
+#'     methylated, range 0-1). Sites with coverage below the
 #'     \code{min_coverage} threshold are stored as \code{NA}.}
 #'   \item{\code{"coverage"}}{Integer read depth at each site.}
 #' }
 #'
-#' Per-site metadata is in \code{rowData(object)} and includes at minimum:
-#' \code{chrom}, \code{position}, \code{strand}, \code{mod_type}, \code{motif},
-#' and \code{mod_context}. The \code{motif} column stores the sequence context
+#' Genomic positions are stored in
+#' \code{\link[SummarizedExperiment]{rowRanges}(object)}, a
+#' \code{\link[GenomicRanges]{GRanges}} with one 1-bp range per methylation
+#' site. Per-site metadata is in the \code{mcols} of this GRanges and
+#' includes at minimum: \code{mod_type}, \code{motif}, and
+#' \code{mod_context}. The \code{motif} column stores the sequence context
 #' of each site (e.g., \code{"GATC"} or \code{"CCWGG"}) as extracted from the
 #' modkit \code{mod_code} field. It is \code{NA} for Dorado and Megalodon
 #' callers. The \code{mod_context} column is a composite of modification type
@@ -48,6 +51,10 @@ NULL
 #' Dorado/Megalodon data). All analyses default to running independently per
 #' \code{mod_context} group to prevent spurious mixing of biologically distinct
 #' methylation events.
+#'
+#' For convenience, \code{\link{siteInfo}(object)} returns a flat
+#' \code{DataFrame} combining the genomic coordinates (chrom, position,
+#' strand) with the mcols columns.
 #'
 #' Per-sample metadata is in \code{colData(object)} and includes at minimum:
 #' \code{sample_name}, \code{condition}, \code{replicate}.
@@ -65,7 +72,7 @@ NULL
 #' @exportClass commaData
 setClass(
     "commaData",
-    contains = "SummarizedExperiment",
+    contains = "RangedSummarizedExperiment",
     representation(
         genomeInfo  = "ANY",   # named integer vector or NULL
         annotation  = "GRanges",
@@ -83,21 +90,21 @@ setClass(
 setValidity("commaData", function(object) {
     errors <- character(0)
 
-    # ── rowData required columns ────────────────────────────────────────────
-    required_row_cols <- c("chrom", "position", "strand",
-                           "mod_type", "motif", "mod_context")
-    rd <- rowData(object)
-    missing_cols <- setdiff(required_row_cols, colnames(rd))
+    # ── rowRanges required mcols ────────────────────────────────────────────
+    required_mcol_cols <- c("mod_type", "motif", "mod_context")
+    rr <- rowRanges(object)
+    mc <- GenomicRanges::mcols(rr)
+    missing_cols <- setdiff(required_mcol_cols, colnames(mc))
     if (length(missing_cols) > 0) {
         errors <- c(errors, paste0(
-            "rowData is missing required columns: ",
+            "rowRanges mcols is missing required columns: ",
             paste(missing_cols, collapse = ", ")
         ))
     }
 
     # ── mod_type allowed values ─────────────────────────────────────────────
-    if ("mod_type" %in% colnames(rd)) {
-        bad_types <- setdiff(unique(rd$mod_type), .VALID_MOD_TYPES)
+    if ("mod_type" %in% colnames(mc)) {
+        bad_types <- setdiff(unique(mc$mod_type), .VALID_MOD_TYPES)
         if (length(bad_types) > 0) {
             errors <- c(errors, paste0(
                 "rowData$mod_type contains unrecognized values: ",
@@ -109,28 +116,28 @@ setValidity("commaData", function(object) {
     }
 
     # ── motif column type ───────────────────────────────────────────────────
-    if ("motif" %in% colnames(rd)) {
-        if (!is.character(rd$motif) && !all(is.na(rd$motif))) {
-            errors <- c(errors, "rowData$motif must be a character vector (NA allowed)")
+    if ("motif" %in% colnames(mc)) {
+        if (!is.character(mc$motif) && !all(is.na(mc$motif))) {
+            errors <- c(errors, "rowRanges mcols$motif must be a character vector (NA allowed)")
         }
     }
 
     # ── mod_context column type and consistency ─────────────────────────────
-    if ("mod_context" %in% colnames(rd)) {
-        if (!is.character(rd$mod_context) || any(is.na(rd$mod_context))) {
+    if ("mod_context" %in% colnames(mc)) {
+        if (!is.character(mc$mod_context) || any(is.na(mc$mod_context))) {
             errors <- c(errors,
-                "rowData$mod_context must be a non-NA character vector. ",
+                "rowRanges mcols$mod_context must be a non-NA character vector. ",
                 "Re-create the object using commaData()."
             )
-        } else if ("mod_type" %in% colnames(rd) && "motif" %in% colnames(rd)) {
+        } else if ("mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
             expected_ctx <- ifelse(
-                is.na(rd$motif),
-                rd$mod_type,
-                paste(rd$mod_type, rd$motif, sep = "_")
+                is.na(mc$motif),
+                mc$mod_type,
+                paste(mc$mod_type, mc$motif, sep = "_")
             )
-            if (!all(rd$mod_context == expected_ctx, na.rm = TRUE)) {
+            if (!all(mc$mod_context == expected_ctx, na.rm = TRUE)) {
                 errors <- c(errors,
-                    "rowData$mod_context values are inconsistent with mod_type and motif. ",
+                    "rowRanges mcols$mod_context values are inconsistent with mod_type and motif. ",
                     "Re-create the object using commaData()."
                 )
             }
@@ -183,7 +190,7 @@ setMethod("show", "commaData", function(object) {
     cat("sites:", n_sites, "| samples:", n_samples, "\n")
 
     # mod types, motifs, and contexts
-    rd <- rowData(object)
+    rd <- rowData(object)  # for RSE, rowData() returns mcols(rowRanges())
     if ("mod_type" %in% colnames(rd) && n_sites > 0) {
         mt <- sort(unique(rd$mod_type))
         cat("mod types:", paste(mt, collapse = ", "), "\n")

@@ -24,24 +24,28 @@ library(GenomicRanges)
     cov    <- matrix(as.integer(runif(n_total * n_samp, 10, 50)),
                      nrow = n_total, dimnames = list(all_keys, samp_names))
 
-    rd <- S4Vectors::DataFrame(
-        chrom       = rep("chr_sim", n_total),
-        position    = c(seq_len(n_6ma) * 100L, seq_len(n_5mc) * 200L),
-        strand      = c(rep("+", n_6ma), rep("-", n_5mc)),
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = rep("chr_sim", n_total),
+        ranges   = IRanges::IRanges(
+            start = c(seq_len(n_6ma) * 100L, seq_len(n_5mc) * 200L),
+            width = 1L
+        ),
+        strand   = c(rep("+", n_6ma), rep("-", n_5mc)),
         mod_type    = c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
         motif       = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc)),
-        mod_context = c(rep("6mA_GATC", n_6ma), rep("5mC_CCWGG", n_5mc)),
-        row.names   = all_keys
+        mod_context = c(rep("6mA_GATC", n_6ma), rep("5mC_CCWGG", n_5mc))
     )
+    names(site_gr) <- all_keys
     cd <- S4Vectors::DataFrame(
         sample_name = samp_names,
         condition   = c("control", "control", "treatment"),
         replicate   = c(1L, 2L, 1L),
         row.names   = samp_names
     )
-    se <- SummarizedExperiment::SummarizedExperiment(
-        assays  = list(methylation = methyl, coverage = cov),
-        rowData = rd, colData = cd
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays     = list(methylation = methyl, coverage = cov),
+        rowRanges  = site_gr,
+        colData    = cd
     )
     ann <- GenomicRanges::GRanges(
         seqnames = "chr_sim",
@@ -50,7 +54,7 @@ library(GenomicRanges)
     GenomicRanges::mcols(ann)$feature_type <- "gene"
     GenomicRanges::mcols(ann)$name         <- "geneA"
 
-    new("commaData", se,
+    new("commaData", rse,
         genomeInfo = c(chr_sim = 100000L),
         annotation = ann,
         motifSites = GenomicRanges::GRanges())

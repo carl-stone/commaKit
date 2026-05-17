@@ -82,7 +82,7 @@ writeBED <- function(object,
     }
 
     # ── Extract data ──────────────────────────────────────────────────────────
-    rd    <- as.data.frame(rowData(object))
+    rd    <- as.data.frame(siteInfo(object))
     betas <- methylation(object)[, sample]
 
     # Exclude NA sites (below coverage threshold)

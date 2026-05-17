@@ -1,8 +1,9 @@
 #' @importFrom methods setGeneric setMethod callNextMethod
-#' @importFrom SummarizedExperiment assay rowData "rowData<-" colData
-#' @importFrom BiocGenerics annotation
+#' @importFrom SummarizedExperiment assay rowData "rowData<-" colData rowRanges
+#' @importFrom BiocGenerics annotation start strand
 #' @importFrom IRanges coverage
-#' @importFrom GenomeInfoDb genome
+#' @importFrom GenomeInfoDb genome seqnames
+#' @importFrom GenomicRanges mcols
 NULL
 
 # ─── methylation() ───────────────────────────────────────────────────────────
@@ -120,7 +121,14 @@ setGeneric("siteInfo", function(object) standardGeneric("siteInfo"))
 
 #' @rdname siteInfo
 setMethod("siteInfo", "commaData", function(object) {
-    rowData(object)
+    rr <- rowRanges(object)
+    S4Vectors::DataFrame(
+        chrom       = as.character(GenomeInfoDb::seqnames(rr)),
+        position    = BiocGenerics::start(rr),
+        strand      = as.character(BiocGenerics::strand(rr)),
+        GenomicRanges::mcols(rr),
+        row.names   = names(rr)
+    )
 })
 
 # ─── modTypes() ──────────────────────────────────────────────────────────────
@@ -370,22 +378,23 @@ setMethod("subset", "commaData", function(x, mod_type = NULL,
                                            chrom = NULL,
                                            motif = NULL,
                                            mod_context = NULL, ...) {
-    rd <- rowData(x)
+    rr <- rowRanges(x)
+    mc <- GenomicRanges::mcols(rr)
     cd <- colData(x)
 
     # Site filter
     site_keep <- rep(TRUE, nrow(x))
     if (!is.null(mod_type)) {
-        site_keep <- site_keep & (rd$mod_type %in% mod_type)
+        site_keep <- site_keep & (mc$mod_type %in% mod_type)
     }
     if (!is.null(chrom)) {
-        site_keep <- site_keep & (rd$chrom %in% chrom)
+        site_keep <- site_keep & (as.character(GenomeInfoDb::seqnames(rr)) %in% chrom)
     }
     if (!is.null(motif)) {
-        site_keep <- site_keep & (!is.na(rd$motif)) & (rd$motif %in% motif)
+        site_keep <- site_keep & (!is.na(mc$motif)) & (mc$motif %in% motif)
     }
     if (!is.null(mod_context)) {
-        site_keep <- site_keep & (rd$mod_context %in% mod_context)
+        site_keep <- site_keep & (mc$mod_context %in% mod_context)
     }
 
     # Sample filter

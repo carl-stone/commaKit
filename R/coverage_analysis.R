@@ -59,7 +59,7 @@ coverageDepth <- function(object,
     }
     window <- as.integer(window)
 
-    rd         <- as.data.frame(rowData(object))
+    rd         <- as.data.frame(siteInfo(object))
     cov_mat    <- coverage(object)
     sample_nms <- colnames(cov_mat)
     agg_fn     <- if (method == "mean") mean else stats::median
