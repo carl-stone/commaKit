@@ -13,16 +13,21 @@ siteInfo(object)
 \item{object}{A \code{commaData} object.}
 }
 \value{
-A \code{data.frame} with one row per methylation site. Always
-contains columns \code{chrom}, \code{position}, \code{strand},
+A \code{\link[S4Vectors]{DataFrame}} with one row per methylation site.
+Always contains columns \code{chrom}, \code{position}, \code{strand},
 \code{mod_type}, \code{motif} (the sequence context; \code{NA} for
 Dorado/Megalodon callers), and \code{mod_context} (the composite
 modification context, e.g., \code{"6mA_GATC"}). May contain additional
-annotation columns added by \code{\link[=annotateSites]{annotateSites()}}.
+annotation columns added by \code{\link[=annotateSites]{annotateSites()}}
+or result columns from \code{\link{diffMethyl}()}.
 }
 \description{
 Returns the per-site metadata table from a \code{\link{commaData}} object.
-Equivalent to \code{rowData(object)} but returns a plain \code{data.frame}.
+Reconstructs a flat \code{DataFrame} from the \code{rowRanges()} GRanges,
+combining genomic coordinates (chrom, position, strand) with the mcols
+columns (mod_type, motif, mod_context, plus any annotation/result columns).
+This provides a backward-compatible interface to the pre-Schema-v2
+\code{rowData()} layout.
 }
 \examples{
 data(comma_example_data)

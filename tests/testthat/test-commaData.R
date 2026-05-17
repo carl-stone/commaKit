@@ -68,6 +68,15 @@ test_that("validity rejects unrecognized mod_type values", {
     expect_error(validObject(obj), regexp = "7mX")
 })
 
+test_that("validity rejects rowRanges with width != 1", {
+    obj <- .make_minimal_commaData()
+    rr <- rowRanges(obj)
+    # Widen the first range to 10bp
+    IRanges::ranges(rr)[1, ] <- IRanges::IRanges(start = start(rr)[1], width = 10L)
+    rowRanges(obj) <- rr
+    expect_error(validObject(obj), regexp = "1-bp ranges")
+})
+
 test_that("validity rejects missing colData columns", {
     obj <- .make_minimal_commaData()
     colData(obj)$condition <- NULL
