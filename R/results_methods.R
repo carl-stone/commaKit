@@ -66,7 +66,7 @@ setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL
     }
 
     # ── Extract rowData as data.frame ─────────────────────────────────────────
-    rd <- as.data.frame(rowData(object))
+    rd <- as.data.frame(siteInfo(object))
 
     # ── Optional mod_type filter ──────────────────────────────────────────────
     if (!is.null(mod_type)) {

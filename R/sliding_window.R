@@ -126,7 +126,7 @@ slidingWindow <- function(object,
         }
     }
 
-    rd          <- as.data.frame(rowData(object))
+    rd          <- as.data.frame(siteInfo(object))
     methyl_mat  <- methylation(object)
     sample_nms  <- colnames(methyl_mat)
     stat_colnm  <- paste0("window_", stat)

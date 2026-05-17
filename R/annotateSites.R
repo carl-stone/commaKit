@@ -1,7 +1,7 @@
-#' @importFrom GenomicRanges GRanges findOverlaps start end width strand resize mcols
+#' @importFrom GenomicRanges GRanges findOverlaps start end width strand resize mcols "mcols<-"
 #' @importFrom IRanges IRanges CharacterList IntegerList NumericList
 #' @importFrom S4Vectors DataFrame queryHits subjectHits splitAsList mendoapply
-#' @importFrom SummarizedExperiment rowData "rowData<-"
+#' @importFrom SummarizedExperiment rowData "rowData<-" rowRanges "rowRanges<-"
 #' @importFrom methods is
 NULL
 
@@ -148,12 +148,8 @@ annotateSites <- function(object,
     }
 
     # ── Build GRanges for sites ───────────────────────────────────────────────
-    rd       <- rowData(object)
-    sites_gr <- GenomicRanges::GRanges(
-        seqnames = rd$chrom,
-        ranges   = IRanges::IRanges(start = rd$position, width = 1L),
-        strand   = rd$strand
-    )
+    sites_gr <- rowRanges(object)
+    rd <- GenomicRanges::mcols(sites_gr)
 
     # ── Unified annotation ────────────────────────────────────────────────────
     rd <- .annotateSites_unified(rd, sites_gr, features, feature_col, name_col,
@@ -164,7 +160,7 @@ annotateSites <- function(object,
     rd <- .applyKeepFilter(rd, keep, meta_out_cols)
 
     # ── Return updated commaData ──────────────────────────────────────────────
-    rowData(object) <- rd
+    GenomicRanges::mcols(rowRanges(object)) <- rd
     object
 }
 
@@ -214,7 +210,7 @@ annotateSites <- function(object,
     feat_strand <- as.character(GenomicRanges::strand(features))[s_idx]
     feat_types  <- as.character(GenomicRanges::mcols(features)[[feature_col]][s_idx])
     feat_names  <- as.character(GenomicRanges::mcols(features)[[name_col]][s_idx])
-    site_pos    <- rd$position[q_idx]
+    site_pos    <- BiocGenerics::start(sites_gr)[q_idx]
 
     # ── rel_position: signed, strand-aware ────────────────────────────────────
     # 0 when site is inside the feature.

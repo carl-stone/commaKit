@@ -19,10 +19,10 @@ make_tiny <- function() {
   cov_mat <- matrix(10L, nrow = 3, ncol = 2,
                     dimnames = list(NULL, c("samp1", "samp2")))
 
-  rd <- S4Vectors::DataFrame(
-    chrom       = "chr_test",
-    position    = c(5L, 10L, 15L),
-    strand      = "+",
+  site_gr <- GenomicRanges::GRanges(
+    seqnames = "chr_test",
+    ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
+    strand   = "+",
     mod_type    = c("6mA", "5mC", "6mA"),   # mixed types for filter test
     motif       = c("GATC", "CCWGG", "GATC"),
     mod_context = c("6mA_GATC", "5mC_CCWGG", "6mA_GATC")
@@ -32,12 +32,12 @@ make_tiny <- function() {
     condition   = c("ctrl", "treat"),
     replicate   = c(1L, 1L)
   )
-  se <- SummarizedExperiment::SummarizedExperiment(
-    assays  = list(methylation = methyl_mat, coverage = cov_mat),
-    rowData = rd,
-    colData = cd
+  rse <- SummarizedExperiment::SummarizedExperiment(
+    assays     = list(methylation = methyl_mat, coverage = cov_mat),
+    rowRanges  = site_gr,
+    colData    = cd
   )
-  new("commaData", se,
+  new("commaData", rse,
       genomeInfo = gi,
       annotation = GenomicRanges::GRanges(),
       motifSites = GenomicRanges::GRanges())
@@ -146,7 +146,7 @@ test_that("slidingWindow: error on missing window argument", {
 
 test_that("slidingWindow: error when genome is NULL", {
     obj_no_genome <- new("commaData",
-        as(comma_example_data, "SummarizedExperiment"),
+        as(comma_example_data, "RangedSummarizedExperiment"),
         genomeInfo = NULL,
         annotation = comma_example_data@annotation,
         motifSites = comma_example_data@motifSites
@@ -181,34 +181,29 @@ test_that("slidingWindow: known smoothed value for simple input", {
     # We verify the smoothed value at a position adjacent to a site
     gi <- c(chr_test = 20L)
     # Create minimal commaData
-    sites_gr <- GenomicRanges::GRanges(
+    site_gr <- GenomicRanges::GRanges(
         seqnames = "chr_test",
         ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
-        strand   = "+"
+        strand   = "+",
+        mod_type    = "6mA",
+        motif       = "GATC",
+        mod_context = "6mA_GATC"
     )
     methyl_mat <- matrix(c(0.2, 0.8, 0.5), nrow = 3, ncol = 1,
                          dimnames = list(NULL, "samp1"))
     cov_mat    <- matrix(10L, nrow = 3, ncol = 1,
                          dimnames = list(NULL, "samp1"))
-    rd <- S4Vectors::DataFrame(
-        chrom       = "chr_test",
-        position    = c(5L, 10L, 15L),
-        strand      = "+",
-        mod_type    = "6mA",
-        motif       = "GATC",
-        mod_context = "6mA_GATC"
-    )
     cd <- S4Vectors::DataFrame(
         sample_name = "samp1",
         condition   = "ctrl",
         replicate   = 1L
     )
-    se <- SummarizedExperiment::SummarizedExperiment(
-        assays  = list(methylation = methyl_mat, coverage = cov_mat),
-        rowData = rd,
-        colData = cd
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays     = list(methylation = methyl_mat, coverage = cov_mat),
+        rowRanges  = site_gr,
+        colData    = cd
     )
-    obj <- new("commaData", se, genomeInfo = gi,
+    obj <- new("commaData", rse, genomeInfo = gi,
                annotation = GenomicRanges::GRanges(),
                motifSites = GenomicRanges::GRanges())
 

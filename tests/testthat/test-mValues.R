@@ -14,27 +14,27 @@
     )
     cov_mat <- matrix(cov_val, nrow = n_sites, ncol = n_samples,
                       dimnames = dimnames(betas))
-    rd <- S4Vectors::DataFrame(
-        chrom       = rep("chr_sim", n_sites),
-        position    = positions,
-        strand      = rep("+", n_sites),
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = rep("chr_sim", n_sites),
+        ranges   = IRanges::IRanges(start = positions, width = 1L),
+        strand   = rep("+", n_sites),
         mod_type    = rep("6mA", n_sites),
         motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites),
-        row.names   = site_keys
+        mod_context = rep("6mA_GATC", n_sites)
     )
+    names(site_gr) <- site_keys
     cd <- S4Vectors::DataFrame(
         sample_name = paste0("s", seq_len(n_samples)),
         condition   = rep("ctrl", n_samples),
         replicate   = seq_len(n_samples),
         row.names   = paste0("s", seq_len(n_samples))
     )
-    se <- SummarizedExperiment::SummarizedExperiment(
-        assays  = list(methylation = betas, coverage = cov_mat),
-        rowData = rd,
-        colData = cd
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays     = list(methylation = betas, coverage = cov_mat),
+        rowRanges  = site_gr,
+        colData    = cd
     )
-    new("commaData", se,
+    new("commaData", rse,
         genomeInfo = c(chr_sim = 100000L),
         annotation = GenomicRanges::GRanges(),
         motifSites = GenomicRanges::GRanges())

@@ -281,9 +281,10 @@ diffMethyl <- function(
     } else if (!is.null(mod_type)) {
         all_mc <- modContexts(object)
         # Keep contexts whose mod_type prefix matches
+        mc <- GenomicRanges::mcols(rowRanges(object))
         test_contexts <- all_mc[
-            rowData(object)$mod_type[
-                match(all_mc, rowData(object)$mod_context)
+            mc$mod_type[
+                match(all_mc, mc$mod_context)
             ] %in% mod_type
         ]
         test_contexts <- sort(unique(test_contexts))
@@ -297,7 +298,7 @@ diffMethyl <- function(
     # -- Extract full matrices -------------------------------------------------
     methyl_full  <- methylation(object)
     cov_full     <- coverage(object)
-    rd_full      <- as.data.frame(rowData(object))
+    rd_full      <- as.data.frame(siteInfo(object))
     n_sites_all  <- nrow(methyl_full)
 
     # -- Initialise result columns (all NA) ------------------------------------
@@ -364,26 +365,26 @@ diffMethyl <- function(
     # -- Apply genome-wide multiple testing correction -------------------------
     padj_all <- .applyMultipleTesting(pvalue_all, method = p_adjust_method)
 
-    # -- Update rowData --------------------------------------------------------
-    rd_new <- rowData(object)
-    rd_new$dm_pvalue     <- pvalue_all
-    rd_new$dm_padj       <- padj_all
-    rd_new$dm_delta_beta <- delta_beta_all
+    # -- Update rowRanges mcols --------------------------------------------------
+    rr_new <- rowRanges(object)
+    GenomicRanges::mcols(rr_new)$dm_pvalue     <- pvalue_all
+    GenomicRanges::mcols(rr_new)$dm_padj       <- padj_all
+    GenomicRanges::mcols(rr_new)$dm_delta_beta <- delta_beta_all
     for (col_nm in names(mean_beta_cols)) {
-        rd_new[[col_nm]] <- mean_beta_cols[[col_nm]]
+        GenomicRanges::mcols(rr_new)[[col_nm]] <- mean_beta_cols[[col_nm]]
     }
 
     result_cols <- c("dm_pvalue", "dm_padj", "dm_delta_beta",
                      names(mean_beta_cols))
 
     # -- Build returned object -------------------------------------------------
-    # Reconstruct commaData with updated rowData
-    se_new <- SummarizedExperiment::SummarizedExperiment(
-        assays  = SummarizedExperiment::assays(object),
-        rowData = rd_new,
-        colData = colData(object)
+    # Reconstruct commaData with updated rowRanges
+    rse_new <- SummarizedExperiment::SummarizedExperiment(
+        assays     = SummarizedExperiment::assays(object),
+        rowRanges  = rr_new,
+        colData    = colData(object)
     )
-    out <- new("commaData", se_new,
+    out <- new("commaData", rse_new,
                genomeInfo = object@genomeInfo,
                annotation = object@annotation,
                motifSites = object@motifSites)

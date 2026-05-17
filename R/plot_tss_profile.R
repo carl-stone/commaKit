@@ -222,7 +222,7 @@ plot_tss_profile <- function(object,
     ## (IntegerList): negative = upstream of TSS, positive = downstream.
     annotated <- annotateSites(object, features = tss_gr, keep = "proximity",
                                window = window)
-    rd <- as.data.frame(SummarizedExperiment::rowData(annotated))
+    rd <- as.data.frame(siteInfo(annotated))
 
     ## ── E. Nearest TSS offset per site (vectorized) ───────────────────────────
     pos_list      <- rd$rel_position
@@ -247,7 +247,7 @@ plot_tss_profile <- function(object,
     }
     annotated_sub <- annotated[keep, ]
     rel_pos_vals  <- nearest_rel_pos[keep]
-    rd_sub        <- as.data.frame(SummarizedExperiment::rowData(annotated_sub))
+    rd_sub        <- as.data.frame(siteInfo(annotated_sub))
 
     ## ── F. Build long data.frame (sites × samples) ────────────────────────────
     methyl_mat  <- methylation(annotated_sub)

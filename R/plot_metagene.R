@@ -105,7 +105,7 @@ plot_metagene <- function(object,
 
     ## --- Run metagene annotation -------------------------------------------
     annotated <- annotateSites(object, features = feat_gr, keep = "metagene")
-    rd        <- as.data.frame(SummarizedExperiment::rowData(annotated))
+    rd        <- as.data.frame(siteInfo(annotated))
 
     ## frac_position is a NumericList (one list element per site)
     pos_list <- rd$frac_position

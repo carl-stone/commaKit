@@ -15,27 +15,27 @@
     methyl_mat[(n_sites - 4L):n_sites, 3L] <- 0.9
     cov_mat <- matrix(10L, nrow = n_sites, ncol = 3L,
                       dimnames = dimnames(methyl_mat))
-    rd <- S4Vectors::DataFrame(
-        chrom       = rep("chr_sim", n_sites),
-        position    = seq_len(n_sites) * 50L,
-        strand      = rep("+", n_sites),
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = rep("chr_sim", n_sites),
+        ranges   = IRanges::IRanges(start = seq_len(n_sites) * 50L, width = 1L),
+        strand   = rep("+", n_sites),
         mod_type    = rep("6mA", n_sites),
         motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites),
-        row.names   = site_keys
+        mod_context = rep("6mA_GATC", n_sites)
     )
+    names(site_gr) <- site_keys
     cd <- S4Vectors::DataFrame(
         sample_name = c("ctrl_1", "ctrl_2", "treat_1"),
         condition   = c("control", "control", "treatment"),
         replicate   = 1:3,
         row.names   = c("ctrl_1", "ctrl_2", "treat_1")
     )
-    se <- SummarizedExperiment::SummarizedExperiment(
-        assays  = list(methylation = methyl_mat, coverage = cov_mat),
-        rowData = rd,
-        colData = cd
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays     = list(methylation = methyl_mat, coverage = cov_mat),
+        rowRanges  = site_gr,
+        colData    = cd
     )
-    obj <- new("commaData", se,
+    obj <- new("commaData", rse,
                genomeInfo = c(chr_sim = 100000L),
                annotation = GenomicRanges::GRanges(),
                motifSites = GenomicRanges::GRanges())

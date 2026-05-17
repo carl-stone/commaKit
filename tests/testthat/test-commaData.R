@@ -19,27 +19,27 @@ library(GenomicRanges)
     cov       <- matrix(as.integer(runif(n_sites * n_samples, 10, 50)),
                         nrow = n_sites, ncol = n_samples,
                         dimnames = list(site_keys, paste0("s", seq_len(n_samples))))
-    rd <- S4Vectors::DataFrame(
-        chrom       = rep("chr_sim", n_sites),
-        position    = seq_len(n_sites) * 100L,
-        strand      = rep("+", n_sites),
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = rep("chr_sim", n_sites),
+        ranges   = IRanges::IRanges(start = seq_len(n_sites) * 100L, width = 1L),
+        strand   = rep("+", n_sites),
         mod_type    = rep("6mA", n_sites),
         motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites),
-        row.names   = site_keys
+        mod_context = rep("6mA_GATC", n_sites)
     )
+    names(site_gr) <- site_keys
     cd <- S4Vectors::DataFrame(
         sample_name = paste0("s", seq_len(n_samples)),
         condition   = rep(c("control", "treatment"), length.out = n_samples),
         replicate   = seq_len(n_samples),
         row.names   = paste0("s", seq_len(n_samples))
     )
-    se <- SummarizedExperiment::SummarizedExperiment(
-        assays  = list(methylation = methyl, coverage = cov),
-        rowData = rd,
-        colData = cd
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays     = list(methylation = methyl, coverage = cov),
+        rowRanges  = site_gr,
+        colData    = cd
     )
-    new("commaData", se, genomeInfo = c(chr_sim = 100000L),
+    new("commaData", rse, genomeInfo = c(chr_sim = 100000L),
         annotation = GenomicRanges::GRanges(),
         motifSites = GenomicRanges::GRanges())
 }
@@ -51,7 +51,7 @@ library(GenomicRanges)
 test_that("minimal commaData object is valid", {
     obj <- .make_minimal_commaData()
     expect_true(is(obj, "commaData"))
-    expect_true(is(obj, "SummarizedExperiment"))
+    expect_true(is(obj, "RangedSummarizedExperiment"))
     expect_no_error(validObject(obj))
 })
 

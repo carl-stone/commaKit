@@ -25,10 +25,10 @@
     cov_mat <- matrix(20L, nrow = n_sites, ncol = 2,
                       dimnames = list(NULL, c("ctrl_1", "treat_1")))
 
-    rd <- S4Vectors::DataFrame(
-        chrom       = "chr_sim",
-        position    = positions,
-        strand      = "+",
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = "chr_sim",
+        ranges   = IRanges::IRanges(start = positions, width = 1L),
+        strand   = "+",
         mod_type    = "6mA",
         motif       = "GATC",
         mod_context = "6mA_GATC"
@@ -40,10 +40,10 @@
     )
     rownames(cd) <- c("ctrl_1", "treat_1")
 
-    se <- SummarizedExperiment::SummarizedExperiment(
-        assays  = list(methylation = methyl_mat, coverage = cov_mat),
-        rowData = rd,
-        colData = cd
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays     = list(methylation = methyl_mat, coverage = cov_mat),
+        rowRanges  = site_gr,
+        colData    = cd
     )
 
     ## 3 genes (two + strand, one - strand)
@@ -58,7 +58,7 @@
     annot_gr$feature_type <- c("gene", "gene", "gene")
     annot_gr$name         <- c("geneA", "geneB", "geneC")
 
-    new("commaData", se,
+    new("commaData", rse,
         genomeInfo = c(chr_sim = 100000L),
         annotation = annot_gr,
         motifSites = GenomicRanges::GRanges()
@@ -81,9 +81,9 @@
 
     combined_gr <- c(annot_gr, reg_gr)
     new("commaData", SummarizedExperiment::SummarizedExperiment(
-            assays  = list(methylation = methylation(obj), coverage = coverage(obj)),
-            rowData = siteInfo(obj),
-            colData = sampleInfo(obj)
+            assays     = list(methylation = methylation(obj), coverage = coverage(obj)),
+            rowRanges  = rowRanges(obj),
+            colData    = sampleInfo(obj)
         ),
         genomeInfo = genome(obj),
         annotation = combined_gr,
@@ -202,16 +202,21 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
                          dimnames = list(NULL, c("ctrl_1", "treat_1")))
     cov_mat    <- matrix(20L, nrow = 2, ncol = 2,
                          dimnames = list(NULL, c("ctrl_1", "treat_1")))
-    rd <- S4Vectors::DataFrame(chrom = "chr_sim", position = positions,
-                                strand = "+", mod_type = "6mA", motif = "GATC",
-                                mod_context = "6mA_GATC")
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = "chr_sim",
+        ranges   = IRanges::IRanges(start = positions, width = 1L),
+        strand   = "+",
+        mod_type    = "6mA",
+        motif       = "GATC",
+        mod_context = "6mA_GATC"
+    )
     cd <- S4Vectors::DataFrame(sample_name = c("ctrl_1", "treat_1"),
                                 condition   = c("control", "treatment"),
                                 replicate   = c(1L, 1L))
     rownames(cd) <- c("ctrl_1", "treat_1")
-    se <- SummarizedExperiment::SummarizedExperiment(
-        assays  = list(methylation = beta_mat, coverage = cov_mat),
-        rowData = rd, colData = cd
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays     = list(methylation = beta_mat, coverage = cov_mat),
+        rowRanges  = site_gr, colData = cd
     )
     annot_gr <- GenomicRanges::GRanges(
         seqnames = "chr_sim",
@@ -220,7 +225,7 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
     )
     annot_gr$feature_type <- "gene"
     annot_gr$name         <- "geneA"
-    tiny_obj <- new("commaData", se,
+    tiny_obj <- new("commaData", rse,
                     genomeInfo = c(chr_sim = 100000L),
                     annotation = annot_gr,
                     motifSites = GenomicRanges::GRanges())
@@ -285,10 +290,10 @@ test_that("error on empty annotation", {
     ## Replace annotation with empty GRanges
     obj2 <- new("commaData",
                 SummarizedExperiment::SummarizedExperiment(
-                    assays  = list(methylation = methylation(obj),
+                    assays     = list(methylation = methylation(obj),
                                    coverage    = coverage(obj)),
-                    rowData = siteInfo(obj),
-                    colData = sampleInfo(obj)
+                    rowRanges  = rowRanges(obj),
+                    colData    = sampleInfo(obj)
                 ),
                 genomeInfo = genome(obj),
                 annotation = GenomicRanges::GRanges(),

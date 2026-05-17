@@ -401,7 +401,7 @@ test_that("annotateSites errors on invalid keep value", {
 test_that("annotateSites errors when features NULL and annotation slot is empty", {
     data(comma_example_data)
     obj_no_ann <- new("commaData",
-        as(comma_example_data, "SummarizedExperiment"),
+        as(comma_example_data, "RangedSummarizedExperiment"),
         genomeInfo = comma_example_data@genomeInfo,
         annotation = GenomicRanges::GRanges(),
         motifSites = comma_example_data@motifSites

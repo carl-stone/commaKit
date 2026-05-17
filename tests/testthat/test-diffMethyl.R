@@ -27,28 +27,28 @@
     cov_mat <- matrix(30L, nrow = n_sites, ncol = n_samp,
                       dimnames = list(site_keys, colnames(methyl_mat)))
 
-    rd <- S4Vectors::DataFrame(
-        chrom       = rep("chr_sim", n_sites),
-        position    = seq_len(n_sites) * 100L,
-        strand      = rep("+", n_sites),
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = rep("chr_sim", n_sites),
+        ranges   = IRanges::IRanges(start = seq_len(n_sites) * 100L, width = 1L),
+        strand   = rep("+", n_sites),
         mod_type    = rep("6mA", n_sites),
         motif       = rep("GATC", n_sites),
         mod_context = rep("6mA_GATC", n_sites),
-        is_diff     = c(rep(TRUE, n_diff), rep(FALSE, n_sites - n_diff)),
-        row.names   = site_keys
+        is_diff     = c(rep(TRUE, n_diff), rep(FALSE, n_sites - n_diff))
     )
+    names(site_gr) <- site_keys
     cd <- S4Vectors::DataFrame(
         sample_name = colnames(methyl_mat),
         condition   = c(rep("control", n_ctrl), rep("treatment", n_treat)),
         replicate   = seq_len(n_samp),
         row.names   = colnames(methyl_mat)
     )
-    se <- SummarizedExperiment::SummarizedExperiment(
-        assays  = list(methylation = methyl_mat, coverage = cov_mat),
-        rowData = rd,
-        colData = cd
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays     = list(methylation = methyl_mat, coverage = cov_mat),
+        rowRanges  = site_gr,
+        colData    = cd
     )
-    new("commaData", se,
+    new("commaData", rse,
         genomeInfo = c(chr_sim = 100000L),
         annotation = GenomicRanges::GRanges(),
         motifSites = GenomicRanges::GRanges())
@@ -618,15 +618,15 @@ test_that("diffMethyl: mod_context stored in metadata params", {
     rownames(methyl_mat) <- site_keys
     cov_mat <- matrix(30L, nrow = n_sites, ncol = 4L,
                       dimnames = list(site_keys, colnames(methyl_mat)))
-    rd <- S4Vectors::DataFrame(
-        chrom       = rep("chr_sim", n_sites),
-        position    = seq_len(n_sites) * 100L,
-        strand      = rep("+", n_sites),
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = rep("chr_sim", n_sites),
+        ranges   = IRanges::IRanges(start = seq_len(n_sites) * 100L, width = 1L),
+        strand   = rep("+", n_sites),
         mod_type    = rep("6mA", n_sites),
         motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites),
-        row.names   = site_keys
+        mod_context = rep("6mA_GATC", n_sites)
     )
+    names(site_gr) <- site_keys
     cond_vals <- c("WT", "WT", "HNS", "HNS")
     if (as_factor) {
         cond_vals <- factor(cond_vals, levels = c("WT", "HNS"))
@@ -637,12 +637,12 @@ test_that("diffMethyl: mod_context stored in metadata params", {
         replicate   = 1:4,
         row.names   = colnames(methyl_mat)
     )
-    se <- SummarizedExperiment::SummarizedExperiment(
-        assays  = list(methylation = methyl_mat, coverage = cov_mat),
-        rowData = rd,
-        colData = cd
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays     = list(methylation = methyl_mat, coverage = cov_mat),
+        rowRanges  = site_gr,
+        colData    = cd
     )
-    new("commaData", se,
+    new("commaData", rse,
         genomeInfo = c(chr_sim = 100000L),
         annotation = GenomicRanges::GRanges(),
         motifSites = GenomicRanges::GRanges())
