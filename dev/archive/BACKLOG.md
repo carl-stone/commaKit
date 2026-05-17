@@ -1,9 +1,11 @@
 # comma Backlog — All Work Items
 
-**Last updated:** 2026-05-14
-**Maintained by:** commaBot
+> **ARCHIVED 2026-05-16** — This file is historical. Work items have been migrated to GitHub Issues on [carl-stone/CoMMA](https://github.com/carl-stone/CoMMA/issues). Do not add new items here. See `dev/README.md` for the current project management workflow.
 
-This is the single source of truth for everything that needs to be done. Carl reads this to see what's pending. commaBot reads this to know what to work on next.
+**Last updated:** 2026-05-14
+**Maintained by:** commaBot (historical — no longer updated)
+
+This file was the single source of truth for work items prior to the GitHub Issues migration on 2026-05-15. The content below is preserved for historical reference only.
 
 ---
 
@@ -317,6 +319,8 @@ Should cover:
 ---
 
 ## How to Update This File
+
+> **HISTORICAL** — This section described the workflow when this file was active. Do not follow these instructions. New work items go in [GitHub Issues](https://github.com/carl-stone/CoMMA/issues).
 
 When adding new work items:
 1. Add to the table with a new ID (increment the number)

@@ -91,7 +91,7 @@ Small, low-risk changes may go directly to `main`:
 - typo fixes
 - small `.gitignore` / `.Rbuildignore` changes
 - small planning/documentation updates
-- `dev/STATUS.md` updates
+- GitHub Issues updates
 - focused project-management docs
 
 When in doubt, branch.
@@ -253,7 +253,7 @@ Example:
 - maintaining clean commit history
 - writing PR summaries
 - running tests/checks or reporting when they were not run
-- updating `dev/STATUS.md`, `dev/BACKLOG.md`, and `NEWS.md`
+- updating GitHub Issues and `NEWS.md`
 - preventing accidental commits of local state or secrets
 
 ### Carl owns
