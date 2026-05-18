@@ -3,6 +3,7 @@
 #' @importFrom S4Vectors DataFrame
 #' @importFrom GenomicRanges GRanges
 #' @importFrom IRanges IRanges
+#' @importFrom GenomeInfoDb Seqinfo seqinfo
 NULL
 
 #' Create a commaData object from methylation calling output files
@@ -313,14 +314,6 @@ commaData <- function(files,
     )
     names(site_gr) <- site_keys
 
-    # ── Build colData ───────────────────────────────────────────────────────
-    # Reorder colData to match sample_names order in files
-    cd_ordered <- as.data.frame(
-        colData[match(sample_names, colData$sample_name), , drop = FALSE]
-    )
-    rownames(cd_ordered) <- cd_ordered$sample_name
-    col_df <- S4Vectors::DataFrame(cd_ordered)
-
     # ── Genome info ─────────────────────────────────────────────────────────
     genome_info <- .validateGenomeInfo(genome)
 
@@ -337,6 +330,23 @@ commaData <- function(files,
             genome_info <- genome_info[names(genome_info) %in% data_chroms]
         }
     }
+
+    # ── Attach Seqinfo to rowRanges ──────────────────────────────────────
+    if (!is.null(genome_info)) {
+        GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+            seqnames = names(genome_info),
+            seqlengths = genome_info,
+            isCircular = rep(FALSE, length(genome_info))
+        )
+    }
+
+    # ── Build colData ───────────────────────────────────────────────────────
+    # Reorder colData to match sample_names order in files
+    cd_ordered <- as.data.frame(
+        colData[match(sample_names, colData$sample_name), , drop = FALSE]
+    )
+    rownames(cd_ordered) <- cd_ordered$sample_name
+    col_df <- S4Vectors::DataFrame(cd_ordered)
 
     # ── Annotation ──────────────────────────────────────────────────────────
     ann_gr <- GenomicRanges::GRanges()
@@ -375,7 +385,6 @@ commaData <- function(files,
     # ── Construct commaData ─────────────────────────────────────────────────
     obj <- new("commaData",
                rse,
-               genomeInfo = genome_info,
                annotation = ann_gr,
                motifSites = motif_gr)
 

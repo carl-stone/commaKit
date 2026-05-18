@@ -159,6 +159,13 @@ site_gr <- GenomicRanges::GRanges(
 )
 names(site_gr) <- all_keys
 
+# ── Attach Seqinfo to rowRanges ────────────────────────────────────────────
+GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+    seqnames = CHR_NAME,
+    seqlengths = GENOME_SIZE,
+    isCircular = FALSE
+)
+
 # ── Build colData ─────────────────────────────────────────────────────────────
 col_df <- S4Vectors::DataFrame(
     sample_name = SAMPLES,
@@ -191,7 +198,6 @@ rse <- SummarizedExperiment(
 
 comma_example_data <- new("commaData",
     rse,
-    genomeInfo = c(chr_sim = GENOME_SIZE),
     annotation = ann_gr,
     motifSites = GenomicRanges::GRanges()
 )

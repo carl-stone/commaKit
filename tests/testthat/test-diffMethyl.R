@@ -37,6 +37,11 @@
         is_diff     = c(rep(TRUE, n_diff), rep(FALSE, n_sites - n_diff))
     )
     names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = colnames(methyl_mat),
         condition   = c(rep("control", n_ctrl), rep("treatment", n_treat)),
@@ -49,7 +54,6 @@
         colData    = cd
     )
     new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
         annotation = GenomicRanges::GRanges(),
         motifSites = GenomicRanges::GRanges())
 }
@@ -643,7 +647,6 @@ test_that("diffMethyl: mod_context stored in metadata params", {
         colData    = cd
     )
     new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
         annotation = GenomicRanges::GRanges(),
         motifSites = GenomicRanges::GRanges())
 }

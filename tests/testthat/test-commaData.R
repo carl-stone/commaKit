@@ -28,6 +28,11 @@ library(GenomicRanges)
         mod_context = rep("6mA_GATC", n_sites)
     )
     names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = paste0("s", seq_len(n_samples)),
         condition   = rep(c("control", "treatment"), length.out = n_samples),
@@ -39,7 +44,7 @@ library(GenomicRanges)
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse, genomeInfo = c(chr_sim = 100000L),
+    new("commaData", rse,
         annotation = GenomicRanges::GRanges(),
         motifSites = GenomicRanges::GRanges())
 }
@@ -83,11 +88,6 @@ test_that("validity rejects missing colData columns", {
     expect_error(validObject(obj), regexp = "condition")
 })
 
-test_that("validity rejects non-integer genomeInfo", {
-    obj <- .make_minimal_commaData()
-    obj@genomeInfo <- list(chr_sim = 100000)   # list, not named integer
-    expect_error(validObject(obj), regexp = "genomeInfo")
-})
 
 # ─────────────────────────────────────────────────────────────────────────────
 # show() method

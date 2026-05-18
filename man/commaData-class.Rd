@@ -16,6 +16,11 @@ It is the central object accepted and returned by all \code{comma}
 analysis functions.
 }
 \details{
+Genome size information is stored in the \code{Seqinfo} attached to
+\code{rowRanges(object)}, accessible via \code{seqlengths(object)} or
+\code{seqinfo(object)}. The \code{genome()} accessor returns the same
+named integer vector for backward compatibility.
+
 The class stores methylation data in two assay matrices (accessible via
 \code{\link[SummarizedExperiment]{assay}}):
 \describe{
@@ -50,9 +55,6 @@ Per-sample metadata is in \code{colData(object)} and includes at minimum:
 \section{Slots}{
 
 \describe{
-\item{\code{genomeInfo}}{Named integer vector of chromosome sizes
-c(chromosome name = length in bp).}
-
 \item{\code{annotation}}{\code{\link[GenomicRanges]{GRanges}} of genomic features
 loaded from a GFF3 or BED file. May be an empty \code{GRanges} if no
 annotation was provided.}

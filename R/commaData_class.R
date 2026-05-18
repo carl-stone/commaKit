@@ -2,6 +2,7 @@
 #' @importFrom SummarizedExperiment SummarizedExperiment assay assayNames rowData colData rowRanges
 #' @importFrom S4Vectors DataFrame
 #' @importFrom GenomicRanges GRanges
+#' @importFrom GenomeInfoDb seqinfo seqlengths
 NULL
 
 # ─── Allowed values ──────────────────────────────────────────────────────────
@@ -18,14 +19,18 @@ NULL
 #' It is the central object accepted and returned by all \code{comma}
 #' analysis functions.
 #'
-#' @slot genomeInfo Named integer vector of chromosome sizes
-#'   c(chromosome name = length in bp).
 #' @slot annotation \code{\link[GenomicRanges]{GRanges}} of genomic features
 #'   loaded from a GFF3 or BED file. May be an empty \code{GRanges} if no
 #'   annotation was provided.
 #' @slot motifSites \code{\link[GenomicRanges]{GRanges}} of all instances of
 #'   the user-specified sequence motif in the genome (e.g., all GATC sites).
 #'   May be an empty \code{GRanges} if no motif was specified.
+#'
+#' @details
+#' Genome size information is stored in the \code{Seqinfo} attached to
+#' \code{rowRanges(object)}, accessible via \code{seqlengths(object)} or
+#' \code{seqinfo(object)}. The \code{genome()} accessor returns the same
+#' named integer vector for backward compatibility.
 #'
 #' @details
 #' The class stores methylation data in two assay matrices (accessible via
@@ -74,12 +79,10 @@ setClass(
     "commaData",
     contains = "RangedSummarizedExperiment",
     representation(
-        genomeInfo  = "ANY",   # named integer vector or NULL
         annotation  = "GRanges",
         motifSites  = "GRanges"
     ),
     prototype(
-        genomeInfo  = NULL,
         annotation  = GenomicRanges::GRanges(),
         motifSites  = GenomicRanges::GRanges()
     )
@@ -179,16 +182,6 @@ setValidity("commaData", function(object) {
         ))
     }
 
-    # ── genomeInfo type ─────────────────────────────────────────────────────
-    gi <- object@genomeInfo
-    if (!is.null(gi)) {
-        if (!is.integer(gi) || is.null(names(gi))) {
-            errors <- c(errors,
-                "genomeInfo must be a named integer vector or NULL"
-            )
-        }
-    }
-
     if (length(errors) == 0) TRUE else errors
 })
 
@@ -224,11 +217,11 @@ setMethod("show", "commaData", function(object) {
         cat("conditions:", paste(cond, collapse = ", "), "\n")
     }
 
-    # genome info
-    gi <- object@genomeInfo
-    if (!is.null(gi) && length(gi) > 0) {
-        total_bp <- sum(gi)
-        cat("genome:", length(gi), ifelse(length(gi) == 1, "chromosome", "chromosomes"),
+    # genome info (from Seqinfo)
+    sl <- GenomeInfoDb::seqlengths(object)
+    if (length(sl) > 0 && !all(is.na(sl))) {
+        total_bp <- sum(sl, na.rm = TRUE)
+        cat("genome:", length(sl), ifelse(length(sl) == 1, "chromosome", "chromosomes"),
             paste0("(", format(total_bp, big.mark = ","), " bp total)"), "\n")
     } else {
         cat("genome: not provided\n")

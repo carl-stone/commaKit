@@ -23,6 +23,11 @@
         mod_context = rep("6mA_GATC", n_sites)
     )
     names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("ctrl_1", "ctrl_2", "treat_1"),
         condition   = c("control", "control", "treatment"),
@@ -35,7 +40,6 @@
         colData    = cd
     )
     new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
         annotation = GenomicRanges::GRanges(),
         motifSites = GenomicRanges::GRanges())
 }
@@ -65,6 +69,11 @@
         mod_context = paste(mod_types, motif_vals, sep = "_")
     )
     names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("samp1", "samp2"),
         condition   = c("ctrl", "treat"),
@@ -77,7 +86,6 @@
         colData    = cd
     )
     new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
         annotation = GenomicRanges::GRanges(),
         motifSites = GenomicRanges::GRanges())
 }

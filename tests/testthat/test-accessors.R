@@ -36,6 +36,11 @@ library(GenomicRanges)
         mod_context = c(rep("6mA_GATC", n_6ma), rep("5mC_CCWGG", n_5mc))
     )
     names(site_gr) <- all_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = samp_names,
         condition   = c("control", "control", "treatment"),
@@ -55,7 +60,6 @@ library(GenomicRanges)
     GenomicRanges::mcols(ann)$name         <- "geneA"
 
     new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
         annotation = ann,
         motifSites = GenomicRanges::GRanges())
 }

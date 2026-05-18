@@ -23,6 +23,11 @@
         mod_context = rep("6mA_GATC", n_sites)
     )
     names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("ctrl_1", "treat_1"),
         condition   = c("control", "treatment"),
@@ -44,7 +49,6 @@
         colData    = cd
     )
     new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
         annotation = ann_gr,
         motifSites = GenomicRanges::GRanges())
 }
@@ -106,9 +110,13 @@ test_that("plot_genome_track: error when chromosome not in genome", {
 
 test_that("plot_genome_track: error when no sites on chromosome", {
     obj <- .make_track_data()
-    # Add chr2 to genomeInfo but not to data
-    new_gi <- c(chr_sim = 100000L, chr2 = 50000L)
-    obj@genomeInfo <- new_gi
+    # Add chr2 to Seqinfo but not to data
+    new_si <- GenomeInfoDb::Seqinfo(
+        seqnames = c("chr_sim", "chr2"),
+        seqlengths = c(100000L, 50000L),
+        isCircular = c(FALSE, FALSE)
+    )
+    GenomeInfoDb::seqinfo(obj) <- new_si
     expect_error(plot_genome_track(obj, chromosome = "chr2"),
                  "No methylation sites found")
 })

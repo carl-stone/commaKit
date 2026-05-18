@@ -113,7 +113,6 @@ test_that("methylomeSummary: all-NA sample gives NA mean_beta and median_beta, n
         colData    = SummarizedExperiment::colData(comma_example_data)
     )
     obj_mod <- new("commaData", se_mod,
-                   genomeInfo = comma_example_data@genomeInfo,
                    annotation = comma_example_data@annotation,
                    motifSites = comma_example_data@motifSites)
     result    <- methylomeSummary(obj_mod)

@@ -2,7 +2,7 @@
 #' @importFrom SummarizedExperiment assay rowData "rowData<-" colData rowRanges
 #' @importFrom BiocGenerics annotation start strand
 #' @importFrom IRanges coverage
-#' @importFrom GenomeInfoDb genome seqnames
+#' @importFrom GenomeInfoDb genome seqnames seqlengths seqinfo
 #' @importFrom GenomicRanges mcols
 NULL
 
@@ -231,11 +231,14 @@ setMethod("modContexts", "commaData", function(object) {
 #' Accessor for genome size information
 #'
 #' Returns the chromosome sizes stored in a \code{\link{commaData}} object.
+#' Genome size information is stored in the \code{Seqinfo} attached to
+#' \code{rowRanges(object)}. This accessor returns \code{seqlengths(object)}
+#' for backward compatibility.
 #'
 #' @param x A \code{commaData} object.
 #'
 #' @return A named integer vector of chromosome sizes
-#'   (chromosome name → length in bp), or \code{NULL} if no genome information
+#'   (chromosome name -> length in bp), or \code{NULL} if no genome information
 #'   was provided at construction.
 #'
 #' @examples
@@ -244,7 +247,8 @@ setMethod("modContexts", "commaData", function(object) {
 #'
 #' @export
 setMethod("genome", "commaData", function(x) {
-    x@genomeInfo
+    sl <- GenomeInfoDb::seqlengths(x)
+    if (length(sl) == 0 || all(is.na(sl))) NULL else sl
 })
 
 # ─── annotation() ────────────────────────────────────────────────────────────
@@ -324,7 +328,6 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
 
     new("commaData",
         se_sub,
-        genomeInfo = x@genomeInfo,
         annotation = x@annotation,
         motifSites = x@motifSites
     )

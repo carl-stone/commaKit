@@ -33,6 +33,11 @@
         motif       = "GATC",
         mod_context = "6mA_GATC"
     )
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("ctrl_1", "treat_1"),
         condition   = c("control", "treatment"),
@@ -59,7 +64,6 @@
     annot_gr$name         <- c("geneA", "geneB", "geneC")
 
     new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
         annotation = annot_gr,
         motifSites = GenomicRanges::GRanges()
     )
@@ -85,7 +89,6 @@
             rowRanges  = rowRanges(obj),
             colData    = sampleInfo(obj)
         ),
-        genomeInfo = genome(obj),
         annotation = combined_gr,
         motifSites = motifSites(obj)
     )
@@ -210,6 +213,11 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
         motif       = "GATC",
         mod_context = "6mA_GATC"
     )
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(sample_name = c("ctrl_1", "treat_1"),
                                 condition   = c("control", "treatment"),
                                 replicate   = c(1L, 1L))
@@ -226,7 +234,6 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
     annot_gr$feature_type <- "gene"
     annot_gr$name         <- "geneA"
     tiny_obj <- new("commaData", rse,
-                    genomeInfo = c(chr_sim = 100000L),
                     annotation = annot_gr,
                     motifSites = GenomicRanges::GRanges())
 
@@ -295,7 +302,6 @@ test_that("error on empty annotation", {
                     rowRanges  = rowRanges(obj),
                     colData    = sampleInfo(obj)
                 ),
-                genomeInfo = genome(obj),
                 annotation = GenomicRanges::GRanges(),
                 motifSites = motifSites(obj))
     expect_error(plot_tss_profile(obj2), "annotation\\(object\\) is empty")

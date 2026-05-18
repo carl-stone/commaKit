@@ -385,7 +385,6 @@ diffMethyl <- function(
         colData    = colData(object)
     )
     out <- new("commaData", rse_new,
-               genomeInfo = object@genomeInfo,
                annotation = object@annotation,
                motifSites = object@motifSites)
 

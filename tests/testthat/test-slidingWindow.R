@@ -27,6 +27,11 @@ make_tiny <- function() {
     motif       = c("GATC", "CCWGG", "GATC"),
     mod_context = c("6mA_GATC", "5mC_CCWGG", "6mA_GATC")
   )
+  GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+    seqnames = "chr_test",
+    seqlengths = 20L,
+    isCircular = FALSE
+  )
   cd <- S4Vectors::DataFrame(
     sample_name = c("samp1", "samp2"),
     condition   = c("ctrl", "treat"),
@@ -38,7 +43,6 @@ make_tiny <- function() {
     colData    = cd
   )
   new("commaData", rse,
-      genomeInfo = gi,
       annotation = GenomicRanges::GRanges(),
       motifSites = GenomicRanges::GRanges())
 }
@@ -145,9 +149,14 @@ test_that("slidingWindow: error on missing window argument", {
 })
 
 test_that("slidingWindow: error when genome is NULL", {
+    data(comma_example_data)
+    rse_no_genome <- as(comma_example_data, "RangedSummarizedExperiment")
+    rr <- rowRanges(rse_no_genome)
+    # Drop all seqlengths to simulate missing genome info
+    GenomeInfoDb::seqlengths(rr) <- NA_integer_
+    rowRanges(rse_no_genome) <- rr
     obj_no_genome <- new("commaData",
-        as(comma_example_data, "RangedSummarizedExperiment"),
-        genomeInfo = NULL,
+        rse_no_genome,
         annotation = comma_example_data@annotation,
         motifSites = comma_example_data@motifSites
     )
@@ -189,6 +198,11 @@ test_that("slidingWindow: known smoothed value for simple input", {
         motif       = "GATC",
         mod_context = "6mA_GATC"
     )
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_test",
+        seqlengths = 20L,
+        isCircular = FALSE
+    )
     methyl_mat <- matrix(c(0.2, 0.8, 0.5), nrow = 3, ncol = 1,
                          dimnames = list(NULL, "samp1"))
     cov_mat    <- matrix(10L, nrow = 3, ncol = 1,
@@ -203,7 +217,7 @@ test_that("slidingWindow: known smoothed value for simple input", {
         rowRanges  = site_gr,
         colData    = cd
     )
-    obj <- new("commaData", rse, genomeInfo = gi,
+    obj <- new("commaData", rse,
                annotation = GenomicRanges::GRanges(),
                motifSites = GenomicRanges::GRanges())
 
