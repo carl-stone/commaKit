@@ -32,8 +32,7 @@ library(GenomicRanges)
         ),
         strand   = c(rep("+", n_6ma), rep("-", n_5mc)),
         mod_type    = c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
-        motif       = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc)),
-        mod_context = c(rep("6mA_GATC", n_6ma), rep("5mC_CCWGG", n_5mc))
+        motif       = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc))
     )
     names(site_gr) <- all_keys
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
@@ -52,16 +51,19 @@ library(GenomicRanges)
         rowRanges  = site_gr,
         colData    = cd
     )
+    obj <- new("commaData", rse)
+
+    # Store annotation in metadata
     ann <- GenomicRanges::GRanges(
         seqnames = "chr_sim",
         ranges   = IRanges::IRanges(start = 1L, end = 500L)
     )
     GenomicRanges::mcols(ann)$feature_type <- "gene"
     GenomicRanges::mcols(ann)$name         <- "geneA"
+    S4Vectors::metadata(obj)$annotation <- ann
+    S4Vectors::metadata(obj)$motifSites <- GenomicRanges::GRanges()
 
-    new("commaData", rse,
-        annotation = ann,
-        motifSites = GenomicRanges::GRanges())
+    obj
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -403,6 +405,15 @@ test_that("modContexts: returns sorted unique mod_context values", {
     expect_equal(mc, c("5mC_CCWGG", "6mA_GATC"))
 })
 
+test_that("modContexts: works even without mod_context in mcols", {
+    obj <- .make_two_modtype()
+    # mod_context should not be in mcols anymore
+    expect_false("mod_context" %in% colnames(GenomicRanges::mcols(rowRanges(obj))))
+    # But modContexts() should still work
+    mc <- modContexts(obj)
+    expect_equal(mc, c("5mC_CCWGG", "6mA_GATC"))
+})
+
 test_that("modContexts: returns character vector", {
     obj <- .make_two_modtype()
     expect_type(modContexts(obj), "character")
@@ -418,7 +429,6 @@ test_that("modContexts: returns 'mod_type' only for NA-motif rows", {
     obj <- .make_two_modtype()
     rd  <- rowData(obj)
     rd$motif      <- NA_character_
-    rd$mod_context <- rd$mod_type   # fallback: mod_type without motif suffix
     rowData(obj) <- rd
     mc <- modContexts(obj)
     expect_true(all(mc %in% c("6mA", "5mC")))
@@ -432,14 +442,17 @@ test_that("modContexts: returns 'mod_type' only for NA-motif rows", {
 test_that("subset: mod_context filters to matching rows", {
     obj <- .make_two_modtype()
     sub <- subset(obj, mod_context = "6mA_GATC")
-    expect_true(all(rowData(sub)$mod_context == "6mA_GATC"))
+    # Use siteInfo() to check mod_context (computed on demand)
+    si <- siteInfo(sub)
+    expect_true(all(si$mod_context == "6mA_GATC"))
     expect_equal(nrow(sub), 10L)
 })
 
 test_that("subset: mod_context = '5mC_CCWGG' retains only 5mC rows", {
     obj <- .make_two_modtype()
     sub <- subset(obj, mod_context = "5mC_CCWGG")
-    expect_true(all(rowData(sub)$mod_context == "5mC_CCWGG"))
+    si <- siteInfo(sub)
+    expect_true(all(si$mod_context == "5mC_CCWGG"))
     expect_equal(nrow(sub), 5L)
 })
 

@@ -30,8 +30,7 @@
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = rep("+", n_sites),
         mod_type    = rep("6mA", n_sites),
-        motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites)
+        motif       = rep("GATC", n_sites)
     )
     names(site_gr) <- site_keys
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
@@ -50,9 +49,7 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse,
-        annotation = GenomicRanges::GRanges(),
-        motifSites = GenomicRanges::GRanges())
+    new("commaData", rse)
 }
 
 # ─── File creation & return value ─────────────────────────────────────────────

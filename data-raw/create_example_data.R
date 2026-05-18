@@ -153,8 +153,6 @@ site_gr <- GenomicRanges::GRanges(
     strand   = c(gatc_strands, ccgg_strands),
     mod_type    = c(rep("6mA", N_6MA_SITES), rep("5mC", N_5MC_SITES)),
     motif       = c(rep(MOTIF_6MA, N_6MA_SITES), rep(MOTIF_5MC, N_5MC_SITES)),
-    mod_context = c(rep(paste0("6mA_", MOTIF_6MA), N_6MA_SITES),
-                    rep(paste0("5mC_", MOTIF_5MC), N_5MC_SITES)),
     is_diff     = c(is_diff_6ma, rep(FALSE, N_5MC_SITES))  # ground truth for testing
 )
 names(site_gr) <- all_keys
@@ -196,11 +194,11 @@ rse <- SummarizedExperiment(
     colData    = col_df
 )
 
-comma_example_data <- new("commaData",
-    rse,
-    annotation = ann_gr,
-    motifSites = GenomicRanges::GRanges()
-)
+comma_example_data <- new("commaData", rse)
+
+# Store annotation and motifSites in metadata
+S4Vectors::metadata(comma_example_data)$annotation <- ann_gr
+S4Vectors::metadata(comma_example_data)$motifSites <- GenomicRanges::GRanges()
 
 # ── Save ──────────────────────────────────────────────────────────────────────
 usethis::use_data(comma_example_data, overwrite = TRUE, compress = "xz")

@@ -24,8 +24,7 @@ make_tiny <- function() {
     ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
     strand   = "+",
     mod_type    = c("6mA", "5mC", "6mA"),   # mixed types for filter test
-    motif       = c("GATC", "CCWGG", "GATC"),
-    mod_context = c("6mA_GATC", "5mC_CCWGG", "6mA_GATC")
+    motif       = c("GATC", "CCWGG", "GATC")
   )
   GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
     seqnames = "chr_test",
@@ -42,9 +41,7 @@ make_tiny <- function() {
     rowRanges  = site_gr,
     colData    = cd
   )
-  new("commaData", rse,
-      annotation = GenomicRanges::GRanges(),
-      motifSites = GenomicRanges::GRanges())
+  new("commaData", rse)
 }
 
 tiny_data <- make_tiny()
@@ -155,11 +152,9 @@ test_that("slidingWindow: error when genome is NULL", {
     # Drop all seqlengths to simulate missing genome info
     GenomeInfoDb::seqlengths(rr) <- NA_integer_
     rowRanges(rse_no_genome) <- rr
-    obj_no_genome <- new("commaData",
-        rse_no_genome,
-        annotation = comma_example_data@annotation,
-        motifSites = comma_example_data@motifSites
-    )
+    obj_no_genome <- new("commaData", rse_no_genome)
+    # Copy metadata from original
+    S4Vectors::metadata(obj_no_genome) <- S4Vectors::metadata(comma_example_data)
     expect_error(slidingWindow(obj_no_genome, window = 1000L), "genome\\(object\\)")
 })
 
@@ -195,8 +190,7 @@ test_that("slidingWindow: known smoothed value for simple input", {
         ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
         strand   = "+",
         mod_type    = "6mA",
-        motif       = "GATC",
-        mod_context = "6mA_GATC"
+        motif       = "GATC"
     )
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
         seqnames = "chr_test",
@@ -217,9 +211,7 @@ test_that("slidingWindow: known smoothed value for simple input", {
         rowRanges  = site_gr,
         colData    = cd
     )
-    obj <- new("commaData", rse,
-               annotation = GenomicRanges::GRanges(),
-               motifSites = GenomicRanges::GRanges())
+    obj <- new("commaData", rse)
 
     # window=5 centered on position 10 covers positions 8:12.
     # Only the site at position 10 (beta=0.8) falls in [8:12]; sites at 5 and 15
