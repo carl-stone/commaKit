@@ -57,6 +57,10 @@ strand) with the mcols columns.
 
 Per-sample metadata is in \code{colData(object)} and includes at minimum:
 \code{sample_name}, \code{condition}, \code{replicate}.
+
+The methylation caller and minimum coverage threshold are stored in
+\code{metadata(object)} and accessible via \code{\link{caller}(object)}
+and \code{\link{minCoverage}(object)}.
 }
 \seealso{
 \code{\link{commaData}} for the constructor,
