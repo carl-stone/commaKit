@@ -183,6 +183,14 @@ test_that("genome() returns correct chromosome sizes", {
     expect_equal(genome(obj), c(chr_sim = 100000L))
 })
 
+test_that("genome() returns NULL when no Seqinfo", {
+    obj <- .make_two_modtype()
+    rr <- rowRanges(obj)
+    GenomeInfoDb::seqlengths(rr) <- NA_integer_
+    rowRanges(obj) <- rr
+    expect_null(genome(obj))
+})
+
 # ─────────────────────────────────────────────────────────────────────────────
 # annotation()
 # ─────────────────────────────────────────────────────────────────────────────

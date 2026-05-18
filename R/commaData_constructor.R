@@ -27,7 +27,7 @@ NULL
 #'   (e.g., \code{BSgenome.Ecoli.NCBI.20080805$NC_000913}) as that yields a
 #'   \code{DNAString} which has no chromosome name and cannot be used. Set to
 #'   \code{NULL} to omit genome information (not recommended). When a
-#'   multi-sequence source is provided, genomeInfo is automatically restricted
+#'   multi-sequence source is provided, genome info is automatically restricted
 #'   to chromosomes present in the data.
 #' @param annotation Optional. Path to a GFF3 or BED annotation file, or a
 #'   pre-loaded \code{\link[GenomicRanges]{GRanges}} object. If \code{NULL},
@@ -317,13 +317,13 @@ commaData <- function(files,
     # ── Genome info ─────────────────────────────────────────────────────────
     genome_info <- .validateGenomeInfo(genome)
 
-    # Restrict genomeInfo to chromosomes actually present in the data
+    # Restrict genome info to chromosomes actually present in the data
     if (!is.null(genome_info)) {
         data_chroms  <- unique(all_sites$chrom)
         extra_chroms <- setdiff(names(genome_info), data_chroms)
         if (length(extra_chroms) > 0L) {
             message(
-                "Dropping ", length(extra_chroms), " chromosome(s) from genomeInfo ",
+                "Dropping ", length(extra_chroms), " chromosome(s) from genome info ",
                 "not present in data: ",
                 paste(extra_chroms, collapse = ", ")
             )
