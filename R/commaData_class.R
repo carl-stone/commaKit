@@ -45,7 +45,9 @@ NULL
 #' \code{\link[SummarizedExperiment]{rowRanges}(object)}, a
 #' \code{\link[GenomicRanges]{GRanges}} with one 1-bp range per methylation
 #' site. Per-site metadata is in the \code{mcols} of this GRanges and
-#' includes at minimum: \code{mod_type} and \code{motif}. The \code{motif}
+#' includes at minimum: \code{mod_type} and \code{motif}. The \code{mod_type}
+#' column is a factor with levels \code{c("4mC", "5mC", "6mA")}, enforcing
+#' valid values at the data structure level. The \code{motif}
 #' column stores the sequence context of each site (e.g., \code{"GATC"} or
 #' \code{"CCWGG"}) as extracted from the modkit \code{mod_code} field. It is
 #' \code{NA} for Dorado and Megalodon callers. The \code{mod_context} is
@@ -114,9 +116,27 @@ setValidity("commaData", function(object) {
         }
     }
 
-    # ── mod_type allowed values ─────────────────────────────────────────────
+    # ── mod_type must be a factor with valid levels ─────────────────────────
     if ("mod_type" %in% colnames(mc)) {
-        bad_types <- setdiff(unique(mc$mod_type), .VALID_MOD_TYPES)
+        if (!is.factor(mc$mod_type)) {
+            errors <- c(errors, paste0(
+                "rowRanges mcols$mod_type must be a factor. ",
+                "Use factor(mod_type, levels = .VALID_MOD_TYPES) when constructing."
+            ))
+        } else {
+            # Check that all factor levels are valid
+            bad_levels <- setdiff(levels(mc$mod_type), .VALID_MOD_TYPES)
+            if (length(bad_levels) > 0) {
+                errors <- c(errors, paste0(
+                    "rowRanges mcols$mod_type has invalid factor levels: ",
+                    paste(bad_levels, collapse = ", "),
+                    ". Allowed levels: ",
+                    paste(.VALID_MOD_TYPES, collapse = ", ")
+                ))
+            }
+        }
+        mod_type_vals <- as.character(unique(mc$mod_type))
+        bad_types <- setdiff(mod_type_vals, .VALID_MOD_TYPES)
         if (length(bad_types) > 0) {
             errors <- c(errors, paste0(
                 "rowRanges mcols$mod_type contains unrecognized values: ",

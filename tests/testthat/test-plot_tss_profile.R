@@ -29,7 +29,7 @@
         seqnames = "chr_sim",
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = "+",
-        mod_type    = "6mA",
+        mod_type    = factor("6mA", levels = c("4mC", "5mC", "6mA")),
         motif       = "GATC"
     )
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
@@ -208,7 +208,7 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
         seqnames = "chr_sim",
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = "+",
-        mod_type    = "6mA",
+        mod_type    = factor("6mA", levels = c("4mC", "5mC", "6mA")),
         motif       = "GATC"
     )
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(

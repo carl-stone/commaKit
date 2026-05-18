@@ -308,7 +308,7 @@ commaData <- function(files,
         seqnames = all_sites$chrom,
         ranges   = IRanges::IRanges(start = all_sites$position, width = 1L),
         strand   = all_sites$strand,
-        mod_type    = all_sites$mod_type,
+        mod_type    = factor(all_sites$mod_type, levels = .VALID_MOD_TYPES),
         motif       = all_sites$motif
     )
     names(site_gr) <- site_keys

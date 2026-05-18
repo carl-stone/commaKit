@@ -23,7 +23,7 @@ library(GenomicRanges)
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = seq_len(n_sites) * 100L, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
         motif       = rep("GATC", n_sites)
     )
     names(site_gr) <- site_keys
@@ -66,8 +66,16 @@ test_that("validity rejects missing rowData columns", {
 
 test_that("validity rejects unrecognized mod_type values", {
     obj <- .make_minimal_commaData()
+    # Assigning a value not in factor levels converts the column to character
     rowData(obj)$mod_type <- rep("7mX", nrow(obj))
     expect_error(validObject(obj), regexp = "7mX")
+})
+
+test_that("validity rejects non-factor mod_type column", {
+    obj <- .make_minimal_commaData()
+    # Replace factor with character vector (simulates old-style object)
+    mcols(rowRanges(obj))$mod_type <- rep("6mA", nrow(obj))
+    expect_error(validObject(obj), regexp = "must be a factor")
 })
 
 test_that("validity rejects rowRanges with width != 1", {
@@ -277,7 +285,7 @@ test_that("commaData() mod_type filter reduces sites", {
     )
     # Only 6mA sites retained
     expect_true(nrow(cd_6ma) <= nrow(cd_all))
-    expect_equal(unique(rowData(cd_6ma)$mod_type), "6mA")
+    expect_equal(as.character(unique(rowData(cd_6ma)$mod_type)), "6mA")
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -374,4 +382,11 @@ test_that("mod_context is not stored in rowData but available via siteInfo", {
 test_that("modContexts() returns correct values without mod_context column", {
     obj <- .make_minimal_commaData()
     expect_equal(modContexts(obj), "6mA_GATC")
+})
+
+test_that("mod_type is a factor with valid levels in example data", {
+    data(comma_example_data)
+    mc <- mcols(rowRanges(comma_example_data))
+    expect_true(is.factor(mc$mod_type))
+    expect_equal(levels(mc$mod_type), c("4mC", "5mC", "6mA"))
 })

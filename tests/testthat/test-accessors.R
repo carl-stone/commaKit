@@ -31,7 +31,8 @@ library(GenomicRanges)
             width = 1L
         ),
         strand   = c(rep("+", n_6ma), rep("-", n_5mc)),
-        mod_type    = c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
+        mod_type    = factor(c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
+                             levels = c("4mC", "5mC", "6mA")),
         motif       = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc))
     )
     names(site_gr) <- all_keys
@@ -266,7 +267,7 @@ test_that("[ subsetting by logical vector works", {
 test_that("subset() by mod_type returns only that mod type", {
     obj   <- .make_two_modtype()
     sub   <- subset(obj, mod_type = "6mA")
-    types <- unique(rowData(sub)$mod_type)
+    types <- as.character(unique(rowData(sub)$mod_type))
     expect_equal(types, "6mA")
 })
 

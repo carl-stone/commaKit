@@ -18,7 +18,7 @@
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
         motif       = rep("GATC", n_sites)
     )
     names(site_gr) <- site_keys
@@ -46,7 +46,8 @@
     n_6ma <- 8L; n_5mc <- 4L
     n_sites <- n_6ma + n_5mc
     positions <- seq(1000L, n_sites * 1000L, by = 1000L)
-    mod_types  <- c(rep("6mA", n_6ma), rep("5mC", n_5mc))
+    mod_types  <- factor(c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
+                         levels = c("4mC", "5mC", "6mA"))
     motif_vals <- c(rep("GATC", n_6ma), rep("CCWGG", n_5mc))
     site_keys  <- paste0("chr_sim:", positions, ":+:", mod_types, ":", motif_vals)
     set.seed(2L)

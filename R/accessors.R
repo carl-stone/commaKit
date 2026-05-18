@@ -164,7 +164,7 @@ setGeneric("modTypes", function(object) standardGeneric("modTypes"))
 
 #' @rdname modTypes
 setMethod("modTypes", "commaData", function(object) {
-    sort(unique(rowData(object)$mod_type))
+    sort(unique(as.character(rowData(object)$mod_type)))
 })
 
 # ─── motifs() ────────────────────────────────────────────────────────────────
@@ -482,6 +482,8 @@ setMethod("minCoverage", "commaData", function(object) {
 # Returns "mod_type_motif" when motif is known, or just "mod_type" when
 # motif is NA (e.g., Dorado/Megalodon callers).
 .computeModContext <- function(mod_type, motif) {
+    # Convert factor to character (paste/ifelse on factor return integer codes)
+    mod_type <- as.character(mod_type)
     ifelse(is.na(motif), mod_type, paste(mod_type, motif, sep = "_"))
 }
 

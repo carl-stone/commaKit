@@ -39,7 +39,9 @@ Genomic positions are stored in
 \code{\link[SummarizedExperiment]{rowRanges}(object)}, a
 \code{\link[GenomicRanges]{GRanges}} with one 1-bp range per methylation
 site. Per-site metadata is in the \code{mcols} of this GRanges and
-includes at minimum: \code{mod_type} and \code{motif}. The \code{motif}
+includes at minimum: \code{mod_type} and \code{motif}. The \code{mod_type}
+column is a factor with levels \code{c("4mC", "5mC", "6mA")}, enforcing
+valid values at the data structure level. The \code{motif}
 column stores the sequence context of each site (e.g., \code{"GATC"} or
 \code{"CCWGG"}) as extracted from the modkit \code{mod_code} field. It is
 \code{NA} for Dorado and Megalodon callers. The \code{mod_context} is

@@ -151,7 +151,8 @@ site_gr <- GenomicRanges::GRanges(
         width = 1L
     ),
     strand   = c(gatc_strands, ccgg_strands),
-    mod_type    = c(rep("6mA", N_6MA_SITES), rep("5mC", N_5MC_SITES)),
+    mod_type    = factor(c(rep("6mA", N_6MA_SITES), rep("5mC", N_5MC_SITES)),
+                         levels = c("4mC", "5mC", "6mA")),
     motif       = c(rep(MOTIF_6MA, N_6MA_SITES), rep(MOTIF_5MC, N_5MC_SITES)),
     is_diff     = c(is_diff_6ma, rep(FALSE, N_5MC_SITES))  # ground truth for testing
 )

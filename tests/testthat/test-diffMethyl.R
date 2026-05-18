@@ -31,7 +31,7 @@
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = seq_len(n_sites) * 100L, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
         motif       = rep("GATC", n_sites),
         is_diff     = c(rep(TRUE, n_diff), rep(FALSE, n_sites - n_diff))
     )
@@ -623,7 +623,7 @@ test_that("diffMethyl: mod_context stored in metadata params", {
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = seq_len(n_sites) * 100L, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
         motif       = rep("GATC", n_sites)
     )
     names(site_gr) <- site_keys

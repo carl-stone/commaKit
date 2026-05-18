@@ -23,7 +23,7 @@ make_tiny <- function() {
     seqnames = "chr_test",
     ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
     strand   = "+",
-    mod_type    = c("6mA", "5mC", "6mA"),   # mixed types for filter test
+    mod_type    = factor(c("6mA", "5mC", "6mA"), levels = c("4mC", "5mC", "6mA")),   # mixed types for filter test
     motif       = c("GATC", "CCWGG", "GATC")
   )
   GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
@@ -189,7 +189,7 @@ test_that("slidingWindow: known smoothed value for simple input", {
         seqnames = "chr_test",
         ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
         strand   = "+",
-        mod_type    = "6mA",
+        mod_type    = factor("6mA", levels = c("4mC", "5mC", "6mA")),
         motif       = "GATC"
     )
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
