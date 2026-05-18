@@ -182,3 +182,17 @@ test_that("mValues: works with comma_example_data", {
     expect_equal(dim(m), dim(methylation(comma_example_data)))
     expect_true(is.numeric(m))
 })
+
+test_that("mValues: mod_type accepts character vector", {
+    data(comma_example_data)
+    m <- mValues(comma_example_data, mod_type = c("6mA", "5mC"))
+    expect_equal(nrow(m), nrow(comma_example_data))
+})
+
+test_that("mValues: mod_type vector with invalid value gives error", {
+    data(comma_example_data)
+    expect_error(
+        mValues(comma_example_data, mod_type = c("6mA", "invalid")),
+        "not found in object"
+    )
+})

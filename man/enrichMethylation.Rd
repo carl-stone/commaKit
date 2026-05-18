@@ -109,7 +109,7 @@ Default \code{0.1}.}
 \item{gene_score_agg}{Character string; aggregation across sites per gene.
 Either \code{"max"} (default) or \code{"mean"}.}
 
-\item{mod_type}{Character string or \code{NULL}; modification-type filter
+\item{mod_type}{Character vector or \code{NULL}; modification-type filter
 passed to \code{\link{results}}.  Ignored when \code{object} is a
 \code{data.frame}.}
 

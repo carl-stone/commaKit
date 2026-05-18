@@ -16,8 +16,8 @@ NULL
 #' @param end Integer or \code{NULL}. End position of the region to display
 #'   (1-based, inclusive). If \code{NULL}, the plot extends to the end of the
 #'   chromosome.
-#' @param mod_type Character string specifying a single modification type to
-#'   display (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default),
+#' @param mod_type Character vector of modification types to display
+#'   (e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL} (default),
 #'   all modification types are shown, colored differently.
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are displayed (e.g., \code{"GATC"}).
@@ -87,9 +87,11 @@ plot_genome_track <- function(object,
     ## --- Optional mod_type filter -------------------------------------------
     if (!is.null(mod_type)) {
         available <- modTypes(object)
-        if (!mod_type %in% available) {
-            stop("'mod_type' = '", mod_type, "' not found in object. ",
-                 "Available types: ", paste(available, collapse = ", "), ".")
+        bad <- setdiff(mod_type, available)
+        if (length(bad) > 0L) {
+            stop("'mod_type' value(s) not found in object: ",
+                 paste(bad, collapse = ", "),
+                 ". Available types: ", paste(available, collapse = ", "), ".")
         }
         object <- subset(object, mod_type = mod_type)
     }

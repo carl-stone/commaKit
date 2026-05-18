@@ -118,3 +118,17 @@ test_that("plot_coverage: works with comma_example_data", {
     p <- plot_coverage(comma_example_data)
     expect_s3_class(p, "ggplot")
 })
+
+test_that("plot_coverage: mod_type accepts character vector", {
+    data(comma_example_data)
+    p <- plot_coverage(comma_example_data, mod_type = c("6mA", "5mC"))
+    expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_coverage: mod_type vector with invalid value gives error", {
+    data(comma_example_data)
+    expect_error(
+        plot_coverage(comma_example_data, mod_type = c("6mA", "invalid")),
+        "not found in object"
+    )
+})

@@ -20,9 +20,10 @@ NULL
 #'   \eqn{[p - \lfloor w/2 \rfloor,\; p + \lfloor w/2 \rfloor]}.
 #' @param stat Character string. Summary statistic to apply within each window.
 #'   One of \code{"median"} (default) or \code{"mean"}.
-#' @param mod_type Character string or \code{NULL}. If provided, only sites of
-#'   the specified modification type (e.g., \code{"6mA"}) are included in the
-#'   smoothing. If \code{NULL} (default), all sites are used.
+#' @param mod_type Character vector or \code{NULL}. If provided, only sites of
+#'   the specified modification type(s) (e.g., \code{"6mA"},
+#'   \code{c("6mA", "5mC")}) are included in the smoothing. If \code{NULL}
+#'   (default), all sites are used.
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are included (e.g., \code{"GATC"}).
 #'   If \code{NULL} (default), all motifs are included.

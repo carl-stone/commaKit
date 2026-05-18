@@ -120,3 +120,18 @@ test_that("methylomeSummary: all-NA sample gives NA mean_beta and median_beta, n
     expect_true(is.na(ctrl1_row$mean_beta))
     expect_true(is.na(ctrl1_row$median_beta))
 })
+
+test_that("methylomeSummary: mod_type accepts character vector", {
+    data(comma_example_data)
+    ms <- methylomeSummary(comma_example_data, mod_type = c("6mA", "5mC"))
+    expect_true(is.data.frame(ms))
+    expect_equal(ms$mod_type[1], "6mA,5mC")
+})
+
+test_that("methylomeSummary: mod_type vector with invalid value gives error", {
+    data(comma_example_data)
+    expect_error(
+        methylomeSummary(comma_example_data, mod_type = c("6mA", "invalid")),
+        "not found in object"
+    )
+})

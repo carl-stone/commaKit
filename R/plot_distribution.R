@@ -8,8 +8,8 @@ NULL
 #' methylation level distributions across samples and modification types.
 #'
 #' @param object A \code{\link{commaData}} object.
-#' @param mod_type Character string specifying a single modification type to
-#'   plot (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), all
+#' @param mod_type Character vector of modification types to include
+#'   (e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL} (default), all
 #'   modification types are included and the plot is faceted by
 #'   \code{mod_type}.
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
@@ -61,9 +61,11 @@ plot_methylation_distribution <- function(object,
     ## --- Optional mod_type filter -------------------------------------------
     if (!is.null(mod_type)) {
         available <- modTypes(object)
-        if (!mod_type %in% available) {
-            stop("'mod_type' = '", mod_type, "' not found in object. ",
-                 "Available types: ", paste(available, collapse = ", "), ".")
+        bad <- setdiff(mod_type, available)
+        if (length(bad) > 0L) {
+            stop("'mod_type' value(s) not found in object: ",
+                 paste(bad, collapse = ", "),
+                 ". Available types: ", paste(available, collapse = ", "), ".")
         }
         object <- subset(object, mod_type = mod_type)
     }

@@ -11,9 +11,9 @@
 #'   methylated and unmethylated read counts before log-transformation. Prevents
 #'   infinite values at beta = 0 or beta = 1 and corresponds to a symmetric
 #'   Beta(alpha, alpha) prior on the methylation fraction. Default \code{0.5}.
-#' @param mod_type Character string specifying a single modification type
-#'   (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), M-values
-#'   are computed for all sites in \code{object}.
+#' @param mod_type Character vector of modification types to include
+#'   (e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL} (default),
+#'   M-values are computed for all sites in \code{object}.
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are included. If \code{NULL} (default),
 #'   all motifs are included.
@@ -75,9 +75,11 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
     ## --- Optional mod_type filter -------------------------------------------
     if (!is.null(mod_type)) {
         available <- modTypes(object)
-        if (!mod_type %in% available) {
-            stop("'mod_type' = '", mod_type, "' not found in object. ",
-                 "Available types: ", paste(available, collapse = ", "), ".")
+        bad <- setdiff(mod_type, available)
+        if (length(bad) > 0L) {
+            stop("'mod_type' value(s) not found in object: ",
+                 paste(bad, collapse = ", "),
+                 ". Available types: ", paste(available, collapse = ", "), ".")
         }
         object <- subset(object, mod_type = mod_type)
     }

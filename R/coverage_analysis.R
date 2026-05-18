@@ -126,8 +126,8 @@ coverageDepth <- function(object,
 #'   include. If \code{NULL} (default), all unique coverage levels observed
 #'   across all samples are used. Useful to pass \code{5:30} to focus on a
 #'   specific depth range.
-#' @param mod_type Character string or \code{NULL}. If provided, only sites
-#'   of the specified modification type are included. Default: \code{NULL}
+#' @param mod_type Character vector or \code{NULL}. If provided, only sites
+#'   of the specified modification type(s) are included. Default: \code{NULL}
 #'   (all types).
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are included (e.g., \code{"GATC"}).
@@ -163,10 +163,12 @@ varianceByDepth <- function(object,
 
     if (!is.null(mod_type)) {
         available <- modTypes(object)
-        if (!mod_type %in% available) {
+        bad <- setdiff(mod_type, available)
+        if (length(bad) > 0L) {
             stop(
-                "'mod_type' = '", mod_type, "' not found in object. ",
-                "Available types: ", paste(available, collapse = ", ")
+                "'mod_type' value(s) not found in object: ",
+                paste(bad, collapse = ", "),
+                ". Available types: ", paste(available, collapse = ", ")
             )
         }
         object <- subset(object, mod_type = mod_type)
