@@ -33,7 +33,7 @@ named integer vector — do not index into the BSgenome with \code{$}
 (e.g., \code{BSgenome.Ecoli.NCBI.20080805$NC_000913}) as that yields a
 \code{DNAString} which has no chromosome name and cannot be used. Set to
 \code{NULL} to omit genome information (not recommended). When a
-multi-sequence source is provided, genomeInfo is automatically restricted
+multi-sequence source is provided, genome info is automatically restricted
 to chromosomes present in the data.}
 
 \item{annotation}{Optional. Path to a GFF3 or BED annotation file, or a

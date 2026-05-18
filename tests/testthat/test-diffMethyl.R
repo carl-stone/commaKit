@@ -33,7 +33,6 @@
         strand   = rep("+", n_sites),
         mod_type    = rep("6mA", n_sites),
         motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites),
         is_diff     = c(rep(TRUE, n_diff), rep(FALSE, n_sites - n_diff))
     )
     names(site_gr) <- site_keys
@@ -53,9 +52,7 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse,
-        annotation = GenomicRanges::GRanges(),
-        motifSites = GenomicRanges::GRanges())
+    new("commaData", rse)
 }
 
 # ─── Basic functionality ──────────────────────────────────────────────────────
@@ -578,19 +575,19 @@ test_that("diffMethyl: mod_context parameter filters to matching contexts", {
     data(comma_example_data)
     dm_6mA <- diffMethyl(comma_example_data, formula = ~ condition,
                           mod_context = "6mA_GATC", method = "quasi_f")
-    rd <- SummarizedExperiment::rowData(dm_6mA)
+    si <- siteInfo(dm_6mA)
     # Only 6mA_GATC sites in result
-    expect_true(all(rd$mod_context[!is.na(rd$dm_pvalue)] == "6mA_GATC"))
+    expect_true(all(si$mod_context[!is.na(si$dm_pvalue)] == "6mA_GATC"))
 })
 
 test_that("diffMethyl: loops separately over each mod_context", {
     data(comma_example_data)
     # comma_example_data has 2 contexts: 6mA_GATC and 5mC_CCWGG
     dm <- diffMethyl(comma_example_data, formula = ~ condition, method = "quasi_f")
-    rd <- SummarizedExperiment::rowData(dm)
+    si <- siteInfo(dm)
     # Both contexts should have results (non-NA pvalues)
-    has_6mA <- any(!is.na(rd$dm_pvalue[rd$mod_context == "6mA_GATC"]))
-    has_5mC <- any(!is.na(rd$dm_pvalue[rd$mod_context == "5mC_CCWGG"]))
+    has_6mA <- any(!is.na(si$dm_pvalue[si$mod_context == "6mA_GATC"]))
+    has_5mC <- any(!is.na(si$dm_pvalue[si$mod_context == "5mC_CCWGG"]))
     expect_true(has_6mA)
     expect_true(has_5mC)
 })
@@ -627,8 +624,7 @@ test_that("diffMethyl: mod_context stored in metadata params", {
         ranges   = IRanges::IRanges(start = seq_len(n_sites) * 100L, width = 1L),
         strand   = rep("+", n_sites),
         mod_type    = rep("6mA", n_sites),
-        motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites)
+        motif       = rep("GATC", n_sites)
     )
     names(site_gr) <- site_keys
     cond_vals <- c("WT", "WT", "HNS", "HNS")
@@ -646,9 +642,7 @@ test_that("diffMethyl: mod_context stored in metadata params", {
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse,
-        annotation = GenomicRanges::GRanges(),
-        motifSites = GenomicRanges::GRanges())
+    new("commaData", rse)
 }
 
 test_that("diffMethyl: factor condition uses first factor level as reference", {

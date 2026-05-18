@@ -127,13 +127,20 @@ setGeneric("siteInfo", function(object) standardGeneric("siteInfo"))
 #' @rdname siteInfo
 setMethod("siteInfo", "commaData", function(object) {
     rr <- rowRanges(object)
-    S4Vectors::DataFrame(
+    mc <- GenomicRanges::mcols(rr)
+    df <- S4Vectors::DataFrame(
         chrom       = as.character(GenomeInfoDb::seqnames(rr)),
         position    = BiocGenerics::start(rr),
         strand      = as.character(BiocGenerics::strand(rr)),
-        GenomicRanges::mcols(rr),
+        mc,
         row.names   = names(rr)
     )
+    # Add computed mod_context column if not already present
+    if (!"mod_context" %in% colnames(df) &&
+        "mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
+        df$mod_context <- .computeModContext(mc$mod_type, mc$motif)
+    }
+    df
 })
 
 # ─── modTypes() ──────────────────────────────────────────────────────────────
@@ -223,7 +230,8 @@ setGeneric("modContexts", function(object) standardGeneric("modContexts"))
 
 #' @rdname modContexts
 setMethod("modContexts", "commaData", function(object) {
-    sort(unique(rowData(object)$mod_context))
+    mc <- GenomicRanges::mcols(rowRanges(object))
+    sort(unique(.computeModContext(mc$mod_type, mc$motif)))
 })
 
 # ─── genome() ────────────────────────────────────────────────────────────────
@@ -270,7 +278,8 @@ setMethod("genome", "commaData", function(x) {
 #'
 #' @export
 setMethod("annotation", "commaData", function(object) {
-    object@annotation
+    md <- S4Vectors::metadata(object)
+    if (is.null(md$annotation)) GenomicRanges::GRanges() else md$annotation
 })
 
 # ─── motifSites() ────────────────────────────────────────────────────────────
@@ -295,7 +304,8 @@ setGeneric("motifSites", function(object) standardGeneric("motifSites"))
 
 #' @rdname motifSites
 setMethod("motifSites", "commaData", function(object) {
-    object@motifSites
+    md <- S4Vectors::metadata(object)
+    if (is.null(md$motifSites)) GenomicRanges::GRanges() else md$motifSites
 })
 
 # ─── [ subsetting ────────────────────────────────────────────────────────────
@@ -326,11 +336,8 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
     # Delegate to SummarizedExperiment's [ method, then re-wrap
     se_sub <- callNextMethod()
 
-    new("commaData",
-        se_sub,
-        annotation = x@annotation,
-        motifSites = x@motifSites
-    )
+    # metadata is automatically preserved by RSE subsetting
+    new("commaData", se_sub)
 })
 
 # ─── subset() ────────────────────────────────────────────────────────────────
@@ -402,7 +409,9 @@ setMethod("subset", "commaData", function(x, mod_type = NULL,
         site_keep <- site_keep & (!is.na(mc$motif)) & (mc$motif %in% motif)
     }
     if (!is.null(mod_context)) {
-        site_keep <- site_keep & (mc$mod_context %in% mod_context)
+        # Compute mod_context on demand for filtering
+        computed_ctx <- .computeModContext(mc$mod_type, mc$motif)
+        site_keep <- site_keep & (computed_ctx %in% mod_context)
     }
 
     # Sample filter
@@ -413,3 +422,12 @@ setMethod("subset", "commaData", function(x, mod_type = NULL,
 
     x[site_keep, samp_keep]
 })
+
+# ─── .computeModContext() ──────────────────────────────────────────────────
+
+# Internal helper: compute mod_context from mod_type and motif vectors.
+# Returns "mod_type_motif" when motif is known, or just "mod_type" when
+# motif is NA (e.g., Dorado/Megalodon callers).
+.computeModContext <- function(mod_type, motif) {
+    ifelse(is.na(motif), mod_type, paste(mod_type, motif, sep = "_"))
+}

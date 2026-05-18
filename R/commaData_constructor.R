@@ -225,9 +225,9 @@ commaData <- function(files,
     all_sites <- all_sites[ord, , drop = FALSE]
     rownames(all_sites) <- NULL
 
-    # ── Compute mod_context ──────────────────────────────────────────────────
+    # ── Compute mod_context on the fly for filtering ────────────────────────
     # "6mA_GATC" when motif is known; falls back to "6mA" for NA-motif callers.
-    all_sites$mod_context <- ifelse(
+    site_ctx <- ifelse(
         is.na(all_sites$motif),
         all_sites$mod_type,
         paste(all_sites$mod_type, all_sites$motif, sep = "_")
@@ -252,7 +252,7 @@ commaData <- function(files,
         }
         allowed_contexts <- unique(allowed_contexts)
 
-        drop_mask <- !(all_sites$mod_context %in% allowed_contexts)
+        drop_mask <- !(site_ctx %in% allowed_contexts)
         if (any(drop_mask)) {
             dropped <- all_sites[drop_mask, , drop = FALSE]
             for (mt in unique(dropped$mod_type)) {
@@ -309,8 +309,7 @@ commaData <- function(files,
         ranges   = IRanges::IRanges(start = all_sites$position, width = 1L),
         strand   = all_sites$strand,
         mod_type    = all_sites$mod_type,
-        motif       = all_sites$motif,
-        mod_context = all_sites$mod_context
+        motif       = all_sites$motif
     )
     names(site_gr) <- site_keys
 
@@ -383,10 +382,11 @@ commaData <- function(files,
     )
 
     # ── Construct commaData ─────────────────────────────────────────────────
-    obj <- new("commaData",
-               rse,
-               annotation = ann_gr,
-               motifSites = motif_gr)
+    obj <- new("commaData", rse)
+
+    # Store annotation and motifSites in metadata (not as S4 slots)
+    S4Vectors::metadata(obj)$annotation <- ann_gr
+    S4Vectors::metadata(obj)$motifSites <- motif_gr
 
     validObject(obj)
     obj

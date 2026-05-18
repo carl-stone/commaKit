@@ -21,8 +21,7 @@
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = rep("+", n_sites),
         mod_type    = rep("6mA", n_sites),
-        motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites)
+        motif       = rep("GATC", n_sites)
     )
     names(site_gr) <- site_keys
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
@@ -50,9 +49,10 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse,
-        annotation = ann_gr,
-        motifSites = GenomicRanges::GRanges())
+    obj <- new("commaData", rse)
+    S4Vectors::metadata(obj)$annotation <- ann_gr
+    S4Vectors::metadata(obj)$motifSites <- GenomicRanges::GRanges()
+    obj
 }
 
 # ─── Basic return type ────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ test_that("plot_metagene: error on non-commaData input", {
 
 test_that("plot_metagene: error when annotation is empty", {
     obj <- .make_metagene_data()
-    obj@annotation <- GenomicRanges::GRanges()
+    S4Vectors::metadata(obj)$annotation <- GenomicRanges::GRanges()
     expect_error(plot_metagene(obj, feature = "gene"),
                  "annotation")
 })

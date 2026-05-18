@@ -282,9 +282,10 @@ diffMethyl <- function(
         all_mc <- modContexts(object)
         # Keep contexts whose mod_type prefix matches
         mc <- GenomicRanges::mcols(rowRanges(object))
+        computed_ctx <- .computeModContext(mc$mod_type, mc$motif)
         test_contexts <- all_mc[
             mc$mod_type[
-                match(all_mc, mc$mod_context)
+                match(all_mc, computed_ctx)
             ] %in% mod_type
         ]
         test_contexts <- sort(unique(test_contexts))
@@ -316,7 +317,9 @@ diffMethyl <- function(
 
     # -- Test each mod context independently -----------------------------------
     for (mc in test_contexts) {
-        site_idx <- which(rd_full$mod_context == mc)
+        # Compute mod_context on demand for site selection
+        computed_ctx <- .computeModContext(rd_full$mod_type, rd_full$motif)
+        site_idx <- which(computed_ctx == mc)
         if (length(site_idx) == 0L) next
 
         methyl_sub <- methyl_full[site_idx, , drop = FALSE]
@@ -384,9 +387,7 @@ diffMethyl <- function(
         rowRanges  = rr_new,
         colData    = colData(object)
     )
-    out <- new("commaData", rse_new,
-               annotation = object@annotation,
-               motifSites = object@motifSites)
+    out <- new("commaData", rse_new)
 
     # Copy existing metadata, then add diffMethyl entries
     S4Vectors::metadata(out) <- S4Vectors::metadata(object)

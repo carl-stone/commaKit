@@ -112,9 +112,9 @@ test_that("methylomeSummary: all-NA sample gives NA mean_beta and median_beta, n
         rowRanges  = SummarizedExperiment::rowRanges(comma_example_data),
         colData    = SummarizedExperiment::colData(comma_example_data)
     )
-    obj_mod <- new("commaData", se_mod,
-                   annotation = comma_example_data@annotation,
-                   motifSites = comma_example_data@motifSites)
+    obj_mod <- new("commaData", se_mod)
+    # Copy metadata from original
+    S4Vectors::metadata(obj_mod) <- S4Vectors::metadata(comma_example_data)
     result    <- methylomeSummary(obj_mod)
     ctrl1_row <- result[result$sample_name == "ctrl_1", ]
     expect_true(is.na(ctrl1_row$mean_beta))
