@@ -124,26 +124,12 @@ setValidity("commaData", function(object) {
                 "Use factor(mod_type, levels = .VALID_MOD_TYPES) when constructing."
             ))
         } else {
-            # Check that all factor levels are valid
-            bad_levels <- setdiff(levels(mc$mod_type), .VALID_MOD_TYPES)
-            if (length(bad_levels) > 0) {
-                errors <- c(errors, paste0(
-                    "rowRanges mcols$mod_type has invalid factor levels: ",
-                    paste(bad_levels, collapse = ", "),
-                    ". Allowed levels: ",
-                    paste(.VALID_MOD_TYPES, collapse = ", ")
-                ))
-            }
-        }
-        mod_type_vals <- as.character(unique(mc$mod_type))
-        bad_types <- setdiff(mod_type_vals, .VALID_MOD_TYPES)
-        if (length(bad_types) > 0) {
-            errors <- c(errors, paste0(
-                "rowRanges mcols$mod_type contains unrecognized values: ",
-                paste(bad_types, collapse = ", "),
-                ". Allowed values: ",
-                paste(.VALID_MOD_TYPES, collapse = ", ")
-            ))
+            # Check levels and values using shared helper
+            mt_errors <- .checkModTypeValues(
+                values = as.character(unique(mc$mod_type)),
+                levels = levels(mc$mod_type)
+            )
+            errors <- c(errors, mt_errors)
         }
     }
 

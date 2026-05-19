@@ -67,7 +67,7 @@ test_that("validity rejects missing rowData columns", {
 test_that("validity rejects unrecognized mod_type values", {
     obj <- .make_minimal_commaData()
     # Assigning a value not in factor levels converts the column to character
-    rowData(obj)$mod_type <- rep("7mX", nrow(obj))
+    mcols(rowRanges(obj))$mod_type <- factor(rep("7mX", nrow(obj)), levels = c("7mX"))
     expect_error(validObject(obj), regexp = "7mX")
 })
 

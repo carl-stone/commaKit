@@ -503,3 +503,36 @@ setMethod("minCoverage", "commaData", function(object) {
     }
     invisible(NULL)
 }
+
+# ─── .checkModTypeValues() ────────────────────────────────────────────────
+
+# Internal helper: check that values and/or factor levels are valid mod_types.
+# Returns a character vector of error messages (empty if valid). Used by the
+# commaData validity method and by .validateModType(). This is the single
+# source of truth for what constitutes a valid mod_type value.
+.checkModTypeValues <- function(values, levels = NULL) {
+    errors <- character(0)
+    # Check factor levels if provided
+    if (!is.null(levels)) {
+        bad_levels <- setdiff(levels, .VALID_MOD_TYPES)
+        if (length(bad_levels) > 0L) {
+            errors <- c(errors, paste0(
+                "rowRanges mcols$mod_type has invalid factor levels: ",
+                paste(bad_levels, collapse = ", "),
+                ". Allowed levels: ",
+                paste(.VALID_MOD_TYPES, collapse = ", ")
+            ))
+        }
+    }
+    # Check actual values
+    bad_vals <- setdiff(values, .VALID_MOD_TYPES)
+    if (length(bad_vals) > 0L) {
+        errors <- c(errors, paste0(
+            "rowRanges mcols$mod_type contains unrecognized values: ",
+            paste(bad_vals, collapse = ", "),
+            ". Allowed values: ",
+            paste(.VALID_MOD_TYPES, collapse = ", ")
+        ))
+    }
+    errors
+}
