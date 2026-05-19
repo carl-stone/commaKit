@@ -388,6 +388,10 @@ commaData <- function(files,
     S4Vectors::metadata(obj)$annotation <- ann_gr
     S4Vectors::metadata(obj)$motifSites <- motif_gr
 
+    # Store caller and min_coverage in metadata for reproducibility
+    S4Vectors::metadata(obj)$caller <- caller
+    S4Vectors::metadata(obj)$min_coverage <- min_coverage
+
     validObject(obj)
     obj
 }

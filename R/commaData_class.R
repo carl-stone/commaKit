@@ -64,6 +64,10 @@ NULL
 #' Per-sample metadata is in \code{colData(object)} and includes at minimum:
 #' \code{sample_name}, \code{condition}, \code{replicate}.
 #'
+#' The methylation caller and minimum coverage threshold are stored in
+#' \code{metadata(object)} and accessible via \code{\link{caller}(object)}
+#' and \code{\link{minCoverage}(object)}.
+#'
 #' @return An object of class \code{commaData}. Use
 #'   \code{\link{commaData}} to construct instances.
 #'
@@ -204,4 +208,10 @@ setMethod("show", "commaData", function(object) {
     n_mot <- length(motifSites(object))
     cat("annotation:", if (n_ann == 0) "none" else paste(n_ann, "features"), "\n")
     cat("motif sites:", if (n_mot == 0) "none" else paste(format(n_mot, big.mark = ","), "sites"), "\n")
+
+    # caller and min_coverage
+    cl <- S4Vectors::metadata(object)$caller
+    mc <- S4Vectors::metadata(object)$min_coverage
+    if (!is.null(cl)) cat("caller:", cl, "\n")
+    if (!is.null(mc)) cat("min_coverage:", mc, "\n")
 })

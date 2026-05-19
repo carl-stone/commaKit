@@ -468,3 +468,42 @@ test_that("subset: mod_context and mod_type can be combined", {
     expect_equal(nrow(sub), 10L)
     expect_true(all(rowData(sub)$mod_type == "6mA"))
 })
+
+# ─────────────────────────────────────────────────────────────────────────────
+# caller() and minCoverage()
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("caller() returns NA for objects without stored caller", {
+    obj <- .make_two_modtype()
+    expect_equal(caller(obj), NA_character_)
+})
+
+test_that("minCoverage() returns NA for objects without stored min_coverage", {
+    obj <- .make_two_modtype()
+    expect_equal(minCoverage(obj), NA_integer_)
+})
+
+test_that("caller() returns stored caller from metadata", {
+    obj <- .make_two_modtype()
+    S4Vectors::metadata(obj)$caller <- "modkit"
+    expect_equal(caller(obj), "modkit")
+})
+
+test_that("minCoverage() returns stored min_coverage from metadata", {
+    obj <- .make_two_modtype()
+    S4Vectors::metadata(obj)$min_coverage <- 10L
+    expect_equal(minCoverage(obj), 10L)
+})
+
+test_that("example data has caller and min_coverage", {
+    data(comma_example_data)
+    expect_equal(caller(comma_example_data), "modkit")
+    expect_equal(minCoverage(comma_example_data), 5L)
+})
+
+test_that("show() displays caller and min_coverage", {
+    data(comma_example_data)
+    out <- capture.output(show(comma_example_data))
+    expect_true(any(grepl("caller:", out, fixed = TRUE)))
+    expect_true(any(grepl("min_coverage:", out, fixed = TRUE)))
+})

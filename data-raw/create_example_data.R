@@ -200,6 +200,10 @@ comma_example_data <- new("commaData", rse)
 S4Vectors::metadata(comma_example_data)$annotation <- ann_gr
 S4Vectors::metadata(comma_example_data)$motifSites <- GenomicRanges::GRanges()
 
+# Store caller and min_coverage in metadata
+S4Vectors::metadata(comma_example_data)$caller <- "modkit"
+S4Vectors::metadata(comma_example_data)$min_coverage <- 5L
+
 # ── Save ──────────────────────────────────────────────────────────────────────
 usethis::use_data(comma_example_data, overwrite = TRUE, compress = "xz")
 

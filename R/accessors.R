@@ -423,6 +423,59 @@ setMethod("subset", "commaData", function(x, mod_type = NULL,
     x[site_keep, samp_keep]
 })
 
+# ─── caller() ────────────────────────────────────────────────────────────────
+
+#' Accessor for the methylation caller
+#'
+#' Returns the name of the methylation caller that produced the data
+#' (e.g., \code{"modkit"}, \code{"megalodon"}, or \code{"dorado"}).
+#' The caller is stored in \code{metadata(object)} at construction time.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return A character string naming the caller, or \code{NA} if not stored
+#'   (e.g., objects created before caller storage was implemented).
+#'
+#' @examples
+#' data(comma_example_data)
+#' caller(comma_example_data)
+#'
+#' @export
+setGeneric("caller", function(object) standardGeneric("caller"))
+
+#' @rdname caller
+setMethod("caller", "commaData", function(object) {
+    md <- S4Vectors::metadata(object)
+    if (is.null(md$caller)) NA_character_ else md$caller
+})
+
+# ─── minCoverage() ───────────────────────────────────────────────────────────
+
+#' Accessor for the minimum coverage threshold
+#'
+#' Returns the minimum read depth threshold that was applied at construction
+#' time. Sites with coverage below this threshold have their beta value set
+#' to \code{NA}.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return An integer (the minimum coverage threshold), or \code{NA_integer_}
+#'   if not stored (e.g., objects created before min_coverage storage was
+#'   implemented).
+#'
+#' @examples
+#' data(comma_example_data)
+#' minCoverage(comma_example_data)
+#'
+#' @export
+setGeneric("minCoverage", function(object) standardGeneric("minCoverage"))
+
+#' @rdname minCoverage
+setMethod("minCoverage", "commaData", function(object) {
+    md <- S4Vectors::metadata(object)
+    if (is.null(md$min_coverage)) NA_integer_ else md$min_coverage
+})
+
 # ─── .computeModContext() ──────────────────────────────────────────────────
 
 # Internal helper: compute mod_context from mod_type and motif vectors.

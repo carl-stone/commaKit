@@ -135,3 +135,12 @@ test_that("methylomeSummary: mod_type vector with invalid value gives error", {
         "not found in object"
     )
 })
+
+test_that("methylomeSummary: caller and min_coverage columns are present", {
+    data(comma_example_data)
+    ms <- methylomeSummary(comma_example_data)
+    expect_true("caller" %in% colnames(ms))
+    expect_true("min_coverage" %in% colnames(ms))
+    expect_equal(ms$caller[1], "modkit")
+    expect_equal(ms$min_coverage[1], 5L)
+})
