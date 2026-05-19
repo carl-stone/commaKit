@@ -15,9 +15,9 @@ methylated and unmethylated read counts before log-transformation. Prevents
 infinite values at beta = 0 or beta = 1 and corresponds to a symmetric
 Beta(alpha, alpha) prior on the methylation fraction. Default \code{0.5}.}
 
-\item{mod_type}{Character string specifying a single modification type
-(e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), M-values
-are computed for all sites in \code{object}.}
+\item{mod_type}{Character vector of modification types to include
+(e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL} (default),
+M-values are computed for all sites in \code{object}.}
 
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with
 matching sequence context motif(s) are included. If \code{NULL} (default),

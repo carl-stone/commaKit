@@ -43,9 +43,9 @@ NULL
 #'   \code{c("sigma_binding", "promoter_-10", "promoter_-35",
 #'   "TF_binding")}). Required when \code{color_by = "regulatory_element"};
 #'   ignored otherwise.
-#' @param mod_type Character string or \code{NULL}. If provided, only sites
-#'   of the specified modification type (e.g., \code{"6mA"}, \code{"5mC"})
-#'   are included.
+#' @param mod_type Character vector or \code{NULL}. If provided, only sites
+#'   of the specified modification type(s) (e.g., \code{"6mA"},
+#'   \code{c("6mA", "5mC")}) are included.
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   the specified sequence motif(s) are included.
 #' @param mod_context Character vector or \code{NULL}. If provided, only sites
@@ -200,11 +200,7 @@ plot_tss_profile <- function(object,
 
     ## ── C. Filter by mod_type / motif / mod_context ──────────────────────────
     if (!is.null(mod_type)) {
-        available <- modTypes(object)
-        if (!mod_type %in% available) {
-            stop("'mod_type' = '", mod_type, "' not found in object. ",
-                 "Available types: ", paste(available, collapse = ", "), ".")
-        }
+        .validateModType(mod_type, object)
         object <- subset(object, mod_type = mod_type)
     }
     if (!is.null(motif)) {

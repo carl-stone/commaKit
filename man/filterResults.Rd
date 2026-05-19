@@ -30,7 +30,7 @@ Default \code{0.05}.}
 (\eqn{|\Delta\beta|}) (inclusive). Default \code{0.1}. Set to \code{0} to
 disable filtering on effect size.}
 
-\item{mod_type}{Character string or \code{NULL}. Passed to
+\item{mod_type}{Character vector or \code{NULL}. Passed to
 \code{\link{results}} for optional modification type filtering.}
 
 \item{motif}{Character vector or \code{NULL}. Passed to

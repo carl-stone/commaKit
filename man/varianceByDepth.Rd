@@ -14,8 +14,8 @@ include. If \code{NULL} (default), all unique coverage levels observed
 across all samples are used. Useful to pass \code{5:30} to focus on a
 specific depth range.}
 
-\item{mod_type}{Character string or \code{NULL}. If provided, only sites
-of the specified modification type are included. Default: \code{NULL}
+\item{mod_type}{Character vector or \code{NULL}. If provided, only sites
+of the specified modification type(s) are included. Default: \code{NULL}
 (all types).}
 
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with

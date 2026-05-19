@@ -26,9 +26,10 @@ value at position \eqn{p} is computed from positions
 \item{stat}{Character string. Summary statistic to apply within each window.
 One of \code{"median"} (default) or \code{"mean"}.}
 
-\item{mod_type}{Character string or \code{NULL}. If provided, only sites of
-the specified modification type (e.g., \code{"6mA"}) are included in the
-smoothing. If \code{NULL} (default), all sites are used.}
+\item{mod_type}{Character vector or \code{NULL}. If provided, only sites of
+the specified modification type(s) (e.g., \code{"6mA"},
+\code{c("6mA", "5mC")}) are included in the smoothing. If \code{NULL}
+(default), all sites are used.}
 
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with
 matching sequence context motif(s) are included (e.g., \code{"GATC"}).

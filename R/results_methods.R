@@ -13,8 +13,8 @@ NULL
 #'
 #' @param object A \code{\link{commaData}} object on which
 #'   \code{\link{diffMethyl}} has been run.
-#' @param mod_type Character string or \code{NULL}. If provided, only sites
-#'   of the specified modification type are returned. If \code{NULL} (default),
+#' @param mod_type Character vector or \code{NULL}. If provided, only sites
+#'   of the specified modification type(s) are returned. If \code{NULL} (default),
 #'   results for all modification types are returned.
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are returned. If \code{NULL} (default),
@@ -70,15 +70,7 @@ setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL
 
     # ── Optional mod_type filter ──────────────────────────────────────────────
     if (!is.null(mod_type)) {
-        available <- unique(rd$mod_type)
-        bad <- setdiff(mod_type, available)
-        if (length(bad) > 0L) {
-            stop(
-                "'mod_type' value(s) not found: ",
-                paste(bad, collapse = ", "),
-                ". Available: ", paste(sort(available), collapse = ", ")
-            )
-        }
+        .validateModType(mod_type, object)
         rd <- rd[rd$mod_type %in% mod_type, , drop = FALSE]
     }
 
@@ -127,7 +119,7 @@ setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL
 #' @param delta_beta Numeric. Minimum absolute effect size threshold
 #'   (\eqn{|\Delta\beta|}) (inclusive). Default \code{0.1}. Set to \code{0} to
 #'   disable filtering on effect size.
-#' @param mod_type Character string or \code{NULL}. Passed to
+#' @param mod_type Character vector or \code{NULL}. Passed to
 #'   \code{\link{results}} for optional modification type filtering.
 #' @param motif Character vector or \code{NULL}. Passed to
 #'   \code{\link{results}} for optional sequence context motif filtering.

@@ -286,6 +286,6 @@ test_that("writeBED: error when mod_type has no matching sites", {
     on.exit(unlink(f))
     expect_error(
         writeBED(obj, file = f, sample = "samp1", mod_type = "5mC"),
-        "No sites remain"
+        "not found in object"
     )
 })

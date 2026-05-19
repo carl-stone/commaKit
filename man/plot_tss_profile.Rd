@@ -39,9 +39,9 @@ types from \code{annotation(object)} used to label sites when
 "TF_binding")}). Required when \code{color_by = "regulatory_element"};
 ignored otherwise.}
 
-\item{mod_type}{Character string or \code{NULL}. If provided, only sites
-of the specified modification type (e.g., \code{"6mA"}, \code{"5mC"})
-are included.}
+\item{mod_type}{Character vector or \code{NULL}. If provided, only sites
+of the specified modification type(s) (e.g., \code{"6mA"},
+\code{c("6mA", "5mC")}) are included.}
 
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with
 the specified sequence motif(s) are included.}

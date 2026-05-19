@@ -169,7 +169,7 @@ test_that("slidingWindow: error when window exceeds chromosome size", {
 test_that("slidingWindow: error on invalid mod_type", {
     expect_error(
         slidingWindow(tiny_data, window = W, mod_type = "invalid_type"),
-        "No sites remain"
+        "not found in object"
     )
 })
 

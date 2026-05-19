@@ -1235,7 +1235,7 @@ buildKEGGGeneIDMap <- function(organism,
 #'   \code{"combined"} (default), \code{"padj"}, or \code{"delta_beta"}.
 #' @param gene_score_agg Character string; aggregation across sites per gene.
 #'   Either \code{"max"} (default) or \code{"mean"}.
-#' @param mod_type Character string or \code{NULL}; modification-type filter
+#' @param mod_type Character vector or \code{NULL}; modification-type filter
 #'   passed to \code{\link{results}}.  Ignored when \code{object} is a
 #'   \code{data.frame}.
 #' @param mod_context Character string or \code{NULL}; mod-context filter

@@ -204,15 +204,7 @@ diffMethyl <- function(
         object <- subset(object, mod_context = mod_context)
     } else {
         if (!is.null(mod_type)) {
-            available <- modTypes(object)
-            bad <- setdiff(mod_type, available)
-            if (length(bad) > 0L) {
-                stop(
-                    "mod_type value(s) not found in object: ",
-                    paste(bad, collapse = ", "),
-                    ". Available: ", paste(available, collapse = ", ")
-                )
-            }
+            .validateModType(mod_type, object)
         }
 
         if (!is.null(motif)) {

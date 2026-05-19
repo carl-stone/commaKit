@@ -8,9 +8,9 @@ NULL
 #' coverage is sufficient and consistent across samples.
 #'
 #' @param object A \code{\link{commaData}} object.
-#' @param mod_type Character string specifying a single modification type
-#'   (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), all sites
-#'   from all modification types are included.
+#' @param mod_type Character vector of modification types to include
+#'   (e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL} (default),
+#'   all sites from all modification types are included.
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are included (e.g., \code{"GATC"}).
 #'   If \code{NULL} (default), all motifs are included.
@@ -59,11 +59,7 @@ plot_coverage <- function(object,
 
     ## --- Optional mod_type filter -------------------------------------------
     if (!is.null(mod_type)) {
-        available <- modTypes(object)
-        if (!mod_type %in% available) {
-            stop("'mod_type' = '", mod_type, "' not found in object. ",
-                 "Available types: ", paste(available, collapse = ", "), ".")
-        }
+        .validateModType(mod_type, object)
         object <- subset(object, mod_type = mod_type)
     }
     if (!is.null(motif)) {

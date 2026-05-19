@@ -15,9 +15,9 @@ plot_coverage(
 \arguments{
 \item{object}{A \code{\link{commaData}} object.}
 
-\item{mod_type}{Character string specifying a single modification type
-(e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default), all sites
-from all modification types are included.}
+\item{mod_type}{Character vector of modification types to include
+(e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL} (default),
+all sites from all modification types are included.}
 
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with
 matching sequence context motif(s) are included (e.g., \code{"GATC"}).
