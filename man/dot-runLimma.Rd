@@ -7,6 +7,7 @@
 .runLimma(
   methyl_mat,
   coverage_mat,
+  site_df,
   coldata,
   formula,
   alpha = 0.5,
@@ -18,6 +19,9 @@
 \code{NA} indicates below-coverage sites.}
 
 \item{coverage_mat}{Integer matrix (sites × samples) of read depths.}
+
+\item{site_df}{Data frame with columns \code{chrom}, \code{position},
+\code{strand}, \code{mod_type}, \code{motif} — one row per site.}
 
 \item{coldata}{\code{data.frame} with at least one column matching the
 RHS variable in \code{formula} (typically \code{condition}).}

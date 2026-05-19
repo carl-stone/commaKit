@@ -4,12 +4,22 @@
 \alias{.runMethylKit}
 \title{Run differential methylation via methylKit}
 \usage{
-.runMethylKit(methyl_mat, coverage_mat, coldata, formula, ref_level = NULL)
+.runMethylKit(
+  methyl_mat,
+  coverage_mat,
+  site_df,
+  coldata,
+  formula,
+  ref_level = NULL
+)
 }
 \arguments{
 \item{methyl_mat}{Numeric matrix (sites × samples) of beta values.}
 
 \item{coverage_mat}{Integer matrix (sites × samples) of read depths.}
+
+\item{site_df}{Data frame with columns \code{chrom}, \code{position},
+\code{strand}, \code{mod_type}, \code{motif} — one row per site.}
 
 \item{coldata}{\code{data.frame} with at least one column matching the
 RHS variable in \code{formula}.}

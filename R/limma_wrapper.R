@@ -38,6 +38,8 @@ NULL
 #' @param methyl_mat Numeric matrix (sites × samples) of beta values.
 #'   \code{NA} indicates below-coverage sites.
 #' @param coverage_mat Integer matrix (sites × samples) of read depths.
+#' @param site_df Data frame with columns \code{chrom}, \code{position},
+#'   \code{strand}, \code{mod_type}, \code{motif} — one row per site.
 #' @param coldata \code{data.frame} with at least one column matching the
 #'   RHS variable in \code{formula} (typically \code{condition}).
 #' @param formula One-sided formula specifying the design (e.g.,
