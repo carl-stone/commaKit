@@ -59,13 +59,7 @@ plot_coverage <- function(object,
 
     ## --- Optional mod_type filter -------------------------------------------
     if (!is.null(mod_type)) {
-        available <- modTypes(object)
-        bad <- setdiff(mod_type, available)
-        if (length(bad) > 0L) {
-            stop("'mod_type' value(s) not found in object: ",
-                 paste(bad, collapse = ", "),
-                 ". Available types: ", paste(available, collapse = ", "), ".")
-        }
+        .validateModType(mod_type, object)
         object <- subset(object, mod_type = mod_type)
     }
     if (!is.null(motif)) {

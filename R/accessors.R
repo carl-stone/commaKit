@@ -431,3 +431,20 @@ setMethod("subset", "commaData", function(x, mod_type = NULL,
 .computeModContext <- function(mod_type, motif) {
     ifelse(is.na(motif), mod_type, paste(mod_type, motif, sep = "_"))
 }
+
+# ─── .validateModType() ───────────────────────────────────────────────────
+
+# Internal helper: validate that all requested mod_type values exist in the
+# object. Called by 13 functions that accept a mod_type filter parameter.
+# Stops with an informative error listing the invalid values and available
+# types. Returns invisibly if all values are valid.
+.validateModType <- function(mod_type, object) {
+    available <- modTypes(object)
+    bad <- setdiff(mod_type, available)
+    if (length(bad) > 0L) {
+        stop("'mod_type' value(s) not found in object: ",
+             paste(bad, collapse = ", "),
+             ". Available types: ", paste(available, collapse = ", "), ".")
+    }
+    invisible(NULL)
+}

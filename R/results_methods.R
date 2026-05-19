@@ -70,15 +70,7 @@ setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL
 
     # ── Optional mod_type filter ──────────────────────────────────────────────
     if (!is.null(mod_type)) {
-        available <- unique(rd$mod_type)
-        bad <- setdiff(mod_type, available)
-        if (length(bad) > 0L) {
-            stop(
-                "'mod_type' value(s) not found: ",
-                paste(bad, collapse = ", "),
-                ". Available: ", paste(sort(available), collapse = ", ")
-            )
-        }
+        .validateModType(mod_type, object)
         rd <- rd[rd$mod_type %in% mod_type, , drop = FALSE]
     }
 
