@@ -76,27 +76,10 @@ plot_heatmap <- function(results,
     n_use <- min(n_sites, nrow(res_sorted))
     top_res <- res_sorted[seq_len(n_use), , drop = FALSE]
 
-    ## --- Match to object rowData --------------------------------------------
-    make_key <- function(chrom, position, strand, mod_type, motif) {
-        paste(chrom, position, strand, mod_type, motif, sep = ":")
-    }
-
-    rd        <- siteInfo(object)
-    obj_keys  <- make_key(rd$chrom, rd$position, rd$strand, rd$mod_type, rd$motif)
-    res_keys  <- make_key(top_res$chrom, top_res$position,
-                          top_res$strand, top_res$mod_type, top_res$motif)
-
-    row_idx <- match(res_keys, obj_keys)
-    missing_keys <- sum(is.na(row_idx))
-    if (missing_keys == n_use) {
-        stop("None of the selected sites were found in 'object'. ",
-             "Ensure 'results' was produced from the same commaData object.")
-    }
-    if (missing_keys > 0L) {
-        warning(missing_keys, " site(s) from 'results' could not be matched in 'object' and will be excluded.")
-        top_res  <- top_res[!is.na(row_idx), , drop = FALSE]
-        row_idx  <- row_idx[!is.na(row_idx)]
-    }
+    ## --- Match to object rows (by index, not string keys) -------------------
+    ## results() returns a DataFrame aligned to rowRanges(object), so row
+    ## indices in the results correspond directly to rows in the object.
+    row_idx <- which(!is.na(top_res$dm_padj))
 
     ## --- Extract methylation submatrix -------------------------------------
     methyl_mat <- methylation(object)[row_idx, , drop = FALSE]
@@ -107,9 +90,10 @@ plot_heatmap <- function(results,
     methyl_mat  <- methyl_mat[delta_order, , drop = FALSE]
     top_res     <- top_res[delta_order, , drop = FALSE]
 
-    ## Build site keys for y-axis ordering
-    site_keys <- make_key(top_res$chrom, top_res$position,
-                          top_res$strand, top_res$mod_type, top_res$motif)
+    ## Build display labels for y-axis (computed on demand, not from rownames)
+    site_keys <- paste(top_res$chrom, top_res$position,
+                       top_res$strand, top_res$mod_type,
+                       top_res$motif, sep = ":")
     n_final <- length(site_keys)
 
     ## --- Reshape to long data.frame ----------------------------------------
