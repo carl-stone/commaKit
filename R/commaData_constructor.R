@@ -74,12 +74,12 @@ NULL
 #' The constructor uses a parse-then-merge strategy:
 #' \enumerate{
 #'   \item Each file is parsed independently using the appropriate parser.
-#'   \item Sites are identified by a 5-part key:
-#'     \code{"chrom:position:strand:mod_type:motif"} (motif is \code{"NA"}
-#'     for Dorado and Megalodon callers).
-#'   \item The union of all sites across all samples is taken.
-#'   \item Beta values and coverage are arranged into sites × samples matrices,
-#'     with \code{NA} for samples that do not cover a given site.
+#'   \item Sites are identified by their genomic position (chromosome, position,
+#'     strand) plus modification type and motif context.
+#'   \item The union of all sites across all samples is taken, using
+#'     \code{findOverlaps()} for alignment.
+#'   \item Beta values and coverage are arranged into sites \eqn{\times} samples
+#'     matrices, with \code{NA} for samples that do not cover a given site.
 #'   \item Sites where coverage is below \code{min_coverage} in a sample have
 #'     their beta value set to \code{NA} (but coverage is preserved).
 #' }
@@ -275,35 +275,16 @@ commaData <- function(files,
         }
     }
 
-    site_keys <- paste(all_sites$chrom, all_sites$position,
-                       all_sites$strand, all_sites$mod_type,
-                       all_sites$motif, sep = ":")
-    n_sites   <- length(site_keys)
+    n_sites   <- nrow(all_sites)
 
     # ── Build matrices ──────────────────────────────────────────────────────
     n_samples    <- length(sample_names)
     methyl_mat   <- matrix(NA_real_,    nrow = n_sites, ncol = n_samples,
-                           dimnames = list(site_keys, sample_names))
+                           dimnames = list(NULL, sample_names))
     coverage_mat <- matrix(NA_integer_, nrow = n_sites, ncol = n_samples,
-                           dimnames = list(site_keys, sample_names))
+                           dimnames = list(NULL, sample_names))
 
-    for (sn in sample_names) {
-        df <- parsed_list[[sn]]
-        if (nrow(df) == 0L) next
-
-        df_keys <- paste(df$chrom, df$position, df$strand, df$mod_type, df$motif, sep = ":")
-        idx      <- match(df_keys, site_keys)
-        valid    <- !is.na(idx)
-
-        methyl_mat[idx[valid], sn]   <- df$beta[valid]
-        coverage_mat[idx[valid], sn] <- df$coverage[valid]
-    }
-
-    # ── Apply min_coverage: set beta NA where coverage < threshold ──────────
-    below_threshold <- !is.na(coverage_mat) & coverage_mat < min_coverage
-    methyl_mat[below_threshold] <- NA_real_
-
-    # ── Build rowRanges (GRanges) ──────────────────────────────────────────
+    # ── Build rowRanges (GRanges) for findOverlaps merge ────────────────────
     site_gr <- GenomicRanges::GRanges(
         seqnames = all_sites$chrom,
         ranges   = IRanges::IRanges(start = all_sites$position, width = 1L),
@@ -311,7 +292,44 @@ commaData <- function(files,
         mod_type    = factor(all_sites$mod_type, levels = .VALID_MOD_TYPES),
         motif       = all_sites$motif
     )
-    names(site_gr) <- site_keys
+
+    for (sn in sample_names) {
+        df <- parsed_list[[sn]]
+        if (nrow(df) == 0L) next
+
+        # Align parsed sites to the site universe using findOverlaps()
+        df_gr <- GenomicRanges::GRanges(
+            seqnames = df$chrom,
+            ranges   = IRanges::IRanges(start = df$position, width = 1L),
+            strand   = df$strand
+        )
+        GenomicRanges::mcols(df_gr)$mod_type <- df$mod_type
+        GenomicRanges::mcols(df_gr)$motif    <- df$motif
+
+        hits <- GenomicRanges::findOverlaps(df_gr, site_gr, type = "equal")
+        qh   <- S4Vectors::queryHits(hits)
+        sh   <- S4Vectors::subjectHits(hits)
+
+        # Verify mod_type and motif match (same position can have multiple types)
+        mc_q <- GenomicRanges::mcols(df_gr)[qh, c("mod_type", "motif")]
+        mc_s <- GenomicRanges::mcols(site_gr)[sh, c("mod_type", "motif")]
+        type_match  <- mc_q$mod_type == mc_s$mod_type
+        motif_match <- is.na(mc_q$motif) & is.na(mc_s$motif) |
+                       (!is.na(mc_q$motif) & !is.na(mc_s$motif) &
+                            mc_q$motif == mc_s$motif)
+        valid <- type_match & motif_match
+
+        idx <- rep(NA_integer_, nrow(df))
+        idx[qh[valid]] <- sh[valid]
+
+        valid_idx <- !is.na(idx)
+        methyl_mat[idx[valid_idx], sn]   <- df$beta[valid_idx]
+        coverage_mat[idx[valid_idx], sn] <- df$coverage[valid_idx]
+    }
+
+    # ── Apply min_coverage: set beta NA where coverage < threshold ──────────
+    below_threshold <- !is.na(coverage_mat) & coverage_mat < min_coverage
+    methyl_mat[below_threshold] <- NA_real_
 
     # ── Genome info ─────────────────────────────────────────────────────────
     genome_info <- .validateGenomeInfo(genome)

@@ -128,7 +128,7 @@ methyl_mat <- matrix(
       c(beta_6ma_treat2, beta_5mc_treat2),
       c(beta_6ma_treat3, beta_5mc_treat3)),
     nrow = n_total, ncol = 6L,
-    dimnames = list(all_keys, SAMPLES)
+    dimnames = list(NULL, SAMPLES)
 )
 
 coverage_mat <- matrix(
@@ -139,7 +139,7 @@ coverage_mat <- matrix(
       c(cov_6ma_treat2, cov_5mc_treat2),
       c(cov_6ma_treat3, cov_5mc_treat3)),
     nrow = n_total, ncol = 6L,
-    dimnames = list(all_keys, SAMPLES)
+    dimnames = list(NULL, SAMPLES)
 )
 storage.mode(coverage_mat) <- "integer"
 
@@ -156,7 +156,6 @@ site_gr <- GenomicRanges::GRanges(
     motif       = c(rep(MOTIF_6MA, N_6MA_SITES), rep(MOTIF_5MC, N_5MC_SITES)),
     is_diff     = c(is_diff_6ma, rep(FALSE, N_5MC_SITES))  # ground truth for testing
 )
-names(site_gr) <- all_keys
 
 # ── Attach Seqinfo to rowRanges ────────────────────────────────────────────
 GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(

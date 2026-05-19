@@ -68,7 +68,7 @@ NULL
 #'   }
 #'
 #' @keywords internal
-.runQuasiF <- function(methyl_mat, coverage_mat, coldata, formula,
+.runQuasiF <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
                        ref_level = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("limma", quietly = TRUE)) {
@@ -127,7 +127,7 @@ NULL
     }, numeric(n_sites))
     if (is.null(dim(group_means))) {
         group_means <- matrix(group_means, nrow = 1L,
-                              dimnames = list(rownames(methyl_mat), cond_levels))
+                              dimnames = list(NULL, cond_levels))
     }
     group_means[is.nan(group_means)] <- NA_real_
 
@@ -227,7 +227,6 @@ NULL
         result <- data.frame(
             pvalue     = pvalue_vec,
             delta_beta = delta_beta_vec,
-            row.names  = rownames(methyl_mat),
             stringsAsFactors = FALSE
         )
         for (lv in cond_levels) {
@@ -256,7 +255,6 @@ NULL
     result <- data.frame(
         pvalue     = pvalue_vec,
         delta_beta = delta_beta_vec,
-        row.names  = rownames(methyl_mat),
         stringsAsFactors = FALSE
     )
     for (lv in cond_levels) {

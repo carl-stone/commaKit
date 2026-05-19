@@ -316,6 +316,7 @@ diffMethyl <- function(
 
         methyl_sub <- methyl_full[site_idx, , drop = FALSE]
         cov_sub    <- cov_full[site_idx, , drop = FALSE]
+        site_sub   <- rd_full[site_idx, , drop = FALSE]
 
         # Apply min_coverage: set beta to NA where coverage < threshold
         low_cov <- !is.na(cov_sub) & cov_sub < min_coverage
@@ -324,13 +325,13 @@ diffMethyl <- function(
         # Dispatch to statistical backend
         res_sub <- tryCatch(
             if (method == "limma") {
-                .runLimma(methyl_sub, cov_sub, cd, formula, alpha = alpha,
+                .runLimma(methyl_sub, cov_sub, site_sub, cd, formula, alpha = alpha,
                           ref_level = ref_level)
             } else if (method == "quasi_f") {
-                .runQuasiF(methyl_sub, cov_sub, cd, formula,
+                .runQuasiF(methyl_sub, cov_sub, site_sub, cd, formula,
                            ref_level = ref_level)
             } else {
-                .runMethylKit(methyl_sub, cov_sub, cd, formula,
+                .runMethylKit(methyl_sub, cov_sub, site_sub, cd, formula,
                               ref_level = ref_level)
             },
             error = function(e) {
