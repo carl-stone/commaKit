@@ -5,8 +5,6 @@
 .make_dm_data <- function(n_sites = 20L, n_ctrl = 2L, n_treat = 1L) {
     set.seed(99L)
     n_samp  <- n_ctrl + n_treat
-    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 100L, ":+:6mA:GATC")
-
     # First half of sites: differentially methylated (ctrl ~0.9, treat ~0.2)
     # Second half: not (both ~0.5)
     n_diff    <- n_sites %/% 2L
@@ -23,9 +21,8 @@
         paste0("ctrl_",  seq_len(n_ctrl)),
         paste0("treat_", seq_len(n_treat))
     )
-    rownames(methyl_mat) <- site_keys
     cov_mat <- matrix(30L, nrow = n_sites, ncol = n_samp,
-                      dimnames = list(site_keys, colnames(methyl_mat)))
+                      dimnames = list(NULL, colnames(methyl_mat)))
 
     site_gr <- GenomicRanges::GRanges(
         seqnames = rep("chr_sim", n_sites),
@@ -35,7 +32,6 @@
         motif       = rep("GATC", n_sites),
         is_diff     = c(rep(TRUE, n_diff), rep(FALSE, n_sites - n_diff))
     )
-    names(site_gr) <- site_keys
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
         seqnames = "chr_sim",
         seqlengths = 100000L,
@@ -606,7 +602,6 @@ test_that("diffMethyl: mod_context stored in metadata params", {
 .make_ref_test_data <- function(as_factor = FALSE) {
     set.seed(7L)
     n_sites <- 20L
-    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 100L, ":+:6mA:GATC")
     # WT (n=2) ~ 0.2 methylation, HNS (n=2) ~ 0.8 methylation
     # delta_beta (HNS - WT) should be positive
     methyl_mat <- cbind(
@@ -616,9 +611,8 @@ test_that("diffMethyl: mod_context stored in metadata params", {
                nrow = n_sites, ncol = 2L)
     )
     colnames(methyl_mat) <- c("wt_1", "wt_2", "hns_1", "hns_2")
-    rownames(methyl_mat) <- site_keys
     cov_mat <- matrix(30L, nrow = n_sites, ncol = 4L,
-                      dimnames = list(site_keys, colnames(methyl_mat)))
+                      dimnames = list(NULL, colnames(methyl_mat)))
     site_gr <- GenomicRanges::GRanges(
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = seq_len(n_sites) * 100L, width = 1L),
@@ -626,7 +620,6 @@ test_that("diffMethyl: mod_context stored in metadata params", {
         mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
         motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
     cond_vals <- c("WT", "WT", "HNS", "HNS")
     if (as_factor) {
         cond_vals <- factor(cond_vals, levels = c("WT", "HNS"))

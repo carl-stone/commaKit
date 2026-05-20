@@ -15,14 +15,10 @@ library(GenomicRanges)
     n_total <- n_6ma + n_5mc
     samp_names <- c("ctrl_1", "ctrl_2", "treat_1")
 
-    keys_6ma <- paste0("chr_sim:", seq_len(n_6ma) * 100L, ":+:6mA:GATC")
-    keys_5mc <- paste0("chr_sim:", seq_len(n_5mc) * 200L, ":-:5mC:CCWGG")
-    all_keys <- c(keys_6ma, keys_5mc)
-
     methyl <- matrix(runif(n_total * n_samp, 0.1, 0.95),
-                     nrow = n_total, dimnames = list(all_keys, samp_names))
+                     nrow = n_total, dimnames = list(NULL, samp_names))
     cov    <- matrix(as.integer(runif(n_total * n_samp, 10, 50)),
-                     nrow = n_total, dimnames = list(all_keys, samp_names))
+                     nrow = n_total, dimnames = list(NULL, samp_names))
 
     site_gr <- GenomicRanges::GRanges(
         seqnames = rep("chr_sim", n_total),
@@ -35,7 +31,6 @@ library(GenomicRanges)
                              levels = c("4mC", "5mC", "6mA")),
         motif       = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc))
     )
-    names(site_gr) <- all_keys
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
         seqnames = "chr_sim",
         seqlengths = 100000L,

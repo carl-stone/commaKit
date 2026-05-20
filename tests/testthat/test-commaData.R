@@ -12,13 +12,12 @@ library(GenomicRanges)
 # ── Helper: build a minimal valid commaData without file I/O ──────────────────
 
 .make_minimal_commaData <- function(n_sites = 5L, n_samples = 2L) {
-    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 100L, ":+:6mA:GATC")
     methyl    <- matrix(runif(n_sites * n_samples, 0.1, 0.9),
                         nrow = n_sites, ncol = n_samples,
-                        dimnames = list(site_keys, paste0("s", seq_len(n_samples))))
+                        dimnames = list(NULL, paste0("s", seq_len(n_samples))))
     cov       <- matrix(as.integer(runif(n_sites * n_samples, 10, 50)),
                         nrow = n_sites, ncol = n_samples,
-                        dimnames = list(site_keys, paste0("s", seq_len(n_samples))))
+                        dimnames = list(NULL, paste0("s", seq_len(n_samples))))
     site_gr <- GenomicRanges::GRanges(
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = seq_len(n_sites) * 100L, width = 1L),
@@ -26,7 +25,6 @@ library(GenomicRanges)
         mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
         motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
         seqnames = "chr_sim",
         seqlengths = 100000L,
@@ -55,6 +53,24 @@ test_that("minimal commaData object is valid", {
     expect_true(is(obj, "commaData"))
     expect_true(is(obj, "RangedSummarizedExperiment"))
     expect_no_error(validObject(obj))
+})
+
+test_that("assay matrices have no rownames", {
+    obj <- .make_minimal_commaData()
+    expect_null(rownames(methylation(obj)))
+    expect_null(rownames(coverage(obj)))
+})
+
+test_that("rowRanges has no names", {
+    obj <- .make_minimal_commaData()
+    expect_null(names(rowRanges(obj)))
+})
+
+test_that("siteInfo() has no rownames and includes site_key", {
+    obj <- .make_minimal_commaData()
+    si <- siteInfo(obj)
+    expect_null(rownames(si))
+    expect_true("site_key" %in% colnames(si))
 })
 
 test_that("validity rejects missing rowData columns", {

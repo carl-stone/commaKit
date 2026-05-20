@@ -6,11 +6,10 @@
                              seed = 99L, cov_val = 20L) {
     set.seed(seed)
     positions <- seq(1000L, by = 1000L, length.out = n_sites)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     betas <- matrix(
         runif(n_sites * n_samples, 0.05, 0.95),
         nrow = n_sites, ncol = n_samples,
-        dimnames = list(site_keys, paste0("s", seq_len(n_samples)))
+        dimnames = list(NULL, paste0("s", seq_len(n_samples)))
     )
     cov_mat <- matrix(cov_val, nrow = n_sites, ncol = n_samples,
                       dimnames = dimnames(betas))
@@ -21,7 +20,6 @@
         mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
         motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
         seqnames = "chr_sim",
         seqlengths = 100000L,
@@ -73,7 +71,7 @@ test_that("mValues: formula is correct for known values", {
     SummarizedExperiment::assay(obj, "methylation")[1, 1] <- 0.8
     m <- mValues(obj, alpha = 0.5)
     expected <- log2((8 + 0.5) / (2 + 0.5))
-    expect_equal(m[1, 1], expected)
+    expect_equal(unname(m[1, 1]), expected)
 })
 
 test_that("mValues: M-value at beta=0.5 is near zero", {

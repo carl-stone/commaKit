@@ -5,12 +5,11 @@
 .make_cov_data <- function() {
     n_sites   <- 10L
     positions <- seq(1000L, 10000L, by = 1000L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     set.seed(7L)
     betas <- matrix(
         runif(n_sites * 2L, 0.1, 0.9),
         nrow = n_sites, ncol = 2L,
-        dimnames = list(site_keys, c("samp1", "samp2"))
+        dimnames = list(NULL, c("samp1", "samp2"))
     )
     depths <- matrix(
         sample(5L:100L, n_sites * 2L, replace = TRUE),
@@ -24,7 +23,6 @@
         mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
         motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
     GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
         seqnames = "chr_sim",
         seqlengths = 100000L,
