@@ -77,9 +77,10 @@ plot_heatmap <- function(results,
     top_res <- res_sorted[seq_len(n_use), , drop = FALSE]
 
     ## --- Match to object rows (by index, not string keys) -------------------
-    ## results() returns a DataFrame aligned to rowRanges(object), so row
-    ## indices in the results correspond directly to rows in the object.
-    row_idx <- which(!is.na(top_res$dm_padj))
+    ## results() returns a DataFrame aligned to rowRanges(object). The rownames
+    ## of the results DataFrame carry the original row indices into the object,
+    ## even after subsetting and sorting. Use those to index into the assay.
+    row_idx <- as.integer(rownames(top_res))
 
     ## --- Extract methylation submatrix -------------------------------------
     methyl_mat <- methylation(object)[row_idx, , drop = FALSE]
