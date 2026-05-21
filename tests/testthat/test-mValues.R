@@ -6,11 +6,10 @@
                              seed = 99L, cov_val = 20L) {
     set.seed(seed)
     positions <- seq(1000L, by = 1000L, length.out = n_sites)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     betas <- matrix(
         runif(n_sites * n_samples, 0.05, 0.95),
         nrow = n_sites, ncol = n_samples,
-        dimnames = list(site_keys, paste0("s", seq_len(n_samples)))
+        dimnames = list(NULL, paste0("s", seq_len(n_samples)))
     )
     cov_mat <- matrix(cov_val, nrow = n_sites, ncol = n_samples,
                       dimnames = dimnames(betas))
@@ -18,11 +17,14 @@
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
-        motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites)
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
+        motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = paste0("s", seq_len(n_samples)),
         condition   = rep("ctrl", n_samples),
@@ -34,10 +36,7 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
-        annotation = GenomicRanges::GRanges(),
-        motifSites = GenomicRanges::GRanges())
+    new("commaData", rse)
 }
 
 # ─── Return type and dimensions ───────────────────────────────────────────────
@@ -72,7 +71,7 @@ test_that("mValues: formula is correct for known values", {
     SummarizedExperiment::assay(obj, "methylation")[1, 1] <- 0.8
     m <- mValues(obj, alpha = 0.5)
     expected <- log2((8 + 0.5) / (2 + 0.5))
-    expect_equal(m[1, 1], expected)
+    expect_equal(unname(m[1, 1]), expected)
 })
 
 test_that("mValues: M-value at beta=0.5 is near zero", {
@@ -180,4 +179,18 @@ test_that("mValues: works with comma_example_data", {
     m <- mValues(comma_example_data)
     expect_equal(dim(m), dim(methylation(comma_example_data)))
     expect_true(is.numeric(m))
+})
+
+test_that("mValues: mod_type accepts character vector", {
+    data(comma_example_data)
+    m <- mValues(comma_example_data, mod_type = c("6mA", "5mC"))
+    expect_equal(nrow(m), nrow(comma_example_data))
+})
+
+test_that("mValues: mod_type vector with invalid value gives error", {
+    data(comma_example_data)
+    expect_error(
+        mValues(comma_example_data, mod_type = c("6mA", "invalid")),
+        "not found in object"
+    )
 })

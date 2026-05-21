@@ -11,11 +11,14 @@
 }
 \value{
 A named integer vector of chromosome sizes
-(chromosome name → length in bp), or \code{NULL} if no genome information
+(chromosome name -> length in bp), or \code{NULL} if no genome information
 was provided at construction.
 }
 \description{
 Returns the chromosome sizes stored in a \code{\link{commaData}} object.
+Genome size information is stored in the \code{Seqinfo} attached to
+\code{rowRanges(object)}. This accessor returns \code{seqlengths(object)}
+for backward compatibility.
 }
 \examples{
 data(comma_example_data)

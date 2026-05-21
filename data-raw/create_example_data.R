@@ -128,7 +128,7 @@ methyl_mat <- matrix(
       c(beta_6ma_treat2, beta_5mc_treat2),
       c(beta_6ma_treat3, beta_5mc_treat3)),
     nrow = n_total, ncol = 6L,
-    dimnames = list(all_keys, SAMPLES)
+    dimnames = list(NULL, SAMPLES)
 )
 
 coverage_mat <- matrix(
@@ -139,7 +139,7 @@ coverage_mat <- matrix(
       c(cov_6ma_treat2, cov_5mc_treat2),
       c(cov_6ma_treat3, cov_5mc_treat3)),
     nrow = n_total, ncol = 6L,
-    dimnames = list(all_keys, SAMPLES)
+    dimnames = list(NULL, SAMPLES)
 )
 storage.mode(coverage_mat) <- "integer"
 
@@ -151,13 +151,18 @@ site_gr <- GenomicRanges::GRanges(
         width = 1L
     ),
     strand   = c(gatc_strands, ccgg_strands),
-    mod_type    = c(rep("6mA", N_6MA_SITES), rep("5mC", N_5MC_SITES)),
+    mod_type    = factor(c(rep("6mA", N_6MA_SITES), rep("5mC", N_5MC_SITES)),
+                         levels = c("4mC", "5mC", "6mA")),
     motif       = c(rep(MOTIF_6MA, N_6MA_SITES), rep(MOTIF_5MC, N_5MC_SITES)),
-    mod_context = c(rep(paste0("6mA_", MOTIF_6MA), N_6MA_SITES),
-                    rep(paste0("5mC_", MOTIF_5MC), N_5MC_SITES)),
     is_diff     = c(is_diff_6ma, rep(FALSE, N_5MC_SITES))  # ground truth for testing
 )
-names(site_gr) <- all_keys
+
+# ── Attach Seqinfo to rowRanges ────────────────────────────────────────────
+GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+    seqnames = CHR_NAME,
+    seqlengths = GENOME_SIZE,
+    isCircular = FALSE
+)
 
 # ── Build colData ─────────────────────────────────────────────────────────────
 col_df <- S4Vectors::DataFrame(
@@ -189,12 +194,15 @@ rse <- SummarizedExperiment(
     colData    = col_df
 )
 
-comma_example_data <- new("commaData",
-    rse,
-    genomeInfo = c(chr_sim = GENOME_SIZE),
-    annotation = ann_gr,
-    motifSites = GenomicRanges::GRanges()
-)
+comma_example_data <- new("commaData", rse)
+
+# Store annotation and motifSites in metadata
+S4Vectors::metadata(comma_example_data)$annotation <- ann_gr
+S4Vectors::metadata(comma_example_data)$motifSites <- GenomicRanges::GRanges()
+
+# Store caller and min_coverage in metadata
+S4Vectors::metadata(comma_example_data)$caller <- "modkit"
+S4Vectors::metadata(comma_example_data)$min_coverage <- 5L
 
 # ── Save ──────────────────────────────────────────────────────────────────────
 usethis::use_data(comma_example_data, overwrite = TRUE, compress = "xz")

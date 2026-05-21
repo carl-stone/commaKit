@@ -5,12 +5,11 @@
 .make_dist_data <- function() {
     n_sites   <- 10L
     positions <- seq(1000L, 10000L, by = 1000L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     set.seed(1L)
     betas <- matrix(
         runif(n_sites * 3L, 0.1, 0.9),
         nrow = n_sites, ncol = 3L,
-        dimnames = list(site_keys, c("ctrl_1", "ctrl_2", "treat_1"))
+        dimnames = list(NULL, c("ctrl_1", "ctrl_2", "treat_1"))
     )
     cov_mat <- matrix(20L, nrow = n_sites, ncol = 3L,
                       dimnames = dimnames(betas))
@@ -18,11 +17,14 @@
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
-        motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites)
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
+        motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("ctrl_1", "ctrl_2", "treat_1"),
         condition   = c("control", "control", "treatment"),
@@ -34,10 +36,7 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
-        annotation = GenomicRanges::GRanges(),
-        motifSites = GenomicRanges::GRanges())
+    new("commaData", rse)
 }
 
 ## Object with two modification types
@@ -45,14 +44,14 @@
     n_6ma <- 8L; n_5mc <- 4L
     n_sites <- n_6ma + n_5mc
     positions <- seq(1000L, n_sites * 1000L, by = 1000L)
-    mod_types  <- c(rep("6mA", n_6ma), rep("5mC", n_5mc))
+    mod_types  <- factor(c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
+                         levels = c("4mC", "5mC", "6mA"))
     motif_vals <- c(rep("GATC", n_6ma), rep("CCWGG", n_5mc))
-    site_keys  <- paste0("chr_sim:", positions, ":+:", mod_types, ":", motif_vals)
     set.seed(2L)
     betas <- matrix(
         runif(n_sites * 2L, 0.1, 0.9),
         nrow = n_sites, ncol = 2L,
-        dimnames = list(site_keys, c("samp1", "samp2"))
+        dimnames = list(NULL, c("samp1", "samp2"))
     )
     cov_mat <- matrix(20L, nrow = n_sites, ncol = 2L,
                       dimnames = dimnames(betas))
@@ -61,10 +60,13 @@
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = rep("+", n_sites),
         mod_type    = mod_types,
-        motif       = motif_vals,
-        mod_context = paste(mod_types, motif_vals, sep = "_")
+        motif       = motif_vals
     )
-    names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("samp1", "samp2"),
         condition   = c("ctrl", "treat"),
@@ -76,10 +78,7 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
-        annotation = GenomicRanges::GRanges(),
-        motifSites = GenomicRanges::GRanges())
+    new("commaData", rse)
 }
 
 # ─── Basic return type ────────────────────────────────────────────────────────

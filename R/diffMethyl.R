@@ -204,15 +204,7 @@ diffMethyl <- function(
         object <- subset(object, mod_context = mod_context)
     } else {
         if (!is.null(mod_type)) {
-            available <- modTypes(object)
-            bad <- setdiff(mod_type, available)
-            if (length(bad) > 0L) {
-                stop(
-                    "mod_type value(s) not found in object: ",
-                    paste(bad, collapse = ", "),
-                    ". Available: ", paste(available, collapse = ", ")
-                )
-            }
+            .validateModType(mod_type, object)
         }
 
         if (!is.null(motif)) {
@@ -282,9 +274,10 @@ diffMethyl <- function(
         all_mc <- modContexts(object)
         # Keep contexts whose mod_type prefix matches
         mc <- GenomicRanges::mcols(rowRanges(object))
+        computed_ctx <- .computeModContext(mc$mod_type, mc$motif)
         test_contexts <- all_mc[
             mc$mod_type[
-                match(all_mc, mc$mod_context)
+                match(all_mc, computed_ctx)
             ] %in% mod_type
         ]
         test_contexts <- sort(unique(test_contexts))
@@ -316,11 +309,14 @@ diffMethyl <- function(
 
     # -- Test each mod context independently -----------------------------------
     for (mc in test_contexts) {
-        site_idx <- which(rd_full$mod_context == mc)
+        # Compute mod_context on demand for site selection
+        computed_ctx <- .computeModContext(rd_full$mod_type, rd_full$motif)
+        site_idx <- which(computed_ctx == mc)
         if (length(site_idx) == 0L) next
 
         methyl_sub <- methyl_full[site_idx, , drop = FALSE]
         cov_sub    <- cov_full[site_idx, , drop = FALSE]
+        site_sub   <- rd_full[site_idx, , drop = FALSE]
 
         # Apply min_coverage: set beta to NA where coverage < threshold
         low_cov <- !is.na(cov_sub) & cov_sub < min_coverage
@@ -329,13 +325,13 @@ diffMethyl <- function(
         # Dispatch to statistical backend
         res_sub <- tryCatch(
             if (method == "limma") {
-                .runLimma(methyl_sub, cov_sub, cd, formula, alpha = alpha,
+                .runLimma(methyl_sub, cov_sub, site_sub, cd, formula, alpha = alpha,
                           ref_level = ref_level)
             } else if (method == "quasi_f") {
-                .runQuasiF(methyl_sub, cov_sub, cd, formula,
+                .runQuasiF(methyl_sub, cov_sub, site_sub, cd, formula,
                            ref_level = ref_level)
             } else {
-                .runMethylKit(methyl_sub, cov_sub, cd, formula,
+                .runMethylKit(methyl_sub, cov_sub, site_sub, cd, formula,
                               ref_level = ref_level)
             },
             error = function(e) {
@@ -384,10 +380,7 @@ diffMethyl <- function(
         rowRanges  = rr_new,
         colData    = colData(object)
     )
-    out <- new("commaData", rse_new,
-               genomeInfo = object@genomeInfo,
-               annotation = object@annotation,
-               motifSites = object@motifSites)
+    out <- new("commaData", rse_new)
 
     # Copy existing metadata, then add diffMethyl entries
     S4Vectors::metadata(out) <- S4Vectors::metadata(object)

@@ -51,6 +51,8 @@ NULL
 #' @param methyl_mat Numeric matrix (sites × samples) of beta values.
 #'   \code{NA} indicates below-coverage sites.
 #' @param coverage_mat Integer matrix (sites × samples) of read depths.
+#' @param site_df Data frame with columns \code{chrom}, \code{position},
+#'   \code{strand}, \code{mod_type}, \code{motif} — one row per site.
 #' @param coldata \code{data.frame} with at least one column matching the
 #'   RHS variable in \code{formula} (typically \code{condition}).
 #' @param formula One-sided formula specifying the design (e.g.,
@@ -68,7 +70,7 @@ NULL
 #'   }
 #'
 #' @keywords internal
-.runQuasiF <- function(methyl_mat, coverage_mat, coldata, formula,
+.runQuasiF <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
                        ref_level = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("limma", quietly = TRUE)) {
@@ -127,7 +129,7 @@ NULL
     }, numeric(n_sites))
     if (is.null(dim(group_means))) {
         group_means <- matrix(group_means, nrow = 1L,
-                              dimnames = list(rownames(methyl_mat), cond_levels))
+                              dimnames = list(NULL, cond_levels))
     }
     group_means[is.nan(group_means)] <- NA_real_
 
@@ -227,7 +229,6 @@ NULL
         result <- data.frame(
             pvalue     = pvalue_vec,
             delta_beta = delta_beta_vec,
-            row.names  = rownames(methyl_mat),
             stringsAsFactors = FALSE
         )
         for (lv in cond_levels) {
@@ -256,7 +257,6 @@ NULL
     result <- data.frame(
         pvalue     = pvalue_vec,
         delta_beta = delta_beta_vec,
-        row.names  = rownames(methyl_mat),
         stringsAsFactors = FALSE
     )
     for (lv in cond_levels) {

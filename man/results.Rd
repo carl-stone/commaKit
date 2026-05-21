@@ -15,8 +15,8 @@ results(object, ...)
 
 \item{...}{Ignored (for S4 generic compatibility).}
 
-\item{mod_type}{Character string or \code{NULL}. If provided, only sites
-of the specified modification type are returned. If \code{NULL} (default),
+\item{mod_type}{Character vector or \code{NULL}. If provided, only sites
+of the specified modification type(s) are returned. If \code{NULL} (default),
 results for all modification types are returned.}
 
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with

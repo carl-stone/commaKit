@@ -23,9 +23,13 @@ make_tiny <- function() {
     seqnames = "chr_test",
     ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
     strand   = "+",
-    mod_type    = c("6mA", "5mC", "6mA"),   # mixed types for filter test
-    motif       = c("GATC", "CCWGG", "GATC"),
-    mod_context = c("6mA_GATC", "5mC_CCWGG", "6mA_GATC")
+    mod_type    = factor(c("6mA", "5mC", "6mA"), levels = c("4mC", "5mC", "6mA")),   # mixed types for filter test
+    motif       = c("GATC", "CCWGG", "GATC")
+  )
+  GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+    seqnames = "chr_test",
+    seqlengths = 20L,
+    isCircular = FALSE
   )
   cd <- S4Vectors::DataFrame(
     sample_name = c("samp1", "samp2"),
@@ -37,10 +41,7 @@ make_tiny <- function() {
     rowRanges  = site_gr,
     colData    = cd
   )
-  new("commaData", rse,
-      genomeInfo = gi,
-      annotation = GenomicRanges::GRanges(),
-      motifSites = GenomicRanges::GRanges())
+  new("commaData", rse)
 }
 
 tiny_data <- make_tiny()
@@ -145,12 +146,15 @@ test_that("slidingWindow: error on missing window argument", {
 })
 
 test_that("slidingWindow: error when genome is NULL", {
-    obj_no_genome <- new("commaData",
-        as(comma_example_data, "RangedSummarizedExperiment"),
-        genomeInfo = NULL,
-        annotation = comma_example_data@annotation,
-        motifSites = comma_example_data@motifSites
-    )
+    data(comma_example_data)
+    rse_no_genome <- as(comma_example_data, "RangedSummarizedExperiment")
+    rr <- rowRanges(rse_no_genome)
+    # Drop all seqlengths to simulate missing genome info
+    GenomeInfoDb::seqlengths(rr) <- NA_integer_
+    rowRanges(rse_no_genome) <- rr
+    obj_no_genome <- new("commaData", rse_no_genome)
+    # Copy metadata from original
+    S4Vectors::metadata(obj_no_genome) <- S4Vectors::metadata(comma_example_data)
     expect_error(slidingWindow(obj_no_genome, window = 1000L), "genome\\(object\\)")
 })
 
@@ -165,7 +169,7 @@ test_that("slidingWindow: error when window exceeds chromosome size", {
 test_that("slidingWindow: error on invalid mod_type", {
     expect_error(
         slidingWindow(tiny_data, window = W, mod_type = "invalid_type"),
-        "No sites remain"
+        "not found in object"
     )
 })
 
@@ -185,9 +189,13 @@ test_that("slidingWindow: known smoothed value for simple input", {
         seqnames = "chr_test",
         ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
         strand   = "+",
-        mod_type    = "6mA",
-        motif       = "GATC",
-        mod_context = "6mA_GATC"
+        mod_type    = factor("6mA", levels = c("4mC", "5mC", "6mA")),
+        motif       = "GATC"
+    )
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_test",
+        seqlengths = 20L,
+        isCircular = FALSE
     )
     methyl_mat <- matrix(c(0.2, 0.8, 0.5), nrow = 3, ncol = 1,
                          dimnames = list(NULL, "samp1"))
@@ -203,9 +211,7 @@ test_that("slidingWindow: known smoothed value for simple input", {
         rowRanges  = site_gr,
         colData    = cd
     )
-    obj <- new("commaData", rse, genomeInfo = gi,
-               annotation = GenomicRanges::GRanges(),
-               motifSites = GenomicRanges::GRanges())
+    obj <- new("commaData", rse)
 
     # window=5 centered on position 10 covers positions 8:12.
     # Only the site at position 10 (beta=0.8) falls in [8:12]; sites at 5 and 15

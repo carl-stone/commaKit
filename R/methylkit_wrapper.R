@@ -24,6 +24,8 @@ NULL
 #'
 #' @param methyl_mat Numeric matrix (sites × samples) of beta values.
 #' @param coverage_mat Integer matrix (sites × samples) of read depths.
+#' @param site_df Data frame with columns \code{chrom}, \code{position},
+#'   \code{strand}, \code{mod_type}, \code{motif} — one row per site.
 #' @param coldata \code{data.frame} with at least one column matching the
 #'   RHS variable in \code{formula}.
 #' @param formula One-sided formula (e.g., \code{~ condition}).
@@ -33,7 +35,7 @@ NULL
 #'   per condition level. Row names are site keys.
 #'
 #' @keywords internal
-.runMethylKit <- function(methyl_mat, coverage_mat, coldata, formula,
+.runMethylKit <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
                           ref_level = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("methylKit", quietly = TRUE)) {
@@ -82,14 +84,11 @@ NULL
         ref_level, "' (reference/control)"
     )
 
-    # ── Parse site keys into components ───────────────────────────────────────
-    site_keys <- rownames(methyl_mat)
-    # site_key format: "chrom:position:strand:mod_type"
-    key_parts <- strsplit(site_keys, ":", fixed = TRUE)
-    chroms    <- vapply(key_parts, `[[`, character(1), 1L)
-    positions <- as.integer(vapply(key_parts, `[[`, character(1), 2L))
-    strands   <- vapply(key_parts, `[[`, character(1), 3L)
-    n_sites   <- length(site_keys)
+    # ── Get site positions from site_df ───────────────────────────────────────
+    chroms    <- site_df$chrom
+    positions <- site_df$position
+    strands   <- site_df$strand
+    n_sites   <- nrow(site_df)
 
     # ── Filter zero-variance sites ───────────────────────────────────────────
     # methylKit's calculateDiffMeth() crashes when any site has identical
@@ -126,13 +125,12 @@ NULL
         }, numeric(n_sites))
         if (is.null(dim(group_means))) {
             group_means <- matrix(group_means, nrow = 1L,
-                                  dimnames = list(rownames(methyl_mat), cond_levels))
+                                  dimnames = list(NULL, cond_levels))
         }
         group_means[is.nan(group_means)] <- NA_real_
         result <- data.frame(
             pvalue     = rep(1, n_sites),
             delta_beta = group_means[, treat_level] - group_means[, ref_level],
-            row.names  = site_keys,
             stringsAsFactors = FALSE
         )
         for (lv in cond_levels) {
@@ -252,7 +250,7 @@ NULL
     }, numeric(n_sites))
     if (is.null(dim(group_means))) {
         group_means <- matrix(group_means, nrow = 1L,
-                              dimnames = list(rownames(methyl_mat), cond_levels))
+                              dimnames = list(NULL, cond_levels))
     }
     group_means[is.nan(group_means)] <- NA_real_
 
@@ -273,7 +271,6 @@ NULL
     result <- data.frame(
         pvalue     = pvalue_vec,
         delta_beta = delta_beta_vec,
-        row.names  = site_keys,
         stringsAsFactors = FALSE
     )
     for (lv in cond_levels) {

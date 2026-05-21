@@ -14,9 +14,9 @@ NULL
 #'   created or overwritten.
 #' @param sample Character string. Name of the sample to export. Must match a
 #'   column name in \code{methylation(object)}.
-#' @param mod_type Character string or \code{NULL}. If provided, only sites of
-#'   the specified modification type are written (e.g., \code{"6mA"}). If
-#'   \code{NULL} (default), all sites are written.
+#' @param mod_type Character vector or \code{NULL}. If provided, only sites of
+#'   the specified modification type(s) are written (e.g., \code{"6mA"},
+#'   \code{c("6mA", "5mC")}). If \code{NULL} (default), all sites are written.
 #' @param rgb_scale Logical. If \code{TRUE} (default), an \code{itemRGB}
 #'   column is added based on the methylation score using a blue-to-red
 #'   gradient (low = blue, high = red). If \code{FALSE}, \code{itemRGB} is
@@ -75,9 +75,11 @@ writeBED <- function(object,
 
     # ── Filter by mod_type ────────────────────────────────────────────────────
     if (!is.null(mod_type)) {
+        .validateModType(mod_type, object)
         object <- subset(object, mod_type = mod_type)
         if (nrow(object) == 0) {
-            stop("No sites remain after filtering for mod_type = '", mod_type, "'.")
+            stop("No sites remain after filtering for mod_type = '",
+                 paste(mod_type, collapse = "', '"), "'.")
         }
     }
 

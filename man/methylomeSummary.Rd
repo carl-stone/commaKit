@@ -9,10 +9,10 @@ methylomeSummary(object, mod_type = NULL, motif = NULL, mod_context = NULL)
 \arguments{
 \item{object}{A \code{\link{commaData}} object.}
 
-\item{mod_type}{Character string or \code{NULL}. If provided, only sites
-of the specified modification type (e.g., \code{"6mA"}) are included in
-the summary. If \code{NULL} (default), all modification types are
-summarized together.}
+\item{mod_type}{Character vector or \code{NULL}. If provided, only sites
+of the specified modification type(s) (e.g., \code{"6mA"},
+\code{c("6mA", "5mC")}) are included in the summary. If \code{NULL}
+(default), all modification types are summarized together.}
 
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with
 matching sequence context motif(s) are included (e.g., \code{"GATC"}).
@@ -43,7 +43,11 @@ sites.}
 \item{\code{mean_coverage}}{Mean sequencing depth across all sites
 (including sites below the \code{min_coverage} threshold, which have
 coverage stored as 0 or their raw depth).}
-\item{\code{median_coverage}}{Median sequencing depth.}
+\\item{\\code{median_coverage}}{Median sequencing depth.}
+\\item{\\code{caller}}{Methylation caller that produced the data
+(e.g., \\code{\"modkit\"}), or \\code{NA} if not stored.}
+\\item{\\code{min_coverage}}{Minimum coverage threshold applied at
+construction, or \\code{NA} if not stored.}
 }
 }
 \description{

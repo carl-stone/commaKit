@@ -29,9 +29,13 @@
         seqnames = "chr_sim",
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = "+",
-        mod_type    = "6mA",
-        motif       = "GATC",
-        mod_context = "6mA_GATC"
+        mod_type    = factor("6mA", levels = c("4mC", "5mC", "6mA")),
+        motif       = "GATC"
+    )
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
     )
     cd <- S4Vectors::DataFrame(
         sample_name = c("ctrl_1", "treat_1"),
@@ -58,11 +62,10 @@
     annot_gr$feature_type <- c("gene", "gene", "gene")
     annot_gr$name         <- c("geneA", "geneB", "geneC")
 
-    new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
-        annotation = annot_gr,
-        motifSites = GenomicRanges::GRanges()
-    )
+    obj <- new("commaData", rse)
+    S4Vectors::metadata(obj)$annotation <- annot_gr
+    S4Vectors::metadata(obj)$motifSites <- GenomicRanges::GRanges()
+    obj
 }
 
 ## Same as above but with regulatory features added to annotation
@@ -80,15 +83,14 @@
     reg_gr$name         <- c("sigma1", "sigma2")
 
     combined_gr <- c(annot_gr, reg_gr)
-    new("commaData", SummarizedExperiment::SummarizedExperiment(
+    obj2 <- new("commaData", SummarizedExperiment::SummarizedExperiment(
             assays     = list(methylation = methylation(obj), coverage = coverage(obj)),
             rowRanges  = rowRanges(obj),
             colData    = sampleInfo(obj)
-        ),
-        genomeInfo = genome(obj),
-        annotation = combined_gr,
-        motifSites = motifSites(obj)
-    )
+        ))
+    S4Vectors::metadata(obj2) <- S4Vectors::metadata(obj)
+    S4Vectors::metadata(obj2)$annotation <- combined_gr
+    obj2
 }
 
 ## ── Basic return type ────────────────────────────────────────────────────────
@@ -206,9 +208,13 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
         seqnames = "chr_sim",
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = "+",
-        mod_type    = "6mA",
-        motif       = "GATC",
-        mod_context = "6mA_GATC"
+        mod_type    = factor("6mA", levels = c("4mC", "5mC", "6mA")),
+        motif       = "GATC"
+    )
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
     )
     cd <- S4Vectors::DataFrame(sample_name = c("ctrl_1", "treat_1"),
                                 condition   = c("control", "treatment"),
@@ -225,10 +231,9 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
     )
     annot_gr$feature_type <- "gene"
     annot_gr$name         <- "geneA"
-    tiny_obj <- new("commaData", rse,
-                    genomeInfo = c(chr_sim = 100000L),
-                    annotation = annot_gr,
-                    motifSites = GenomicRanges::GRanges())
+    tiny_obj <- new("commaData", rse)
+    S4Vectors::metadata(tiny_obj)$annotation <- annot_gr
+    S4Vectors::metadata(tiny_obj)$motifSites <- GenomicRanges::GRanges()
 
     expect_warning(
         p <- plot_tss_profile(tiny_obj, feature_type = "gene",
@@ -294,10 +299,9 @@ test_that("error on empty annotation", {
                                    coverage    = coverage(obj)),
                     rowRanges  = rowRanges(obj),
                     colData    = sampleInfo(obj)
-                ),
-                genomeInfo = genome(obj),
-                annotation = GenomicRanges::GRanges(),
-                motifSites = motifSites(obj))
+                ))
+    S4Vectors::metadata(obj2) <- S4Vectors::metadata(obj)
+    S4Vectors::metadata(obj2)$annotation <- GenomicRanges::GRanges()
     expect_error(plot_tss_profile(obj2), "annotation\\(object\\) is empty")
 })
 

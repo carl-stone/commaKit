@@ -11,13 +11,12 @@
     #   0.9 → score 900 ≤ 1000→ red      (250,0,0)
     n_sites   <- 5L
     positions <- c(1000L, 2000L, 3000L, 4000L, 5000L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     betas     <- c(0.1, 0.3, 0.5, 0.7, 0.9)
 
     methyl_mat <- matrix(
         c(betas, betas + 0.05),
         nrow = n_sites, ncol = 2L,
-        dimnames = list(site_keys, c("samp1", "samp2"))
+        dimnames = list(NULL, c("samp1", "samp2"))
     )
     # Clamp samp2 to [0,1]
     methyl_mat[, "samp2"] <- pmin(1, pmax(0, methyl_mat[, "samp2"]))
@@ -29,11 +28,14 @@
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
-        motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites)
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
+        motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 10000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("samp1", "samp2"),
         condition   = c("ctrl", "treat"),
@@ -45,10 +47,7 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse,
-        genomeInfo = c(chr_sim = 10000L),
-        annotation = GenomicRanges::GRanges(),
-        motifSites = GenomicRanges::GRanges())
+    new("commaData", rse)
 }
 
 # ─── File creation & return value ─────────────────────────────────────────────
@@ -285,6 +284,6 @@ test_that("writeBED: error when mod_type has no matching sites", {
     on.exit(unlink(f))
     expect_error(
         writeBED(obj, file = f, sample = "samp1", mod_type = "5mC"),
-        "No sites remain"
+        "not found in object"
     )
 })

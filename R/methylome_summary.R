@@ -10,10 +10,10 @@ NULL
 #' tabular reporting.
 #'
 #' @param object A \code{\link{commaData}} object.
-#' @param mod_type Character string or \code{NULL}. If provided, only sites
-#'   of the specified modification type (e.g., \code{"6mA"}) are included in
-#'   the summary. If \code{NULL} (default), all modification types are
-#'   summarized together.
+#' @param mod_type Character vector or \code{NULL}. If provided, only sites
+#'   of the specified modification type(s) (e.g., \code{"6mA"},
+#'   \code{c("6mA", "5mC")}) are included in the summary. If \code{NULL}
+#'   (default), all modification types are summarized together.
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are included (e.g., \code{"GATC"}).
 #'   If \code{NULL} (default), all motifs are included.
@@ -41,7 +41,11 @@ NULL
 #'     \item{\code{mean_coverage}}{Mean sequencing depth across all sites
 #'       (including sites below the \code{min_coverage} threshold, which have
 #'       coverage stored as 0 or their raw depth).}
-#'     \item{\code{median_coverage}}{Median sequencing depth.}
+#'     \\item{\\code{median_coverage}}{Median sequencing depth.}
+#'     \\item{\\code{caller}}{Methylation caller that produced the data
+#'       (e.g., \\code{\"modkit\"}), or \\code{NA} if not stored.}
+#'     \\item{\\code{min_coverage}}{Minimum coverage threshold applied at
+#'       construction, or \\code{NA} if not stored.}
 #'   }
 #'
 #' @examples
@@ -65,16 +69,10 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
     }
 
     # ── Filter by mod_type ────────────────────────────────────────────────────
-    mt_label <- if (is.null(mod_type)) "all" else mod_type
+    mt_label <- if (is.null(mod_type)) "all" else paste(mod_type, collapse = ",")
 
     if (!is.null(mod_type)) {
-        available <- modTypes(object)
-        if (!mod_type %in% available) {
-            stop(
-                "'mod_type' = '", mod_type, "' not found in object. ",
-                "Available types: ", paste(available, collapse = ", ")
-            )
-        }
+        .validateModType(mod_type, object)
         object <- subset(object, mod_type = mod_type)
     }
 
@@ -111,6 +109,8 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
     si         <- sampleInfo(object)
     sample_nms <- colnames(methyl_mat)
     n_sites    <- nrow(methyl_mat)
+    obj_caller <- caller(object)
+    obj_min_cov <- minCoverage(object)
 
     # ── Per-sample statistics ─────────────────────────────────────────────────
     rows <- lapply(sample_nms, function(samp) {
@@ -134,6 +134,8 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
             frac_methylated  = if (n_covered > 0) mean(b_cov > 0.5)    else NA_real_,
             mean_coverage    = mean(c_all, na.rm = TRUE),
             median_coverage  = stats::median(c_all, na.rm = TRUE),
+            caller           = obj_caller,
+            min_coverage     = obj_min_cov,
             stringsAsFactors = FALSE
         )
     })

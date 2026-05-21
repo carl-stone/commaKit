@@ -85,27 +85,35 @@ NULL
     mod_prob <- as.numeric(raw[[ncol(raw)]])
 
     # ── Aggregate per-read → per-site ───────────────────────────────────────
-    # Site key: chrom:position:strand (1-based)
+    # Group by genomic position (chrom, position, strand) and compute
+    # per-site beta (mean of mod_prob) and coverage (count of reads).
     position <- start + 1L
-    site_key <- paste(chrom, position, strand, sep = ":")
 
-    beta_vals <- tapply(mod_prob, site_key, mean,  na.rm = TRUE)
-    cov_vals  <- tapply(mod_prob, site_key, length)
+    site_df <- data.frame(
+        chrom    = chrom,
+        position = position,
+        strand   = strand,
+        mod_prob = mod_prob,
+        stringsAsFactors = FALSE
+    )
 
-    all_keys   <- names(beta_vals)
-    key_parts  <- strsplit(all_keys, ":", fixed = TRUE)
-    out_chrom  <- vapply(key_parts, `[[`, character(1), 1L)
-    out_pos    <- as.integer(vapply(key_parts, `[[`, character(1), 2L))
-    out_strand <- vapply(key_parts, `[[`, character(1), 3L)
+    # Use aggregate() for base-R dedup — no string keys needed
+    agg_beta <- aggregate(mod_prob ~ chrom + position + strand,
+                           data = site_df,
+                           FUN = mean, na.rm = TRUE)
+    agg_cov  <- aggregate(mod_prob ~ chrom + position + strand,
+                           data = site_df,
+                           FUN = length)
 
+    # Merge the two aggregates (same grouping columns, same row order)
     result <- data.frame(
-        chrom    = out_chrom,
-        position = out_pos,
-        strand   = out_strand,
+        chrom    = agg_beta$chrom,
+        position = agg_beta$position,
+        strand   = agg_beta$strand,
         mod_type = mod_type,
         motif    = NA_character_,
-        beta     = as.numeric(beta_vals),
-        coverage = as.integer(cov_vals),
+        beta     = agg_beta$mod_prob,
+        coverage = agg_cov$mod_prob,
         stringsAsFactors = FALSE
     )
 

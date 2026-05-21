@@ -112,12 +112,35 @@ test_that("methylomeSummary: all-NA sample gives NA mean_beta and median_beta, n
         rowRanges  = SummarizedExperiment::rowRanges(comma_example_data),
         colData    = SummarizedExperiment::colData(comma_example_data)
     )
-    obj_mod <- new("commaData", se_mod,
-                   genomeInfo = comma_example_data@genomeInfo,
-                   annotation = comma_example_data@annotation,
-                   motifSites = comma_example_data@motifSites)
+    obj_mod <- new("commaData", se_mod)
+    # Copy metadata from original
+    S4Vectors::metadata(obj_mod) <- S4Vectors::metadata(comma_example_data)
     result    <- methylomeSummary(obj_mod)
     ctrl1_row <- result[result$sample_name == "ctrl_1", ]
     expect_true(is.na(ctrl1_row$mean_beta))
     expect_true(is.na(ctrl1_row$median_beta))
+})
+
+test_that("methylomeSummary: mod_type accepts character vector", {
+    data(comma_example_data)
+    ms <- methylomeSummary(comma_example_data, mod_type = c("6mA", "5mC"))
+    expect_true(is.data.frame(ms))
+    expect_equal(ms$mod_type[1], "6mA,5mC")
+})
+
+test_that("methylomeSummary: mod_type vector with invalid value gives error", {
+    data(comma_example_data)
+    expect_error(
+        methylomeSummary(comma_example_data, mod_type = c("6mA", "invalid")),
+        "not found in object"
+    )
+})
+
+test_that("methylomeSummary: caller and min_coverage columns are present", {
+    data(comma_example_data)
+    ms <- methylomeSummary(comma_example_data)
+    expect_true("caller" %in% colnames(ms))
+    expect_true("min_coverage" %in% colnames(ms))
+    expect_equal(ms$caller[1], "modkit")
+    expect_equal(ms$min_coverage[1], 5L)
 })

@@ -33,7 +33,7 @@ named integer vector — do not index into the BSgenome with \code{$}
 (e.g., \code{BSgenome.Ecoli.NCBI.20080805$NC_000913}) as that yields a
 \code{DNAString} which has no chromosome name and cannot be used. Set to
 \code{NULL} to omit genome information (not recommended). When a
-multi-sequence source is provided, genomeInfo is automatically restricted
+multi-sequence source is provided, genome info is automatically restricted
 to chromosomes present in the data.}
 
 \item{annotation}{Optional. Path to a GFF3 or BED annotation file, or a
@@ -93,12 +93,12 @@ genomic annotation and motif site positions.
 The constructor uses a parse-then-merge strategy:
 \enumerate{
 \item Each file is parsed independently using the appropriate parser.
-\item Sites are identified by a 5-part key:
-\code{"chrom:position:strand:mod_type:motif"} (motif is \code{"NA"}
-for Dorado and Megalodon callers).
-\item The union of all sites across all samples is taken.
-\item Beta values and coverage are arranged into sites × samples matrices,
-with \code{NA} for samples that do not cover a given site.
+\item Sites are identified by their genomic position (chromosome, position,
+strand) plus modification type and motif context.
+\item The union of all sites across all samples is taken, using
+\code{findOverlaps()} for alignment.
+\item Beta values and coverage are arranged into sites \eqn{\times} samples
+matrices, with \code{NA} for samples that do not cover a given site.
 \item Sites where coverage is below \code{min_coverage} in a sample have
 their beta value set to \code{NA} (but coverage is preserved).
 }

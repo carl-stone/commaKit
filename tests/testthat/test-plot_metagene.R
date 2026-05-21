@@ -7,12 +7,11 @@
     n_sites   <- 10L
     positions <- c(1500L, 2000L, 2500L, 3000L, 3500L,
                    6500L, 7000L, 7500L, 8000L, 8500L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     set.seed(5L)
     betas <- matrix(
         runif(n_sites * 2L, 0.1, 0.9),
         nrow = n_sites, ncol = 2L,
-        dimnames = list(site_keys, c("ctrl_1", "treat_1"))
+        dimnames = list(NULL, c("ctrl_1", "treat_1"))
     )
     cov_mat <- matrix(20L, nrow = n_sites, ncol = 2L,
                       dimnames = dimnames(betas))
@@ -20,11 +19,14 @@
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
-        motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites)
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
+        motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("ctrl_1", "treat_1"),
         condition   = c("control", "treatment"),
@@ -45,10 +47,10 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
-        annotation = ann_gr,
-        motifSites = GenomicRanges::GRanges())
+    obj <- new("commaData", rse)
+    S4Vectors::metadata(obj)$annotation <- ann_gr
+    S4Vectors::metadata(obj)$motifSites <- GenomicRanges::GRanges()
+    obj
 }
 
 # ─── Basic return type ────────────────────────────────────────────────────────
@@ -90,7 +92,7 @@ test_that("plot_metagene: error on non-commaData input", {
 
 test_that("plot_metagene: error when annotation is empty", {
     obj <- .make_metagene_data()
-    obj@annotation <- GenomicRanges::GRanges()
+    S4Vectors::metadata(obj)$annotation <- GenomicRanges::GRanges()
     expect_error(plot_metagene(obj, feature = "gene"),
                  "annotation")
 })

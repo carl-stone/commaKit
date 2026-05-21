@@ -3,6 +3,7 @@
 #' @importFrom S4Vectors DataFrame
 #' @importFrom GenomicRanges GRanges
 #' @importFrom IRanges IRanges
+#' @importFrom GenomeInfoDb Seqinfo seqinfo
 NULL
 
 #' Create a commaData object from methylation calling output files
@@ -26,7 +27,7 @@ NULL
 #'   (e.g., \code{BSgenome.Ecoli.NCBI.20080805$NC_000913}) as that yields a
 #'   \code{DNAString} which has no chromosome name and cannot be used. Set to
 #'   \code{NULL} to omit genome information (not recommended). When a
-#'   multi-sequence source is provided, genomeInfo is automatically restricted
+#'   multi-sequence source is provided, genome info is automatically restricted
 #'   to chromosomes present in the data.
 #' @param annotation Optional. Path to a GFF3 or BED annotation file, or a
 #'   pre-loaded \code{\link[GenomicRanges]{GRanges}} object. If \code{NULL},
@@ -73,12 +74,12 @@ NULL
 #' The constructor uses a parse-then-merge strategy:
 #' \enumerate{
 #'   \item Each file is parsed independently using the appropriate parser.
-#'   \item Sites are identified by a 5-part key:
-#'     \code{"chrom:position:strand:mod_type:motif"} (motif is \code{"NA"}
-#'     for Dorado and Megalodon callers).
-#'   \item The union of all sites across all samples is taken.
-#'   \item Beta values and coverage are arranged into sites × samples matrices,
-#'     with \code{NA} for samples that do not cover a given site.
+#'   \item Sites are identified by their genomic position (chromosome, position,
+#'     strand) plus modification type and motif context.
+#'   \item The union of all sites across all samples is taken, using
+#'     \code{findOverlaps()} for alignment.
+#'   \item Beta values and coverage are arranged into sites \eqn{\times} samples
+#'     matrices, with \code{NA} for samples that do not cover a given site.
 #'   \item Sites where coverage is below \code{min_coverage} in a sample have
 #'     their beta value set to \code{NA} (but coverage is preserved).
 #' }
@@ -224,9 +225,9 @@ commaData <- function(files,
     all_sites <- all_sites[ord, , drop = FALSE]
     rownames(all_sites) <- NULL
 
-    # ── Compute mod_context ──────────────────────────────────────────────────
+    # ── Compute mod_context on the fly for filtering ────────────────────────
     # "6mA_GATC" when motif is known; falls back to "6mA" for NA-motif callers.
-    all_sites$mod_context <- ifelse(
+    site_ctx <- ifelse(
         is.na(all_sites$motif),
         all_sites$mod_type,
         paste(all_sites$mod_type, all_sites$motif, sep = "_")
@@ -251,7 +252,7 @@ commaData <- function(files,
         }
         allowed_contexts <- unique(allowed_contexts)
 
-        drop_mask <- !(all_sites$mod_context %in% allowed_contexts)
+        drop_mask <- !(site_ctx %in% allowed_contexts)
         if (any(drop_mask)) {
             dropped <- all_sites[drop_mask, , drop = FALSE]
             for (mt in unique(dropped$mod_type)) {
@@ -274,44 +275,87 @@ commaData <- function(files,
         }
     }
 
-    site_keys <- paste(all_sites$chrom, all_sites$position,
-                       all_sites$strand, all_sites$mod_type,
-                       all_sites$motif, sep = ":")
-    n_sites   <- length(site_keys)
+    n_sites   <- nrow(all_sites)
 
     # ── Build matrices ──────────────────────────────────────────────────────
     n_samples    <- length(sample_names)
     methyl_mat   <- matrix(NA_real_,    nrow = n_sites, ncol = n_samples,
-                           dimnames = list(site_keys, sample_names))
+                           dimnames = list(NULL, sample_names))
     coverage_mat <- matrix(NA_integer_, nrow = n_sites, ncol = n_samples,
-                           dimnames = list(site_keys, sample_names))
+                           dimnames = list(NULL, sample_names))
+
+    # ── Build rowRanges (GRanges) for findOverlaps merge ────────────────────
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = all_sites$chrom,
+        ranges   = IRanges::IRanges(start = all_sites$position, width = 1L),
+        strand   = all_sites$strand,
+        mod_type    = factor(all_sites$mod_type, levels = .VALID_MOD_TYPES),
+        motif       = all_sites$motif
+    )
 
     for (sn in sample_names) {
         df <- parsed_list[[sn]]
         if (nrow(df) == 0L) next
 
-        df_keys <- paste(df$chrom, df$position, df$strand, df$mod_type, df$motif, sep = ":")
-        idx      <- match(df_keys, site_keys)
-        valid    <- !is.na(idx)
+        # Align parsed sites to the site universe using findOverlaps()
+        df_gr <- GenomicRanges::GRanges(
+            seqnames = df$chrom,
+            ranges   = IRanges::IRanges(start = df$position, width = 1L),
+            strand   = df$strand
+        )
+        GenomicRanges::mcols(df_gr)$mod_type <- df$mod_type
+        GenomicRanges::mcols(df_gr)$motif    <- df$motif
 
-        methyl_mat[idx[valid], sn]   <- df$beta[valid]
-        coverage_mat[idx[valid], sn] <- df$coverage[valid]
+        hits <- GenomicRanges::findOverlaps(df_gr, site_gr, type = "equal")
+        qh   <- S4Vectors::queryHits(hits)
+        sh   <- S4Vectors::subjectHits(hits)
+
+        # Verify mod_type and motif match (same position can have multiple types)
+        mc_q <- GenomicRanges::mcols(df_gr)[qh, c("mod_type", "motif")]
+        mc_s <- GenomicRanges::mcols(site_gr)[sh, c("mod_type", "motif")]
+        type_match  <- mc_q$mod_type == mc_s$mod_type
+        motif_match <- is.na(mc_q$motif) & is.na(mc_s$motif) |
+                       (!is.na(mc_q$motif) & !is.na(mc_s$motif) &
+                            mc_q$motif == mc_s$motif)
+        valid <- type_match & motif_match
+
+        idx <- rep(NA_integer_, nrow(df))
+        idx[qh[valid]] <- sh[valid]
+
+        valid_idx <- !is.na(idx)
+        methyl_mat[idx[valid_idx], sn]   <- df$beta[valid_idx]
+        coverage_mat[idx[valid_idx], sn] <- df$coverage[valid_idx]
     }
 
     # ── Apply min_coverage: set beta NA where coverage < threshold ──────────
     below_threshold <- !is.na(coverage_mat) & coverage_mat < min_coverage
     methyl_mat[below_threshold] <- NA_real_
 
-    # ── Build rowRanges (GRanges) ──────────────────────────────────────────
-    site_gr <- GenomicRanges::GRanges(
-        seqnames = all_sites$chrom,
-        ranges   = IRanges::IRanges(start = all_sites$position, width = 1L),
-        strand   = all_sites$strand,
-        mod_type    = all_sites$mod_type,
-        motif       = all_sites$motif,
-        mod_context = all_sites$mod_context
-    )
-    names(site_gr) <- site_keys
+    # ── Genome info ─────────────────────────────────────────────────────────
+    genome_info <- .validateGenomeInfo(genome)
+
+    # Restrict genome info to chromosomes actually present in the data
+    if (!is.null(genome_info)) {
+        data_chroms  <- unique(all_sites$chrom)
+        extra_chroms <- setdiff(names(genome_info), data_chroms)
+        if (length(extra_chroms) > 0L) {
+            message(
+                "Dropping ", length(extra_chroms), " chromosome(s) from genome info ",
+                "not present in data: ",
+                paste(extra_chroms, collapse = ", ")
+            )
+            genome_info <- genome_info[names(genome_info) %in% data_chroms]
+        }
+    }
+
+    # ── Attach Seqinfo to rowRanges ──────────────────────────────────────
+    if (!is.null(genome_info)) {
+        GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+            seqnames = names(genome_info),
+            seqlengths = genome_info,
+            isCircular = rep(FALSE, length(genome_info))
+        )
+    }
 
     # ── Build colData ───────────────────────────────────────────────────────
     # Reorder colData to match sample_names order in files
@@ -320,23 +364,6 @@ commaData <- function(files,
     )
     rownames(cd_ordered) <- cd_ordered$sample_name
     col_df <- S4Vectors::DataFrame(cd_ordered)
-
-    # ── Genome info ─────────────────────────────────────────────────────────
-    genome_info <- .validateGenomeInfo(genome)
-
-    # Restrict genomeInfo to chromosomes actually present in the data
-    if (!is.null(genome_info)) {
-        data_chroms  <- unique(all_sites$chrom)
-        extra_chroms <- setdiff(names(genome_info), data_chroms)
-        if (length(extra_chroms) > 0L) {
-            message(
-                "Dropping ", length(extra_chroms), " chromosome(s) from genomeInfo ",
-                "not present in data: ",
-                paste(extra_chroms, collapse = ", ")
-            )
-            genome_info <- genome_info[names(genome_info) %in% data_chroms]
-        }
-    }
 
     # ── Annotation ──────────────────────────────────────────────────────────
     ann_gr <- GenomicRanges::GRanges()
@@ -373,11 +400,15 @@ commaData <- function(files,
     )
 
     # ── Construct commaData ─────────────────────────────────────────────────
-    obj <- new("commaData",
-               rse,
-               genomeInfo = genome_info,
-               annotation = ann_gr,
-               motifSites = motif_gr)
+    obj <- new("commaData", rse)
+
+    # Store annotation and motifSites in metadata (not as S4 slots)
+    S4Vectors::metadata(obj)$annotation <- ann_gr
+    S4Vectors::metadata(obj)$motifSites <- motif_gr
+
+    # Store caller and min_coverage in metadata for reproducibility
+    S4Vectors::metadata(obj)$caller <- caller
+    S4Vectors::metadata(obj)$min_coverage <- min_coverage
 
     validObject(obj)
     obj

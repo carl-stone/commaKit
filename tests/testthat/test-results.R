@@ -5,11 +5,10 @@
 .make_tested_object <- function() {
     set.seed(123L)
     n_sites  <- 15L
-    site_keys <- paste0("chr_sim:", seq_len(n_sites) * 50L, ":+:6mA:GATC")
     methyl_mat <- matrix(
         c(rep(0.9, n_sites), rep(0.9, n_sites), rep(0.2, n_sites)),
         nrow = n_sites, ncol = 3L,
-        dimnames = list(site_keys, c("ctrl_1", "ctrl_2", "treat_1"))
+        dimnames = list(NULL, c("ctrl_1", "ctrl_2", "treat_1"))
     )
     # Make last 5 sites non-differential
     methyl_mat[(n_sites - 4L):n_sites, 3L] <- 0.9
@@ -19,11 +18,14 @@
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = seq_len(n_sites) * 50L, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
-        motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites)
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
+        motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("ctrl_1", "ctrl_2", "treat_1"),
         condition   = c("control", "control", "treatment"),
@@ -35,10 +37,7 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    obj <- new("commaData", rse,
-               genomeInfo = c(chr_sim = 100000L),
-               annotation = GenomicRanges::GRanges(),
-               motifSites = GenomicRanges::GRanges())
+    obj <- new("commaData", rse)
     diffMethyl(obj, formula = ~ condition)
 }
 

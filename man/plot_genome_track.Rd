@@ -28,8 +28,8 @@ Must be present in \code{names(genome(object))}.}
 (1-based, inclusive). If \code{NULL}, the plot extends to the end of the
 chromosome.}
 
-\item{mod_type}{Character string specifying a single modification type to
-display (e.g., \code{"6mA"}, \code{"5mC"}). If \code{NULL} (default),
+\item{mod_type}{Character vector of modification types to display
+(e.g., \code{"6mA"}, \code{c("6mA", "5mC")}). If \code{NULL} (default),
 all modification types are shown, colored differently.}
 
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with

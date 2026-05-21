@@ -15,14 +15,10 @@ library(GenomicRanges)
     n_total <- n_6ma + n_5mc
     samp_names <- c("ctrl_1", "ctrl_2", "treat_1")
 
-    keys_6ma <- paste0("chr_sim:", seq_len(n_6ma) * 100L, ":+:6mA:GATC")
-    keys_5mc <- paste0("chr_sim:", seq_len(n_5mc) * 200L, ":-:5mC:CCWGG")
-    all_keys <- c(keys_6ma, keys_5mc)
-
     methyl <- matrix(runif(n_total * n_samp, 0.1, 0.95),
-                     nrow = n_total, dimnames = list(all_keys, samp_names))
+                     nrow = n_total, dimnames = list(NULL, samp_names))
     cov    <- matrix(as.integer(runif(n_total * n_samp, 10, 50)),
-                     nrow = n_total, dimnames = list(all_keys, samp_names))
+                     nrow = n_total, dimnames = list(NULL, samp_names))
 
     site_gr <- GenomicRanges::GRanges(
         seqnames = rep("chr_sim", n_total),
@@ -31,11 +27,15 @@ library(GenomicRanges)
             width = 1L
         ),
         strand   = c(rep("+", n_6ma), rep("-", n_5mc)),
-        mod_type    = c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
-        motif       = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc)),
-        mod_context = c(rep("6mA_GATC", n_6ma), rep("5mC_CCWGG", n_5mc))
+        mod_type    = factor(c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
+                             levels = c("4mC", "5mC", "6mA")),
+        motif       = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc))
     )
-    names(site_gr) <- all_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = samp_names,
         condition   = c("control", "control", "treatment"),
@@ -47,17 +47,19 @@ library(GenomicRanges)
         rowRanges  = site_gr,
         colData    = cd
     )
+    obj <- new("commaData", rse)
+
+    # Store annotation in metadata
     ann <- GenomicRanges::GRanges(
         seqnames = "chr_sim",
         ranges   = IRanges::IRanges(start = 1L, end = 500L)
     )
     GenomicRanges::mcols(ann)$feature_type <- "gene"
     GenomicRanges::mcols(ann)$name         <- "geneA"
+    S4Vectors::metadata(obj)$annotation <- ann
+    S4Vectors::metadata(obj)$motifSites <- GenomicRanges::GRanges()
 
-    new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
-        annotation = ann,
-        motifSites = GenomicRanges::GRanges())
+    obj
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -179,6 +181,14 @@ test_that("genome() returns correct chromosome sizes", {
     expect_equal(genome(obj), c(chr_sim = 100000L))
 })
 
+test_that("genome() returns NULL when no Seqinfo", {
+    obj <- .make_two_modtype()
+    rr <- rowRanges(obj)
+    GenomeInfoDb::seqlengths(rr) <- NA_integer_
+    rowRanges(obj) <- rr
+    expect_null(genome(obj))
+})
+
 # ─────────────────────────────────────────────────────────────────────────────
 # annotation()
 # ─────────────────────────────────────────────────────────────────────────────
@@ -252,7 +262,7 @@ test_that("[ subsetting by logical vector works", {
 test_that("subset() by mod_type returns only that mod type", {
     obj   <- .make_two_modtype()
     sub   <- subset(obj, mod_type = "6mA")
-    types <- unique(rowData(sub)$mod_type)
+    types <- as.character(unique(rowData(sub)$mod_type))
     expect_equal(types, "6mA")
 })
 
@@ -391,6 +401,15 @@ test_that("modContexts: returns sorted unique mod_context values", {
     expect_equal(mc, c("5mC_CCWGG", "6mA_GATC"))
 })
 
+test_that("modContexts: works even without mod_context in mcols", {
+    obj <- .make_two_modtype()
+    # mod_context should not be in mcols anymore
+    expect_false("mod_context" %in% colnames(GenomicRanges::mcols(rowRanges(obj))))
+    # But modContexts() should still work
+    mc <- modContexts(obj)
+    expect_equal(mc, c("5mC_CCWGG", "6mA_GATC"))
+})
+
 test_that("modContexts: returns character vector", {
     obj <- .make_two_modtype()
     expect_type(modContexts(obj), "character")
@@ -406,7 +425,6 @@ test_that("modContexts: returns 'mod_type' only for NA-motif rows", {
     obj <- .make_two_modtype()
     rd  <- rowData(obj)
     rd$motif      <- NA_character_
-    rd$mod_context <- rd$mod_type   # fallback: mod_type without motif suffix
     rowData(obj) <- rd
     mc <- modContexts(obj)
     expect_true(all(mc %in% c("6mA", "5mC")))
@@ -420,14 +438,17 @@ test_that("modContexts: returns 'mod_type' only for NA-motif rows", {
 test_that("subset: mod_context filters to matching rows", {
     obj <- .make_two_modtype()
     sub <- subset(obj, mod_context = "6mA_GATC")
-    expect_true(all(rowData(sub)$mod_context == "6mA_GATC"))
+    # Use siteInfo() to check mod_context (computed on demand)
+    si <- siteInfo(sub)
+    expect_true(all(si$mod_context == "6mA_GATC"))
     expect_equal(nrow(sub), 10L)
 })
 
 test_that("subset: mod_context = '5mC_CCWGG' retains only 5mC rows", {
     obj <- .make_two_modtype()
     sub <- subset(obj, mod_context = "5mC_CCWGG")
-    expect_true(all(rowData(sub)$mod_context == "5mC_CCWGG"))
+    si <- siteInfo(sub)
+    expect_true(all(si$mod_context == "5mC_CCWGG"))
     expect_equal(nrow(sub), 5L)
 })
 
@@ -442,4 +463,43 @@ test_that("subset: mod_context and mod_type can be combined", {
     sub <- subset(obj, mod_context = "6mA_GATC", mod_type = "6mA")
     expect_equal(nrow(sub), 10L)
     expect_true(all(rowData(sub)$mod_type == "6mA"))
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# caller() and minCoverage()
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("caller() returns NA for objects without stored caller", {
+    obj <- .make_two_modtype()
+    expect_equal(caller(obj), NA_character_)
+})
+
+test_that("minCoverage() returns NA for objects without stored min_coverage", {
+    obj <- .make_two_modtype()
+    expect_equal(minCoverage(obj), NA_integer_)
+})
+
+test_that("caller() returns stored caller from metadata", {
+    obj <- .make_two_modtype()
+    S4Vectors::metadata(obj)$caller <- "modkit"
+    expect_equal(caller(obj), "modkit")
+})
+
+test_that("minCoverage() returns stored min_coverage from metadata", {
+    obj <- .make_two_modtype()
+    S4Vectors::metadata(obj)$min_coverage <- 10L
+    expect_equal(minCoverage(obj), 10L)
+})
+
+test_that("example data has caller and min_coverage", {
+    data(comma_example_data)
+    expect_equal(caller(comma_example_data), "modkit")
+    expect_equal(minCoverage(comma_example_data), 5L)
+})
+
+test_that("show() displays caller and min_coverage", {
+    data(comma_example_data)
+    out <- capture.output(show(comma_example_data))
+    expect_true(any(grepl("caller:", out, fixed = TRUE)))
+    expect_true(any(grepl("min_coverage:", out, fixed = TRUE)))
 })

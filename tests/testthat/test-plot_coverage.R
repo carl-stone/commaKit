@@ -5,12 +5,11 @@
 .make_cov_data <- function() {
     n_sites   <- 10L
     positions <- seq(1000L, 10000L, by = 1000L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     set.seed(7L)
     betas <- matrix(
         runif(n_sites * 2L, 0.1, 0.9),
         nrow = n_sites, ncol = 2L,
-        dimnames = list(site_keys, c("samp1", "samp2"))
+        dimnames = list(NULL, c("samp1", "samp2"))
     )
     depths <- matrix(
         sample(5L:100L, n_sites * 2L, replace = TRUE),
@@ -21,11 +20,14 @@
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
-        motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites)
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
+        motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("samp1", "samp2"),
         condition   = c("ctrl", "treat"),
@@ -37,10 +39,7 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    new("commaData", rse,
-        genomeInfo = c(chr_sim = 100000L),
-        annotation = GenomicRanges::GRanges(),
-        motifSites = GenomicRanges::GRanges())
+    new("commaData", rse)
 }
 
 # ─── Basic return type ────────────────────────────────────────────────────────
@@ -116,4 +115,18 @@ test_that("plot_coverage: works with comma_example_data", {
     data(comma_example_data)
     p <- plot_coverage(comma_example_data)
     expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_coverage: mod_type accepts character vector", {
+    data(comma_example_data)
+    p <- plot_coverage(comma_example_data, mod_type = c("6mA", "5mC"))
+    expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_coverage: mod_type vector with invalid value gives error", {
+    data(comma_example_data)
+    expect_error(
+        plot_coverage(comma_example_data, mod_type = c("6mA", "invalid")),
+        "not found in object"
+    )
 })

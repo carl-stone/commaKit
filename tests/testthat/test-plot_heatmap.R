@@ -5,12 +5,11 @@
 .make_heatmap_fixtures <- function() {
     n_sites   <- 15L
     positions <- seq(1000L, 15000L, by = 1000L)
-    site_keys <- paste0("chr_sim:", positions, ":+:6mA:GATC")
     set.seed(10L)
     betas <- matrix(
         runif(n_sites * 3L, 0.0, 1.0),
         nrow = n_sites, ncol = 3L,
-        dimnames = list(site_keys, c("ctrl_1", "ctrl_2", "treat_1"))
+        dimnames = list(NULL, c("ctrl_1", "ctrl_2", "treat_1"))
     )
     cov_mat <- matrix(20L, nrow = n_sites, ncol = 3L,
                       dimnames = dimnames(betas))
@@ -18,11 +17,14 @@
         seqnames = rep("chr_sim", n_sites),
         ranges   = IRanges::IRanges(start = positions, width = 1L),
         strand   = rep("+", n_sites),
-        mod_type    = rep("6mA", n_sites),
-        motif       = rep("GATC", n_sites),
-        mod_context = rep("6mA_GATC", n_sites)
+        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
+        motif       = rep("GATC", n_sites)
     )
-    names(site_gr) <- site_keys
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_sim",
+        seqlengths = 100000L,
+        isCircular = FALSE
+    )
     cd <- S4Vectors::DataFrame(
         sample_name = c("ctrl_1", "ctrl_2", "treat_1"),
         condition   = c("control", "control", "treatment"),
@@ -34,10 +36,7 @@
         rowRanges  = site_gr,
         colData    = cd
     )
-    obj <- new("commaData", rse,
-               genomeInfo = c(chr_sim = 100000L),
-               annotation = GenomicRanges::GRanges(),
-               motifSites = GenomicRanges::GRanges())
+    obj <- new("commaData", rse)
 
     ## Produce results table: use synthetic dm_padj / dm_delta_beta
     set.seed(11L)
@@ -50,7 +49,6 @@
         dm_pvalue     = runif(n_sites, 0, 0.1),
         dm_padj       = runif(n_sites, 0, 0.05),
         dm_delta_beta = runif(n_sites, -0.5, 0.5),
-        row.names     = site_keys,
         stringsAsFactors = FALSE
     )
     list(obj = obj, res = res)

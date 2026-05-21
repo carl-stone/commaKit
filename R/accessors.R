@@ -2,7 +2,7 @@
 #' @importFrom SummarizedExperiment assay rowData "rowData<-" colData rowRanges
 #' @importFrom BiocGenerics annotation start strand
 #' @importFrom IRanges coverage
-#' @importFrom GenomeInfoDb genome seqnames
+#' @importFrom GenomeInfoDb genome seqnames seqlengths seqinfo
 #' @importFrom GenomicRanges mcols
 NULL
 
@@ -110,8 +110,12 @@ setMethod("sampleInfo", "commaData", function(object) {
 #' @return A \code{\link[S4Vectors]{DataFrame}} with one row per methylation site.
 #'   Always contains columns \code{chrom}, \code{position}, \code{strand},
 #'   \code{mod_type}, \code{motif} (the sequence context; \code{NA} for
-#'   Dorado/Megalodon callers), and \code{mod_context} (the composite
-#'   modification context, e.g., \code{"6mA_GATC"}). May contain additional
+#'   Dorado/Megalodon callers), \code{mod_context} (the composite
+#'   modification context, e.g., \code{"6mA_GATC"}), and \code{site_key}
+#'   (a human-readable label, e.g., \code{"512:+:6mA:GATC"} for
+#'   single-chromosome genomes or \code{"chr1:512:+:6mA:GATC"} for
+#'   multi-chromosome genomes — computed on demand, not used for
+#'   internal matching). May contain additional
 #'   annotation columns added by \code{\link[=annotateSites]{annotateSites()}}
 #'   or result columns from \code{\link{diffMethyl}()}.
 #'
@@ -127,13 +131,32 @@ setGeneric("siteInfo", function(object) standardGeneric("siteInfo"))
 #' @rdname siteInfo
 setMethod("siteInfo", "commaData", function(object) {
     rr <- rowRanges(object)
-    S4Vectors::DataFrame(
+    mc <- GenomicRanges::mcols(rr)
+    df <- S4Vectors::DataFrame(
         chrom       = as.character(GenomeInfoDb::seqnames(rr)),
         position    = BiocGenerics::start(rr),
         strand      = as.character(BiocGenerics::strand(rr)),
-        GenomicRanges::mcols(rr),
-        row.names   = names(rr)
+        mc,
+        row.names   = NULL
     )
+    # Add computed mod_context column if not already present
+    if (!"mod_context" %in% colnames(df) &&
+        "mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
+        df$mod_context <- .computeModContext(mc$mod_type, mc$motif)
+    }
+    # Add computed site_key column for human readability (not used for matching)
+    # Omit chrom when there is only one sequence (typical for bacterial genomes)
+    if ("mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
+        n_chrom <- length(unique(df$chrom))
+        if (n_chrom > 1L) {
+            df$site_key <- paste(df$chrom, df$position, df$strand,
+                                 as.character(df$mod_type), df$motif, sep = ":")
+        } else {
+            df$site_key <- paste(df$position, df$strand,
+                                 as.character(df$mod_type), df$motif, sep = ":")
+        }
+    }
+    df
 })
 
 # ─── modTypes() ──────────────────────────────────────────────────────────────
@@ -157,7 +180,7 @@ setGeneric("modTypes", function(object) standardGeneric("modTypes"))
 
 #' @rdname modTypes
 setMethod("modTypes", "commaData", function(object) {
-    sort(unique(rowData(object)$mod_type))
+    sort(unique(as.character(rowData(object)$mod_type)))
 })
 
 # ─── motifs() ────────────────────────────────────────────────────────────────
@@ -223,7 +246,8 @@ setGeneric("modContexts", function(object) standardGeneric("modContexts"))
 
 #' @rdname modContexts
 setMethod("modContexts", "commaData", function(object) {
-    sort(unique(rowData(object)$mod_context))
+    mc <- GenomicRanges::mcols(rowRanges(object))
+    sort(unique(.computeModContext(mc$mod_type, mc$motif)))
 })
 
 # ─── genome() ────────────────────────────────────────────────────────────────
@@ -231,11 +255,14 @@ setMethod("modContexts", "commaData", function(object) {
 #' Accessor for genome size information
 #'
 #' Returns the chromosome sizes stored in a \code{\link{commaData}} object.
+#' Genome size information is stored in the \code{Seqinfo} attached to
+#' \code{rowRanges(object)}. This accessor returns \code{seqlengths(object)}
+#' for backward compatibility.
 #'
 #' @param x A \code{commaData} object.
 #'
 #' @return A named integer vector of chromosome sizes
-#'   (chromosome name → length in bp), or \code{NULL} if no genome information
+#'   (chromosome name -> length in bp), or \code{NULL} if no genome information
 #'   was provided at construction.
 #'
 #' @examples
@@ -244,7 +271,8 @@ setMethod("modContexts", "commaData", function(object) {
 #'
 #' @export
 setMethod("genome", "commaData", function(x) {
-    x@genomeInfo
+    sl <- GenomeInfoDb::seqlengths(x)
+    if (length(sl) == 0 || all(is.na(sl))) NULL else sl
 })
 
 # ─── annotation() ────────────────────────────────────────────────────────────
@@ -266,7 +294,8 @@ setMethod("genome", "commaData", function(x) {
 #'
 #' @export
 setMethod("annotation", "commaData", function(object) {
-    object@annotation
+    md <- S4Vectors::metadata(object)
+    if (is.null(md$annotation)) GenomicRanges::GRanges() else md$annotation
 })
 
 # ─── motifSites() ────────────────────────────────────────────────────────────
@@ -291,7 +320,8 @@ setGeneric("motifSites", function(object) standardGeneric("motifSites"))
 
 #' @rdname motifSites
 setMethod("motifSites", "commaData", function(object) {
-    object@motifSites
+    md <- S4Vectors::metadata(object)
+    if (is.null(md$motifSites)) GenomicRanges::GRanges() else md$motifSites
 })
 
 # ─── [ subsetting ────────────────────────────────────────────────────────────
@@ -322,12 +352,8 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
     # Delegate to SummarizedExperiment's [ method, then re-wrap
     se_sub <- callNextMethod()
 
-    new("commaData",
-        se_sub,
-        genomeInfo = x@genomeInfo,
-        annotation = x@annotation,
-        motifSites = x@motifSites
-    )
+    # metadata is automatically preserved by RSE subsetting
+    new("commaData", se_sub)
 })
 
 # ─── subset() ────────────────────────────────────────────────────────────────
@@ -399,7 +425,9 @@ setMethod("subset", "commaData", function(x, mod_type = NULL,
         site_keep <- site_keep & (!is.na(mc$motif)) & (mc$motif %in% motif)
     }
     if (!is.null(mod_context)) {
-        site_keep <- site_keep & (mc$mod_context %in% mod_context)
+        # Compute mod_context on demand for filtering
+        computed_ctx <- .computeModContext(mc$mod_type, mc$motif)
+        site_keep <- site_keep & (computed_ctx %in% mod_context)
     }
 
     # Sample filter
@@ -410,3 +438,117 @@ setMethod("subset", "commaData", function(x, mod_type = NULL,
 
     x[site_keep, samp_keep]
 })
+
+# ─── caller() ────────────────────────────────────────────────────────────────
+
+#' Accessor for the methylation caller
+#'
+#' Returns the name of the methylation caller that produced the data
+#' (e.g., \code{"modkit"}, \code{"megalodon"}, or \code{"dorado"}).
+#' The caller is stored in \code{metadata(object)} at construction time.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return A character string naming the caller, or \code{NA} if not stored
+#'   (e.g., objects created before caller storage was implemented).
+#'
+#' @examples
+#' data(comma_example_data)
+#' caller(comma_example_data)
+#'
+#' @export
+setGeneric("caller", function(object) standardGeneric("caller"))
+
+#' @rdname caller
+setMethod("caller", "commaData", function(object) {
+    md <- S4Vectors::metadata(object)
+    if (is.null(md$caller)) NA_character_ else md$caller
+})
+
+# ─── minCoverage() ───────────────────────────────────────────────────────────
+
+#' Accessor for the minimum coverage threshold
+#'
+#' Returns the minimum read depth threshold that was applied at construction
+#' time. Sites with coverage below this threshold have their beta value set
+#' to \code{NA}.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return An integer (the minimum coverage threshold), or \code{NA_integer_}
+#'   if not stored (e.g., objects created before min_coverage storage was
+#'   implemented).
+#'
+#' @examples
+#' data(comma_example_data)
+#' minCoverage(comma_example_data)
+#'
+#' @export
+setGeneric("minCoverage", function(object) standardGeneric("minCoverage"))
+
+#' @rdname minCoverage
+setMethod("minCoverage", "commaData", function(object) {
+    md <- S4Vectors::metadata(object)
+    if (is.null(md$min_coverage)) NA_integer_ else md$min_coverage
+})
+
+# ─── .computeModContext() ──────────────────────────────────────────────────
+
+# Internal helper: compute mod_context from mod_type and motif vectors.
+# Returns "mod_type_motif" when motif is known, or just "mod_type" when
+# motif is NA (e.g., Dorado/Megalodon callers).
+.computeModContext <- function(mod_type, motif) {
+    # Convert factor to character (paste/ifelse on factor return integer codes)
+    mod_type <- as.character(mod_type)
+    ifelse(is.na(motif), mod_type, paste(mod_type, motif, sep = "_"))
+}
+
+# ─── .validateModType() ───────────────────────────────────────────────────
+
+# Internal helper: validate that all requested mod_type values exist in the
+# object. Called by 13 functions that accept a mod_type filter parameter.
+# Stops with an informative error listing the invalid values and available
+# types. Returns invisibly if all values are valid.
+.validateModType <- function(mod_type, object) {
+    available <- modTypes(object)
+    bad <- setdiff(mod_type, available)
+    if (length(bad) > 0L) {
+        stop("'mod_type' value(s) not found in object: ",
+             paste(bad, collapse = ", "),
+             ". Available types: ", paste(available, collapse = ", "), ".")
+    }
+    invisible(NULL)
+}
+
+# ─── .checkModTypeValues() ────────────────────────────────────────────────
+
+# Internal helper: check that values and/or factor levels are valid mod_types.
+# Returns a character vector of error messages (empty if valid). Used by the
+# commaData validity method and by .validateModType(). This is the single
+# source of truth for what constitutes a valid mod_type value.
+.checkModTypeValues <- function(values, levels = NULL) {
+    errors <- character(0)
+    # Check factor levels if provided
+    if (!is.null(levels)) {
+        bad_levels <- setdiff(levels, .VALID_MOD_TYPES)
+        if (length(bad_levels) > 0L) {
+            errors <- c(errors, paste0(
+                "rowRanges mcols$mod_type has invalid factor levels: ",
+                paste(bad_levels, collapse = ", "),
+                ". Allowed levels: ",
+                paste(.VALID_MOD_TYPES, collapse = ", ")
+            ))
+        }
+    }
+    # Check actual values
+    bad_vals <- setdiff(values, .VALID_MOD_TYPES)
+    if (length(bad_vals) > 0L) {
+        errors <- c(errors, paste0(
+            "rowRanges mcols$mod_type contains unrecognized values: ",
+            paste(bad_vals, collapse = ", "),
+            ". Allowed values: ",
+            paste(.VALID_MOD_TYPES, collapse = ", ")
+        ))
+    }
+    errors
+}
