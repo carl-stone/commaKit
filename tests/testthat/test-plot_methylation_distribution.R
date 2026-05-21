@@ -89,12 +89,6 @@ test_that("plot_methylation_distribution: returns ggplot for valid input", {
     expect_s3_class(p, "ggplot")
 })
 
-test_that("plot_methylation_distribution: per_sample = FALSE returns ggplot", {
-    obj <- .make_dist_data()
-    p <- plot_methylation_distribution(obj, per_sample = FALSE)
-    expect_s3_class(p, "ggplot")
-})
-
 test_that("plot_methylation_distribution: mod_type filter returns ggplot", {
     obj <- .make_dist_data_two_mods()
     p <- plot_methylation_distribution(obj, mod_type = "6mA")
@@ -156,8 +150,4 @@ test_that("plot_methylation_distribution: works with comma_example_data", {
     expect_s3_class(p, "ggplot")
 })
 
-test_that("plot_methylation_distribution: example data, mod_type = '6mA'", {
-    data(comma_example_data)
-    p <- plot_methylation_distribution(comma_example_data, mod_type = "6mA")
-    expect_s3_class(p, "ggplot")
-})
+

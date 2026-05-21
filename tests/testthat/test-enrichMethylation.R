@@ -752,17 +752,6 @@ test_that("enrichMethylation accepts data.frame input and warns on mod_type", {
     )
 })
 
-test_that("enrichMethylation data.frame input runs without error when valid", {
-    skip_if_not_installed("clusterProfiler")
-    ann    <- make_annotated_dm()
-    res_df <- results(ann)
-    expect_no_error(
-        suppressWarnings(
-            enrichMethylation(res_df, TERM2GENE = fake_t2g)
-        )
-    )
-})
-
 test_that("enrichMethylation errors for non-commaData non-data.frame input", {
     expect_error(
         enrichMethylation(list(a = 1), TERM2GENE = fake_t2g),

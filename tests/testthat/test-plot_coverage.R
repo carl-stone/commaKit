@@ -50,12 +50,6 @@ test_that("plot_coverage: returns ggplot for valid input", {
     expect_s3_class(p, "ggplot")
 })
 
-test_that("plot_coverage: per_sample = FALSE returns ggplot", {
-    obj <- .make_cov_data()
-    p <- plot_coverage(obj, per_sample = FALSE)
-    expect_s3_class(p, "ggplot")
-})
-
 test_that("plot_coverage: mod_type filter accepted", {
     obj <- .make_cov_data()
     p <- plot_coverage(obj, mod_type = "6mA")

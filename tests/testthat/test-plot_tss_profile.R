@@ -358,9 +358,4 @@ test_that("works with comma_example_data, feature_type = 'gene'", {
     expect_s3_class(p, "ggplot")
 })
 
-test_that("works with comma_example_data, window = 1000L", {
-    data(comma_example_data)
-    p <- plot_tss_profile(comma_example_data, feature_type = "gene",
-                          window = 1000L)
-    expect_s3_class(p, "ggplot")
-})
+

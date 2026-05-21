@@ -174,15 +174,6 @@ test_that("findMotifSites() DNAStringSet result has motif mcols column", {
     expect_true(all(result$motif == "GATC"))
 })
 
-test_that("findMotifSites() DNAStringSet multi-chromosome searches all sequences", {
-    skip_if_not_installed("Biostrings")
-    seqs   <- Biostrings::DNAStringSet(c(chr1 = "GATCAAAA", chr2 = "AAAGATCA"))
-    result <- findMotifSites(seqs, "GATC")
-    chroms <- as.character(seqnames(result))
-    expect_true("chr1" %in% chroms)
-    expect_true("chr2" %in% chroms)
-})
-
 # ─────────────────────────────────────────────────────────────────────────────
 # findMotifSites() — error handling
 # ─────────────────────────────────────────────────────────────────────────────

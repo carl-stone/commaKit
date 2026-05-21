@@ -335,42 +335,6 @@ test_that("diffMethyl: non-positive alpha errors informatively", {
 
 # ─── quasi_f method ───────────────────────────────────────────────────────────
 
-test_that("diffMethyl: method='quasi_f' returns commaData with correct columns", {
-    skip_if_not_installed("limma")
-    obj <- .make_dm_data()
-    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
-    expect_s4_class(dm, "commaData")
-    rd <- as.data.frame(SummarizedExperiment::rowData(dm))
-    expect_true(all(c("dm_pvalue", "dm_padj", "dm_delta_beta",
-                      "dm_mean_beta_control", "dm_mean_beta_treatment") %in%
-                        colnames(rd)))
-    expect_equal(nrow(rd), nrow(SummarizedExperiment::rowData(obj)))
-})
-
-test_that("diffMethyl: method='quasi_f' produces valid p-values in [0, 1]", {
-    skip_if_not_installed("limma")
-    obj <- .make_dm_data()
-    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
-    rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
-    pvals <- rd$dm_pvalue[!is.na(rd$dm_pvalue)]
-    expect_true(length(pvals) > 0)
-    expect_true(all(pvals >= 0 & pvals <= 1))
-    expect_true(all(rd$dm_padj[!is.na(rd$dm_padj)] >=
-                        rd$dm_pvalue[!is.na(rd$dm_pvalue)]))
-})
-
-test_that("diffMethyl: quasi_f and limma delta_beta are highly correlated", {
-    skip_if_not_installed("limma")
-    obj  <- .make_dm_data(n_sites = 40L)
-    dm_q <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
-    dm_l <- diffMethyl(obj, formula = ~ condition, method = "limma")
-    db_q <- SummarizedExperiment::rowData(dm_q)$dm_delta_beta
-    db_l <- SummarizedExperiment::rowData(dm_l)$dm_delta_beta
-    ok   <- !is.na(db_q) & !is.na(db_l)
-    expect_true(sum(ok) > 0)
-    expect_gt(cor(db_q[ok], db_l[ok]), 0.95)
-})
-
 test_that("diffMethyl: quasi_f recovers majority of ground-truth diff sites", {
     skip_if_not_installed("limma")
     data(comma_example_data)

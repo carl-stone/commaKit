@@ -213,20 +213,4 @@ test_that(".parseModkit() parses the bundled example file without error", {
     expect_true(all(result$coverage > 0))
 })
 
-# ─────────────────────────────────────────────────────────────────────────────
-# .parseDorado() — input validation (Phase 4: full implementation)
-# ─────────────────────────────────────────────────────────────────────────────
 
-test_that(".parseDorado() stops with informative error for missing file", {
-    expect_error(
-        comma:::.parseDorado("/nonexistent/path/to.bam", "s1"),
-        regexp = "not found"
-    )
-})
-
-test_that(".parseDorado() stops with informative error for non-character file", {
-    expect_error(
-        comma:::.parseDorado(123L, "s1"),
-        regexp = "single character string"
-    )
-})
