@@ -338,7 +338,7 @@ test_that("enrichMethylation ORA warns (not errors) when no sig genes", {
 
 # ── enrichMethylation() — mod_type / mod_context filters ─────────────────────
 
-test_that("enrichMethylation mod_type filter changes gene set compared to unfiltered", {
+test_that("enrichMethylation mod_type filter restricts gene set to filtered sites", {
     skip_if_not_installed("clusterProfiler")
     ann <- make_annotated_dm()
     res_all <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g)
@@ -347,13 +347,13 @@ test_that("enrichMethylation mod_type filter changes gene set compared to unfilt
     # Both should return results
     expect_type(res_all, "list")
     expect_type(res_filt, "list")
-    # Filtered result should have different gene input (fewer sites)
-    # The go result should differ because different sites are used
+    # The filtered enrichment should use a subset of the genes from unfiltered
+    # Verify by checking the gene input to enrichGO (the @gene slot)
     if (!is.null(res_all$go) && !is.null(res_filt$go)) {
-        n_all <- nrow(res_all$go@result[res_all$go@result$pvalue < 0.05, ])
-        n_filt <- nrow(res_filt$go@result[res_filt$go@result$pvalue < 0.05, ])
-        # They may differ in number of significant terms
-        expect_true(is.numeric(n_all) && is.numeric(n_filt))
+        genes_all  <- res_all$go@gene
+        genes_filt <- res_filt$go@gene
+        # Filtered gene set should be a subset of unfiltered gene set
+        expect_true(all(genes_filt %in% genes_all))
     }
 })
 
