@@ -136,9 +136,14 @@ test_that("mValues: non-numeric alpha errors", {
     expect_error(mValues(obj, alpha = "0.5"), "positive")
 })
 
-test_that("mValues: alpha = 1 runs without error", {
+test_that("mValues: alpha = 1 produces valid finite M-value matrix", {
     obj <- .make_mval_data()
-    expect_no_error(mValues(obj, alpha = 1))
+    mv <- mValues(obj, alpha = 1)
+    expect_true(is.matrix(mv))
+    expect_equal(nrow(mv), nrow(obj))
+    expect_equal(ncol(mv), ncol(obj))
+    # All M-values should be finite (no Inf from 0/1 beta with alpha=1)
+    expect_true(all(is.finite(mv)))
 })
 
 test_that("mValues: smaller alpha produces more extreme M-values", {

@@ -37,11 +37,15 @@ test_that("coverageDepth: log2_depth is log2(depth+1)", {
     expect_equal(result$log2_depth[non_na], log2(result$depth[non_na] + 1), tolerance = 1e-10)
 })
 
-test_that("coverageDepth: method='median' works without error", {
+test_that("coverageDepth: method='median' produces different values than default (mean)", {
     data(comma_example_data)
-    result <- coverageDepth(comma_example_data, window = 10000L, method = "median")
-    expect_s3_class(result, "data.frame")
-    expect_true("depth" %in% colnames(result))
+    result_median <- coverageDepth(comma_example_data, window = 10000L, method = "median")
+    result_mean   <- coverageDepth(comma_example_data, window = 10000L, method = "mean")
+    expect_s3_class(result_median, "data.frame")
+    expect_true("depth" %in% colnames(result_median))
+    # Median and mean should differ for at least some windows
+    ok <- !is.na(result_median$depth) & !is.na(result_mean$depth)
+    expect_true(any(abs(result_median$depth[ok] - result_mean$depth[ok]) > 0.01))
 })
 
 test_that("coverageDepth: depth values are non-negative where not NA", {

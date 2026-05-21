@@ -116,10 +116,16 @@ test_that("slidingWindow: values are in [0,1] range (ignoring NA)", {
     expect_true(all(vals >= 0 & vals <= 1))
 })
 
-test_that("slidingWindow: circular=FALSE works without error", {
+test_that("slidingWindow: circular=FALSE returns valid data.frame with boundary behavior", {
     result <- slidingWindow(tiny_data, window = W, circular = FALSE)
     expect_s3_class(result, "data.frame")
     expect_true("window_median" %in% colnames(result))
+    # Non-circular: windows near chromosome edges should have fewer sites
+    # (partial windows) — verify result has rows for all positions
+    expect_true(nrow(result) > 0)
+    # window_median should be in [0,1] for beta values
+    valid_med <- result$window_median[!is.na(result$window_median)]
+    expect_true(all(valid_med >= 0 & valid_med <= 1))
 })
 
 test_that("slidingWindow: circular=TRUE and FALSE give different edge results", {

@@ -180,12 +180,20 @@ test_that("diffMethyl: min_coverage = 1000 → all NA p-values", {
 
 # ─── p_adjust_method ─────────────────────────────────────────────────────────
 
-test_that("diffMethyl: p_adjust_method = 'bonferroni' is accepted", {
+test_that("diffMethyl: p_adjust_method = 'bonferroni' produces padj >= pvalue", {
     obj <- .make_dm_data()
-    expect_no_error(
-        diffMethyl(obj, formula = ~ condition, method = "quasi_f",
-                   p_adjust_method = "bonferroni")
-    )
+    dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f",
+                      p_adjust_method = "bonferroni")
+    rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
+    ok  <- !is.na(rd$dm_pvalue) & !is.na(rd$dm_padj)
+    # Bonferroni correction should always produce padj >= pvalue
+    expect_true(all(rd$dm_padj[ok] >= rd$dm_pvalue[ok] - 1e-10))
+    # Bonferroni should be more conservative than BH (larger padj)
+    dm_bh <- diffMethyl(obj, formula = ~ condition, method = "quasi_f",
+                        p_adjust_method = "BH")
+    rd_bh <- as.data.frame(SummarizedExperiment::rowData(dm_bh))
+    ok_both <- ok & !is.na(rd_bh$dm_padj)
+    expect_true(all(rd$dm_padj[ok_both] >= rd_bh$dm_padj[ok_both] - 1e-10))
 })
 
 test_that("diffMethyl: p_adjust_method = 'none' gives padj equal to pvalue", {
@@ -226,12 +234,18 @@ test_that("diffMethyl: method argument must be valid", {
     expect_error(diffMethyl(obj, method = "bogus"), "'arg' should be one of")
 })
 
-test_that("diffMethyl: works with comma_example_data", {
+test_that("diffMethyl: returns commaData with result columns for comma_example_data", {
     data(comma_example_data)
-    expect_no_error(
-        diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA",
-                   method = "quasi_f")
-    )
+    dm <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA",
+                     method = "quasi_f")
+    expect_s4_class(dm, "commaData")
+    rd <- colnames(SummarizedExperiment::rowData(dm))
+    expect_true(all(c("dm_pvalue", "dm_padj", "dm_delta_beta") %in% rd))
+    # 6mA sites should have non-NA results
+    rd_df <- as.data.frame(SummarizedExperiment::rowData(dm))
+    n_6ma <- sum(rd_df$mod_type == "6mA")
+    n_6ma_result <- sum(rd_df$mod_type == "6mA" & !is.na(rd_df$dm_pvalue))
+    expect_gte(n_6ma_result, 1L)
 })
 
 # ─── methylKit method ─────────────────────────────────────────────────────────

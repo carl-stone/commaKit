@@ -91,10 +91,14 @@ test_that("methylation() values are in [0, 1] range (ignoring NA)", {
 # coverage()
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that("coverage() returns a matrix", {
+test_that("coverage() returns a numeric matrix", {
     obj <- .make_two_modtype()
     cov <- coverage(obj)
     expect_true(is.matrix(cov))
+    expect_true(is.numeric(cov))
+    # Coverage values should be non-negative integers
+    valid <- cov[!is.na(cov)]
+    expect_true(all(valid >= 0))
 })
 
 test_that("coverage() has correct dimensions", {
