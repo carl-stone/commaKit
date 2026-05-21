@@ -241,11 +241,14 @@ test_that("diffMethyl: returns commaData with result columns for comma_example_d
     expect_s4_class(dm, "commaData")
     rd <- colnames(SummarizedExperiment::rowData(dm))
     expect_true(all(c("dm_pvalue", "dm_padj", "dm_delta_beta") %in% rd))
-    # 6mA sites should have non-NA results
+    # All 393 6mA sites should have non-NA results
     rd_df <- as.data.frame(SummarizedExperiment::rowData(dm))
     n_6ma <- sum(rd_df$mod_type == "6mA")
     n_6ma_result <- sum(rd_df$mod_type == "6mA" & !is.na(rd_df$dm_pvalue))
-    expect_gte(n_6ma_result, 1L)
+    expect_equal(n_6ma_result, n_6ma)
+    # 5mC sites should have NA results (not tested)
+    n_5mc_na <- sum(rd_df$mod_type == "5mC" & is.na(rd_df$dm_pvalue))
+    expect_equal(n_5mc_na, sum(rd_df$mod_type == "5mC"))
 })
 
 # ─── methylKit method ─────────────────────────────────────────────────────────
