@@ -186,6 +186,8 @@ test_that("diffMethyl: p_adjust_method = 'bonferroni' produces padj >= pvalue", 
                       p_adjust_method = "bonferroni")
     rd  <- as.data.frame(SummarizedExperiment::rowData(dm))
     ok  <- !is.na(rd$dm_pvalue) & !is.na(rd$dm_padj)
+    # Guard against vacuous pass: must have at least one non-NA row
+    expect_true(any(ok))
     # Bonferroni correction should always produce padj >= pvalue
     expect_true(all(rd$dm_padj[ok] >= rd$dm_pvalue[ok] - 1e-10))
     # Bonferroni should be more conservative than BH (larger padj)
@@ -193,6 +195,8 @@ test_that("diffMethyl: p_adjust_method = 'bonferroni' produces padj >= pvalue", 
                         p_adjust_method = "BH")
     rd_bh <- as.data.frame(SummarizedExperiment::rowData(dm_bh))
     ok_both <- ok & !is.na(rd_bh$dm_padj)
+    # Guard against vacuous pass
+    expect_true(any(ok_both))
     expect_true(all(rd$dm_padj[ok_both] >= rd_bh$dm_padj[ok_both] - 1e-10))
 })
 

@@ -98,6 +98,7 @@ test_that("coverage() returns a numeric matrix", {
     expect_true(is.numeric(cov))
     # Coverage values should be non-negative integers
     valid <- cov[!is.na(cov)]
+    expect_true(length(valid) > 0)
     expect_true(all(valid >= 0))
 })
 

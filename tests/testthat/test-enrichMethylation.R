@@ -348,13 +348,16 @@ test_that("enrichMethylation mod_type filter restricts gene set to filtered site
     expect_type(res_all, "list")
     expect_type(res_filt, "list")
     # The filtered enrichment should use a subset of the genes from unfiltered
-    # Verify by checking the gene input to enrichGO (the @gene slot)
+    # GO may be NULL with tiny synthetic data (gene sets below min/max size)
+    # but the subset relationship should hold when both produce results
     if (!is.null(res_all$go) && !is.null(res_filt$go)) {
         genes_all  <- res_all$go@gene
         genes_filt <- res_filt$go@gene
-        # Filtered gene set should be a subset of unfiltered gene set
         expect_true(all(genes_filt %in% genes_all))
     }
+    # At minimum, verify mod_type filter produces different gene Universes
+    # (the unfiltered run includes all mod_types, filtered only 6mA)
+    expect_true(length(res_filt$kegg) <= length(res_all$kegg) || is.null(res_filt$kegg))
 })
 
 test_that("enrichMethylation mod_type filter errors on unknown type", {
@@ -440,6 +443,10 @@ test_that("enrichMethylation feature_type = NULL matches default (all features)"
     expect_type(res_null, "list")
     expect_type(res_default, "list")
     expect_equal(names(res_null), names(res_default))
+    # Both should use the same gene set (NULL = default = all features)
+    if (!is.null(res_null$go) && !is.null(res_default$go)) {
+        expect_equal(sort(res_null$go@gene), sort(res_default$go@gene))
+    }
 })
 
 test_that("enrichMethylation warns and returns NULL for unmatched feature_type", {
@@ -704,24 +711,31 @@ make_tfbs_res_df <- function() {
     )
 }
 
-test_that("enrichMethylation gene_role='target' uses target genes and returns list(go,kegg)", {
+test_that("enrichMethylation gene_role='target' and 'regulator' use different gene sets", {
     skip_if_not_installed("clusterProfiler")
     df <- make_tfbs_res_df()
     suppressWarnings({
-        res <- enrichMethylation(df, TERM2GENE = fake_t2g,
-                                 feature_type = "transcription_factor_binding_site",
-                                 gene_role    = "target")
+        res_target <- enrichMethylation(df, TERM2GENE = fake_t2g,
+                                        feature_type = "transcription_factor_binding_site",
+                                        gene_role    = "target")
+        res_regulator <- enrichMethylation(df, TERM2GENE = fake_t2g,
+                                           feature_type = "transcription_factor_binding_site",
+                                           gene_role    = "regulator")
     })
-    expect_type(res, "list")
-    expect_true(all(c("go", "kegg") %in% names(res)))
-    # Target gene_role should use feature_names as the gene list
-    # (the TF's target gene, not the TF itself)
-    if (!is.null(res$go) && inherits(res$go, "enrichResult")) {
-        expect_s4_class(res$go, "enrichResult")
+    expect_type(res_target, "list")
+    expect_type(res_regulator, "list")
+    # Target and regulator should use different gene sets when both produce results
+    # GO may be NULL with tiny synthetic data — but the gene_role distinction
+    # should still manifest in the gene universe (accessible via @gene slot)
+    if (!is.null(res_target$go) && !is.null(res_regulator$go)) {
+        genes_target <- res_target$go@gene
+        genes_regulator <- res_regulator$go@gene
+        expect_false(identical(sort(genes_target), sort(genes_regulator)),
+                     "Target and regulator gene sets should differ")
     }
 })
 
-test_that("enrichMethylation gene_role='regulator' uses regulator genes", {
+test_that("enrichMethylation gene_role='regulator' returns valid results", {
     skip_if_not_installed("clusterProfiler")
     df <- make_tfbs_res_df()
     suppressWarnings({
@@ -731,9 +745,8 @@ test_that("enrichMethylation gene_role='regulator' uses regulator genes", {
     })
     expect_type(res, "list")
     expect_true(all(c("go", "kegg") %in% names(res)))
-    # Regulator gene_role should use feature_subtype_values as the gene list
-    # (the TF itself, e.g., Sigma70)
-    if (!is.null(res$go) && inherits(res$go, "enrichResult")) {
+    # Regulator GO result may be NULL with tiny synthetic data
+    if (!is.null(res$go)) {
         expect_s4_class(res$go, "enrichResult")
     }
 })
