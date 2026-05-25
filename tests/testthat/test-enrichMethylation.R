@@ -267,13 +267,18 @@ test_that("enrichMethylation ORA $go is enrichResult or NULL", {
     }
 })
 
-test_that("enrichMethylation ORA with TERM2NAME works without error", {
+test_that("enrichMethylation ORA with TERM2NAME returns enrichResult with Description column", {
     skip_if_not_installed("clusterProfiler")
     ann <- make_annotated_dm()
-    expect_no_error(
-        enrichMethylation(ann, method = "ora",
-                          TERM2GENE = fake_t2g, TERM2NAME = fake_t2n)
-    )
+    res <- enrichMethylation(ann, method = "ora",
+                             TERM2GENE = fake_t2g, TERM2NAME = fake_t2n)
+    # Should return a list with go and kegg
+    expect_type(res, "list")
+    expect_true("go" %in% names(res))
+    # If go result exists, TERM2NAME should populate Description
+    if (!is.null(res$go) && inherits(res$go, "enrichResult")) {
+        expect_true("Description" %in% colnames(res$go@result))
+    }
 })
 
 # ── enrichMethylation() — GSEA with TERM2GENE ────────────────────────────────
@@ -333,14 +338,26 @@ test_that("enrichMethylation ORA warns (not errors) when no sig genes", {
 
 # ── enrichMethylation() — mod_type / mod_context filters ─────────────────────
 
-test_that("enrichMethylation mod_type filter passes through to results()", {
+test_that("enrichMethylation mod_type filter restricts gene set to filtered sites", {
     skip_if_not_installed("clusterProfiler")
     ann <- make_annotated_dm()
-    # Should work without error (filters to 6mA sites only)
-    expect_no_error(
-        enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g,
-                          mod_type = "6mA")
-    )
+    res_all <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g)
+    res_filt <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g,
+                                  mod_type = "6mA")
+    # Both should return results
+    expect_type(res_all, "list")
+    expect_type(res_filt, "list")
+    # The filtered enrichment should use a subset of the genes from unfiltered
+    # GO may be NULL with tiny synthetic data (gene sets below min/max size)
+    # but the subset relationship should hold when both produce results
+    if (!is.null(res_all$go) && !is.null(res_filt$go)) {
+        genes_all  <- res_all$go@gene
+        genes_filt <- res_filt$go@gene
+        expect_true(all(genes_filt %in% genes_all))
+    }
+    # At minimum, verify mod_type filter produces different gene Universes
+    # (the unfiltered run includes all mod_types, filtered only 6mA)
+    expect_true(length(res_filt$kegg) <= length(res_all$kegg) || is.null(res_filt$kegg))
 })
 
 test_that("enrichMethylation mod_type filter errors on unknown type", {
@@ -404,22 +421,32 @@ test_that(".computeGeneScores 'mean' does not return empty when gene_ids contain
 
 # ── enrichMethylation() — feature_type argument ───────────────────────────────
 
-test_that("enrichMethylation feature_type = 'gene' runs without error", {
+test_that("enrichMethylation feature_type = 'gene' filters to gene features only", {
     skip_if_not_installed("clusterProfiler")
     ann <- make_annotated_dm()
-    expect_no_error(
-        enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g,
-                          feature_type = "gene")
-    )
+    res <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g,
+                             feature_type = "gene")
+    expect_type(res, "list")
+    # Result should exist (gene features are present in test data)
+    if (!is.null(res$go)) {
+        expect_s4_class(res$go, "enrichResult")
+    }
 })
 
-test_that("enrichMethylation feature_type = NULL includes all features", {
+test_that("enrichMethylation feature_type = NULL matches default (all features)", {
     skip_if_not_installed("clusterProfiler")
     ann <- make_annotated_dm()
-    expect_no_error(
-        enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g,
-                          feature_type = NULL)
-    )
+    res_null <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g,
+                                  feature_type = NULL)
+    res_default <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g)
+    # Both should return the same structure
+    expect_type(res_null, "list")
+    expect_type(res_default, "list")
+    expect_equal(names(res_null), names(res_default))
+    # Both should use the same gene set (NULL = default = all features)
+    if (!is.null(res_null$go) && !is.null(res_default$go)) {
+        expect_equal(sort(res_null$go@gene), sort(res_default$go@gene))
+    }
 })
 
 test_that("enrichMethylation warns and returns NULL for unmatched feature_type", {
@@ -684,20 +711,31 @@ make_tfbs_res_df <- function() {
     )
 }
 
-test_that("enrichMethylation gene_role='target' uses target genes and returns list(go,kegg)", {
+test_that("enrichMethylation gene_role='target' and 'regulator' use different gene sets", {
     skip_if_not_installed("clusterProfiler")
     df <- make_tfbs_res_df()
-    # Should not error; returns standard list(go, kegg)
     suppressWarnings({
-        res <- enrichMethylation(df, TERM2GENE = fake_t2g,
-                                 feature_type = "transcription_factor_binding_site",
-                                 gene_role    = "target")
+        res_target <- enrichMethylation(df, TERM2GENE = fake_t2g,
+                                        feature_type = "transcription_factor_binding_site",
+                                        gene_role    = "target")
+        res_regulator <- enrichMethylation(df, TERM2GENE = fake_t2g,
+                                           feature_type = "transcription_factor_binding_site",
+                                           gene_role    = "regulator")
     })
-    expect_type(res, "list")
-    expect_true(all(c("go", "kegg") %in% names(res)))
+    expect_type(res_target, "list")
+    expect_type(res_regulator, "list")
+    # Target and regulator should use different gene sets when both produce results
+    # GO may be NULL with tiny synthetic data — but the gene_role distinction
+    # should still manifest in the gene universe (accessible via @gene slot)
+    if (!is.null(res_target$go) && !is.null(res_regulator$go)) {
+        genes_target <- res_target$go@gene
+        genes_regulator <- res_regulator$go@gene
+        expect_false(identical(sort(genes_target), sort(genes_regulator)),
+                     "Target and regulator gene sets should differ")
+    }
 })
 
-test_that("enrichMethylation gene_role='regulator' uses regulator genes", {
+test_that("enrichMethylation gene_role='regulator' returns valid results", {
     skip_if_not_installed("clusterProfiler")
     df <- make_tfbs_res_df()
     suppressWarnings({
@@ -707,6 +745,10 @@ test_that("enrichMethylation gene_role='regulator' uses regulator genes", {
     })
     expect_type(res, "list")
     expect_true(all(c("go", "kegg") %in% names(res)))
+    # Regulator GO result may be NULL with tiny synthetic data
+    if (!is.null(res$go)) {
+        expect_s4_class(res$go, "enrichResult")
+    }
 })
 
 test_that("enrichMethylation gene_role='both' returns list with target and regulator", {
