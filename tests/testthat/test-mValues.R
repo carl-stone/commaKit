@@ -207,3 +207,14 @@ test_that("mValues: mod_type vector with invalid value gives error", {
         "not found in object"
     )
 })
+
+test_that("mValues: clamps impossible beta-derived counts to avoid NaN", {
+    obj <- .make_mval_data(n_sites = 2L, n_samples = 1L, cov_val = 10L)
+    SummarizedExperiment::assay(obj, "methylation")[1, 1] <- 1.2
+    SummarizedExperiment::assay(obj, "methylation")[2, 1] <- -0.2
+    mv <- mValues(obj, alpha = 0.5)
+    expect_false(any(is.nan(mv)))
+    expect_true(all(is.finite(mv)))
+    expect_equal(unname(mv[1, 1]), log2((10 + 0.5) / (0 + 0.5)))
+    expect_equal(unname(mv[2, 1]), log2((0 + 0.5) / (10 + 0.5)))
+})

@@ -36,7 +36,7 @@ NULL
 #'
 #' @keywords internal
 .runMethylKit <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
-                          ref_level = NULL) {
+                          ref_level = NULL, design_info = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("methylKit", quietly = TRUE)) {
         stop(
@@ -46,38 +46,16 @@ NULL
         )
     }
 
-    # ── Parse formula ─────────────────────────────────────────────────────────
-    rhs_vars <- all.vars(formula)
-    if (length(rhs_vars) == 0L) {
-        stop("'formula' must contain at least one RHS variable (e.g., ~ condition).")
+    # ── Resolve two-level design and group statistics ─────────────────────────
+    if (is.null(design_info)) {
+        design_info <- .resolveDiffMethylDesign(coldata, formula, ref_level = ref_level)
     }
-    primary_var <- rhs_vars[[1L]]
-
-    if (!primary_var %in% colnames(coldata)) {
-        stop(
-            "Variable '", primary_var, "' from formula not found in sample metadata. ",
-            "Available columns: ", paste(colnames(coldata), collapse = ", ")
-        )
-    }
-
-    cond        <- as.character(coldata[[primary_var]])
-    all_levels  <- sort(unique(cond))
-
-    if (length(all_levels) < 2L) {
-        stop(
-            "Differential methylation requires at least 2 distinct levels of '",
-            primary_var, "'. Found only: '", all_levels[[1L]], "'."
-        )
-    }
-
-    # methylKit requires integer treatment codes: 0 = reference, 1 = treatment
-    # Use provided ref_level, or fall back to alphabetically first
-    if (is.null(ref_level)) {
-        ref_level <- all_levels[[1L]]
-    }
-    cond_levels <- c(ref_level, setdiff(all_levels, ref_level))
-    treat_level <- cond_levels[[2L]]
-    treatment   <- as.integer(cond != ref_level)  # 0/1
+    primary_var <- design_info$primary_var
+    ref_level   <- design_info$ref_level
+    treat_level <- design_info$treat_level
+    cond_levels <- design_info$cond_levels
+    cond        <- design_info$cond
+    treatment   <- as.integer(cond == treat_level)  # 0 = reference, 1 = treatment
 
     message(
         "methylKit: comparing '", treat_level, "' (treatment) vs '",
@@ -96,9 +74,8 @@ NULL
     # internal mgcv::uniquecombs() returns a vector instead of a matrix, and
     # methylKit's reshape logic hardcodes ncol = 4 (2-sample assumption),
     # producing garbage that cascades into a split() error. Filter these sites
-    # out before building methylRaw objects and assign p = 1: the data is
-    # perfectly consistent with the null (no differential methylation), so
-    # we cannot reject it.
+    # out before building methylRaw objects. These sites are untestable, so
+    # they retain p = NA and are excluded from multiple-testing correction.
     all_meth  <- apply(methyl_mat, 1L, function(x) all(x == 1, na.rm = TRUE))
     all_unmeth <- apply(methyl_mat, 1L, function(x) all(x == 0, na.rm = TRUE))
     skip_idx  <- which(all_meth | all_unmeth)
@@ -108,33 +85,22 @@ NULL
         message(
             "methylKit: ", n_skipped, " site(s) with all samples at ",
             "beta = 1 or beta = 0 excluded (zero within-group variance; ",
-            "methylKit GLM cannot estimate). Assigned p = 1."
+            "methylKit GLM cannot estimate). Assigned p = NA."
         )
     }
 
     keep_idx <- if (n_skipped > 0L) setdiff(seq_len(n_sites), skip_idx) else seq_len(n_sites)
 
-    # If all sites are zero-variance, return early with p = 1
+    # If all sites are zero-variance, return early with p = NA
     if (length(keep_idx) == 0L) {
-        group_idx  <- lapply(cond_levels, function(lv) which(cond == lv))
-        names(group_idx) <- cond_levels
-        group_means <- vapply(cond_levels, function(lv) {
-            idx <- group_idx[[lv]]
-            if (length(idx) == 1L) methyl_mat[, idx]
-            else rowMeans(methyl_mat[, idx, drop = FALSE], na.rm = TRUE)
-        }, numeric(n_sites))
-        if (is.null(dim(group_means))) {
-            group_means <- matrix(group_means, nrow = 1L,
-                                  dimnames = list(NULL, cond_levels))
-        }
-        group_means[is.nan(group_means)] <- NA_real_
+        group_stats <- .computeDiffMethylGroupStats(methyl_mat, design_info)
         result <- data.frame(
-            pvalue     = rep(1, n_sites),
-            delta_beta = group_means[, treat_level] - group_means[, ref_level],
+            pvalue     = rep(NA_real_, n_sites),
+            delta_beta = group_stats$delta_beta,
             stringsAsFactors = FALSE
         )
         for (lv in cond_levels) {
-            result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
+            result[[paste0("mean_beta_", lv)]] <- group_stats$group_means[, lv]
         }
         return(result)
     }
@@ -194,7 +160,7 @@ NULL
       # and was set to 0).  glm.fit inside logReg crashes with
       # "object of type 'closure' is not subsettable" when all weights are 0.
       # Remove such sites from the united object before calling
-      # calculateDiffMeth; they retain p = 1 via the skip_idx path above.
+      # calculateDiffMeth; they retain p = NA via the untestable-site path above.
       united_df  <- methylKit::getData(mk_united)
       cov_cols   <- seq(5L, ncol(united_df), by = 3L)
       site_total_cov <- rowSums(as.matrix(united_df[, cov_cols, drop = FALSE]))
@@ -203,7 +169,7 @@ NULL
       if (n_dropped > 0L) {
         message(
           "methylKit: ", n_dropped, " site(s) with zero total coverage across ",
-          "all samples removed before testing (p = 1 assigned)."
+          "all samples removed before testing (p = NA assigned)."
         )
         mk_united <- mk_united[keep_united, ]
       }
@@ -237,27 +203,12 @@ NULL
     mk_key <- paste0(diff_df$chr, ":", diff_df$start, ":", diff_df$strand)
 
     # Pre-compute group means from our matrices (mirroring quasi_f/limma wrappers)
-    group_idx  <- lapply(cond_levels, function(lv) which(cond == lv))
-    names(group_idx) <- cond_levels
-
-    group_means <- vapply(cond_levels, function(lv) {
-        idx <- group_idx[[lv]]
-        if (length(idx) == 1L) {
-            methyl_mat[, idx]
-        } else {
-            rowMeans(methyl_mat[, idx, drop = FALSE], na.rm = TRUE)
-        }
-    }, numeric(n_sites))
-    if (is.null(dim(group_means))) {
-        group_means <- matrix(group_means, nrow = 1L,
-                              dimnames = list(NULL, cond_levels))
-    }
-    group_means[is.nan(group_means)] <- NA_real_
-
-    delta_beta_vec <- group_means[, treat_level] - group_means[, ref_level]
-    # Initialise p = 1 for all sites; zero-variance sites (skip_idx) retain
-    # p = 1 since the data is perfectly consistent with the null.
-    pvalue_vec     <- rep(1, n_sites)
+    group_stats    <- .computeDiffMethylGroupStats(methyl_mat, design_info)
+    group_means    <- group_stats$group_means
+    delta_beta_vec <- group_stats$delta_beta
+    # Initialise p = NA for all sites; untestable sites stay NA and are excluded
+    # from multiple-testing correction, matching the limma and quasi_f backends.
+    pvalue_vec     <- rep(NA_real_, n_sites)
 
     # Match methylKit results back to original site order by key
     our_key_for_match <- paste0(chroms, ":", positions, ":", strands)

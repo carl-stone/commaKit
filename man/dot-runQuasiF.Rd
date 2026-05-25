@@ -10,7 +10,8 @@
   site_df,
   coldata,
   formula,
-  ref_level = NULL
+  ref_level = NULL,
+  design_info = NULL
 )
 }
 \arguments{

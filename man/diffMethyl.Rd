@@ -22,17 +22,20 @@ diffMethyl(
 \item{object}{A \code{\link{commaData}} object with at least two samples in
 distinct conditions.}
 
-\item{formula}{A one-sided formula specifying the design. The RHS variable
-must match a column in \code{sampleInfo(object)} (e.g., \code{~ condition}).
-Default is \code{~ condition}.}
+\item{formula}{A one-sided formula specifying the design. The first RHS
+variable must match a column in \code{sampleInfo(object)} and must have
+exactly 2 distinct levels. Multi-level variables are not currently
+supported in a single \code{diffMethyl()} call; subset to the two groups to
+compare. Default is \code{~ condition}.}
 
 \item{reference}{Character string or \code{NULL}. The reference (control)
 level for the primary formula variable. When provided, it must match one of
-the values present in the corresponding \code{colData} column. When
+the two values present in the corresponding \code{colData} column. When
 \code{NULL} (default), the reference level is determined automatically: if
 the column is a factor, its first factor level is used; otherwise the
 alphabetically first value is used (matching R's default contrast
-behaviour).}
+behaviour). The reported \code{dm_delta_beta} is the non-reference level
+minus the reference level.}
 
 \item{method}{Character string selecting the statistical backend.
 \code{"methylkit"} (default) wraps \code{methylKit::calculateDiffMeth()}

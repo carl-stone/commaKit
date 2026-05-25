@@ -71,7 +71,7 @@ NULL
 #'
 #' @keywords internal
 .runQuasiF <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
-                       ref_level = NULL) {
+                       ref_level = NULL, design_info = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("limma", quietly = TRUE)) {
         stop(
@@ -81,59 +81,21 @@ NULL
         )
     }
 
-    # ── Parse formula ─────────────────────────────────────────────────────────
-    rhs_vars <- all.vars(formula)
-    if (length(rhs_vars) == 0L) {
-        stop("'formula' must contain at least one RHS variable (e.g., ~ condition).")
+    # ── Resolve two-level design and group statistics ─────────────────────────
+    if (is.null(design_info)) {
+        design_info <- .resolveDiffMethylDesign(coldata, formula, ref_level = ref_level)
     }
-    primary_var <- rhs_vars[[1L]]
+    primary_var <- design_info$primary_var
+    ref_level   <- design_info$ref_level
+    treat_level <- design_info$treat_level
+    cond_levels <- design_info$cond_levels
+    cond        <- design_info$cond
 
-    if (!primary_var %in% colnames(coldata)) {
-        stop(
-            "Variable '", primary_var, "' from formula not found in sample metadata. ",
-            "Available columns: ", paste(colnames(coldata), collapse = ", ")
-        )
-    }
+    n_sites <- nrow(methyl_mat)
 
-    cond        <- as.character(coldata[[primary_var]])
-    all_levels  <- sort(unique(cond))
-
-    if (length(all_levels) < 2L) {
-        stop(
-            "Differential methylation requires at least 2 distinct levels of '",
-            primary_var, "'. Found only: '", all_levels[[1L]], "'."
-        )
-    }
-
-    # Use provided ref_level, or fall back to alphabetically first
-    if (is.null(ref_level)) {
-        ref_level <- all_levels[[1L]]
-    }
-    cond_levels <- c(ref_level, setdiff(all_levels, ref_level))
-    treat_level <- cond_levels[[2L]]
-
-    n_sites   <- nrow(methyl_mat)
-    n_samples <- ncol(methyl_mat)
-
-    # ── Pre-compute group means (beta scale, vectorised) ─────────────────────
-    group_idx <- lapply(cond_levels, function(lv) which(cond == lv))
-    names(group_idx) <- cond_levels
-
-    group_means <- vapply(cond_levels, function(lv) {
-        idx <- group_idx[[lv]]
-        if (length(idx) == 1L) {
-            methyl_mat[, idx]
-        } else {
-            rowMeans(methyl_mat[, idx, drop = FALSE], na.rm = TRUE)
-        }
-    }, numeric(n_sites))
-    if (is.null(dim(group_means))) {
-        group_means <- matrix(group_means, nrow = 1L,
-                              dimnames = list(NULL, cond_levels))
-    }
-    group_means[is.nan(group_means)] <- NA_real_
-
-    delta_beta_vec <- group_means[, treat_level] - group_means[, ref_level]
+    group_stats    <- .computeDiffMethylGroupStats(methyl_mat, design_info)
+    group_means    <- group_stats$group_means
+    delta_beta_vec <- group_stats$delta_beta
 
     # ── Pass 1: per-site GLM — collect dispersion and unscaled t ─────────────
     phi_vec    <- rep(NA_real_, n_sites)
@@ -221,6 +183,17 @@ NULL
     }
 
     # ── Pass 2: EB shrinkage on dispersions via limma::squeezeVar ────────────
+    had_data <- rowSums(!is.na(methyl_mat) & !is.na(coverage_mat) & coverage_mat > 0L) >= 2L
+    failed_with_data <- had_data & (is.na(phi_vec) | is.na(t_unscaled))
+    if (sum(had_data) > 0L && sum(failed_with_data) / sum(had_data) > 0.5) {
+        warning(
+            "quasi_f: GLM fitting failed for ", sum(failed_with_data),
+            " of ", sum(had_data), " sites with sufficient observed data. ",
+            "These sites retain p = NA.",
+            call. = FALSE
+        )
+    }
+
     testable   <- !is.na(phi_vec) & !is.na(t_unscaled)
     pvalue_vec <- rep(NA_real_, n_sites)
 

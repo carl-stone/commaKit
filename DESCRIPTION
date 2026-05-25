@@ -49,6 +49,7 @@ Collate:
     'comma_example_data.R'
     'coverage_analysis.R'
     'diffMethyl.R'
+    'diffMethyl_helpers.R'
     'enrichment.R'
     'find_motif_sites.R'
     'genome_utils.R'

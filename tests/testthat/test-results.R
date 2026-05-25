@@ -195,3 +195,17 @@ test_that("filterResults: padj=0 returns an empty data frame", {
     expect_equal(nrow(sig), 0L)
     expect_s3_class(sig, "data.frame")
 })
+
+test_that("filterResults: NA thresholds error rather than returning NA rows", {
+    dm <- .make_tested_object()
+    expect_error(filterResults(dm, padj = NA_real_), "padj")
+    expect_error(filterResults(dm, delta_beta = NA_real_), "delta_beta")
+})
+
+test_that("filterResults: non-finite or negative thresholds error", {
+    dm <- .make_tested_object()
+    expect_error(filterResults(dm, padj = Inf), "padj")
+    expect_error(filterResults(dm, padj = -0.1), "padj")
+    expect_error(filterResults(dm, delta_beta = Inf), "delta_beta")
+    expect_error(filterResults(dm, delta_beta = -0.1), "delta_beta")
+})

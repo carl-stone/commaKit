@@ -106,9 +106,16 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
     beta_mat <- methylation(object)   # sites × samples, values in [0, 1]
     cov_mat  <- coverage(object)      # sites × samples, non-negative integers
 
-    ## Estimated methylated read counts (round to nearest integer)
+    ## Estimated methylated read counts (round to nearest integer). Clamp to the
+    ## physically possible range so malformed/manual objects cannot produce
+    ## negative unmethylated counts and NaN M-values.
     m_reads <- round(beta_mat * cov_mat)
-    u_reads <- cov_mat - m_reads
+    m_reads <- pmax(0, pmin(m_reads, cov_mat))
+    u_reads <- pmax(0, cov_mat - m_reads)
+    dim(m_reads) <- dim(beta_mat)
+    dim(u_reads) <- dim(beta_mat)
+    dimnames(m_reads) <- dimnames(beta_mat)
+    dimnames(u_reads) <- dimnames(beta_mat)
 
     ## Sites with coverage == 0: set m_reads and u_reads to NA so that the
     ## log ratio returns NA rather than log2(alpha / alpha) = 0 (misleading).

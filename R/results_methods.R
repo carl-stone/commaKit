@@ -165,6 +165,15 @@ setMethod("filterResults", "commaData",
         )
     }
 
+    if (!is.numeric(padj) || length(padj) != 1L ||
+            is.na(padj) || !is.finite(padj) || padj < 0) {
+        stop("'padj' must be a single non-NA, non-negative finite number.")
+    }
+    if (!is.numeric(delta_beta) || length(delta_beta) != 1L ||
+            is.na(delta_beta) || !is.finite(delta_beta) || delta_beta < 0) {
+        stop("'delta_beta' must be a single non-NA, non-negative finite number.")
+    }
+
     keep <- !is.na(res$dm_padj) &
             !is.na(res$dm_delta_beta) &
             res$dm_padj <= padj &

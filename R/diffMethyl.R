@@ -69,9 +69,11 @@ NULL
 #'
 #' @param object A \code{\link{commaData}} object with at least two samples in
 #'   distinct conditions.
-#' @param formula A one-sided formula specifying the design. The RHS variable
-#'   must match a column in \code{sampleInfo(object)} (e.g., \code{~ condition}).
-#'   Default is \code{~ condition}.
+#' @param formula A one-sided formula specifying the design. The first RHS
+#'   variable must match a column in \code{sampleInfo(object)} and must have
+#'   exactly 2 distinct levels. Multi-level variables are not currently
+#'   supported in a single \code{diffMethyl()} call; subset to the two groups to
+#'   compare. Default is \code{~ condition}.
 #' @param method Character string selecting the statistical backend.
 #'   \code{"methylkit"} (default) wraps \code{methylKit::calculateDiffMeth()}
 #'   with logistic regression and SLIM p-value correction; robust for small n
@@ -109,11 +111,12 @@ NULL
 #'   this threshold are treated as \code{NA} in that sample. Default \code{5L}.
 #' @param reference Character string or \code{NULL}. The reference (control)
 #'   level for the primary formula variable. When provided, it must match one of
-#'   the values present in the corresponding \code{colData} column. When
+#'   the two values present in the corresponding \code{colData} column. When
 #'   \code{NULL} (default), the reference level is determined automatically: if
 #'   the column is a factor, its first factor level is used; otherwise the
 #'   alphabetically first value is used (matching R's default contrast
-#'   behaviour).
+#'   behaviour). The reported \code{dm_delta_beta} is the non-reference level
+#'   minus the reference level.
 #' @param p_adjust_method Character string. Multiple testing correction method,
 #'   passed to \code{\link[stats]{p.adjust}}. Default \code{"BH"}
 #'   (Benjamini-Hochberg). Other options: \code{"bonferroni"}, \code{"holm"},
@@ -160,8 +163,21 @@ diffMethyl <- function(
     if (!inherits(formula, "formula")) {
         stop("'formula' must be a formula object (e.g., ~ condition).")
     }
-    method      <- match.arg(method)
+    method <- match.arg(method)
+
+    if (!is.numeric(min_coverage) || length(min_coverage) != 1L ||
+            is.na(min_coverage) || min_coverage < 0L) {
+        stop("'min_coverage' must be a single non-negative integer.")
+    }
     min_coverage <- as.integer(min_coverage)
+    if (!is.character(p_adjust_method) || length(p_adjust_method) != 1L ||
+            is.na(p_adjust_method) ||
+            !p_adjust_method %in% stats::p.adjust.methods) {
+        stop(
+            "'p_adjust_method' must be one of: ",
+            paste(stats::p.adjust.methods, collapse = ", ")
+        )
+    }
 
     if (method == "methylkit" && !requireNamespace("methylKit", quietly = TRUE)) {
         stop(
@@ -221,45 +237,13 @@ diffMethyl <- function(
         }
     }
 
-    # Validate formula variable exists in colData
-    rhs_vars <- all.vars(formula)
-    if (length(rhs_vars) == 0L) {
-        stop("'formula' must contain at least one RHS variable (e.g., ~ condition).")
-    }
+    # Validate and resolve the currently supported two-level contrast contract
     cd <- as.data.frame(colData(object))
-    primary_var <- rhs_vars[[1L]]
-    if (!primary_var %in% colnames(cd)) {
-        stop(
-            "Variable '", primary_var, "' in formula not found in sampleInfo. ",
-            "Available columns: ", paste(colnames(cd), collapse = ", ")
-        )
-    }
-    if (length(unique(cd[[primary_var]])) < 2L) {
-        stop(
-            "Column '", primary_var, "' must have at least 2 distinct values. ",
-            "Found: '", unique(cd[[primary_var]]), "'"
-        )
-    }
-
-    # -- Resolve reference level -----------------------------------------------
-    if (!is.null(reference)) {
-        if (!is.character(reference) || length(reference) != 1L) {
-            stop("'reference' must be a single character string or NULL.")
-        }
-        all_vals <- unique(as.character(cd[[primary_var]]))
-        if (!reference %in% all_vals) {
-            stop(
-                "'reference' value '", reference, "' not found in column '",
-                primary_var, "'. Available values: ",
-                paste(sort(all_vals), collapse = ", ")
-            )
-        }
-        ref_level <- reference
-    } else if (is.factor(cd[[primary_var]])) {
-        ref_level <- levels(cd[[primary_var]])[1L]
-    } else {
-        ref_level <- sort(unique(as.character(cd[[primary_var]])))[1L]
-    }
+    design_info <- .resolveDiffMethylDesign(cd, formula, ref_level = reference)
+    primary_var <- design_info$primary_var
+    ref_level   <- design_info$ref_level
+    treat_level_dm <- design_info$treat_level
+    cond_levels <- design_info$cond_levels
 
     # -- Determine which mod contexts to test ----------------------------------
     # Loop by mod_context (mod_type x motif combination) rather than mod_type
@@ -284,10 +268,6 @@ diffMethyl <- function(
     } else {
         test_contexts <- modContexts(object)
     }
-    cond_levels <- c(ref_level,
-                     setdiff(sort(unique(as.character(cd[[primary_var]]))),
-                             ref_level))
-
     # -- Extract full matrices -------------------------------------------------
     methyl_full  <- methylation(object)
     cov_full     <- coverage(object)
@@ -301,7 +281,6 @@ diffMethyl <- function(
     names(mean_beta_cols) <- paste0("dm_mean_beta_", cond_levels)
 
     # -- Report comparison direction -------------------------------------------
-    treat_level_dm <- cond_levels[[2L]]
     message(
         "diffMethyl: testing '", primary_var, "' -- '",
         treat_level_dm, "' vs '", ref_level, "' (reference)"
@@ -326,13 +305,13 @@ diffMethyl <- function(
         res_sub <- tryCatch(
             if (method == "limma") {
                 .runLimma(methyl_sub, cov_sub, site_sub, cd, formula, alpha = alpha,
-                          ref_level = ref_level)
+                          ref_level = ref_level, design_info = design_info)
             } else if (method == "quasi_f") {
                 .runQuasiF(methyl_sub, cov_sub, site_sub, cd, formula,
-                           ref_level = ref_level)
+                           ref_level = ref_level, design_info = design_info)
             } else {
                 .runMethylKit(methyl_sub, cov_sub, site_sub, cd, formula,
-                              ref_level = ref_level)
+                              ref_level = ref_level, design_info = design_info)
             },
             error = function(e) {
                 warning(
@@ -388,6 +367,7 @@ diffMethyl <- function(
     S4Vectors::metadata(out)$diffMethyl_params <- list(
         formula         = deparse(formula),
         reference       = ref_level,
+        treatment       = treat_level_dm,
         method          = method,
         mod_context     = mod_context,
         mod_type        = mod_type,

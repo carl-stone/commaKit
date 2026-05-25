@@ -482,9 +482,9 @@ test_that("diffMethyl methylkit: all-zero-coverage site does not crash calculate
         )
     )
     rd <- as.data.frame(SummarizedExperiment::rowData(dm))
-    # The all-zero site (row 2) gets p = 1 (assigned by skip_idx; no
-    # evidence against the null).  The critical check is no crash.
-    expect_equal(rd$dm_pvalue[2L], 1)
+    # The all-zero site (row 2) is untestable and retains p = NA.
+    # The critical check is no crash.
+    expect_true(is.na(rd$dm_pvalue[2L]))
     # Other sites should have p-values (not NA or 1 from skip_idx)
     expect_false(is.na(rd$dm_pvalue[1L]))
     expect_false(is.na(rd$dm_pvalue[3L]))
@@ -656,5 +656,58 @@ test_that("diffMethyl: invalid reference value produces informative error", {
     expect_error(
         diffMethyl(obj, formula = ~ condition, reference = "CTRL"),
         regexp = "'reference' value 'CTRL' not found"
+    )
+})
+
+# ─── Two-level contrast contract (#135/#137) ─────────────────────────────────
+
+.make_three_level_dm_data <- function() {
+    obj <- .make_dm_data(n_sites = 12L, n_ctrl = 2L, n_treat = 2L)
+    methyl_mat <- methylation(obj)
+    colnames(methyl_mat) <- c("A_1", "A_2", "B_1", "C_1")
+    # Make the group directions intentionally different so B-A and C-A would
+    # disagree if a backend silently chose the wrong contrast.
+    methyl_mat[, "A_1"] <- 0.5
+    methyl_mat[, "A_2"] <- 0.5
+    methyl_mat[, "B_1"] <- 0.2
+    methyl_mat[, "C_1"] <- 0.9
+    SummarizedExperiment::assay(obj, "methylation", withDimnames = FALSE) <- methyl_mat
+    cov_mat <- SummarizedExperiment::assay(obj, "coverage", withDimnames = FALSE)
+    colnames(cov_mat) <- colnames(methyl_mat)
+    SummarizedExperiment::assay(obj, "coverage", withDimnames = FALSE) <- cov_mat
+    SummarizedExperiment::colData(obj)$sample_name <- colnames(methyl_mat)
+    SummarizedExperiment::colData(obj)$condition <- c("A", "A", "B", "C")
+    rownames(SummarizedExperiment::colData(obj)) <- colnames(methyl_mat)
+    obj
+}
+
+test_that("diffMethyl: errors clearly for primary variables with more than 2 levels", {
+    obj <- .make_three_level_dm_data()
+    expect_error(
+        diffMethyl(obj, formula = ~ condition, method = "quasi_f"),
+        "currently supports exactly 2 levels"
+    )
+})
+
+test_that("diffMethyl: two-level factor reference defines treatment-reference direction", {
+    obj <- .make_dm_data(n_sites = 10L, n_ctrl = 2L, n_treat = 2L)
+    SummarizedExperiment::colData(obj)$condition <- factor(
+        SummarizedExperiment::colData(obj)$condition,
+        levels = c("treatment", "control")
+    )
+    dm <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
+    rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+    # Factor reference is treatment, so delta is control - treatment; first sites
+    # have control high and treatment low.
+    expect_true(all(rd$dm_delta_beta[1:5] > 0, na.rm = TRUE))
+    expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$reference, "treatment")
+    expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$treatment, "control")
+})
+
+test_that("diffMethyl: invalid p_adjust_method errors before p.adjust", {
+    obj <- .make_dm_data()
+    expect_error(
+        diffMethyl(obj, method = "quasi_f", p_adjust_method = "bogus"),
+        "p_adjust_method"
     )
 })
