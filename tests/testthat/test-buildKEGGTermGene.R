@@ -674,3 +674,23 @@ test_that("buildKEGGTermGene errors on malformed id_map", {
         "'symbol' and 'kegg_id'"
     )
 })
+
+test_that("buildKEGGTermGene errors when cache parent directory does not exist", {
+    bad_file <- file.path(tempdir(), "does-not-exist", "kegg.rds")
+    expect_error(
+        buildKEGGTermGene("eco", file = bad_file),
+        regexp = "Parent directory"
+    )
+})
+
+test_that("buildKEGGGeneIDMap errors when cache parent directory does not exist", {
+    bad_file <- file.path(tempdir(), "does-not-exist", "id-map.rds")
+    expect_error(
+        buildKEGGGeneIDMap(
+            "eco",
+            entrez2symbol = data.frame(entrez_id = "1", symbol = "geneA"),
+            file = bad_file
+        ),
+        regexp = "Parent directory"
+    )
+})

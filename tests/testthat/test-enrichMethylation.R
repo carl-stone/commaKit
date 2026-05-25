@@ -800,3 +800,23 @@ test_that("enrichMethylation errors for non-commaData non-data.frame input", {
         "commaData.*data.frame|data.frame.*commaData"
     )
 })
+
+test_that("enrichMethylation validates TERM2GENE and TERM2NAME column names before clusterProfiler", {
+    res_df <- data.frame(
+        chrom = "chr1", position = 1L, strand = "+", mod_type = "6mA",
+        dm_padj = 0.01, dm_delta_beta = 0.2,
+        feature_names = I(list("geneA")),
+        stringsAsFactors = FALSE
+    )
+    bad_t2g <- data.frame(pathway = "P1", gene = "geneA")
+    bad_t2n <- data.frame(term = "P1", description = "Pathway 1")
+
+    expect_error(
+        enrichMethylation(res_df, TERM2GENE = bad_t2g),
+        regexp = "TERM2GENE"
+    )
+    expect_error(
+        enrichMethylation(res_df, TERM2GENE = fake_t2g, TERM2NAME = bad_t2n),
+        regexp = "TERM2NAME"
+    )
+})

@@ -164,6 +164,32 @@ setValidity("commaData", function(object) {
         ))
     }
 
+
+    # ── assay value invariants ──────────────────────────────────────────────
+    if ("methylation" %in% assayNames(object)) {
+        methyl <- SummarizedExperiment::assay(object, "methylation")
+        methyl_vals <- methyl[!is.na(methyl)]
+        if (length(methyl_vals) > 0L &&
+                any(!is.finite(methyl_vals) | methyl_vals < 0 | methyl_vals > 1)) {
+            errors <- c(errors,
+                "assay 'methylation' must contain beta values in [0, 1] or NA"
+            )
+        }
+    }
+    if ("coverage" %in% assayNames(object)) {
+        cov <- SummarizedExperiment::assay(object, "coverage")
+        cov_vals <- cov[!is.na(cov)]
+        if (length(cov_vals) > 0L) {
+            bad_cov <- !is.finite(cov_vals) | cov_vals < 0 |
+                       abs(cov_vals - round(cov_vals)) > sqrt(.Machine$double.eps)
+            if (any(bad_cov)) {
+                errors <- c(errors,
+                    "assay 'coverage' must contain non-negative integer-like values or NA"
+                )
+            }
+        }
+    }
+
     if (length(errors) == 0) TRUE else errors
 })
 

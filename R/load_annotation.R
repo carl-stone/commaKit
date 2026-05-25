@@ -112,10 +112,11 @@ loadAnnotation <- function(file, feature_types = NULL, ...) {
     ext  <- tolower(tools::file_ext(base))
     if (ext %in% c("gff", "gff3")) return("gff")
     if (ext == "bed") return("bed")
-    # Default: try GFF
-    warning("Unrecognized file extension for annotation file '", file,
-            "'. Attempting to read as GFF3.")
-    "gff"
+    stop(
+        "Unrecognized annotation file extension for '", file, "'. ",
+        "Supported extensions are .gff, .gff3, and .bed ",
+        "(optionally compressed with .gz, .bz2, or .xz)."
+    )
 }
 
 #' Standardize annotation GRanges mcols to always have feature_type and name

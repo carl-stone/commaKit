@@ -1,4 +1,5 @@
 #' @importFrom utils read.table
+#' @importFrom stats aggregate
 NULL
 
 #' Parse a Megalodon per-read methylation file into a tidy per-site data frame
@@ -24,10 +25,10 @@ NULL
 #'
 #' @param file Character string. Path to the Megalodon per-read BED file.
 #' @param sample_name Character string. Sample name (used in messages).
-#' @param mod_type Character string or \code{NULL}. Modification type to assign
-#'   to all sites (e.g., \code{"6mA"}). Megalodon files are modification-
-#'   type-specific, so the type cannot be auto-detected from the file alone.
-#'   If \code{NULL}, defaults to \code{"6mA"} with a warning.
+#' @param mod_type Character string. Modification type to assign to all sites
+#'   (e.g., \code{"6mA"}). Megalodon files are modification-type-specific,
+#'   so the type cannot be auto-detected from the file alone and must be
+#'   supplied explicitly.
 #' @param min_coverage Integer. Minimum read depth. Default \code{5}.
 #'
 #' @return A \code{data.frame} with columns: \code{chrom}, \code{position}
@@ -45,12 +46,17 @@ NULL
     }
     min_coverage <- as.integer(min_coverage)
 
-    if (is.null(mod_type)) {
-        warning(
-            "mod_type not specified for Megalodon file '", file, "'. ",
-            "Defaulting to '6mA'. Set mod_type explicitly in commaData()."
+    if (is.null(mod_type) || !is.character(mod_type) || length(mod_type) != 1L ||
+            is.na(mod_type)) {
+        stop(
+            "'mod_type' must be explicitly supplied as a single modification ",
+            "type for Megalodon files. Megalodon output does not encode the ",
+            "modification type in the file."
         )
-        mod_type <- "6mA"
+    }
+    mod_type_errors <- .checkModTypeValues(mod_type)
+    if (length(mod_type_errors) > 0L) {
+        stop(paste(mod_type_errors, collapse = "\n"))
     }
 
     # ── Read file ───────────────────────────────────────────────────────────
@@ -67,7 +73,7 @@ NULL
     )
 
     if (nrow(raw) == 0L) {
-        return(.emptyModkitResult())
+        return(.emptyParseResult())
     }
 
     if (ncol(raw) < 7L) {
@@ -98,10 +104,10 @@ NULL
     )
 
     # Use aggregate() for base-R dedup — no string keys needed
-    agg_beta <- aggregate(mod_prob ~ chrom + position + strand,
+    agg_beta <- stats::aggregate(mod_prob ~ chrom + position + strand,
                            data = site_df,
                            FUN = mean, na.rm = TRUE)
-    agg_cov  <- aggregate(mod_prob ~ chrom + position + strand,
+    agg_cov  <- stats::aggregate(mod_prob ~ chrom + position + strand,
                            data = site_df,
                            FUN = length)
 

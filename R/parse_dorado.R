@@ -86,7 +86,7 @@ NULL
     n_reads <- length(reads$pos)
     if (n_reads == 0L) {
         message("Note: BAM file '", file, "' contains no aligned reads.")
-        return(.emptyModkitResult())
+        return(.emptyParseResult())
     }
 
     # ── Parse modifications from each read ────────────────────────────────────
@@ -142,7 +142,7 @@ NULL
 
     if (is.null(all_records) || nrow(all_records) == 0L) {
         message("Note: No modification records found in BAM '", file, "'.")
-        return(.emptyModkitResult())
+        return(.emptyParseResult())
     }
 
     # Group by site key
@@ -177,7 +177,7 @@ NULL
     }
 
     if (nrow(agg_df) == 0L) {
-        return(.emptyModkitResult())
+        return(.emptyParseResult())
     }
 
     # ── Return standard format ────────────────────────────────────────────────

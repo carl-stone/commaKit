@@ -406,3 +406,42 @@ test_that("mod_type is a factor with valid levels in example data", {
     expect_true(is.factor(mc$mod_type))
     expect_equal(levels(mc$mod_type), c("4mC", "5mC", "6mA"))
 })
+
+test_that("validity rejects methylation beta values outside [0, 1]", {
+    obj <- .make_minimal_commaData()
+    assay(obj, "methylation")[1, 1] <- 1.2
+    expect_error(validObject(obj), regexp = "methylation.*\\[0, 1\\]")
+})
+
+test_that("validity rejects negative or non-integer-like coverage values", {
+    obj <- .make_minimal_commaData()
+    assay(obj, "coverage")[1, 1] <- -1
+    expect_error(validObject(obj), regexp = "coverage.*non-negative")
+
+    obj <- .make_minimal_commaData()
+    assay(obj, "coverage")[1, 1] <- 1.5
+    expect_error(validObject(obj), regexp = "coverage.*integer-like")
+})
+
+test_that("commaData() rejects duplicate parsed site identities before merge assignment", {
+    f <- tempfile(fileext = ".bed")
+    row <- paste(
+        "chr_sim", 99L, 100L, "a,GATC,1", 0L, "+",
+        99L, 100L, "0,0,0", 20L, 50, 10L, 10L, 0L, 0L, 0L, 0L, 0L,
+        sep = "\t"
+    )
+    writeLines(c(row, row), f)
+
+    expect_error(
+        commaData(
+            files = c(s1 = f),
+            colData = data.frame(
+                sample_name = "s1", condition = "control", replicate = 1L,
+                stringsAsFactors = FALSE
+            ),
+            genome = c(chr_sim = 100000L),
+            caller = "modkit"
+        ),
+        regexp = "duplicate methylation site rows"
+    )
+})

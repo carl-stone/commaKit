@@ -239,3 +239,10 @@ test_that("loadAnnotation() feature_subtype is absent when GFF3 has no feature_t
     # example.gff3 has no 'feature_type' attribute in column 9
     expect_false("feature_subtype" %in% names(mcols(result)))
 })
+
+test_that("loadAnnotation() errors on unrecognized annotation file extensions", {
+    skip_if_not_installed("rtracklayer")
+    f <- tempfile(fileext = ".regions")
+    writeLines("chr1\t0\t10\tregion1", f)
+    expect_error(loadAnnotation(f), regexp = "Unrecognized annotation file extension")
+})

@@ -11,10 +11,10 @@
 
 \item{sample_name}{Character string. Sample name (used in messages).}
 
-\item{mod_type}{Character string or \code{NULL}. Modification type to assign
-to all sites (e.g., \code{"6mA"}). Megalodon files are modification-
-type-specific, so the type cannot be auto-detected from the file alone.
-If \code{NULL}, defaults to \code{"6mA"} with a warning.}
+\item{mod_type}{Character string. Modification type to assign to all sites
+(e.g., \code{"6mA"}). Megalodon files are modification-type-specific,
+so the type cannot be auto-detected from the file alone and must be
+supplied explicitly.}
 
 \item{min_coverage}{Integer. Minimum read depth. Default \code{5}.}
 }

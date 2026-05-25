@@ -82,7 +82,7 @@ NULL
 
     if (is.null(raw) || nrow(raw) == 0L) {
         message("Note: modkit BED file '", file, "' contains no data rows")
-        return(.emptyModkitResult())
+        return(.emptyParseResult())
     }
 
     if (ncol(raw) < 18L) {
@@ -132,7 +132,7 @@ NULL
     }
 
     if (nrow(raw) == 0L) {
-        return(.emptyModkitResult())
+        return(.emptyParseResult())
     }
 
     # ── Build result ────────────────────────────────────────────────────────
@@ -148,12 +148,12 @@ NULL
     )
 }
 
-#' Empty modkit parse result (zero-row data frame with correct schema)
+#' Empty parser result (zero-row data frame with shared parse schema)
 #' @return A zero-row \code{data.frame} with columns \code{chrom},
 #'   \code{position}, \code{strand}, \code{mod_type}, \code{motif},
 #'   \code{beta}, \code{coverage}.
 #' @keywords internal
-.emptyModkitResult <- function() {
+.emptyParseResult <- function() {
     data.frame(
         chrom    = character(0),
         position = integer(0),
@@ -165,3 +165,7 @@ NULL
         stringsAsFactors = FALSE
     )
 }
+
+
+# Backward-compatible internal alias for older tests/code paths.
+.emptyModkitResult <- .emptyParseResult

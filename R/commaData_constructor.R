@@ -297,6 +297,23 @@ commaData <- function(files,
         df <- parsed_list[[sn]]
         if (nrow(df) == 0L) next
 
+        # Parsed rows must be unique for the site identity used by the merge.
+        # Otherwise later matrix assignment would silently let the last duplicate win.
+        df_key <- paste(df$chrom, df$position, df$strand, df$mod_type,
+                        ifelse(is.na(df$motif), "<NA>", df$motif), sep = "
+")
+        if (anyDuplicated(df_key)) {
+            dup <- df[duplicated(df_key) | duplicated(df_key, fromLast = TRUE),
+                      c("chrom", "position", "strand", "mod_type", "motif"),
+                      drop = FALSE]
+            stop(
+                "Parser returned duplicate methylation site rows for sample '", sn,
+                "'. Duplicate chrom/position/strand/mod_type/motif entries ",
+                "must be aggregated before commaData() can merge samples. ",
+                "First duplicate: ", paste(dup[1L, ], collapse = ":")
+            )
+        }
+
         # Align parsed sites to the site universe using findOverlaps()
         df_gr <- GenomicRanges::GRanges(
             seqnames = df$chrom,
@@ -314,10 +331,17 @@ commaData <- function(files,
         mc_q <- GenomicRanges::mcols(df_gr)[qh, c("mod_type", "motif")]
         mc_s <- GenomicRanges::mcols(site_gr)[sh, c("mod_type", "motif")]
         type_match  <- mc_q$mod_type == mc_s$mod_type
-        motif_match <- is.na(mc_q$motif) & is.na(mc_s$motif) |
+        motif_match <- (is.na(mc_q$motif) & is.na(mc_s$motif)) |
                        (!is.na(mc_q$motif) & !is.na(mc_s$motif) &
                             mc_q$motif == mc_s$motif)
         valid <- type_match & motif_match
+
+        if (anyDuplicated(qh[valid])) {
+            stop(
+                "Ambiguous site merge for sample '", sn,
+                "': at least one parsed row matched multiple site-universe rows."
+            )
+        }
 
         idx <- rep(NA_integer_, nrow(df))
         idx[qh[valid]] <- sh[valid]

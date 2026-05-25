@@ -467,6 +467,37 @@ NULL
     combined
 }
 
+# Validate clusterProfiler TERM2GENE / TERM2NAME mapping tables.
+# @keywords internal
+.validateTermMapping <- function(x, arg_name, required_cols) {
+    if (is.null(x)) return(invisible(NULL))
+    if (!is.data.frame(x)) {
+        stop("'", arg_name, "' must be a data.frame with columns ",
+             paste(sprintf("'%s'", required_cols), collapse = " and "), ".")
+    }
+    missing <- setdiff(required_cols, colnames(x))
+    if (length(missing) > 0L) {
+        stop("'", arg_name, "' must be a data.frame with columns ",
+             paste(sprintf("'%s'", required_cols), collapse = " and "),
+             ". Missing: ", paste(sprintf("'%s'", missing), collapse = ", "), ".")
+    }
+    invisible(NULL)
+}
+
+# Validate cache output path before calling saveRDS().
+# @keywords internal
+.validateWritableCacheFile <- function(file, arg_name = "file") {
+    if (is.null(file)) return(invisible(NULL))
+    if (!is.character(file) || length(file) != 1L || is.na(file) || nchar(file) == 0L) {
+        stop("'", arg_name, "' must be a single non-empty file path or NULL.")
+    }
+    parent <- dirname(file)
+    if (!dir.exists(parent)) {
+        stop("Parent directory for '", arg_name, "' does not exist: ", parent)
+    }
+    invisible(NULL)
+}
+
 # Run ORA and/or GSEA for a prepared site-gene data.frame.
 #
 # This is the refactored ORA+GSEA block from enrichMethylation(), now callable
@@ -709,6 +740,8 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
     if (!is.character(organism) || length(organism) != 1L || nchar(organism) == 0L) {
         stop("'organism' must be a non-empty character string (e.g., \"eco\").")
     }
+
+    .validateWritableCacheFile(file)
 
     if (!requireNamespace("KEGGREST", quietly = TRUE)) {
         stop(
@@ -953,6 +986,8 @@ buildKEGGGeneIDMap <- function(organism,
             "  entrez2symbol -- a data.frame(entrez_id, symbol)"
         )
     }
+    .validateWritableCacheFile(file)
+
     if (!is.null(entrez2symbol)) {
         if (!is.data.frame(entrez2symbol) ||
                 !all(c("entrez_id", "symbol") %in% colnames(entrez2symbol))) {
@@ -1327,23 +1362,10 @@ enrichMethylation <- function(object,
         )
     }
 
-    if (!is.null(kegg_term2gene)) {
-        if (!is.data.frame(kegg_term2gene) ||
-                !all(c("term", "gene") %in% colnames(kegg_term2gene))) {
-            stop(
-                "'kegg_term2gene' must be a data.frame with columns 'term' and 'gene'.\n",
-                "Use buildKEGGTermGene() to create it."
-            )
-        }
-    }
-    if (!is.null(kegg_term2name)) {
-        if (!is.data.frame(kegg_term2name) ||
-                !all(c("term", "name") %in% colnames(kegg_term2name))) {
-            stop(
-                "'kegg_term2name' must be a data.frame with columns 'term' and 'name'."
-            )
-        }
-    }
+    .validateTermMapping(TERM2GENE, "TERM2GENE", c("term", "gene"))
+    .validateTermMapping(TERM2NAME, "TERM2NAME", c("term", "name"))
+    .validateTermMapping(kegg_term2gene, "kegg_term2gene", c("term", "gene"))
+    .validateTermMapping(kegg_term2name, "kegg_term2name", c("term", "name"))
 
     if (!requireNamespace("clusterProfiler", quietly = TRUE)) {
         stop(

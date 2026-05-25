@@ -156,16 +156,23 @@ test_that(".parseMegalodon() retains all sites when min_coverage = 0", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# .parseMegalodon() — mod_type defaulting
+# .parseMegalodon() — mod_type validation
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that(".parseMegalodon() warns and defaults to '6mA' when mod_type is NULL", {
+test_that(".parseMegalodon() requires explicit mod_type", {
     f <- .write_tmp_megalodon(.megalodon_row())
-    expect_warning(
-        result <- comma:::.parseMegalodon(f, "s1", mod_type = NULL, min_coverage = 1L),
-        regexp = "6mA"
+    expect_error(
+        comma:::.parseMegalodon(f, "s1", mod_type = NULL, min_coverage = 1L),
+        regexp = "explicitly supplied"
     )
-    expect_equal(result$mod_type, "6mA")
+})
+
+test_that(".parseMegalodon() rejects invalid mod_type values", {
+    f <- .write_tmp_megalodon(.megalodon_row())
+    expect_error(
+        comma:::.parseMegalodon(f, "s1", mod_type = "7mX", min_coverage = 1L),
+        regexp = "unrecognized"
+    )
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
