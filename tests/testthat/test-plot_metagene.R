@@ -55,22 +55,48 @@
 
 # ─── Basic return type ────────────────────────────────────────────────────────
 
-test_that("plot_metagene: returns ggplot for valid feature type", {
+test_that("plot_metagene: returns ggplot with line data for valid feature type", {
     obj <- .make_metagene_data()
     p <- plot_metagene(obj, feature = "gene")
     expect_s3_class(p, "ggplot")
+    d <- p$data
+    # bin_center values are in [0, 1]
+    expect_true(all(d$bin_center >= 0))
+    expect_true(all(d$bin_center <= 1))
+    # sample_name matches fixture
+    expect_setequal(as.character(d$sample_name), c("ctrl_1", "treat_1"))
+    # mean_beta values are finite
+    expect_true(all(is.finite(d$mean_beta)))
 })
 
-test_that("plot_metagene: mod_type filter accepted", {
+test_that("plot_metagene: mod_type filter produces identical data when all sites match", {
     obj <- .make_metagene_data()
-    p <- plot_metagene(obj, feature = "gene", mod_type = "6mA")
-    expect_s3_class(p, "ggplot")
+    p <- plot_metagene(obj, feature = "gene")
+    p_filt <- plot_metagene(obj, feature = "gene", mod_type = "6mA")
+    expect_s3_class(p_filt, "ggplot")
+    # All sites are 6mA, so filtering by 6mA should produce identical data
+    d_all  <- p$data
+    d_filt <- p_filt$data
+    expect_identical(d_all$bin_center, d_filt$bin_center)
+    expect_identical(as.character(d_all$sample_name),
+                     as.character(d_filt$sample_name))
+    expect_identical(d_all$mean_beta, d_filt$mean_beta)
 })
 
-test_that("plot_metagene: n_bins parameter accepted", {
+test_that("plot_metagene: n_bins parameter controls bin count", {
     obj <- .make_metagene_data()
-    p <- plot_metagene(obj, feature = "gene", n_bins = 20L)
-    expect_s3_class(p, "ggplot")
+    p_20 <- plot_metagene(obj, feature = "gene", n_bins = 20L)
+    p_50 <- plot_metagene(obj, feature = "gene", n_bins = 50L)
+    # Compute expected bin centers the same way the function does
+    breaks_20 <- seq(0, 1, length.out = 21L)
+    centers_20 <- (breaks_20[-length(breaks_20)] + breaks_20[-1L]) / 2
+    breaks_50 <- seq(0, 1, length.out = 51L)
+    centers_50 <- (breaks_50[-length(breaks_50)] + breaks_50[-1L]) / 2
+    # Every observed bin_center must be present in the expected grid
+    obs_20 <- round(unique(p_20$data$bin_center), 10)
+    obs_50 <- round(unique(p_50$data$bin_center), 10)
+    expect_true(all(obs_20 %in% round(centers_20, 10)))
+    expect_true(all(obs_50 %in% round(centers_50, 10)))
 })
 
 # ─── x-axis range ─────────────────────────────────────────────────────────────
@@ -121,4 +147,5 @@ test_that("plot_metagene: works with comma_example_data", {
     data(comma_example_data)
     p <- plot_metagene(comma_example_data, feature = "gene")
     expect_s3_class(p, "ggplot")
+    expect_gt(nrow(p$data), 0L)
 })

@@ -38,7 +38,6 @@
     )
     obj <- new("commaData", rse)
 
-    ## Produce results table: use synthetic dm_padj / dm_delta_beta
     set.seed(11L)
     res <- data.frame(
         chrom         = rep("chr_sim", n_sites),
@@ -54,38 +53,58 @@
     list(obj = obj, res = res)
 }
 
-# ─── Basic return type ────────────────────────────────────────────────────────
+# ─── Data mapping ─────────────────────────────────────────────────────────────
 
-test_that("plot_heatmap: returns ggplot for valid input", {
+test_that("plot_heatmap: p$data maps site_key, sample_name, and beta exactly", {
     fix <- .make_heatmap_fixtures()
     p <- plot_heatmap(fix$res, fix$obj)
     expect_s3_class(p, "ggplot")
+    # p$data should have site_key, sample_name, beta columns
+    expect_true("site_key" %in% colnames(p$data))
+    expect_true("sample_name" %in% colnames(p$data))
+    expect_true("beta" %in% colnames(p$data))
+    # 15 sites * 3 samples = 45 rows (all padj non-NA)
+    n_nonNA <- sum(!is.na(fix$res$dm_padj))
+    expect_equal(nrow(p$data), n_nonNA * ncol(methylation(fix$obj)))
+    # Sample names should match the object
+    expect_equal(sort(unique(p$data$sample_name)), c("ctrl_1", "ctrl_2", "treat_1"))
 })
 
-test_that("plot_heatmap: n_sites controls number of displayed sites", {
+test_that("plot_heatmap: n_sites limits p$data to top N sites by padj", {
     fix <- .make_heatmap_fixtures()
     p5 <- plot_heatmap(fix$res, fix$obj, n_sites = 5L)
-    # The y scale should have at most 5 levels
-    bd <- ggplot2::ggplot_build(p5)
-    expect_lte(length(unique(bd$data[[1L]]$y)), 5L)
+    # 5 sites * 3 samples = 15 rows
+    expect_equal(nrow(p5$data), 5L * 3L)
+    # site_key should have exactly 5 unique values
+    expect_equal(length(unique(p5$data$site_key)), 5L)
 })
 
-test_that("plot_heatmap: n_sites larger than available sites clamps silently", {
+test_that("plot_heatmap: n_sites larger than available sites clamps to all available", {
     fix <- .make_heatmap_fixtures()
-    # n_sites = 1000 > 15 sites available
     p <- plot_heatmap(fix$res, fix$obj, n_sites = 1000L)
     expect_s3_class(p, "ggplot")
+    # All 15 sites should be shown
+    n_nonNA <- sum(!is.na(fix$res$dm_padj))
+    expect_equal(length(unique(p$data$site_key)), n_nonNA)
+    expect_equal(nrow(p$data), n_nonNA * 3L)
 })
 
 # ─── NA handling ─────────────────────────────────────────────────────────────
 
-test_that("plot_heatmap: NA beta values handled without error", {
+test_that("plot_heatmap: NA beta values are preserved in p$data", {
     fix <- .make_heatmap_fixtures()
     methyl_mat <- methylation(fix$obj)
     methyl_mat[1L, "ctrl_1"] <- NA
     SummarizedExperiment::assay(fix$obj, "methylation") <- methyl_mat
     p <- plot_heatmap(fix$res, fix$obj)
     expect_s3_class(p, "ggplot")
+    # NA beta should be present in p$data for that site-sample combo
+    na_rows <- is.na(p$data$beta)
+    expect_true(any(na_rows))
+    # The NA should be for the site we injected it into
+    na_site <- p$data$site_key[na_rows]
+    na_samp <- p$data$sample_name[na_rows]
+    expect_equal(na_samp, "ctrl_1")
 })
 
 # ─── Error conditions ─────────────────────────────────────────────────────────
@@ -121,10 +140,12 @@ test_that("plot_heatmap: error on invalid n_sites", {
 
 # ─── Comma example data ───────────────────────────────────────────────────────
 
-test_that("plot_heatmap: works with comma_example_data results", {
+test_that("plot_heatmap: comma_example_data has correct row count", {
     data(comma_example_data)
     cd_dm <- diffMethyl(comma_example_data, ~ condition, mod_type = "6mA")
     res <- results(cd_dm)
     p <- plot_heatmap(res, cd_dm, n_sites = 20L)
     expect_s3_class(p, "ggplot")
+    # 20 sites * 6 samples = 120 rows
+    expect_equal(nrow(p$data), 20L * 6L)
 })

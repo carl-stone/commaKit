@@ -87,12 +87,24 @@ test_that("plot_methylation_distribution: returns ggplot for valid input", {
     obj <- .make_dist_data()
     p <- plot_methylation_distribution(obj)
     expect_s3_class(p, "ggplot")
+    d <- p$data
+    # Required columns present
+    expect_true("beta" %in% colnames(d))
+    expect_true("sample_name" %in% colnames(d))
+    # Row count: n_sites * n_samples (no NAs in fixture)
+    expect_equal(nrow(d), 10L * 3L)
+    # Beta values match the methylation assay
+    methyl_mat <- methylation(obj)
+    expect_equal(sort(d$beta), sort(as.vector(methyl_mat)))
 })
 
 test_that("plot_methylation_distribution: mod_type filter returns ggplot", {
     obj <- .make_dist_data_two_mods()
+    p_unfiltered <- plot_methylation_distribution(obj)
     p <- plot_methylation_distribution(obj, mod_type = "6mA")
     expect_s3_class(p, "ggplot")
+    # Filtered data has fewer rows than unfiltered (filters to one mod_type)
+    expect_lt(nrow(p$data), nrow(p_unfiltered$data))
 })
 
 # ─── Faceting ─────────────────────────────────────────────────────────────────
@@ -121,6 +133,8 @@ test_that("plot_methylation_distribution: NAs in beta values are silently exclud
     SummarizedExperiment::assay(obj, "methylation") <- methyl_mat
     p <- plot_methylation_distribution(obj)
     expect_s3_class(p, "ggplot")
+    # Verify no NA betas remain in p$data
+    expect_true(all(!is.na(p$data$beta)))
 })
 
 # ─── Error conditions ─────────────────────────────────────────────────────────
@@ -148,6 +162,5 @@ test_that("plot_methylation_distribution: works with comma_example_data", {
     data(comma_example_data)
     p <- plot_methylation_distribution(comma_example_data)
     expect_s3_class(p, "ggplot")
+    expect_gt(nrow(p$data), 0L)
 })
-
-
