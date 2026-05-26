@@ -43,11 +43,11 @@ sites.}
 \item{\code{mean_coverage}}{Mean sequencing depth across all sites
 (including sites below the \code{min_coverage} threshold, which have
 coverage stored as 0 or their raw depth).}
-\\item{\\code{median_coverage}}{Median sequencing depth.}
-\\item{\\code{caller}}{Methylation caller that produced the data
-(e.g., \\code{\"modkit\"}), or \\code{NA} if not stored.}
-\\item{\\code{min_coverage}}{Minimum coverage threshold applied at
-construction, or \\code{NA} if not stored.}
+\item{\code{median_coverage}}{Median sequencing depth.}
+\item{\code{caller}}{Methylation caller that produced the data
+(e.g., \code{"modkit"}), or \code{NA} if not stored.}
+\item{\code{min_coverage}}{Minimum coverage threshold applied at
+construction, or \code{NA} if not stored.}
 }
 }
 \description{
@@ -67,6 +67,6 @@ ms_6mA[, c("sample_name", "condition", "mean_beta", "n_covered")]
 
 }
 \seealso{
-\code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
+\code{\link{methylation}}, \code{\link{siteCoverage}},
 \code{\link{sampleInfo}}
 }

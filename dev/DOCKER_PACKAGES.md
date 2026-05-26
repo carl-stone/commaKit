@@ -9,6 +9,7 @@ commaBot logs runtime package installs here. Carl reviews and either bakes them 
 ## System packages (apt)
 
 - `pandoc` — needed for devtools::build_vignettes(). Currently missing from the container, which blocks vignette builds.
+- `qpdf` — needed by `R CMD check` for PDF size-reduction checks when vignettes are built/compacted; without it local full checks report `qpdf is needed for checks on size reduction of PDFs`.
 
 ## Python packages
 
