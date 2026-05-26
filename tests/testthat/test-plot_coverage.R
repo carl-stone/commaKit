@@ -56,7 +56,7 @@ test_that("plot_coverage: maps exact coverage depths to x aesthetic with correct
     # Sample names should match the object
     expect_equal(sort(unique(p$data$sample_name)), c("samp1", "samp2"))
     # Depths should match the coverage assay values exactly
-    cov_mat <- coverage(obj)
+    cov_mat <- siteCoverage(obj)
     expect_equal(sort(p$data$depth), sort(as.vector(cov_mat)))
 })
 
@@ -109,7 +109,7 @@ test_that("plot_coverage: per_sample vline positions match computed medians per 
     expect_s3_class(vline_data, "data.frame")
     expect_true("median_depth" %in% colnames(vline_data))
     # Verify exact median values match stats::median of coverage per sample
-    cov_mat <- coverage(obj)
+    cov_mat <- siteCoverage(obj)
     for (samp in vline_data$sample_name) {
         expected_med <- stats::median(cov_mat[, samp])
         actual_med <- vline_data$median_depth[vline_data$sample_name == samp]
@@ -144,7 +144,7 @@ test_that("plot_coverage: single-sample object plots only that sample's depths",
     expect_equal(unique(p$data$sample_name), "samp1")
     expect_equal(nrow(p$data), 10L)  # 10 sites, 1 sample
     # Depths should match the single column exactly
-    expect_equal(sort(p$data$depth), sort(as.vector(coverage(obj_1samp))))
+    expect_equal(sort(p$data$depth), sort(as.vector(siteCoverage(obj_1samp))))
 })
 
 # ─── Comma example data ───────────────────────────────────────────────────────

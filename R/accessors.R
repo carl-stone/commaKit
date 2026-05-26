@@ -21,7 +21,7 @@ NULL
 #'   columns corresponding to samples. Rownames are site keys
 #'   (\code{"chrom:position:strand:mod_type"}); column names are sample names.
 #'
-#' @seealso \code{\link[=coverage,commaData-method]{coverage}}, \code{\link{siteInfo}},
+#' @seealso \code{\link{siteCoverage}}, \code{\link{siteInfo}},
 #'   \code{\link{sampleInfo}}
 #'
 #' @examples
@@ -38,18 +38,16 @@ setMethod("methylation", "commaData", function(object) {
     assay(object, "methylation")
 })
 
-# ─── coverage() ──────────────────────────────────────────────────────────────
+# ─── siteCoverage() ─────────────────────────────────────────────────────────
 
 #' Accessor for the sequencing coverage (read depth) matrix
 #'
 #' Retrieves the sites × samples matrix of read depth from a
-#' \code{\link{commaData}} object.
+#' \code{\link{commaData}} object. This package-specific accessor avoids
+#' overloading \code{IRanges::coverage()}, whose conventional Bioconductor
+#' meaning is genomic/Rle coverage computation.
 #'
-#' @param x A \code{commaData} object.
-#' @param shift Not used; inherited from the \code{IRanges::coverage} generic.
-#' @param width Not used; inherited from the \code{IRanges::coverage} generic.
-#' @param weight Not used; inherited from the \code{IRanges::coverage} generic.
-#' @param ... Not used.
+#' @param object A \code{commaData} object.
 #'
 #' @return An integer matrix with rows corresponding to methylation sites and
 #'   columns corresponding to samples.
@@ -58,12 +56,47 @@ setMethod("methylation", "commaData", function(object) {
 #'
 #' @examples
 #' data(comma_example_data)
-#' cov <- coverage(comma_example_data)
+#' cov <- siteCoverage(comma_example_data)
 #' summary(as.vector(cov))
 #'
 #' @export
+setGeneric("siteCoverage", function(object) standardGeneric("siteCoverage"))
+
+#' @rdname siteCoverage
+setMethod("siteCoverage", "commaData", function(object) {
+    assay(object, "coverage")
+})
+
+# ─── coverage() compatibility wrapper ────────────────────────────────────────
+
+#' Deprecated coverage accessor for commaData objects
+#'
+#' \code{coverage(commaData)} is deprecated because \code{coverage()} is an
+#' established IRanges/GenomicRanges generic for computing genomic coverage, not
+#' for retrieving an assay matrix. Use \code{\link{siteCoverage}} instead.
+#'
+#' @param x A \code{commaData} object.
+#' @param shift,width,weight,... Inherited from \code{IRanges::coverage}. These
+#'   arguments are not meaningful for the commaData assay accessor and must be
+#'   left at their defaults.
+#'
+#' @return An integer matrix with rows corresponding to methylation sites and
+#'   columns corresponding to samples.
+#'
+#' @export
 setMethod("coverage", "commaData", function(x, shift = 0L, width = NULL, weight = 1L, ...) {
-    assay(x, "coverage")
+    dots <- list(...)
+    if (!identical(shift, 0L) || !is.null(width) || !identical(weight, 1L) ||
+            length(dots) > 0L) {
+        stop(
+            "coverage() for commaData objects is deprecated and does not ",
+            "support IRanges::coverage arguments such as 'shift', 'width', ",
+            "or 'weight'. Use siteCoverage(object) to retrieve the coverage ",
+            "assay matrix."
+        )
+    }
+    .Deprecated("siteCoverage")
+    siteCoverage(x)
 })
 
 # ─── sampleInfo() ────────────────────────────────────────────────────────────
@@ -356,12 +389,14 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
     new("commaData", se_sub)
 })
 
-# ─── subset() ────────────────────────────────────────────────────────────────
+# ─── filterSites() ───────────────────────────────────────────────────────────
 
-#' Subset a commaData object by condition, modification type, or chromosome
+#' Filter a commaData object by condition, modification type, or chromosome
 #'
 #' A convenience function for filtering a \code{\link{commaData}} object by
-#' common criteria. For arbitrary index-based subsetting, use \code{[}.
+#' common criteria. For arbitrary index-based subsetting, use \code{[}. This
+#' package-specific name avoids exporting a broad \code{subset()} generic that
+#' masks \code{base::subset()}.
 #'
 #' @param x A \code{commaData} object.
 #' @param mod_type Character vector or \code{NULL}. If provided, only sites
@@ -389,26 +424,24 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
 #' @examples
 #' data(comma_example_data)
 #' # Only 6mA sites
-#' six_ma <- subset(comma_example_data, mod_type = "6mA")
+#' six_ma <- filterSites(comma_example_data, mod_type = "6mA")
 #' modTypes(six_ma)
 #'
 #' # Only GATC-context sites
-#' gatc <- subset(comma_example_data, motif = "GATC")
+#' gatc <- filterSites(comma_example_data, motif = "GATC")
 #' nrow(gatc)
 #'
 #' # Filter by mod_context (equivalent to the above for modkit data)
-#' gatc2 <- subset(comma_example_data, mod_context = "6mA_GATC")
+#' gatc2 <- filterSites(comma_example_data, mod_context = "6mA_GATC")
 #' nrow(gatc2)
 #'
 #' @export
-setGeneric("subset", function(x, ...) standardGeneric("subset"))
+filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
+                        motif = NULL, mod_context = NULL, ...) {
+    if (!is(x, "commaData")) {
+        stop("'x' must be a commaData object.")
+    }
 
-#' @rdname subset
-setMethod("subset", "commaData", function(x, mod_type = NULL,
-                                           condition = NULL,
-                                           chrom = NULL,
-                                           motif = NULL,
-                                           mod_context = NULL, ...) {
     rr <- rowRanges(x)
     mc <- GenomicRanges::mcols(rr)
     cd <- colData(x)
@@ -437,7 +470,24 @@ setMethod("subset", "commaData", function(x, mod_type = NULL,
     }
 
     x[site_keep, samp_keep]
-})
+}
+
+#' Deprecated subset method for commaData objects
+#'
+#' \code{subset(commaData)} is deprecated to avoid package-level masking of
+#' \code{base::subset()}. Use \code{\link{filterSites}} for common
+#' commaData filters or \code{[} for index-based subsetting.
+#'
+#' @inheritParams filterSites
+#' @return A \code{commaData} object containing only the selected sites and
+#'   samples.
+#' @export
+subset.commaData <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
+                             motif = NULL, mod_context = NULL, ...) {
+    .Deprecated("filterSites")
+    filterSites(x, mod_type = mod_type, condition = condition, chrom = chrom,
+                motif = motif, mod_context = mod_context, ...)
+}
 
 # ─── caller() ────────────────────────────────────────────────────────────────
 

@@ -234,7 +234,7 @@ test_that("annotateSites keep='overlap' assay data unchanged", {
     data(comma_example_data)
     result <- annotateSites(comma_example_data, keep = "overlap")
     expect_equal(methylation(result), methylation(comma_example_data))
-    expect_equal(coverage(result),    coverage(comma_example_data))
+    expect_equal(siteCoverage(result),    siteCoverage(comma_example_data))
 })
 
 # ── keep = "proximity" ────────────────────────────────────────────────────────
@@ -439,7 +439,7 @@ test_that("annotateSites assay data unchanged after annotation", {
     data(comma_example_data)
     result <- annotateSites(comma_example_data)
     expect_equal(methylation(result), methylation(comma_example_data))
-    expect_equal(coverage(result),    coverage(comma_example_data))
+    expect_equal(siteCoverage(result),    siteCoverage(comma_example_data))
 })
 
 test_that("annotateSites returns commaData with same dimensions", {

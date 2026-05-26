@@ -217,7 +217,7 @@ diffMethyl <- function(
                 ". Available: ", paste(available_mc, collapse = ", ")
             )
         }
-        object <- subset(object, mod_context = mod_context)
+        object <- filterSites(object, mod_context = mod_context)
     } else {
         if (!is.null(mod_type)) {
             .validateModType(mod_type, object)
@@ -233,7 +233,7 @@ diffMethyl <- function(
                     ". Available: ", paste(available_m, collapse = ", ")
                 )
             }
-            object <- subset(object, motif = motif)
+            object <- filterSites(object, motif = motif)
         }
     }
 
@@ -270,7 +270,7 @@ diffMethyl <- function(
     }
     # -- Extract full matrices -------------------------------------------------
     methyl_full  <- methylation(object)
-    cov_full     <- coverage(object)
+    cov_full     <- siteCoverage(object)
     rd_full      <- as.data.frame(siteInfo(object))
     n_sites_all  <- nrow(methyl_full)
 

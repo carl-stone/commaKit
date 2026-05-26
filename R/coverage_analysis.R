@@ -60,7 +60,7 @@ coverageDepth <- function(object,
     window <- as.integer(window)
 
     rd         <- as.data.frame(siteInfo(object))
-    cov_mat    <- coverage(object)
+    cov_mat    <- siteCoverage(object)
     sample_nms <- colnames(cov_mat)
     agg_fn     <- if (method == "mean") mean else stats::median
 
@@ -163,7 +163,7 @@ varianceByDepth <- function(object,
 
     if (!is.null(mod_type)) {
         .validateModType(mod_type, object)
-        object <- subset(object, mod_type = mod_type)
+        object <- filterSites(object, mod_type = mod_type)
     }
 
     if (!is.null(motif)) {
@@ -176,11 +176,11 @@ varianceByDepth <- function(object,
                 ". Available: ", paste(available_m, collapse = ", ")
             )
         }
-        object <- subset(object, motif = motif)
+        object <- filterSites(object, motif = motif)
     }
 
     methyl_mat <- methylation(object)
-    cov_mat    <- coverage(object)
+    cov_mat    <- siteCoverage(object)
     sample_nms <- colnames(methyl_mat)
 
     result_list <- vector("list", length(sample_nms))

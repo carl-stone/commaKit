@@ -108,7 +108,7 @@ test_that("methylomeSummary: all-NA sample gives NA mean_beta and median_beta, n
     methyl[, "ctrl_1"] <- NA_real_
     se_mod <- SummarizedExperiment::SummarizedExperiment(
         assays     = list(methylation = methyl,
-                       coverage    = coverage(comma_example_data)),
+                       coverage    = siteCoverage(comma_example_data)),
         rowRanges  = SummarizedExperiment::rowRanges(comma_example_data),
         colData    = SummarizedExperiment::colData(comma_example_data)
     )

@@ -147,7 +147,7 @@ test_that("mValues: alpha = 1 produces valid finite M-value matrix with correct 
     # M-values should match the actual formula: log2((m_reads + 1) / (u_reads + 1))
     # where m_reads = round(beta * cov), u_reads = cov - m_reads
     betas <- methylation(obj)
-    cov_mat <- coverage(obj)
+    cov_mat <- siteCoverage(obj)
     m_reads <- round(betas * cov_mat)
     u_reads <- cov_mat - m_reads
     expected <- log2((m_reads + 1) / (u_reads + 1))

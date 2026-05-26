@@ -58,7 +58,7 @@ test_that("minimal commaData object is valid", {
 test_that("assay matrices have no rownames", {
     obj <- .make_minimal_commaData()
     expect_null(rownames(methylation(obj)))
-    expect_null(rownames(coverage(obj)))
+    expect_null(rownames(siteCoverage(obj)))
 })
 
 test_that("rowRanges has no names", {

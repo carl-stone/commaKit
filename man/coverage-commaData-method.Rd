@@ -2,35 +2,23 @@
 % Please edit documentation in R/accessors.R
 \name{coverage,commaData-method}
 \alias{coverage,commaData-method}
-\title{Accessor for the sequencing coverage (read depth) matrix}
+\title{Deprecated coverage accessor for commaData objects}
 \usage{
 \S4method{coverage}{commaData}(x, shift = 0L, width = NULL, weight = 1L, ...)
 }
 \arguments{
 \item{x}{A \code{commaData} object.}
 
-\item{shift}{Not used; inherited from the \code{IRanges::coverage} generic.}
-
-\item{width}{Not used; inherited from the \code{IRanges::coverage} generic.}
-
-\item{weight}{Not used; inherited from the \code{IRanges::coverage} generic.}
-
-\item{...}{Not used.}
+\item{shift, width, weight, ...}{Inherited from \code{IRanges::coverage}. These
+arguments are not meaningful for the commaData assay accessor and must be
+left at their defaults.}
 }
 \value{
 An integer matrix with rows corresponding to methylation sites and
 columns corresponding to samples.
 }
 \description{
-Retrieves the sites × samples matrix of read depth from a
-\code{\link{commaData}} object.
-}
-\examples{
-data(comma_example_data)
-cov <- coverage(comma_example_data)
-summary(as.vector(cov))
-
-}
-\seealso{
-\code{\link{methylation}}, \code{\link{siteInfo}}
+\code{coverage(commaData)} is deprecated because \code{coverage()} is an
+established IRanges/GenomicRanges generic for computing genomic coverage, not
+for retrieving an assay matrix. Use \code{\link{siteCoverage}} instead.
 }

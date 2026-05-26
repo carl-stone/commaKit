@@ -84,7 +84,7 @@
 
     combined_gr <- c(annot_gr, reg_gr)
     obj2 <- new("commaData", SummarizedExperiment::SummarizedExperiment(
-            assays     = list(methylation = methylation(obj), coverage = coverage(obj)),
+            assays     = list(methylation = methylation(obj), coverage = siteCoverage(obj)),
             rowRanges  = rowRanges(obj),
             colData    = sampleInfo(obj)
         ))
@@ -315,7 +315,7 @@ test_that("error on empty annotation", {
     obj2 <- new("commaData",
                 SummarizedExperiment::SummarizedExperiment(
                     assays     = list(methylation = methylation(obj),
-                                   coverage    = coverage(obj)),
+                                   coverage    = siteCoverage(obj)),
                     rowRanges  = rowRanges(obj),
                     colData    = sampleInfo(obj)
                 ))

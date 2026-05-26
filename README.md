@@ -318,7 +318,7 @@ modContexts(comma_example_data)
 #> [1] "5mC_CCWGG" "6mA_GATC"
 
 # Subset to a single type
-obj_6mA <- subset(comma_example_data, mod_type = "6mA")
+obj_6mA <- filterSites(comma_example_data, mod_type = "6mA")
 obj_6mA
 #> class: commaData
 #> sites: 393 | samples: 6 

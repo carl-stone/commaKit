@@ -76,7 +76,7 @@ writeBED <- function(object,
     # ── Filter by mod_type ────────────────────────────────────────────────────
     if (!is.null(mod_type)) {
         .validateModType(mod_type, object)
-        object <- subset(object, mod_type = mod_type)
+        object <- filterSites(object, mod_type = mod_type)
         if (nrow(object) == 0) {
             stop("No sites remain after filtering for mod_type = '",
                  paste(mod_type, collapse = "', '"), "'.")

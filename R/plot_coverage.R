@@ -60,17 +60,17 @@ plot_coverage <- function(object,
     ## --- Optional mod_type filter -------------------------------------------
     if (!is.null(mod_type)) {
         .validateModType(mod_type, object)
-        object <- subset(object, mod_type = mod_type)
+        object <- filterSites(object, mod_type = mod_type)
     }
     if (!is.null(motif)) {
-        object <- subset(object, motif = motif)
+        object <- filterSites(object, motif = motif)
     }
     if (!is.null(mod_context)) {
-        object <- subset(object, mod_context = mod_context)
+        object <- filterSites(object, mod_context = mod_context)
     }
 
     ## --- Extract data -------------------------------------------------------
-    cov_mat    <- coverage(object)
+    cov_mat    <- siteCoverage(object)
     si         <- sampleInfo(object)
     sample_nms <- colnames(cov_mat)
     n_sites    <- nrow(cov_mat)

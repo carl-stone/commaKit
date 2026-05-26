@@ -73,7 +73,7 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
 
     if (!is.null(mod_type)) {
         .validateModType(mod_type, object)
-        object <- subset(object, mod_type = mod_type)
+        object <- filterSites(object, mod_type = mod_type)
     }
 
     # ── Filter by motif ───────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
                 ". Available: ", paste(available_m, collapse = ", ")
             )
         }
-        object <- subset(object, motif = motif)
+        object <- filterSites(object, motif = motif)
     }
 
     # ── Filter by mod_context ─────────────────────────────────────────────────
@@ -101,11 +101,11 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
                 ". Available: ", paste(available_mc, collapse = ", ")
             )
         }
-        object <- subset(object, mod_context = mod_context)
+        object <- filterSites(object, mod_context = mod_context)
     }
 
     methyl_mat <- methylation(object)
-    cov_mat    <- coverage(object)
+    cov_mat    <- siteCoverage(object)
     si         <- sampleInfo(object)
     sample_nms <- colnames(methyl_mat)
     n_sites    <- nrow(methyl_mat)

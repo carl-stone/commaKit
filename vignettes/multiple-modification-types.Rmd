@@ -87,11 +87,11 @@ high efficiency. 5mC patterns can be more variable.
 
 # Subsetting by Modification Type
 
-Use `subset()` to extract a single modification type:
+Use `filterSites()` to extract a single modification type:
 
 ```{r subset}
-only_6ma <- subset(comma_example_data, mod_type = "6mA")
-only_5mc <- subset(comma_example_data, mod_type = "5mC")
+only_6ma <- filterSites(comma_example_data, mod_type = "6mA")
+only_5mc <- filterSites(comma_example_data, mod_type = "5mC")
 
 cat("6mA sites:", nrow(methylation(only_6ma)), "\n")
 cat("5mC sites:", nrow(methylation(only_5mc)), "\n")

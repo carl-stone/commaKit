@@ -85,13 +85,13 @@ plot_pca <- function(object,
     ## --- Optional mod_type filter -------------------------------------------
     if (!is.null(mod_type)) {
         .validateModType(mod_type, object)
-        object <- subset(object, mod_type = mod_type)
+        object <- filterSites(object, mod_type = mod_type)
     }
     if (!is.null(motif)) {
-        object <- subset(object, motif = motif)
+        object <- filterSites(object, motif = motif)
     }
     if (!is.null(mod_context)) {
-        object <- subset(object, mod_context = mod_context)
+        object <- filterSites(object, mod_context = mod_context)
     }
 
     ## --- Validate color_by / shape_by (only needed when plotting) -----------

@@ -75,7 +75,7 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
     ## --- Optional mod_type filter -------------------------------------------
     if (!is.null(mod_type)) {
         .validateModType(mod_type, object)
-        object <- subset(object, mod_type = mod_type)
+        object <- filterSites(object, mod_type = mod_type)
     }
 
     ## --- Optional motif filter ----------------------------------------------
@@ -87,7 +87,7 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
                  paste(bad_m, collapse = ", "),
                  ". Available: ", paste(available_m, collapse = ", "), ".")
         }
-        object <- subset(object, motif = motif)
+        object <- filterSites(object, motif = motif)
     }
 
     ## --- Optional mod_context filter ----------------------------------------
@@ -99,12 +99,12 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
                  paste(bad_mc, collapse = ", "),
                  ". Available: ", paste(available_mc, collapse = ", "), ".")
         }
-        object <- subset(object, mod_context = mod_context)
+        object <- filterSites(object, mod_context = mod_context)
     }
 
     ## --- Compute M-values ---------------------------------------------------
     beta_mat <- methylation(object)   # sites × samples, values in [0, 1]
-    cov_mat  <- coverage(object)      # sites × samples, non-negative integers
+    cov_mat  <- siteCoverage(object)      # sites × samples, non-negative integers
 
     ## Estimated methylated read counts (round to nearest integer). Clamp to the
     ## physically possible range so malformed/manual objects cannot produce

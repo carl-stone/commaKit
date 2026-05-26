@@ -88,12 +88,12 @@ test_that("methylation() values are in [0, 1] range (ignoring NA)", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# coverage()
+# siteCoverage()
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that("coverage() returns a numeric matrix", {
+test_that("siteCoverage() returns a numeric matrix", {
     obj <- .make_two_modtype()
-    cov <- coverage(obj)
+    cov <- siteCoverage(obj)
     expect_true(is.matrix(cov))
     expect_true(is.numeric(cov))
     # Coverage values should be non-negative integers
@@ -102,9 +102,9 @@ test_that("coverage() returns a numeric matrix", {
     expect_true(all(valid >= 0))
 })
 
-test_that("coverage() has correct dimensions", {
+test_that("siteCoverage() has correct dimensions", {
     obj <- .make_two_modtype()
-    expect_equal(dim(coverage(obj)), dim(methylation(obj)))
+    expect_equal(dim(siteCoverage(obj)), dim(methylation(obj)))
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -261,42 +261,42 @@ test_that("[ subsetting by logical vector works", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# subset() method
+# filterSites() method
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that("subset() by mod_type returns only that mod type", {
+test_that("filterSites() by mod_type returns only that mod type", {
     obj   <- .make_two_modtype()
-    sub   <- subset(obj, mod_type = "6mA")
+    sub   <- filterSites(obj, mod_type = "6mA")
     types <- as.character(unique(rowData(sub)$mod_type))
     expect_equal(types, "6mA")
 })
 
-test_that("subset() by mod_type reduces site count", {
+test_that("filterSites() by mod_type reduces site count", {
     obj  <- .make_two_modtype()
-    sub  <- subset(obj, mod_type = "6mA")
+    sub  <- filterSites(obj, mod_type = "6mA")
     expect_lt(nrow(sub), nrow(obj))
 })
 
-test_that("subset() by condition returns only those samples", {
+test_that("filterSites() by condition returns only those samples", {
     obj  <- .make_two_modtype()
-    sub  <- subset(obj, condition = "control")
+    sub  <- filterSites(obj, condition = "control")
     cond <- unique(colData(sub)$condition)
     expect_equal(cond, "control")
     expect_equal(ncol(sub), 2L)
 })
 
-test_that("subset() by chrom filters sites by chromosome", {
+test_that("filterSites() by chrom filters sites by chromosome", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, chrom = "chr_sim")
+    sub <- filterSites(obj, chrom = "chr_sim")
     expect_equal(nrow(sub), nrow(obj))  # all sites are on chr_sim
 
-    sub_none <- subset(obj, chrom = "nonexistent_chr")
+    sub_none <- filterSites(obj, chrom = "nonexistent_chr")
     expect_equal(nrow(sub_none), 0L)
 })
 
-test_that("subset() returns commaData", {
+test_that("filterSites() returns commaData", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, mod_type = "6mA")
+    sub <- filterSites(obj, mod_type = "6mA")
     expect_true(is(sub, "commaData"))
 })
 
@@ -337,45 +337,45 @@ test_that("motifs() returns empty character vector when all motifs are NA", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# subset() by motif
+# filterSites() by motif
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that("subset() by motif returns only sites with that motif", {
+test_that("filterSites() by motif returns only sites with that motif", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, motif = "GATC")
+    sub <- filterSites(obj, motif = "GATC")
     expect_true(all(SummarizedExperiment::rowData(sub)$motif == "GATC"))
 })
 
-test_that("subset() by motif reduces site count", {
+test_that("filterSites() by motif reduces site count", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, motif = "GATC")
+    sub <- filterSites(obj, motif = "GATC")
     expect_lt(nrow(sub), nrow(obj))
 })
 
-test_that("subset() by motif='GATC' returns only 6mA sites", {
+test_that("filterSites() by motif='GATC' returns only 6mA sites", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, motif = "GATC")
+    sub <- filterSites(obj, motif = "GATC")
     expect_true(all(SummarizedExperiment::rowData(sub)$mod_type == "6mA"))
 })
 
-test_that("subset() with both motif and mod_type composes correctly", {
+test_that("filterSites() with both motif and mod_type composes correctly", {
     obj  <- .make_two_modtype()
-    sub  <- subset(obj, mod_type = "6mA", motif = "GATC")
+    sub  <- filterSites(obj, mod_type = "6mA", motif = "GATC")
     rd   <- SummarizedExperiment::rowData(sub)
     expect_true(all(rd$mod_type == "6mA"))
     expect_true(all(rd$motif   == "GATC"))
     expect_equal(nrow(sub), 10L)  # all 10 6mA sites have motif GATC
 })
 
-test_that("subset() by motif returns commaData", {
+test_that("filterSites() by motif returns commaData", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, motif = "GATC")
+    sub <- filterSites(obj, motif = "GATC")
     expect_true(is(sub, "commaData"))
 })
 
-test_that("subset() by non-existent motif returns zero-row object", {
+test_that("filterSites() by non-existent motif returns zero-row object", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, motif = "TTAA")
+    sub <- filterSites(obj, motif = "TTAA")
     expect_equal(nrow(sub), 0L)
 })
 
@@ -422,7 +422,7 @@ test_that("modContexts: returns character vector", {
 
 test_that("modContexts: single context returns length-1 vector", {
     data(comma_example_data)
-    sub <- subset(comma_example_data, mod_type = "6mA")
+    sub <- filterSites(comma_example_data, mod_type = "6mA")
     expect_equal(modContexts(sub), "6mA_GATC")
 })
 
@@ -437,35 +437,35 @@ test_that("modContexts: returns 'mod_type' only for NA-motif rows", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# subset(object, mod_context = ...) filtering
+# filterSites(object, mod_context = ...) filtering
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that("subset: mod_context filters to matching rows", {
+test_that("filterSites: mod_context filters to matching rows", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, mod_context = "6mA_GATC")
+    sub <- filterSites(obj, mod_context = "6mA_GATC")
     # Use siteInfo() to check mod_context (computed on demand)
     si <- siteInfo(sub)
     expect_true(all(si$mod_context == "6mA_GATC"))
     expect_equal(nrow(sub), 10L)
 })
 
-test_that("subset: mod_context = '5mC_CCWGG' retains only 5mC rows", {
+test_that("filterSites: mod_context = '5mC_CCWGG' retains only 5mC rows", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, mod_context = "5mC_CCWGG")
+    sub <- filterSites(obj, mod_context = "5mC_CCWGG")
     si <- siteInfo(sub)
     expect_true(all(si$mod_context == "5mC_CCWGG"))
     expect_equal(nrow(sub), 5L)
 })
 
-test_that("subset: mod_context with non-existent context returns 0 rows", {
+test_that("filterSites: mod_context with non-existent context returns 0 rows", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, mod_context = "4mC_GATC")
+    sub <- filterSites(obj, mod_context = "4mC_GATC")
     expect_equal(nrow(sub), 0L)
 })
 
-test_that("subset: mod_context and mod_type can be combined", {
+test_that("filterSites: mod_context and mod_type can be combined", {
     obj <- .make_two_modtype()
-    sub <- subset(obj, mod_context = "6mA_GATC", mod_type = "6mA")
+    sub <- filterSites(obj, mod_context = "6mA_GATC", mod_type = "6mA")
     expect_equal(nrow(sub), 10L)
     expect_true(all(rowData(sub)$mod_type == "6mA"))
 })
@@ -507,4 +507,29 @@ test_that("show() displays caller and min_coverage", {
     out <- capture.output(show(comma_example_data))
     expect_true(any(grepl("caller:", out, fixed = TRUE)))
     expect_true(any(grepl("min_coverage:", out, fixed = TRUE)))
+})
+
+test_that("coverage() compatibility wrapper warns and returns siteCoverage", {
+    obj <- .make_two_modtype()
+    expect_warning(
+        cov <- coverage(obj),
+        regexp = "deprecated"
+    )
+    expect_equal(cov, siteCoverage(obj))
+})
+
+test_that("coverage() compatibility wrapper rejects ignored IRanges arguments", {
+    obj <- .make_two_modtype()
+    expect_error(coverage(obj, shift = 1L), regexp = "siteCoverage")
+    expect_error(coverage(obj, width = 100L), regexp = "siteCoverage")
+    expect_error(coverage(obj, weight = 2L), regexp = "siteCoverage")
+})
+
+test_that("subset.commaData compatibility method warns and returns filterSites", {
+    obj <- .make_two_modtype()
+    expect_warning(
+        sub <- subset(obj, mod_type = "6mA"),
+        regexp = "deprecated"
+    )
+    expect_equal(sub, filterSites(obj, mod_type = "6mA"))
 })
