@@ -9,6 +9,7 @@ real_r_home=${COMMA_R45_HOME:-}
 if [ -z "$real_r_home" ]; then
   for candidate in \
     /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources \
+    /Library/Frameworks/R.framework/Versions/4.5-x86_64/Resources \
     /Library/Frameworks/R.framework/Versions/4.5/Resources
   do
     if [ -x "$candidate/bin/exec/R" ]; then
@@ -30,7 +31,23 @@ tmp_root=${TMPDIR:-/tmp}
 if [ -n "${COMMA_R45_OVERLAY_HOME:-}" ]; then
   overlay_r_home=$COMMA_R45_OVERLAY_HOME
   cleanup_overlay=false
-  rm -rf "$overlay_r_home"
+  case $(basename "$overlay_r_home") in
+    comma-r-4.5-home.*) ;;
+    *)
+      cat >&2 <<'EOF'
+COMMA_R45_OVERLAY_HOME must point to a scratch directory named comma-r-4.5-home.*.
+Refusing to populate or remove an arbitrary path.
+EOF
+      exit 1
+      ;;
+  esac
+  if [ -e "$overlay_r_home" ] && [ -n "$(find "$overlay_r_home" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+    cat >&2 <<'EOF'
+COMMA_R45_OVERLAY_HOME already exists and is not empty.
+Choose an empty scratch directory or unset COMMA_R45_OVERLAY_HOME.
+EOF
+    exit 1
+  fi
 else
   overlay_r_home=$(mktemp -d "$tmp_root/comma-r-4.5-home.XXXXXX")
   cleanup_overlay=true
@@ -69,7 +86,9 @@ for item in "$real_r_home/etc"/*; do
 done
 
 rm "$overlay_r_home/etc/Makeconf"
-sed 's#^LIBR = .*#LIBR = -L"$(R_HOME)/lib$(R_ARCH)" -lR#' \
+sed \
+  -e "s#/Library/Frameworks/R.framework/Resources#$overlay_r_home#g" \
+  -e 's#^LIBR = .*#LIBR = -L"$(R_HOME)/lib$(R_ARCH)" -lR#' \
   "$real_r_home/etc/Makeconf" > "$overlay_r_home/etc/Makeconf"
 
 export R_HOME=$overlay_r_home
