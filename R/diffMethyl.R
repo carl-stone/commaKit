@@ -39,6 +39,20 @@ NULL
 #' \pkg{limma} (\code{BiocManager::install("limma")}). Effect sizes are
 #' reported on the original beta scale.
 #'
+#' \strong{Method selection guidance:}
+#' Use the default \code{"methylkit"} backend when you want compatibility with
+#' established \pkg{methylKit} workflows or need results that closely follow
+#' methylKit's logistic-regression conventions. Use \code{"quasi_f"} as a
+#' good general-purpose alternative for bacterial methylomes when you want a
+#' count-aware model with empirical Bayes dispersion shrinkage and genome-wide
+#' multiple-testing correction handled entirely inside \pkg{comma}. It is often
+#' a good first alternative if methylKit convergence warnings, zero-variance
+#' sites, or runtime become distracting. Use \code{"limma"} when you want the
+#' familiar \pkg{limma} empirical-Bayes linear-model workflow on M-values,
+#' especially for complete datasets with few replicates per group. All three
+#' backends report \code{dm_delta_beta} on the original beta scale, so effect
+#' sizes remain comparable even when p-values differ.
+#'
 #' \strong{Multiple mod contexts:} When \code{mod_context = NULL} (default),
 #' all modification contexts (mod_type x motif combinations) present in the
 #' object are tested independently and results are combined. Sites not belonging
@@ -81,7 +95,8 @@ NULL
 #'   filtering. Requires \pkg{methylKit} (Bioconductor).
 #'   \code{"quasi_f"} applies empirical Bayes shrinkage of quasibinomial
 #'   dispersions via \code{\link[limma]{squeezeVar}} (quasi-likelihood F-test;
-#'   count-data EB, recommended for small n). Requires \pkg{limma}.
+#'   count-data EB), making it a good general-purpose alternative for bacterial
+#'   methylomes. Requires \pkg{limma}.
 #'   \code{"limma"} applies empirical Bayes variance shrinkage via
 #'   \code{\link[limma]{eBayes}} on M-value-transformed data; recommended when
 #'   replicates are few (n < 3 per group). Requires \pkg{limma}.
