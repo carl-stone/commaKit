@@ -83,6 +83,29 @@ test_that("methylomeSummary: mean_beta matches manual computation", {
     expect_equal(actual_mean, expected_mean, tolerance = 1e-10)
 })
 
+test_that("methylomeSummary: beta and coverage summaries use documented inputs", {
+    data(comma_example_data)
+    obj <- comma_example_data[seq_len(4), "ctrl_1"]
+
+    methyl <- methylation(obj)
+    cov <- siteCoverage(obj)
+    methyl[, 1] <- c(NA_real_, 0.25, 0.75, NA_real_)
+    cov[, 1] <- c(1L, 10L, 20L, NA_integer_)
+    SummarizedExperiment::assay(obj, "methylation") <- methyl
+    SummarizedExperiment::assay(obj, "coverage") <- cov
+
+    result <- methylomeSummary(obj)
+
+    expect_equal(result$n_sites, 4L)
+    expect_equal(result$n_covered, 2L)
+    expect_equal(result$mean_beta, mean(c(0.25, 0.75)))
+    expect_equal(result$median_beta, stats::median(c(0.25, 0.75)))
+    expect_equal(result$frac_methylated, mean(c(0.25, 0.75) > 0.5))
+    expect_equal(result$mean_coverage, mean(c(1L, 10L, 20L)))
+    expect_equal(result$median_coverage, stats::median(c(1L, 10L, 20L)))
+    expect_false(identical(result$mean_coverage, mean(c(10L, 20L))))
+})
+
 test_that("methylomeSummary: n_covered matches non-NA count", {
     data(comma_example_data)
     result <- methylomeSummary(comma_example_data)
