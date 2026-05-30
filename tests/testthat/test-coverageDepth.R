@@ -1,3 +1,44 @@
+.make_coverage_depth_object <- function() {
+    positions <- c(1L, 5L, 10L, 21L, 30L)
+    methyl <- matrix(
+        c(0.1, 0.2, 0.3, 0.4, 0.5,
+          0.2, 0.3, 0.4, 0.5, 0.6),
+        nrow = length(positions),
+        dimnames = list(NULL, c("s1", "s2"))
+    )
+    cov <- matrix(
+        c(10L, 20L, 35L, 40L, 60L,
+          5L, 15L, 25L, 35L, 45L),
+        nrow = length(positions),
+        dimnames = list(NULL, c("s1", "s2"))
+    )
+    site_gr <- GenomicRanges::GRanges(
+        seqnames = rep("chr_test", length(positions)),
+        ranges = IRanges::IRanges(start = positions, width = 1L),
+        strand = rep("+", length(positions)),
+        mod_type = factor(rep("6mA", length(positions)),
+                          levels = c("4mC", "5mC", "6mA")),
+        motif = rep("GATC", length(positions))
+    )
+    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+        seqnames = "chr_test",
+        seqlengths = 40L,
+        isCircular = FALSE
+    )
+    col_data <- S4Vectors::DataFrame(
+        sample_name = c("s1", "s2"),
+        condition = c("control", "treatment"),
+        replicate = c(1L, 1L),
+        row.names = c("s1", "s2")
+    )
+    rse <- SummarizedExperiment::SummarizedExperiment(
+        assays = list(methylation = methyl, coverage = cov),
+        rowRanges = site_gr,
+        colData = col_data
+    )
+    new("commaData", rse)
+}
+
 test_that("coverageDepth: returns a data.frame", {
     data(comma_example_data)
     result <- coverageDepth(comma_example_data, window = 10000L)
@@ -58,6 +99,31 @@ test_that("coverageDepth: method='median' and 'mean' both return valid results w
     expect_true(length(mean_depths) > 0)
     expect_true(all(is.finite(med_depths)))
     expect_true(all(is.finite(mean_depths)))
+})
+
+test_that("coverageDepth: exact window aggregation keeps empty windows as NA", {
+    object <- .make_coverage_depth_object()
+
+    result_mean <- coverageDepth(object, window = 10L, method = "mean")
+    result_median <- coverageDepth(object, window = 10L, method = "median")
+
+    expect_equal(nrow(result_mean), 8L)
+    expect_equal(
+        result_mean[result_mean$sample_name == "s1", "depth"],
+        c(mean(c(10, 20, 35)), NA_real_, mean(c(40, 60)), NA_real_)
+    )
+    expect_equal(
+        result_mean[result_mean$sample_name == "s2", "depth"],
+        c(mean(c(5, 15, 25)), NA_real_, mean(c(35, 45)), NA_real_)
+    )
+    expect_equal(
+        result_median[result_median$sample_name == "s1", "depth"],
+        c(20, NA_real_, 50, NA_real_)
+    )
+    expect_equal(
+        result_median[result_median$sample_name == "s2", "depth"],
+        c(15, NA_real_, 40, NA_real_)
+    )
 })
 
 test_that("coverageDepth: depth values are non-negative where not NA", {

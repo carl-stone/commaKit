@@ -80,6 +80,11 @@ coverageDepth <- function(object,
 
         chr_idx  <- which(rd$chrom == chr)
         chr_pos  <- rd$position[chr_idx]
+        win_index <- if (length(chr_pos) > 0L) {
+            as.integer((chr_pos - 1L) %/% window) + 1L
+        } else {
+            integer(0)
+        }
 
         sample_dfs <- vector("list", length(sample_nms))
 
@@ -87,11 +92,17 @@ coverageDepth <- function(object,
             samp     <- sample_nms[si]
             chr_cov  <- as.numeric(cov_mat[chr_idx, samp])
 
-            depths <- vapply(seq_along(win_starts), function(wi) {
-                in_win <- chr_pos >= win_starts[wi] & chr_pos <= win_ends[wi]
-                if (!any(in_win)) return(NA_real_)
-                agg_fn(chr_cov[in_win], na.rm = TRUE)
-            }, numeric(1))
+            depths <- rep(NA_real_, length(win_starts))
+            if (length(chr_cov) > 0L) {
+                valid_window <- win_index >= 1L & win_index <= length(win_starts)
+                depth_by_window <- vapply(
+                    split(chr_cov[valid_window], win_index[valid_window]),
+                    agg_fn,
+                    numeric(1),
+                    na.rm = TRUE
+                )
+                depths[as.integer(names(depth_by_window))] <- depth_by_window
+            }
 
             df <- data.frame(
                 chrom        = chr,
