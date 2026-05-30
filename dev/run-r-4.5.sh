@@ -80,6 +80,57 @@ sed "s#/Library/Frameworks/R.framework/Resources#$overlay_r_home#g" \
   "$real_r_home/bin/R" > "$overlay_r_home/bin/R"
 chmod +x "$overlay_r_home/bin/R"
 
+rm "$overlay_r_home/bin/Rscript"
+cat > "$overlay_r_home/bin/Rscript" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+r_home=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+r_bin="$r_home/bin/R"
+r_args=(--no-echo --no-restore)
+expr_mode=false
+
+if [[ $# -eq 0 || "${1:-}" == "--help" ]]; then
+  exec "$r_bin" --help
+fi
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --version)
+      exec "$r_bin" --version
+      ;;
+    -e)
+      [[ $# -ge 2 ]] || {
+        echo "Rscript: option '-e' requires an argument" >&2
+        exit 1
+      }
+      expr_mode=true
+      r_args+=(-e "$2")
+      shift 2
+      ;;
+    --)
+      shift
+      exec "$r_bin" "${r_args[@]}" --args "$@"
+      ;;
+    -*)
+      r_args+=("$1")
+      shift
+      ;;
+    *)
+      if [[ "$expr_mode" == true ]]; then
+        exec "$r_bin" "${r_args[@]}" --args "$@"
+      fi
+      script_file="$1"
+      shift
+      exec "$r_bin" "${r_args[@]}" --file="$script_file" --args "$@"
+      ;;
+  esac
+done
+
+exec "$r_bin" "${r_args[@]}"
+EOF
+chmod +x "$overlay_r_home/bin/Rscript"
+
 for item in "$real_r_home/etc"/*; do
   name=$(basename "$item")
   ln -s "$item" "$overlay_r_home/etc/$name"

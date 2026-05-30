@@ -24,6 +24,21 @@ Labels follow a namespaced scheme:
 
 ---
 
+## Local R Version
+
+The project records R 4.5.3 in `renv.lock`, `renv/settings.json`, and
+`.R-version`. Use `.R-version` with tools such as `rig`, `mise`, or `asdf` to
+select the same R minor version as CI before activating `renv`.
+
+`renv.lock` remains the dependency source of truth. `.R-version` only helps
+local version managers choose the matching R executable.
+
+On macOS machines where the default framework R has moved ahead of CI,
+`dev/run-r-4.5.sh` is a convenience wrapper for running checks against a local
+R 4.5 framework.
+
+---
+
 ## Strategic & Context Documents
 
 These files are maintained in `dev/`:

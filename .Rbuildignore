@@ -2,6 +2,7 @@
 ^renv\.lock$
 ^comma\.Rproj$
 ^\.Rproj\.user$
+^\.R-version$
 ^LICENSE\.md$
 ^README\.Rmd$
 ^\.github$
