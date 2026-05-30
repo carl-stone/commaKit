@@ -1,0 +1,216 @@
+---
+title: "Understanding the commaData object"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Understanding the commaData object}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+# Why `commaData` matters
+
+Most `comma` workflow functions start from a `commaData` object, and many
+return an updated `commaData` object with added analysis layers. Other
+functions expose those layers as tables, plots, or enrichment result lists.
+The object is the stable substrate for the workflow: rows are genomic
+methylation sites, columns are samples, assays store measurements, and later
+analyses add named layers to the same biological coordinates.
+
+```{r load}
+library(comma)
+data(comma_example_data)
+
+comma_example_data
+```
+
+The built-in example data are synthetic, but they exercise the same object
+model used for real data. They contain multiple modification types and multiple
+sequence contexts, so the examples below avoid assuming that a data set is
+specific to one methylation chemistry.
+
+# Object anatomy
+
+`commaData` extends Bioconductor's `RangedSummarizedExperiment`. The core
+dimensions therefore have the same interpretation throughout the package:
+
+- rows are one-base methylation sites;
+- columns are biological samples;
+- assays are site-by-sample matrices;
+- `rowRanges()` stores genomic coordinates;
+- `colData()` stores sample metadata;
+- `metadata()` stores package-level context such as annotations, motif sites,
+  caller information, and analysis parameters.
+
+```{r dimensions}
+dim(comma_example_data)
+SummarizedExperiment::assayNames(comma_example_data)
+```
+
+The main package accessors expose the two required assay matrices. Beta values
+are proportions in `[0, 1]`; coverage values are read depths.
+
+```{r assays}
+methylation(comma_example_data)[1:5, 1:3]
+siteCoverage(comma_example_data)[1:5, 1:3]
+```
+
+Sample metadata live in `colData()` and are also available through
+`sampleInfo()`.
+
+```{r samples}
+sampleInfo(comma_example_data)
+```
+
+# Genomic row identity
+
+Schema v2 stores genomic identity in `rowRanges()`, not in string row names.
+Each row is a one-base `GRanges` range with methylation-site metadata in the
+range metadata columns.
+
+```{r row-ranges}
+rr <- SummarizedExperiment::rowRanges(comma_example_data)
+rr[1:4]
+GenomeInfoDb::seqinfo(rr)
+```
+
+For human-readable inspection, `siteInfo()` reconstructs a flat table from
+`rowRanges()` and its metadata columns.
+
+```{r site-info}
+si <- siteInfo(comma_example_data)
+si[1:5, c("chrom", "position", "strand", "mod_type", "motif",
+          "mod_context", "site_key")]
+```
+
+The `site_key` column is a display label. Alignment between objects and samples
+is based on genomic ranges and site metadata, not on matching string keys.
+
+# Modification type, context, and `mod_context`
+
+The `mod_context` value should be read as **modification + context**. It is not
+just a synonym for motif.
+
+- `mod_type` answers which chemical or base modification is measured, such as
+  `6mA`, `5mC`, or `4mC`.
+- `motif` answers which sequence or biological context the site belongs to,
+  such as `GATC`, `CCWGG`, `CpG`, or a future context definition.
+- `mod_context` answers which biological class of sites is being analyzed,
+  such as `6mA_GATC` or `5mC_CCWGG`.
+
+```{r mod-contexts}
+modTypes(comma_example_data)
+motifs(comma_example_data)
+modContexts(comma_example_data)
+```
+
+The built-in data illustrate that a `mod_context` is the combination of both
+parts.
+
+```{r context-table}
+context_table <- unique(as.data.frame(si[, c("mod_type", "motif", "mod_context")]))
+context_table[order(context_table$mod_context), ]
+```
+
+When a caller does not provide motif information, `motif` may be `NA` and the
+computed `mod_context` falls back to the modification type alone. Code that
+uses `modContexts()` rather than hard-coded labels remains compatible with
+single-context, multi-context, and future-context data sets.
+
+This distinction is important for differential methylation. Analyses should not
+silently pool distinct `mod_context` groups, because methylation at different
+modification-plus-context units can reflect different biological systems.
+
+# Metadata and package-level context
+
+Object-level context is stored in `metadata()`. In this example, annotation and
+motif-site containers are available without reading any external files.
+
+```{r metadata}
+md <- S4Vectors::metadata(comma_example_data)
+names(md)
+
+c(
+    annotation_features = length(annotation(comma_example_data)),
+    motif_sites = length(motifSites(comma_example_data))
+)
+
+vapply(md, function(x) paste(class(x), collapse = "/"), character(1))
+```
+
+# Analysis layers
+
+A useful way to learn `comma` is to think in layers:
+
+- the measurement layer contains methylation and coverage assays;
+- the coordinate layer is `rowRanges()`;
+- the sample layer is `colData()`;
+- the annotation layer adds feature relationships to sites;
+- the statistical layer adds differential methylation results;
+- plotting, filtering, and enrichment functions interpret those layers.
+
+The object dimensions stay anchored to the same sites and samples while layers
+are added or recomputed.
+
+```{r annotation-layer}
+base_cols <- colnames(siteInfo(comma_example_data))
+
+annotated <- annotateSites(comma_example_data, keep = "overlap")
+annotation_cols <- setdiff(colnames(siteInfo(annotated)), base_cols)
+annotation_cols
+
+identical(dim(comma_example_data), dim(annotated))
+```
+
+Layering is intended to be idempotent: rerunning the same layer with the same
+arguments recomputes the named layer columns rather than creating a second copy
+of the biological rows.
+
+```{r idempotent-annotation}
+annotated_again <- annotateSites(annotated, keep = "overlap")
+identical(colnames(siteInfo(annotated)), colnames(siteInfo(annotated_again)))
+identical(dim(annotated), dim(annotated_again))
+```
+
+Differential methylation adds a statistical result layer. By default,
+`diffMethyl()` works over the modification contexts present in the object,
+which keeps distinct modification-plus-context units separate.
+
+```{r diff-layer}
+dm <- diffMethyl(annotated, formula = ~ condition, method = "quasi_f")
+dm_cols <- setdiff(colnames(siteInfo(dm)), colnames(siteInfo(annotated)))
+dm_cols
+
+S4Vectors::metadata(dm)$diffMethyl_params[c("method", "p_adjust_method")]
+```
+
+`results()` exposes that layer as a tidy data frame while preserving the site
+metadata needed to interpret each row.
+
+```{r results-layer}
+res <- results(dm)
+res <- res[order(res$dm_padj), ]
+head(res[, c("chrom", "position", "strand", "mod_type", "motif",
+             "mod_context", "dm_padj", "dm_delta_beta")])
+```
+
+The important pattern is that downstream functions do not replace the central
+object model. They add, expose, or interpret layers attached to the same
+genomic methylation-site substrate.
+
+# Session information
+
+```{r session-info}
+sessionInfo()
+```
