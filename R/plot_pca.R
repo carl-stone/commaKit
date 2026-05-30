@@ -20,10 +20,12 @@ NULL
 #'   are included. If \code{NULL} (default), all modification contexts are
 #'   included.
 #' @param color_by Character string naming a column in \code{sampleInfo(object)}
-#'   to use for point color. Default \code{"condition"}.
+#'   to use for point color. When \code{return_data = TRUE}, this column is
+#'   validated and included in the returned data. Default \code{"condition"}.
 #' @param shape_by Character string naming a column in \code{sampleInfo(object)}
 #'   to use for point shape. If \code{NULL} (default), all points use the same
-#'   shape. Ignored when \code{return_data = TRUE}.
+#'   shape. When \code{return_data = TRUE}, a non-\code{NULL} column is
+#'   validated and included in the returned data.
 #' @param return_data Logical. If \code{TRUE}, return the underlying scores
 #'   \code{data.frame} instead of a ggplot object. Useful for building custom
 #'   plots. Default \code{FALSE}.
@@ -47,7 +49,8 @@ NULL
 #'
 #'   When \code{return_data = TRUE}, a \code{data.frame} with one row per
 #'   sample containing columns \code{PC1}, \code{PC2}, \code{sample_name}, and
-#'   all columns from \code{sampleInfo(object)}. The attribute
+#'   all columns from \code{sampleInfo(object)}, including requested
+#'   \code{color_by} and non-\code{NULL} \code{shape_by} columns. The attribute
 #'   \code{percentVar} (accessible via \code{attr(result, "percentVar")}) is a
 #'   named numeric vector giving the percentage of variance explained by PC1 and
 #'   PC2.
@@ -94,16 +97,27 @@ plot_pca <- function(object,
         object <- filterSites(object, mod_context = mod_context)
     }
 
-    ## --- Validate color_by / shape_by (only needed when plotting) -----------
+    ## --- Validate color_by / shape_by ---------------------------------------
     si <- sampleInfo(object)
-    if (!return_data) {
-        if (!color_by %in% colnames(si)) {
-            stop("'color_by' column '", color_by, "' not found in sampleInfo(object). ",
-                 "Available columns: ", paste(colnames(si), collapse = ", "), ".")
+    si_cols <- colnames(si)
+    if (!is.character(color_by) || length(color_by) != 1L ||
+        is.na(color_by) || !nzchar(color_by)) {
+        stop("'color_by' must be a single non-empty character string naming ",
+             "a column in sampleInfo(object).")
+    }
+    if (!color_by %in% si_cols) {
+        stop("'color_by' column '", color_by, "' not found in sampleInfo(object). ",
+             "Available columns: ", paste(si_cols, collapse = ", "), ".")
+    }
+    if (!is.null(shape_by)) {
+        if (!is.character(shape_by) || length(shape_by) != 1L ||
+            is.na(shape_by) || !nzchar(shape_by)) {
+            stop("'shape_by' must be NULL or a single non-empty character ",
+                 "string naming a column in sampleInfo(object).")
         }
-        if (!is.null(shape_by) && !shape_by %in% colnames(si)) {
+        if (!shape_by %in% si_cols) {
             stop("'shape_by' column '", shape_by, "' not found in sampleInfo(object). ",
-                 "Available columns: ", paste(colnames(si), collapse = ", "), ".")
+                 "Available columns: ", paste(si_cols, collapse = ", "), ".")
         }
     }
 

@@ -162,10 +162,34 @@ test_that("plot_pca: return_data attaches percentVar attribute", {
     expect_true(all(pv >= 0 & pv <= 100))
 })
 
-test_that("plot_pca: return_data = TRUE skips color_by validation", {
+test_that("plot_pca: return_data includes requested color and shape columns", {
     obj <- .make_pca_data()
-    # Would error if color_by were validated; should not error with return_data = TRUE
-    expect_no_error(plot_pca(obj, color_by = "nonexistent_col", return_data = TRUE))
+    d <- plot_pca(obj,
+                  color_by = "condition",
+                  shape_by = "replicate",
+                  return_data = TRUE)
+    si <- as.data.frame(sampleInfo(obj))
+    si <- si[match(d$sample_name, si$sample_name), , drop = FALSE]
+
+    expect_true(all(c("condition", "replicate") %in% colnames(d)))
+    expect_equal(d$condition, si$condition)
+    expect_equal(d$replicate, si$replicate)
+})
+
+test_that("plot_pca: return_data = TRUE validates missing color_by column", {
+    obj <- .make_pca_data()
+    expect_error(
+        plot_pca(obj, color_by = "nonexistent_col", return_data = TRUE),
+        "'color_by' column 'nonexistent_col' not found"
+    )
+})
+
+test_that("plot_pca: return_data = TRUE validates missing shape_by column", {
+    obj <- .make_pca_data()
+    expect_error(
+        plot_pca(obj, shape_by = "nonexistent_col", return_data = TRUE),
+        "'shape_by' column 'nonexistent_col' not found"
+    )
 })
 
 # ─── Comma example data ───────────────────────────────────────────────────────

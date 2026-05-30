@@ -31,11 +31,13 @@ are included. If \code{NULL} (default), all modification contexts are
 included.}
 
 \item{color_by}{Character string naming a column in \code{sampleInfo(object)}
-to use for point color. Default \code{"condition"}.}
+to use for point color. When \code{return_data = TRUE}, this column is
+validated and included in the returned data. Default \code{"condition"}.}
 
 \item{shape_by}{Character string naming a column in \code{sampleInfo(object)}
 to use for point shape. If \code{NULL} (default), all points use the same
-shape. Ignored when \code{return_data = TRUE}.}
+shape. When \code{return_data = TRUE}, a non-\code{NULL} column is
+validated and included in the returned data.}
 
 \item{return_data}{Logical. If \code{TRUE}, return the underlying scores
 \code{data.frame} instead of a ggplot object. Useful for building custom
@@ -50,7 +52,8 @@ labels. Each point represents one sample and is labeled with its
 
 When \code{return_data = TRUE}, a \code{data.frame} with one row per
 sample containing columns \code{PC1}, \code{PC2}, \code{sample_name}, and
-all columns from \code{sampleInfo(object)}. The attribute
+all columns from \code{sampleInfo(object)}, including requested
+\code{color_by} and non-\code{NULL} \code{shape_by} columns. The attribute
 \code{percentVar} (accessible via \code{attr(result, "percentVar")}) is a
 named numeric vector giving the percentage of variance explained by PC1 and
 PC2.
