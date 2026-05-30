@@ -514,10 +514,10 @@ test_that("diffMethyl: dm_delta_beta is strongly negative for is_diff 6mA sites 
 test_that("diffMethyl: majority of is_diff 6mA sites recovered at pvalue < 0.2 in comma_example_data", {
     # With a strong simulated signal (~0.65 delta_beta for 30 sites), diffMethyl()
     # should detect at least half of the ground-truth differentially methylated sites.
-    # Note: comma_example_data has only 3 samples (2 control + 1 treatment), giving
-    # 1 residual df for the quasibinomial GLM. FDR-corrected padj < 0.05 is not
-    # achievable with this few replicates. We use the raw p-value at a lenient
-    # threshold (0.2) to verify the model correctly ranks differential sites.
+    # Note: comma_example_data has 6 samples (3 control + 3 treatment), but this
+    # small simulated fixture still makes FDR-corrected padj < 0.05 too strict
+    # for a recovery smoke test. Use a lenient raw p-value threshold (0.2) to
+    # verify the model correctly ranks differential sites.
     data(comma_example_data)
     dm  <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA",
                       method = "quasi_f")
