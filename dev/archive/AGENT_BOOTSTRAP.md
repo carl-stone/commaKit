@@ -137,7 +137,7 @@ Synthetic `commaData` created by `data-raw/create_example_data.R` (`set.seed(131
 ### Week 1-2: Understand the data structure
 - Read `R/commaData_class.R` and `R/commaData_constructor.R`
 - Run `data(comma_example_data); comma_example_data` in R console
-- Explore accessors: `methylation()`, `coverage()`, `modType()`, `modContext()`
+- Explore accessors: `methylation()`, `coverage()`, `modTypes()`, `modContexts()`
 - Read the getting-started vignette
 
 ### Week 3-4: Understand the analysis pipeline
