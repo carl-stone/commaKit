@@ -1,6 +1,6 @@
 # Claire's Onboarding Path
 
-**Audience**: Claire — second-year PhD student in Behringer lab, decent at R, new to package development
+**Audience**: Claire — second-year PhD student, decent at R, new to package development
 
 **Timeline**: 7 weeks (can be compressed or extended)
 
@@ -25,10 +25,11 @@
    ```r
    methylation(comma_example_data)
    coverage(comma_example_data)
-   modType(comma_example_data)
-   modContext(comma_example_data)
-   rowData(comma_example_data)
-   colData(comma_example_data)
+   modTypes(comma_example_data)
+   modContexts(comma_example_data)
+   siteInfo(comma_example_data)
+   sampleInfo(comma_example_data)
+   rowRanges(comma_example_data)  # genomic positions as GRanges
    ```
 4. Read the "Getting Started" vignette:
    ```r
@@ -37,7 +38,7 @@
 
 ### Questions to answer
 - What's the difference between `mod_type` and `mod_context`?
-- Why does the same site appear multiple times in `rowData`?
+- Why are genomic positions stored in `rowRanges()` instead of rowData?
 - What does the `coverage()` matrix represent?
 
 ---
@@ -53,26 +54,26 @@
    ```r
    # This is already in the vignette, but type it out yourself
    cdata <- comma_example_data
-   
+
    # Annotate sites to genomic features
-   cdata <- annotateSites(cdata, features, type = "all")
-   
+   cdata <- annotateSites(cdata, keep = "overlap")
+
    # Differential methylation testing
-   cdata <- diffMethyl(cdata, method = "limma")
-   
+   cdata <- diffMethyl(cdata, formula = ~ condition, mod_type = "6mA")
+
    # Extract results
    res <- results(cdata)
-   res_sig <- filterResults(res, padj_threshold = 0.05)
-   
+   res_sig <- filterResults(cdata, padj = 0.05, delta_beta = 0.2)
+
    # Visualize
    plot_volcano(res_sig)
-   plot_heatmap(cdata, top_n = 50)
+   plot_heatmap(res_sig, cdata, n_sites = 30L)
    ```
 
 2. Try different methods:
    ```r
-   cdata <- diffMethyl(cdata, method = "methylkit")
-   cdata <- diffMethyl(cdata, method = "quasi_f")
+   cdata <- diffMethyl(cdata, formula = ~ condition, mod_type = "6mA", method = "methylkit")
+   cdata <- diffMethyl(cdata, formula = ~ condition, mod_type = "6mA", method = "limma")
    ```
 
 3. Compare results between methods
@@ -80,7 +81,7 @@
 ### Questions to answer
 - What's the difference between the three `diffMethyl()` backends?
 - Why might you choose one method over another?
-- What does `annotateSites(type = "all")` do vs. `type = "overlap"`?
+- What does `annotateSites(keep = "overlap")` do vs. `keep = "proximity"`?
 
 ---
 

@@ -1,2 +1,0 @@
-CJS 2026-04-02
-  TODO: Change plot_methylation_distribution() so that with no filter arguments it plots all mod_contexts and facets by mod_context. If mod_context is used to filter for a single mod_context, then don't facet and just make the one plot. If mod_type or motif arguments are used to filter and it matches more than one mod_context, then facet by mod_context.

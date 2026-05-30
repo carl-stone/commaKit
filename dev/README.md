@@ -1,6 +1,6 @@
-# comma Development Directory
+# commaKit Development Directory
 
-This directory holds project-management context, durable knowledge, and strategic documents for comma.
+This directory holds project-management context, durable knowledge, and strategic documents for commaKit.
 
 **Maintained by:** commaBot
 **Audience:** Carl, Claire, future agents, and any human contributor
@@ -9,7 +9,7 @@ This directory holds project-management context, durable knowledge, and strategi
 
 ## Tactical Work: GitHub Issues & PRs
 
-**The tactical source of truth for current work is [GitHub Issues](https://github.com/carl-stone/CoMMA/issues) and [Pull Requests](https://github.com/carl-stone/CoMMA/pulls).**
+**The tactical source of truth for current work is [GitHub Issues](https://github.com/carl-stone/comma/issues) and [Pull Requests](https://github.com/carl-stone/comma/pulls).**
 
 If you want to know what is happening, what needs to be done, or what is blocked — go to GitHub Issues. That is where tasks live, get labeled, and get tracked.
 
@@ -26,7 +26,7 @@ Labels follow a namespaced scheme:
 
 ## Strategic & Context Documents
 
-These files are still maintained in `dev/`:
+These files are maintained in `dev/`:
 
 | Question | Read this |
 |----------|-----------|

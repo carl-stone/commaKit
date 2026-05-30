@@ -1,6 +1,6 @@
 # Design Decisions — Why We Made These Choices
 
-**Last updated:** 2026-05-14
+**Last updated:** 2026-05-30
 **Maintained by:** commaBot
 
 This document records significant architectural and API decisions. When you're tempted to change something, check here first to understand why it was designed this way.
@@ -9,14 +9,14 @@ This document records significant architectural and API decisions. When you're t
 
 ## D-001: diffMethyl loops by mod_context, not mod_type
 
-**Decision:** Differential methylation tests each `mod_context` (mod_type × motif combination) independently, not each `mod_type`.
+**Decision:** Differential methylation tests each `mod_context` (mod_type x motif combination) independently, not each `mod_type`.
 
 **Rationale:** Different modification contexts are biologically distinct. 6mA at GATC (Dam methyltransferase) and 6mA at ACCACC (Cellulomonas-specific) are not the same signal. Pooling them would create spurious associations.
 
 **Example:**
-- `6mA_GATC` — 393 sites, tested separately
-- `5mC_CCWGG` — 195 sites, tested separately
-- A site that's `6mA_GATC` is NOT tested in the `5mC_CCWGG` model
+- `6mA:GATC` — 393 sites, tested separately
+- `5mC:CCWGG` — 195 sites, tested separately
+- A site that's `6mA:GATC` is NOT tested in the `5mC:CCWGG` model
 
 **Consequence:** Multiple testing correction is genome-wide across all mod_contexts, not per-mod_type.
 
@@ -93,17 +93,18 @@ This document records significant architectural and API decisions. When you're t
 
 ---
 
-## D-007: commaData extends SummarizedExperiment
+## D-007: commaData extends RangedSummarizedExperiment
 
-**Decision:** The core data container is an S4 class extending `SummarizedExperiment`.
+**Decision:** The core data container is an S4 class extending `RangedSummarizedExperiment` (migrated from `SummarizedExperiment` in Schema v2, PR #100).
 
-**Rationale:** Idiomatic for Bioconductor. Users familiar with DESeq2, edgeR, or other Bioc packages will recognize the pattern. Enables reuse of Bioc infrastructure (rowRanges, colData, assays).
+**Rationale:** Idiomatic for Bioconductor. `RangedSummarizedExperiment` stores genomic positions as `GRanges` in `rowRanges()`, enabling native `findOverlaps()`-based operations. Users familiar with DESeq2, edgeR, or other Bioc packages will recognize the pattern.
 
 **Consequence:**
+- Genomic positions stored in `rowRanges()` as 1-bp `GRanges`
 - `methylation()` and `coverage()` are assay accessors
-- `rowData()` holds per-site metadata
-- `colData()` holds per-sample metadata
-- `genome()` and `annotation()` are custom slots
+- `siteInfo()` provides backward-compatible flat DataFrame access
+- Genome info from `Seqinfo` (per `seqinfo(object)`)
+- Annotation and motif sites stored in `metadata()`
 
 **Do not change:** Core to the package architecture.
 
@@ -124,15 +125,15 @@ This document records significant architectural and API decisions. When you're t
 
 ---
 
-## D-009: Genome size from genomeInfo, never hardcoded
+## D-009: Genome size from Seqinfo, never hardcoded
 
-**Decision:** Any function that needs chromosome length must get it from `genomeInfo(object)`, never hardcode values.
+**Decision:** Any function that needs chromosome length must get it from `seqinfo(object)` (via `seqlengths()`), never hardcode values.
 
 **Rationale:** Different organisms have different genomes. Hardcoding E. coli values would break for Helicobacter or Mycobacterium.
 
 **Consequence:**
-- `slidingWindow()` uses `genomeInfo()` for boundary handling
-- `plot_genome_track()` uses `genomeInfo()` for axis limits
+- `slidingWindow()` uses `seqlengths()` for boundary handling
+- `plot_genome_track()` uses `seqlengths()` for axis limits
 - Tests use synthetic 100 kb chromosome, not real values
 
 **Do not change:** This is a core design principle.
@@ -150,6 +151,30 @@ This document records significant architectural and API decisions. When you're t
 **Rationale:** Follows established R conventions. Analysis functions are actions, plots are nouns, arguments are descriptive.
 
 **Do not change:** Consistency matters for user experience.
+
+---
+
+## D-011: mod_context derived on demand, not stored
+
+**Decision:** `mod_context` is computed from `mod_type` and `motif` columns via `modContexts()` accessor, not stored as a persistent column in `mcols(rowRanges())`.
+
+**Rationale:** Storing a derived column creates a denormalization risk — if `mod_type` or `motif` changes, the stored `mod_context` could become stale. Deriving on demand guarantees consistency.
+
+**Consequence:** Use `modContexts(object)` to get unique mod_context strings, not `mcols(rowRanges(object))$mod_context`.
+
+**Do not change without:** Understanding the Schema v2 migration rationale (issue #95).
+
+---
+
+## D-012: Alignment by genomic position, not string keys
+
+**Decision:** All alignment between sites (e.g., merging per-sample data in the constructor) uses `findOverlaps()` on `GRanges` with `mod_type`/`motif` matching, not row names or string keys.
+
+**Rationale:** String-key alignment is fragile (separator collisions, formatting inconsistencies). `GRanges`-based alignment is mathematically correct and leverages Bioconductor infrastructure.
+
+**Consequence:** Assay matrices have no row names. `site_key` is a computed display column only.
+
+**Do not change without:** Understanding the no-rownames alignment design (PR #117, #105).
 
 ---
 
