@@ -9,7 +9,7 @@
   ],
   "ppm.enabled": null,
   "ppm.ignored.urls": [],
-  "r.version": null,
+  "r.version": "4.5.3",
   "snapshot.dev": true,
   "snapshot.type": "explicit",
   "use.cache": true,
