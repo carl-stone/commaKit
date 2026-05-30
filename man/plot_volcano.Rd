@@ -52,6 +52,12 @@ Produces a volcano plot from differential methylation results computed by
 Sites are colored by significance category based on user-supplied adjusted
 p-value and delta-beta thresholds.
 }
+\details{
+For the y-axis calculation, adjusted p-values are clamped from
+below at \code{.Machine$double.xmin} before applying
+\code{-log10()}. This keeps exact-zero adjusted p-values finite in the
+plotted coordinates instead of producing infinite values.
+}
 \examples{
 data(comma_example_data)
 cd_dm <- diffMethyl(comma_example_data, ~ condition)

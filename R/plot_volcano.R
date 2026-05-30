@@ -8,6 +8,11 @@ NULL
 #' Sites are colored by significance category based on user-supplied adjusted
 #' p-value and delta-beta thresholds.
 #'
+#' @details For the y-axis calculation, adjusted p-values are clamped from
+#'   below at \code{.Machine$double.xmin} before applying
+#'   \code{-log10()}. This keeps exact-zero adjusted p-values finite in the
+#'   plotted coordinates instead of producing infinite values.
+#'
 #' @param results A \code{data.frame} returned by \code{\link{results}()},
 #'   containing at minimum the columns \code{dm_delta_beta} (numeric, effect
 #'   size as beta difference treatment minus control) and \code{dm_padj}

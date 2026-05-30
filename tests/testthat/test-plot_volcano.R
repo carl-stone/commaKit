@@ -53,6 +53,19 @@ test_that("plot_volcano: p$data contains exact non-NA padj rows with computed ne
     expect_equal(p$data$dm_delta_beta, res$dm_delta_beta[!is.na(res$dm_padj)])
 })
 
+test_that("plot_volcano: exact zero padj produces finite plotted y values", {
+    res <- .make_volcano_results()
+    res$dm_padj[1] <- 0
+    p <- plot_volcano(res)
+
+    zero_idx <- which(p$data$dm_padj == 0)
+    expect_length(zero_idx, 1L)
+    expect_true(is.finite(p$data$neg_log10_padj[zero_idx]))
+    expect_false(is.infinite(p$data$neg_log10_padj[zero_idx]))
+    expect_equal(p$data$neg_log10_padj[zero_idx],
+                 -log10(.Machine$double.xmin))
+})
+
 test_that("plot_volcano: significance categories match threshold rules", {
     res <- .make_volcano_results()
     p <- plot_volcano(res, delta_beta_threshold = 0.3, padj_threshold = 0.01)
