@@ -170,12 +170,7 @@ plot_genome_track <- function(object,
     }
 
     ## --- Color palette for mod_type -----------------------------------------
-    mod_colors <- c("6mA" = "#e41a1c", "5mC" = "#377eb8", "4mC" = "#4daf4a")
-    present_mods <- unique(df$mod_type)
-    missing_mods <- setdiff(present_mods, names(mod_colors))
-    for (m in missing_mods) {
-        mod_colors[m] <- "grey50"
-    }
+    mod_colors <- .modTypePalette(df$mod_type)
 
     ## --- Build methylation track --------------------------------------------
     ## sample_name ordering consistent with sampleInfo order

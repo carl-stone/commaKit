@@ -383,8 +383,12 @@ plot_tss_profile <- function(object,
         ) +
         ggplot2::theme_bw()
 
-    ## Colour scale for regulatory elements: "None" → grey70
-    if (color_by == "regulatory_element" &&
+    ## Colour scale for modification types and regulatory elements.
+    if (color_by == "mod_type") {
+        p <- p + ggplot2::scale_color_manual(
+            values = .modTypePalette(df$mod_type)
+        )
+    } else if (color_by == "regulatory_element" &&
             "regulatory_element" %in% names(df)) {
         lvls   <- levels(df$regulatory_element)
         n_reg  <- sum(lvls != "None")

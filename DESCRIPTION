@@ -64,6 +64,7 @@ Collate:
     'parse_modkit.R'
     'plot_coverage.R'
     'plot_distribution.R'
+    'plot_helpers.R'
     'plot_genome_track.R'
     'plot_heatmap.R'
     'plot_metagene.R'
