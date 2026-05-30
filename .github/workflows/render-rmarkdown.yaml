@@ -28,7 +28,19 @@ jobs:
           r-version: renv
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev libbz2-dev liblzma-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            libcairo2-dev \
+            libcurl4-openssl-dev \
+            libfontconfig1-dev \
+            libglpk-dev \
+            libpng-dev \
+            libssl-dev \
+            zlib1g-dev \
+            libbz2-dev \
+            liblzma-dev
 
       - uses: r-lib/actions/setup-renv@v2
 
