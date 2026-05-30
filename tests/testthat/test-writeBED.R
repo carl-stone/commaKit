@@ -229,6 +229,46 @@ test_that("writeBED: all-NA sample produces only track header line with warning"
     expect_equal(length(lines), 1L)  # only the track header
 })
 
+test_that("writeBED: all-NA sample still replaces the target with an explicit empty BED", {
+    obj <- .make_bed_data()
+    m   <- methylation(obj)
+    m[, "samp1"] <- NA_real_
+    SummarizedExperiment::assay(obj, "methylation") <- m
+    f <- tempfile(fileext = ".bed")
+    on.exit(unlink(f))
+    writeLines("stale content", f)
+
+    expect_warning(writeBED(obj, file = f, sample = "samp1"), "No sites")
+    lines <- readLines(f)
+
+    expect_equal(length(lines), 1L)
+    expect_true(grepl("^track ", lines[1]))
+    expect_false(any(grepl("stale content", lines, fixed = TRUE)))
+})
+
+test_that("writeBED: failed final move does not leave a temporary BED file", {
+    obj <- .make_bed_data()
+    parent <- tempfile("writebed-parent-")
+    dir.create(parent)
+    on.exit(unlink(parent, recursive = TRUE), add = TRUE)
+
+    target <- file.path(parent, "target.bed")
+    dir.create(target)
+
+    expect_error(
+        suppressWarnings(writeBED(obj, file = target, sample = "samp1")),
+        "Failed to move temporary BED file into place"
+    )
+
+    expect_true(dir.exists(target))
+    temp_leftovers <- list.files(
+        parent,
+        pattern = "^target\\.bed\\.tmp-",
+        all.files = TRUE
+    )
+    expect_length(temp_leftovers, 0L)
+})
+
 # ─── mod_type filtering ───────────────────────────────────────────────────────
 
 test_that("writeBED: mod_type filtering writes only matching sites", {

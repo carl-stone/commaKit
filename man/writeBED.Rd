@@ -56,7 +56,9 @@ blue-purple (83,0,172), score <= 600 = purple (167,0,85), score <= 800 =
 red-purple (222,0,28), score <= 1000 = red (250,0,0).
 
 Sites with \code{NA} methylation (below the coverage threshold) are
-excluded from the output.
+excluded from the output. Output is written to a temporary file in the
+destination directory and moved into place only after the BED content has
+been written successfully, so failed writes do not leave partial BED files.
 }
 \examples{
 data(comma_example_data)

@@ -37,7 +37,9 @@ NULL
 #' red-purple (222,0,28), score <= 1000 = red (250,0,0).
 #'
 #' Sites with \code{NA} methylation (below the coverage threshold) are
-#' excluded from the output.
+#' excluded from the output. Output is written to a temporary file in the
+#' destination directory and moved into place only after the BED content has
+#' been written successfully, so failed writes do not leave partial BED files.
 #'
 #' @examples
 #' data(comma_example_data)
@@ -95,9 +97,9 @@ writeBED <- function(object,
     if (nrow(rd) == 0) {
         warning("No sites with non-NA methylation for sample '", sample, "'. ",
                 "Writing empty BED file.")
-        writeLines(paste0('track name="', track_name, '" description="',
-                          track_description, '" itemRgb="On"'),
-                   con = file)
+        track_line <- paste0('track name="', track_name, '" description="',
+                             track_description, '" itemRgb="On"')
+        .writeBEDAtomic(file = file, track_line = track_line)
         return(invisible(file))
     }
 
@@ -131,17 +133,47 @@ writeBED <- function(object,
     # ── Write output ──────────────────────────────────────────────────────────
     track_line <- paste0('track name="', track_name, '" description="',
                          track_description, '" itemRgb="On"')
-    writeLines(track_line, con = file)
+    .writeBEDAtomic(file = file, track_line = track_line, bed_df = bed_df)
 
-    utils::write.table(
-        bed_df,
-        file      = file,
-        sep       = "\t",
-        row.names = FALSE,
-        col.names = FALSE,
-        quote     = FALSE,
-        append    = TRUE
+    invisible(file)
+}
+
+.writeBEDAtomic <- function(file, track_line, bed_df = NULL) {
+    output_dir <- dirname(file)
+    if (!dir.exists(output_dir)) {
+        stop("Output directory does not exist: ", output_dir, call. = FALSE)
+    }
+
+    tmp <- tempfile(
+        pattern = paste0(basename(file), ".tmp-"),
+        tmpdir = output_dir
     )
+    cleanup_tmp <- TRUE
+    on.exit({
+        if (cleanup_tmp) {
+            unlink(tmp)
+        }
+    }, add = TRUE)
 
+    writeLines(track_line, con = tmp, useBytes = TRUE)
+
+    if (!is.null(bed_df) && nrow(bed_df) > 0L) {
+        utils::write.table(
+            bed_df,
+            file      = tmp,
+            sep       = "\t",
+            row.names = FALSE,
+            col.names = FALSE,
+            quote     = FALSE,
+            append    = TRUE
+        )
+    }
+
+    if (!file.rename(tmp, file)) {
+        stop("Failed to move temporary BED file into place: ", file,
+             call. = FALSE)
+    }
+
+    cleanup_tmp <- FALSE
     invisible(file)
 }

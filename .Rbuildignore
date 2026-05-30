@@ -22,5 +22,6 @@
 ^\.DS_Store$
 ^\.Rhistory$
 ^\.Rprofile$
+^\.git$
 ^dev$
 ^AGENTS\.md$

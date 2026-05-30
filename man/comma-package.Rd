@@ -61,9 +61,9 @@ The modkit pileup format is documented at
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/carl-stone/CoMMA}
-  \item \url{https://carl-stone.github.io/CoMMA/}
-  \item Report bugs at \url{https://github.com/carl-stone/CoMMA/issues}
+  \item \url{https://github.com/carl-stone/comma}
+  \item \url{https://carl-stone.github.io/comma/}
+  \item Report bugs at \url{https://github.com/carl-stone/comma/issues}
 }
 
 }
