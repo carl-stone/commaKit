@@ -1,35 +1,35 @@
 # Known Issues — Bugs, Gotchas, Edge Cases
 
-**Last updated:** 2026-05-14
+**Last updated:** 2026-05-30
 **Maintained by:** commaBot
 
 ---
 
 ## Confirmed Bugs
 
-None confirmed at this time. All known issues are potential or unverified.
+None confirmed at this time. All known issues are potential, documented behavior, or edge cases.
 
 ---
 
-## Potential Bugs (Unverified)
+## Potential Bugs (Verified)
 
-### P-001: `diag()` scalar trap — status unknown
+### P-001: `diag()` scalar trap — VERIFIED SAFE
 
 **Risk:** If `diag(x)` appears in the source with scalar `x`, it creates an x×x identity matrix instead of a 1×1 matrix. Silent bug.
 
-**Status:** ROADMAP claims "no known usage" but commaBot hasn't verified this by grepping the source.
+**Status:** Verified 2026-05-30. `grep -r "diag(" R/*.R` returns no matches. No `diag()` usage in the codebase.
 
-**Action needed:** `grep -r "diag(" R/*.R` and verify no scalar usage exists.
+**Action:** None needed. Documented as a convention gotcha for future contributors.
 
 ---
 
-### P-002: `S4Vectors::rename()` vs `dplyr::rename()` masking — status unknown
+### P-002: `S4Vectors::rename()` vs `dplyr::rename()` masking — VERIFIED SAFE
 
 **Risk:** If the code uses `rename()` without `dplyr::` prefix, it may call `S4Vectors::rename()` which has different semantics.
 
-**Status:** ROADMAP claims "no known usage" but commaBot hasn't verified this.
+**Status:** Verified 2026-05-30. All `rename()` calls in the codebase use the `dplyr::rename()` prefix explicitly.
 
-**Action needed:** `grep -r "rename(" R/*.R` and verify all calls are `dplyr::rename()`.
+**Action:** None needed. Documented as a convention gotcha for future contributors.
 
 ---
 
@@ -39,7 +39,7 @@ None confirmed at this time. All known issues are potential or unverified.
 
 **What happens:** `methylKit::calculateDiffMeth()` crashes when a site has zero coverage in all samples after filtering.
 
-**Fix:** comma wraps this and assigns `p = 1` (consistent with null hypothesis). Regression test exists at `test-diffMethyl.R` lines 484-509.
+**Fix:** comma wraps this and assigns `p = 1` (consistent with null hypothesis). Regression test exists in `test-diffMethyl.R`.
 
 **User impact:** Shouldn't crash anymore, but may be surprising that such sites get `padj = 1` instead of `NA`.
 
@@ -80,7 +80,7 @@ None confirmed at this time. All known issues are potential or unverified.
 | Function | `mod_type` type |
 |----------|-----------------|
 | `diffMethyl()` | Character vector |
-| `subset()` | Character vector |
+| `filterSites()` | Character vector |
 | `plot_coverage()` | Single string |
 | `mValues()` | Single string |
 | `methylomeSummary()` | Single string |
@@ -97,16 +97,11 @@ None confirmed at this time. All known issues are potential or unverified.
 
 **What:** Four roxygen examples used `\donttest{}` but referenced files not included in the package. CI runs `--run-donttest`, so these examples executed and crashed during R CMD check.
 
-**Affected functions:**
-- `commaData()` — referenced `ctrl_1_modkit.bed`, `treat_1_modkit.bed`
-- `loadAnnotation()` — referenced `my_genome.gff3`
-- `findMotifSites()` — referenced `MG1655.fa` and `BSgenome.Ecoli.NCBI.20080805`
+**Affected functions:** `commaData()`, `loadAnnotation()`, `findMotifSites()`
 
 **Fix:** Changed `\donttest{}` to `\dontrun{}` for all four. `\dontrun{}` means "show in docs but never execute," which is correct for examples that need user-provided files.
 
-**Fixed in:** PR #60, commit dd27a75.
-
-**Lesson:** `\donttest{}` is not safe for examples that need external files. Use `\dontrun{}` instead. This was already documented in conventions gotcha #9 but was not in the backlog or known-issues until CI exposed it.
+**Lesson:** `\donttest{}` is not safe for examples that need external files. Use `\dontrun{}` instead.
 
 ---
 
@@ -152,7 +147,7 @@ None confirmed at this time. All known issues are potential or unverified.
 
 **Tested:** Partially. Test verifies difference from `circular = FALSE` but doesn't verify exact values.
 
-**Confidence:** Medium. Logic looks correct but unverified at boundary positions.
+**Confidence:** Medium. Logic looks correct but unverified at boundary positions. See issue #122.
 
 ---
 
@@ -164,7 +159,7 @@ None confirmed at this time. All known issues are potential or unverified.
 
 **Risk:** Breaking change in one function's output format could silently break downstream consumers.
 
-**Confidence:** Unknown. Individual functions tested, but integration is not.
+**Confidence:** Unknown. Individual functions tested, but integration is not. See issue #128.
 
 ---
 

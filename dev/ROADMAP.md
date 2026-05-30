@@ -1,10 +1,12 @@
-# comma Roadmap — Strategic Direction
+# commaKit Roadmap — Strategic Direction
 
-**Last updated:** 2026-05-18
-**Current version:** 0.1.0.9000 (dev)
-**Next release:** 0.2.0 (schema v2 milestone)
+**Last updated:** 2026-05-30
+**Current version:** 0.2.0
+**Public name:** commaKit (Comparative Microbial Methylomics Analysis Kit)
+**R package namespace:** comma (rename to commaKit planned, issue #168)
+**GitHub repo:** carl-stone/comma
 
-This file is the strategic roadmap: where comma is going and why. Tactical work items are tracked in [GitHub Issues](https://github.com/carl-stone/CoMMA/issues).
+This file is the strategic roadmap: where commaKit is going and why. Tactical work items are tracked in [GitHub Issues](https://github.com/carl-stone/comma/issues).
 
 ---
 
@@ -12,11 +14,11 @@ This file is the strategic roadmap: where comma is going and why. Tactical work 
 
 These are the reasons behind the work. They determine priority order.
 
-1. **Correctness** — comma must produce results you can trust. If the stats are wrong, nothing else matters. This means real discriminating tests, not just smoke tests; known-quantity verification; and audits of known R gotchas.
+1. **Correctness** — commaKit must produce results you can trust. If the stats are wrong, nothing else matters. This means real discriminating tests, not just smoke tests; known-quantity verification; and audits of known R gotchas.
 
-2. **Usability** — Claire should be able to use comma independently. She needs docs, clear error messages, method selection guidance, and a package that doesn't surprise her with silent failures.
+2. **Usability** — Claire should be able to use commaKit independently. She needs docs, clear error messages, method selection guidance, and a package that doesn't surprise her with silent failures.
 
-3. **Robustness** — comma should handle real data, not just the 588-site toy example. Edge cases, large genomes, weird callers, production-scale site counts.
+3. **Robustness** — commaKit should handle real data, not just the 588-site toy example. Edge cases, large genomes, weird callers, production-scale site counts.
 
 4. **Publishability** — Bioconductor-ready when the time comes. This is a low priority. We'd rather have a great, stable package installable from GitHub than a rushed Bioconductor submission.
 
@@ -26,27 +28,28 @@ These are the reasons behind the work. They determine priority order.
 
 Milestones are coherent groups of work that advance one or more strategic goals. They are ordered by priority. Each milestone has a GitHub Milestone for issue tracking.
 
-### 1. Schema v2 — *in progress* (correctness + robustness)
+### 1. Schema v2 — COMPLETE (correctness + robustness)
 
-Restructure the `commaData` class for a stronger foundation. The current SE-based class with custom slots works but creates friction for future improvements.
+Restructured the `commaData` class for a stronger foundation. All 14 issues closed, merged to main as v0.2.0 on 2026-05-21.
 
-**Issues:** #92 (done), #93, #94, #95, #96, #97, #98, #99
+**Issues:** #92–#97, #99, #105–#111
 **GitHub Milestone:** commaData Schema v2
-**Target version:** 0.2.0
+**Version:** 0.2.0
 
 Key changes:
-- SE → RangedSummarizedExperiment (done, PR #100)
-- genomeInfo → Seqinfo (#93)
-- annotation/motifSites → metadata() (#94)
-- mod_context derived on demand, not stored (#95)
-- mod_type as factor, caller/min_coverage stored, site key convention (#96–#98)
+- SE → RangedSummarizedExperiment
+- genomeInfo → Seqinfo
+- annotation/motifSites → metadata()
+- mod_context derived on demand, not stored
+- mod_type as factor, caller/min_coverage stored, site key convention
+- No-rownames alignment (findOverlaps-based)
 
-### 2. Test Quality — *next* (correctness)
+### 2. Test Quality — in progress (correctness)
 
 The test suite has too many smoke tests and not enough discriminating tests. We don't really believe the tests yet — they verify "doesn't crash" but not "produces correct results."
 
-**Issues:** #73, #74, #75
-**GitHub Milestone:** Test Quality (to be created)
+**Issues:** #73, #74, #75, #124, #128, #129
+**PRs:** #132, #133 (strengthened tests)
 
 What this milestone looks like when done:
 - Plot tests verify data mappings (not just ggplot class)
@@ -56,24 +59,40 @@ What this milestone looks like when done:
 
 See `dev/knowledge/test-quality.md` for the full audit.
 
-### 3. Code Quality Audits (correctness)
+### 3. Code Quality Audits — in progress (correctness)
 
-Known R gotchas that could cause silent bugs. These are small, scoped, and high-confidence.
+Thermonuclear review completed 2026-05-25. Findings filed as issues #135–#163, index #164.
 
-**Issues:** #65, #66
-**GitHub Milestone:** Code Quality Audits (to be created)
+**Merged PRs:**
+- #165 — diffMethyl multi-level formula support (#135–#138)
+- #166 — import/enrichment hardening (#139–#143, #146)
 
-What this milestone looks like when done:
-- `diag()` scalar trap audited and either safe or guarded
-- `rename()` masking audited and either safe or guarded
-- Both findings documented in `dev/knowledge/known-issues.md`
+**Remaining:** ~20 issues still open (plots, cleanup, docs gaps).
 
-### 4. Usability (usability)
+### 4. Circle Ops — next (correctness + robustness)
 
-Make comma usable by someone other than Carl. Documentation, guidance, error messages.
+Decide on behavior of all functions at circular genome boundaries.
 
-**Issues:** #62, #64, #68
-**GitHub Milestone:** Usability (to be created)
+**Issues:** #122, #112
+**Key functions:** slidingWindow(), plot_metagene(), plot_tss_profile(), annotateSites() with proximity method
+
+### 5. Layered Assays — proposed for v0.3.0 (robustness)
+
+Current in-place mutation of assay matrices is lossy — running `diffMethyl()` with different parameters overwrites previous results. The right pattern is layered assays (assay keys for different analysis runs).
+
+**Issues:** #118, #167
+
+### 6. Technical Rename to commaKit — planned (publishability)
+
+Rename package namespace, repo, and all public references from `comma`/`CoMMA` to `commaKit`.
+
+**Issues:** #168–#173
+
+### 7. Usability (usability)
+
+Make commaKit usable by someone other than Carl. Documentation, guidance, error messages.
+
+**Issues:** #62, #64, #68, #134, #161
 
 What this milestone looks like when done:
 - Troubleshooting guide for data import
@@ -81,12 +100,11 @@ What this milestone looks like when done:
 - Performance expectations documented
 - Claire can work through the getting-started vignette and the troubleshooting guide without Carl's help
 
-### 5. Real-World Readiness (robustness + publishability)
+### 8. Real-World Readiness (robustness + publishability)
 
-Make comma handle real data and be ready for broader distribution.
+Make commaKit handle real data and be ready for broader distribution.
 
 **Issues:** #67, #70, #76, #77
-**GitHub Milestone:** Real-World Readiness (to be created)
 
 This is the lowest priority milestone. Bioconductor submission is way down the list.
 
@@ -160,10 +178,9 @@ Why: Improves exploratory analysis and potentially increases detection power.
 
 ## References
 
-- `dev/PRD.md` — v1.0 product requirements and scope
-- `dev/VISION.md` — long-term dream package
-- `dev/README.md` — how the dev directory is organized
-- [GitHub Issues](https://github.com/carl-stone/CoMMA/issues) — tactical work items
 - `dev/knowledge/test-quality.md` — what tests are strong, weak, or missing
 - `dev/knowledge/known-issues.md` — bugs, gotchas, edge cases
 - `dev/knowledge/design-decisions.md` — why the package is designed this way
+- `dev/knowledge/git-discipline.md` — branching and versioning conventions
+- `dev/knowledge/branching-releases.md` — release strategy
+- [GitHub Issues](https://github.com/carl-stone/comma/issues) — tactical work items

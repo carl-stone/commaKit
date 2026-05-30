@@ -13,8 +13,8 @@ Description: Analyze bacterial DNA methylation from Oxford Nanopore sequencing
     methylated sites between conditions. Accepts input from modkit pileup
     (primary), Dorado BAM, and Megalodon (legacy) callers.
 License: MIT + file LICENSE
-URL: https://github.com/carl-stone/CoMMA, https://carl-stone.github.io/CoMMA/
-BugReports: https://github.com/carl-stone/CoMMA/issues
+URL: https://github.com/carl-stone/comma, https://carl-stone.github.io/comma/
+BugReports: https://github.com/carl-stone/comma/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 biocViews: Sequencing, Epigenetics, Coverage, DifferentialMethylation,
