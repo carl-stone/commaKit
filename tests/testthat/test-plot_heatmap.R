@@ -89,6 +89,46 @@ test_that("plot_heatmap: n_sites larger than available sites clamps to all avail
     expect_equal(nrow(p$data), n_nonNA * 3L)
 })
 
+test_that("plot_heatmap: subset and sorted results use preserved rowname indices", {
+    fix <- .make_heatmap_fixtures()
+
+    subset_res <- fix$res[c(10L, 2L, 7L, 5L), , drop = FALSE]
+    subset_res$dm_padj <- c(0.03, 0.01, 0.02, 0.04)
+    subset_res$dm_delta_beta <- c(0.4, -0.2, 0.1, -0.5)
+
+    p <- plot_heatmap(
+        subset_res,
+        fix$obj,
+        n_sites = 3L,
+        annotation_cols = character(0)
+    )
+
+    selected <- subset_res[order(subset_res$dm_padj), , drop = FALSE]
+    selected <- selected[seq_len(3L), , drop = FALSE]
+    selected <- selected[order(selected$dm_delta_beta), , drop = FALSE]
+
+    expected_mat <- methylation(fix$obj)[as.integer(rownames(selected)), ,
+                                         drop = FALSE]
+    expected_site_keys <- paste(
+        selected$chrom,
+        selected$position,
+        selected$strand,
+        selected$mod_type,
+        selected$motif,
+        sep = ":"
+    )
+
+    expect_equal(
+        as.character(p$data$site_key),
+        rep(expected_site_keys, times = ncol(expected_mat))
+    )
+    expect_equal(
+        as.character(p$data$sample_name),
+        rep(colnames(expected_mat), each = nrow(expected_mat))
+    )
+    expect_equal(p$data$beta, as.vector(expected_mat))
+})
+
 # ─── NA handling ─────────────────────────────────────────────────────────────
 
 test_that("plot_heatmap: NA beta values are preserved in p$data", {
@@ -136,6 +176,75 @@ test_that("plot_heatmap: error on invalid n_sites", {
     fix <- .make_heatmap_fixtures()
     expect_error(plot_heatmap(fix$res, fix$obj, n_sites = 0L), "n_sites")
     expect_error(plot_heatmap(fix$res, fix$obj, n_sites = -1L), "n_sites")
+})
+
+test_that("plot_heatmap: error when selected rownames are blank", {
+    fix <- .make_heatmap_fixtures()
+    bad_res <- fix$res
+    bad_res$dm_padj <- seq(0.001, 0.015, length.out = nrow(bad_res))
+    attr(bad_res, "row.names") <- c("", as.character(seq(2L, nrow(bad_res))))
+
+    expect_error(
+        plot_heatmap(
+            bad_res,
+            fix$obj,
+            n_sites = 1L,
+            annotation_cols = character(0)
+        ),
+        "row names must be non-missing integer row indices"
+    )
+})
+
+test_that("plot_heatmap: error when selected rownames are missing", {
+    fix <- .make_heatmap_fixtures()
+    bad_res <- fix$res
+    bad_res$dm_padj <- seq(0.001, 0.015, length.out = nrow(bad_res))
+    attr(bad_res, "row.names") <- c(NA_character_,
+                                    as.character(seq(2L, nrow(bad_res))))
+
+    expect_error(
+        plot_heatmap(
+            bad_res,
+            fix$obj,
+            n_sites = 1L,
+            annotation_cols = character(0)
+        ),
+        "row names must be non-missing integer row indices"
+    )
+})
+
+test_that("plot_heatmap: error when selected rownames are non-integer", {
+    fix <- .make_heatmap_fixtures()
+    bad_res <- fix$res
+    bad_res$dm_padj <- seq(0.001, 0.015, length.out = nrow(bad_res))
+    rownames(bad_res)[1L] <- "chr_sim:1000:+:6mA:GATC"
+
+    expect_error(
+        plot_heatmap(
+            bad_res,
+            fix$obj,
+            n_sites = 1L,
+            annotation_cols = character(0)
+        ),
+        "Non-integer row name"
+    )
+})
+
+test_that("plot_heatmap: error when selected rownames are out of range", {
+    fix <- .make_heatmap_fixtures()
+    bad_res <- fix$res
+    bad_res$dm_padj <- seq(0.001, 0.015, length.out = nrow(bad_res))
+    rownames(bad_res)[1L] <- as.character(nrow(fix$obj) + 1L)
+
+    expect_error(
+        plot_heatmap(
+            bad_res,
+            fix$obj,
+            n_sites = 1L,
+            annotation_cols = character(0)
+        ),
+        "Out-of-range row name"
+    )
 })
 
 # ─── Comma example data ───────────────────────────────────────────────────────

@@ -1,6 +1,56 @@
 #' @importFrom ggplot2 ggplot aes geom_tile scale_fill_gradient2 scale_x_discrete scale_y_discrete labs theme_minimal theme element_text element_blank
 NULL
 
+.formatBadRowNames <- function(row_names) {
+    row_names <- unique(as.character(row_names))
+    row_names <- row_names[seq_len(min(5L, length(row_names)))]
+    paste(row_names, collapse = ", ")
+}
+
+.validateHeatmapResultRowIndices <- function(row_names, n_selected, n_object_rows) {
+    contract_msg <- paste0(
+        "Selected 'results' row names must be non-missing integer row ",
+        "indices within the rows of 'object'. This is the row-name contract ",
+        "preserved by results(); do not reset row names or replace them with ",
+        "site keys before calling plot_heatmap()."
+    )
+
+    if (is.null(row_names) || length(row_names) != n_selected ||
+            anyNA(row_names) || any(!nzchar(row_names))) {
+        stop(contract_msg, call. = FALSE)
+    }
+
+    integer_like <- grepl("^[0-9]+$", row_names)
+    if (!all(integer_like)) {
+        stop(
+            contract_msg,
+            " Non-integer row name(s): ",
+            .formatBadRowNames(row_names[!integer_like]),
+            ".",
+            call. = FALSE
+        )
+    }
+
+    row_idx <- as.numeric(row_names)
+    out_of_range <- !is.finite(row_idx) |
+        row_idx < 1L |
+        row_idx > n_object_rows
+
+    if (any(out_of_range)) {
+        stop(
+            contract_msg,
+            " Out-of-range row name(s): ",
+            .formatBadRowNames(row_names[out_of_range]),
+            ". Valid range: 1 to ",
+            n_object_rows,
+            ".",
+            call. = FALSE
+        )
+    }
+
+    as.integer(row_idx)
+}
+
 #' Heatmap of top differentially methylated sites
 #'
 #' Produces a heatmap showing methylation beta values for the top
@@ -11,7 +61,10 @@ NULL
 #' @param results A \code{data.frame} returned by \code{\link{results}()},
 #'   containing at minimum the columns \code{chrom}, \code{position},
 #'   \code{strand}, \code{mod_type}, \code{dm_padj}, and
-#'   \code{dm_delta_beta}.
+#'   \code{dm_delta_beta}. Row names of the selected rows must be
+#'   non-missing integer row indices into \code{object}, as produced by
+#'   \code{\link{results}} and preserved by ordinary data-frame subsetting
+#'   and sorting.
 #' @param object A \code{\link{commaData}} object that was used to produce
 #'   \code{results}. Used to extract the methylation matrix for selected sites.
 #' @param n_sites Positive integer. The number of top sites (ranked by
@@ -27,6 +80,12 @@ NULL
 #'   readability). The fill color encodes methylation beta (blue = 0,
 #'   white = 0.5, red = 1). \code{NA} values are shown in light grey. An
 #'   annotation strip above shows sample-level metadata encoded by color.
+#'
+#' @details \code{plot_heatmap()} maps differential methylation result rows
+#'   back to \code{object} through the row names on \code{results}: selected
+#'   row names must be integer row indices within \code{seq_len(nrow(object))}.
+#'   Do not reset row names or replace them with display labels such as site
+#'   keys before calling this function.
 #'
 #' @examples
 #' data(comma_example_data)
@@ -80,7 +139,11 @@ plot_heatmap <- function(results,
     ## results() returns a DataFrame aligned to rowRanges(object). The rownames
     ## of the results DataFrame carry the original row indices into the object,
     ## even after subsetting and sorting. Use those to index into the assay.
-    row_idx <- as.integer(rownames(top_res))
+    row_idx <- .validateHeatmapResultRowIndices(
+        rownames(top_res),
+        nrow(top_res),
+        nrow(object)
+    )
 
     ## --- Extract methylation submatrix -------------------------------------
     methyl_mat <- methylation(object)[row_idx, , drop = FALSE]

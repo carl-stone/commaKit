@@ -10,7 +10,10 @@ plot_heatmap(results, object, n_sites = 50L, annotation_cols = NULL)
 \item{results}{A \code{data.frame} returned by \code{\link{results}()},
 containing at minimum the columns \code{chrom}, \code{position},
 \code{strand}, \code{mod_type}, \code{dm_padj}, and
-\code{dm_delta_beta}.}
+\code{dm_delta_beta}. Row names of the selected rows must be
+non-missing integer row indices into \code{object}, as produced by
+\code{\link{results}} and preserved by ordinary data-frame subsetting
+and sorting.}
 
 \item{object}{A \code{\link{commaData}} object that was used to produce
 \code{results}. Used to extract the methylation matrix for selected sites.}
@@ -36,6 +39,13 @@ Produces a heatmap showing methylation beta values for the top
 differentially methylated sites across all samples. Sites are ranked by
 adjusted p-value and ordered vertically by effect size (delta beta) to
 reveal condition-specific patterns.
+}
+\details{
+\code{plot_heatmap()} maps differential methylation result rows
+back to \code{object} through the row names on \code{results}: selected
+row names must be integer row indices within \code{seq_len(nrow(object))}.
+Do not reset row names or replace them with display labels such as site
+keys before calling this function.
 }
 \examples{
 data(comma_example_data)
