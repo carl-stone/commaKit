@@ -8,11 +8,9 @@ You need R when: running tests, checking the package, rebuilding docs, or verify
 
 ## What Is Pre-installed
 
-Ubuntu/Debian environment. R 4.3.3 at `/usr/bin/R`.
+The package requires R >= 4.3.0, while CI is pinned to R 4.5 on Ubuntu. Local macOS development should also use R 4.5 for now because some compiled Bioconductor packages can be incompatible with newer framework R builds.
 
-- **Bioconductor core:** `GenomicRanges`, `IRanges`, `SummarizedExperiment`, `S4Vectors`, `GenomeInfoDb`, `Rsamtools`, `Biostrings`, `BSgenome`, `rtracklayer`, `BiocGenerics` — via `apt` (`r-bioc-*`)
-- **CRAN:** `zoo`, `ggplot2`, `dplyr`, `tidyr`, `devtools`, `testthat`, `knitr`, `rmarkdown`, `ggrepel`, `patchwork` — in `/usr/local/lib/R/site-library/`
-- **`BiocManager`** available for additional Bioconductor packages
+Use the repository's `renv.lock` and the active R 4.5 library when possible. On Carl's macOS machines, `dev/run-r-4.5.sh` can be used as a convenience wrapper if the default framework R is newer than CI.
 
 ## Installing Missing Packages
 
@@ -26,7 +24,7 @@ Rscript -e "install.packages('pkgname')"
 Rscript -e "BiocManager::install('pkgname')"
 ```
 
-`sudo` is available without a password.
+Avoid installing packages outside the project library unless you are deliberately fixing the development environment.
 
 ## Common Commands
 
@@ -37,4 +35,4 @@ Rscript -e "devtools::document()"   # rebuild man/ from roxygen2
 Rscript -e "BiocCheck::BiocCheck()" # Bioconductor-specific checks
 ```
 
-Do not give up if R seems unavailable — R 4.3.3 is at `/usr/bin/R` and all `comma` dependencies are pre-installed.
+For CI-equivalent local checks, use R 4.5 and run `R CMD check --no-manual --as-cran` after `devtools::document()` and `devtools::test()`.

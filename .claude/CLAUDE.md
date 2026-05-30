@@ -1,9 +1,11 @@
-# comma — AI Assistant Guide
+# commaKit / comma — AI Assistant Guide
 
-**Package:** `comma` (Comparative Methylomics for Microbial Analysis)
+**Public name:** commaKit (Comparative Microbial Methylomics Analysis Kit)
+**R package namespace:** `comma` (rename to `commaKit` planned, issue #168)
+**GitHub repo:** `carl-stone/comma`
 **Author:** Carl Stone, Vanderbilt University (carl.j.stone@vanderbilt.edu)
-**Version:** 0.9.0.9000 dev (last stable: 0.6.0) | **License:** MIT
-**Target:** Bioconductor submission at v1.0.0 (on hold — active feature development)
+**Version:** 0.2.0 | **License:** MIT
+**Target:** Bioconductor submission is on hold; `0.99.0` is reserved for the eventual submission cycle.
 
 This is an R package (Bioconductor ecosystem). Use R/Bioconductor idioms: S4 classes, tibbles over data.frames, check class compatibility before implementing.
 
@@ -15,16 +17,11 @@ This is an R package (Bioconductor ecosystem). Use R/Bioconductor idioms: S4 cla
 
 | Version | Deliverable |
 |---|---|
-| 0.2.0 | `commaData` S4 class + modkit/Megalodon parsers + constructor + accessors |
-| 0.3.0 | `annotateSites()`, `slidingWindow()`, `methylomeSummary()`, `coverageDepth()`, `varianceByDepth()`, `writeBED()` |
-| 0.4.0 | `diffMethyl()` (beta-binomial + methylKit), `results()`, `filterResults()`, Dorado BAM parser |
-| 0.5.0 | All `plot_*()` functions (8 total), vignettes, `comma-package.R` docs |
-| 0.6.0 | `mValues()`, `motifs()` accessor, M-value PCA |
-| 0.7.x | `plot_tss_profile()`, `diffMethyl(method="limma"\|"quasi_f")` |
-| 0.8.0 | `mod_context` rowData column + `modContexts()` + `expected_mod_contexts`; `diffMethyl()` loops by mod_context |
-| 0.9.0 | `enrichMethylation()` — GO/KEGG ORA + GSEA via clusterProfiler |
-| 0.9.1 | `buildKEGGTermGene()` — bulk KEGG fetch (2 API calls) + RDS cache; `enrichMethylation(kegg_term2gene=)` offline KEGG path |
-| 0.9.2 | `buildKEGGGeneIDMap()` — symbol ↔ KEGG ID map (1 API call) via OrgDb or manual `entrez2symbol`; `buildKEGGTermGene(id_map=)` b-number→symbol translation |
+| 0.2.0 | Current Schema v2 baseline: `commaData` extends `RangedSummarizedExperiment`; Seqinfo-backed genome metadata; no-rownames alignment; modkit/Dorado/Megalodon import; annotation, differential methylation, enrichment, plots, vignettes, and test data are present. |
+| 0.3.0 | Planned next internal feature milestone; exact scope depends on open issues and Carl's decisions. |
+| 0.99.0 | Reserved for the eventual Bioconductor submission branch, not the current development line. |
+
+For the most current architecture and issue status, prefer `AGENTS.md` and `dev/ROADMAP.md`.
 
 ## Naming Conventions
 
@@ -45,7 +42,7 @@ This is an R package (Bioconductor ecosystem). Use R/Bioconductor idioms: S4 cla
 - Use `GenomicRanges::findOverlaps()` for genomic interval overlap — never nested for-loops
 - Return tidy data frames (or updated `commaData`) suitable for ggplot2
 - All `plot_*()` functions return a `ggplot`/`patchwork` object, not a rendered image
-- Treat genome size as a parameter from `commaData@genomeInfo`, never hardcode
+- Treat genome size as metadata from `Seqinfo`/`seqlengths(object)`, never hardcode
 - Document every exported function with full roxygen2: `@param`, `@return`, `@examples`
 - Write `testthat` tests for every exported function
 - Run `devtools::test()` after changes; run `devtools::document()` after changing roxygen2

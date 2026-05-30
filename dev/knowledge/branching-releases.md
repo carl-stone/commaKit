@@ -210,21 +210,17 @@ A tag means:
 
 ## Version Policy
 
-comma is resetting to `0.1.0.9000` as of 2026-05-14.
-
-Why:
-
-- Earlier version numbers were informal and not meaningful
-- This is the first serious attempt to run comma as a real package project
-- Carl is the only user, so backwards version continuity does not matter
-- Starting at 0.1 makes maturity honest
+comma's canonical current version is `0.2.0`. Earlier version numbers were
+informal labels from the script-to-package transition and should not drive
+current metadata, badges, URLs, or release planning.
 
 ### Version meanings
 
 | Version pattern | Meaning |
 |-----------------|---------|
-| `0.1.0.9000` | development version after the fresh-start reset |
-| `0.1.0` | first internal release checkpoint |
+| `0.2.0` | current Schema v2 internal release baseline |
+| `0.2.x` | patch releases on the current internal baseline |
+| `0.3.0` | next deliberate internal feature milestone |
 | `0.x.y` | internal/pre-Bioconductor releases |
 | `0.99.0` | Bioconductor submission version |
 | `1.0.0` | only after external confidence and real stability |
@@ -236,10 +232,10 @@ The `.9000` suffix means active development. This is common R package practice.
 Example:
 
 ```text
-0.1.0      released checkpoint
-0.1.0.9000 development after that checkpoint
-0.1.1      patch release
-0.1.1.9000 development after patch release
+0.2.0      released checkpoint
+0.2.0.9000 development after that checkpoint
+0.2.1      patch release
+0.2.1.9000 development after patch release
 ```
 
 ---

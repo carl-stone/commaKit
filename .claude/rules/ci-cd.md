@@ -9,7 +9,7 @@ paths:
 ## Branch Strategy
 
 - **Stable:** `main` — do not push here directly; work through PRs
-- **Dev branches:** `claude/<description>-<id>` naming pattern for AI-initiated work
+- **Dev branches:** use tool-specific prefixes such as `codex/<description>` or `claude/<description>-<id>` for AI-initiated work
 
 ## Commit Style
 
@@ -24,5 +24,8 @@ Implement plot_tss_profile() with loess smooth overlay
 
 ## CI/CD Workflows
 
-- **`r.yml`** — runs `rcmdcheck` on push/PR against R 3.6.3 and 4.1.1 on macOS-latest. Keep the package passing `R CMD check` throughout development.
-- **`render-rmarkdown.yaml`** — auto-renders `.Rmd` files on push (README.Rmd → README.md).
+- **`R-CMD-check.yaml`** — runs `R CMD check --no-manual --as-cran` on R 4.5 / Ubuntu. CI runs examples with `--run-donttest`, so use `\dontrun{}` for examples that require user-provided files.
+- **`pkgdown.yaml`** — builds the pkgdown site on PRs and deploys to `gh-pages` from `main`.
+- **`render-rmarkdown.yaml`** — auto-renders changed `.Rmd` files on push and commits generated `.md` outputs when present.
+
+Keep local checks aligned with the workflows above.
