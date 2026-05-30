@@ -71,6 +71,7 @@ test_that("siteInfo() has no rownames and includes site_key", {
     si <- siteInfo(obj)
     expect_null(rownames(si))
     expect_true("site_key" %in% colnames(si))
+    expect_equal(si$site_key[1], "chr_sim:100:+:6mA:GATC")
 })
 
 test_that("validity rejects missing rowData columns", {

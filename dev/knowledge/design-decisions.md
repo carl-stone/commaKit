@@ -172,7 +172,7 @@ This document records significant architectural and API decisions. When you're t
 
 **Rationale:** String-key alignment is fragile (separator collisions, formatting inconsistencies). `GRanges`-based alignment is mathematically correct and leverages Bioconductor infrastructure.
 
-**Consequence:** Assay matrices have no row names. `site_key` is a computed display column only.
+**Consequence:** Assay matrices have no row names. `site_key` is a computed display column only. Its display format is stable and always includes chromosome: `chrom:position:strand:mod_type:motif`.
 
 **Do not change without:** Understanding the no-rownames alignment design (PR #117, #105).
 

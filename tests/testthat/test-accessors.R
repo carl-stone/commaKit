@@ -148,6 +148,41 @@ test_that("siteInfo() contains required columns", {
     expect_true(all(c("chrom", "position", "strand", "mod_type") %in% colnames(si)))
 })
 
+test_that("siteInfo() site_key always includes chromosome for single-chromosome objects", {
+    obj <- .make_two_modtype()
+    si <- siteInfo(obj)
+
+    expect_equal(
+        si$site_key[1],
+        paste(si$chrom[1], si$position[1], si$strand[1],
+              as.character(si$mod_type[1]), si$motif[1], sep = ":")
+    )
+    expect_equal(length(strsplit(si$site_key[1], ":", fixed = TRUE)[[1]]), 5L)
+})
+
+test_that("siteInfo() site_key uses same field contract for multi-chromosome objects", {
+    obj <- .make_two_modtype()
+    rr <- rowRanges(obj)
+    GenomeInfoDb::seqlevels(rr) <- c("chr_sim", "chr_alt")
+    GenomeInfoDb::seqnames(rr)[seq_len(3L)] <- "chr_alt"
+    GenomeInfoDb::seqlengths(rr) <- c(chr_sim = 100000L, chr_alt = 50000L)
+    rowRanges(obj) <- rr
+
+    si <- siteInfo(obj)
+
+    expect_true(any(si$chrom == "chr_alt"))
+    expect_true(all(vapply(
+        strsplit(si$site_key, ":", fixed = TRUE),
+        length,
+        integer(1L)
+    ) == 5L))
+    expect_equal(
+        si$site_key,
+        paste(si$chrom, si$position, si$strand,
+              as.character(si$mod_type), si$motif, sep = ":")
+    )
+})
+
 # ─────────────────────────────────────────────────────────────────────────────
 # modTypes()
 # ─────────────────────────────────────────────────────────────────────────────
