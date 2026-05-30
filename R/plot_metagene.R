@@ -115,15 +115,15 @@ plot_metagene <- function(object,
     }
 
     ## Build expanded data.frame: one row per (site x feature) pair
-    ## site_idx is 1-based into the filtered object
+    ## site_idx is 1-based into the annotated object
     site_idx     <- rep(which(has_overlap), times = site_lengths[has_overlap])
     metagene_pos <- unlist(pos_list[has_overlap], use.names = FALSE)
 
     ## --- Extract beta values for overlapping sites -------------------------
-    methyl_mat <- methylation(object)
+    methyl_mat <- methylation(annotated)
     sample_nms <- colnames(methyl_mat)
     n_samples  <- length(sample_nms)
-    si         <- sampleInfo(object)
+    si         <- sampleInfo(annotated)
 
     ## Build per-sample long data.frame
     rows <- lapply(sample_nms, function(samp) {

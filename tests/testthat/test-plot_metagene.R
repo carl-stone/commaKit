@@ -110,6 +110,33 @@ test_that("plot_metagene: x-axis spans approximately [0, 1]", {
     expect_true(max(x_vals) <= 1 + 1e-6)
 })
 
+test_that("plot_metagene: extracts beta values from annotated row order", {
+    obj <- .make_metagene_data()
+    SummarizedExperiment::assay(obj, "methylation")[, "ctrl_1"] <-
+        seq(0.1, 1.0, length.out = nrow(obj))
+    SummarizedExperiment::assay(obj, "methylation")[, "treat_1"] <-
+        seq(0.2, 0.9, length.out = nrow(obj))
+
+    expected <- plot_metagene(obj, feature = "gene", n_bins = 10L)$data
+    real_annotateSites <- annotateSites
+
+    local_mocked_bindings(
+        annotateSites = function(object, features = NULL, keep = "all", ...) {
+            annotated <- real_annotateSites(
+                object,
+                features = features,
+                keep = keep,
+                ...
+            )
+            annotated[rev(seq_len(nrow(annotated))), ]
+        },
+        .package = "comma"
+    )
+
+    observed <- plot_metagene(obj, feature = "gene", n_bins = 10L)$data
+    expect_equal(observed, expected)
+})
+
 # ─── Error conditions ─────────────────────────────────────────────────────────
 
 test_that("plot_metagene: error on non-commaData input", {
