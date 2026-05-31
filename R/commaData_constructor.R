@@ -42,8 +42,9 @@ NULL
 #'   \code{"GATC"}) to locate in the genome using \code{\link{findMotifSites}}.
 #'   The results are stored in the \code{motifSites} slot as a genome-wide
 #'   \code{GRanges} of all motif instances. Requires \code{genome} to be a
-#'   FASTA path or \code{BSgenome} object (not a named integer vector). If
-#'   \code{NULL}, the \code{motifSites} slot is left empty. \emph{Note:} this
+#'   FASTA path, \code{DNAStringSet}, or \code{BSgenome} object (not a named
+#'   integer vector). If \code{NULL}, the \code{motifSites} slot is left empty.
+#'   \emph{Note:} this
 #'   argument is distinct from \code{rowData(object)$motif}, which stores the
 #'   per-site sequence context extracted automatically from the modkit
 #'   \code{mod_code} field (e.g., \code{"a,GATC,1"} → \code{motif = "GATC"})

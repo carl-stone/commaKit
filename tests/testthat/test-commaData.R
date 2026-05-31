@@ -213,6 +213,7 @@ test_that("commaData() constructs valid object from example modkit BED", {
     bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
     skip_if(bed_file == "", message = "extdata not available")
 
+    genome_info <- c(chr_sim = 100000L)
     cd <- commaData(
         files   = c(s1 = bed_file),
         colData = data.frame(
@@ -221,7 +222,7 @@ test_that("commaData() constructs valid object from example modkit BED", {
             replicate   = 1L,
             stringsAsFactors = FALSE
         ),
-        genome  = c(chr_sim = 100000L),
+        genome  = genome_info,
         caller  = "modkit"
     )
 
@@ -232,6 +233,10 @@ test_that("commaData() constructs valid object from example modkit BED", {
     expect_true("methylation" %in% assayNames(cd))
     expect_true("coverage" %in% assayNames(cd))
     expect_true(all(GenomeInfoDb::isCircular(GenomeInfoDb::seqinfo(cd))))
+    expect_equal(
+        GenomeInfoDb::seqinfo(SummarizedExperiment::rowRanges(cd)),
+        comma:::.makeSeqinfo(genome_info)
+    )
 })
 
 test_that("commaData() applies min_coverage filter correctly", {

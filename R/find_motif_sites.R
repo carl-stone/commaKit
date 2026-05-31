@@ -111,31 +111,3 @@ findMotifSites <- function(genome, motif, ...) {
     GenomicRanges::mcols(result)$motif <- rep(motif, length(result))
     GenomicRanges::sort(result)
 }
-
-#' Load genome sequences from a FASTA path or BSgenome object
-#' @return A \code{DNAStringSet} with one element per chromosome.
-#' @keywords internal
-.loadGenomeSequences <- function(genome) {
-    if (is.character(genome)) {
-        if (!file.exists(genome)) {
-            stop("FASTA genome file not found: ", genome)
-        }
-        Biostrings::readDNAStringSet(genome)
-    } else if (is(genome, "BSgenome")) {
-        if (!requireNamespace("BSgenome", quietly = TRUE)) {
-            stop("Package 'BSgenome' is required to use BSgenome objects.")
-        }
-        chr_names <- BSgenome::seqnames(genome)
-        seqs      <- BSgenome::getSeq(genome, chr_names)
-        names(seqs) <- chr_names
-        seqs
-    } else if (is(genome, "DNAStringSet")) {
-        genome   # already the correct type; pass through unchanged
-    } else {
-        stop(
-            "genome must be a path to a FASTA file, a Biostrings DNAStringSet, ",
-            "or a BSgenome object. Got: ",
-            class(genome)
-        )
-    }
-}

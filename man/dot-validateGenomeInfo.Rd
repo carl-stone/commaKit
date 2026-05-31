@@ -7,8 +7,9 @@
 .validateGenomeInfo(genome)
 }
 \arguments{
-\item{genome}{A BSgenome object, path to a FASTA file, or named integer
-vector of chromosome sizes (e.g., \code{c(chr1 = 1000000L)}).}
+\item{genome}{A BSgenome object, path to a FASTA file, named
+\code{DNAStringSet}, or named integer vector of chromosome sizes
+(e.g., \code{c(chr1 = 1000000L)}).}
 }
 \value{
 Named integer vector of chromosome sizes, or \code{NULL} if

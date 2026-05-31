@@ -122,6 +122,56 @@ test_that(".validateGenomeInfo() errors on DNAString with helpful message", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
+# .loadGenomeSequences() — shared sequence resolver
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that(".loadGenomeSequences() reads a FASTA path", {
+    skip_if_not_installed("Biostrings")
+    fa <- tempfile(fileext = ".fa")
+    writeLines(c(">chr_a", "ATCG", ">chr_b", "GGGGCC"), fa)
+
+    seqs <- comma:::.loadGenomeSequences(fa)
+
+    expect_s4_class(seqs, "DNAStringSet")
+    expect_equal(names(seqs), c("chr_a", "chr_b"))
+    expect_equal(as.integer(Biostrings::width(seqs)), c(4L, 6L))
+})
+
+test_that(".loadGenomeSequences() passes through named DNAStringSet input", {
+    skip_if_not_installed("Biostrings")
+    seqs <- Biostrings::DNAStringSet(c(chr1 = "ATCG", chr2 = "GGCC"))
+
+    result <- comma:::.loadGenomeSequences(seqs)
+
+    expect_s4_class(result, "DNAStringSet")
+    expect_equal(names(result), names(seqs))
+    expect_equal(as.character(result), as.character(seqs))
+})
+
+test_that(".loadGenomeSequences() requires named sequences", {
+    skip_if_not_installed("Biostrings")
+    seqs <- Biostrings::DNAStringSet(c("ATCG", "GGCC"))
+
+    expect_error(
+        comma:::.loadGenomeSequences(seqs),
+        "non-empty names"
+    )
+})
+
+test_that(".validateGenomeInfo() and .loadGenomeSequences() share sequence sizes", {
+    skip_if_not_installed("Biostrings")
+    seqs <- Biostrings::DNAStringSet(c(chr1 = "ATCG", chr2 = "GGCCCC"))
+
+    loaded <- comma:::.loadGenomeSequences(seqs)
+    sizes <- comma:::.validateGenomeInfo(seqs)
+
+    expect_equal(sizes, stats::setNames(
+        as.integer(Biostrings::width(loaded)),
+        names(loaded)
+    ))
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
 # .circularIndex() — valid (in-range) positions
 # ─────────────────────────────────────────────────────────────────────────────
 
