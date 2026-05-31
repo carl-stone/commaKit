@@ -49,6 +49,11 @@ If genome size information is stored in \code{genome(object)}, windows are
 sized to fit the chromosomes exactly (the last window may be smaller than
 \code{window}). If genome information is absent, only the range spanned by
 observed sites is covered.
+
+\code{coverageDepth()} always uses fixed genomic coordinate bins and does
+not wrap bins across the origin, even when \code{seqinfo(object)} marks a
+chromosome as circular. For circular smoothing across chromosome boundaries,
+use \code{\link{slidingWindow}()}.
 }
 \examples{
 data(comma_example_data)

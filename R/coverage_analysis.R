@@ -37,6 +37,11 @@ NULL
 #' \code{window}). If genome information is absent, only the range spanned by
 #' observed sites is covered.
 #'
+#' \code{coverageDepth()} always uses fixed genomic coordinate bins and does
+#' not wrap bins across the origin, even when \code{seqinfo(object)} marks a
+#' chromosome as circular. For circular smoothing across chromosome boundaries,
+#' use \code{\link{slidingWindow}()}.
+#'
 #' @examples
 #' data(comma_example_data)
 #' cd <- coverageDepth(comma_example_data, window = 10000L)

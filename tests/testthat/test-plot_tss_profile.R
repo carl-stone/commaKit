@@ -115,6 +115,41 @@ test_that("returns ggplot when mod_type is specified", {
     expect_true(nrow(p_filtered$data) <= nrow(p_unfiltered$data))
 })
 
+test_that("uses circular proximity distances for TSS profiles across origin", {
+    obj <- .make_commaData_fixture(
+        beta = matrix(c(0.2, 0.8), nrow = 2L, dimnames = list(NULL, "s1")),
+        sample_info = data.frame(
+            sample_name = "s1",
+            condition = "control",
+            replicate = 1L,
+            stringsAsFactors = FALSE
+        ),
+        positions = c(990L, 10L),
+        chrom = "chr_wrap",
+        seqlength = 1000L
+    )
+    rr <- rowRanges(obj)
+    si <- GenomeInfoDb::seqinfo(rr)
+    GenomeInfoDb::isCircular(si) <- TRUE
+    GenomeInfoDb::seqinfo(rr) <- si
+    rowRanges(obj) <- rr
+
+    annot_gr <- GenomicRanges::GRanges(
+        seqnames = "chr_wrap",
+        ranges = IRanges::IRanges(start = 1L, end = 100L),
+        strand = "+"
+    )
+    annot_gr$feature_type <- "gene"
+    annot_gr$name <- "origin_gene"
+    S4Vectors::metadata(obj)$annotation <- annot_gr
+
+    p <- plot_tss_profile(obj, feature_type = "gene", window = 20L,
+                          color_by = "none")
+
+    expect_s3_class(p, "ggplot")
+    expect_setequal(p$data$rel_pos, c(-11L, 9L))
+})
+
 ## ── x-axis and TSS marker ───────────────────────────────────────────────────
 
 test_that("x-axis data values are within [-window, +window]", {

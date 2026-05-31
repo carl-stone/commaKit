@@ -126,6 +126,33 @@ test_that("coverageDepth: exact window aggregation keeps empty windows as NA", {
     )
 })
 
+test_that("coverageDepth: circular chromosomes still use fixed non-wrapping bins", {
+    object <- .make_commaData_fixture(
+        beta = matrix(c(0.1, 0.9), nrow = 2L, dimnames = list(NULL, "s1")),
+        coverage = matrix(c(10L, 70L), nrow = 2L, dimnames = list(NULL, "s1")),
+        sample_info = data.frame(
+            sample_name = "s1",
+            condition = "control",
+            replicate = 1L,
+            stringsAsFactors = FALSE
+        ),
+        positions = c(1L, 10L),
+        chrom = "chr_wrap",
+        seqlength = 10L
+    )
+    rr <- rowRanges(object)
+    si <- GenomeInfoDb::seqinfo(rr)
+    GenomeInfoDb::isCircular(si) <- TRUE
+    GenomeInfoDb::seqinfo(rr) <- si
+    rowRanges(object) <- rr
+
+    result <- coverageDepth(object, window = 5L, method = "mean")
+
+    expect_equal(result$window_start, c(1L, 6L))
+    expect_equal(result$window_end, c(5L, 10L))
+    expect_equal(result$depth, c(10, 70))
+})
+
 test_that("coverageDepth: depth values are non-negative where not NA", {
     data(comma_example_data)
     result <- coverageDepth(comma_example_data, window = 10000L)
