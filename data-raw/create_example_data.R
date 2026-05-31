@@ -1,5 +1,5 @@
 ## Script to generate comma_example_data — the synthetic example dataset
-## bundled with the comma package for use in tests, vignettes, and examples.
+## bundled with the commaKit package for use in tests, vignettes, and examples.
 ##
 ## Run this script from the package root with:
 ##   source("data-raw/create_example_data.R")

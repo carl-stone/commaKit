@@ -1,11 +1,11 @@
 ---
-title: "Getting Started with comma"
+title: "Getting Started with commaKit"
 output:
   BiocStyle::html_document:
     toc: true
     toc_depth: 2
 vignette: >
-  %\VignetteIndexEntry{Getting Started with comma}
+  %\VignetteIndexEntry{Getting Started with commaKit}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -23,14 +23,14 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-`comma` (**Co**mparative **M**ethylomics for **M**icrobial **A**nalysis) is an
-R package for genome-wide analysis of bacterial DNA methylation from Oxford
+`commaKit` (**Com**parative **M**icrobial **M**ethylomics **A**nalysis **Kit**) is
+an R package for genome-wide analysis of bacterial DNA methylation from Oxford
 Nanopore sequencing data. It supports three modification types — N6-methyladenine
 (6mA), 5-methylcytosine (5mC), and N4-methylcytosine (4mC) — in a single,
 unified data container. This vignette walks through the complete analysis
 workflow using the built-in `comma_example_data` synthetic dataset.
 
-The typical `comma` workflow has six steps:
+The typical commaKit workflow has six steps:
 
 1. **Load** per-sample methylation files into a `commaData` object.
 2. **QC** the data (coverage, beta distributions, PCA).
@@ -42,19 +42,18 @@ The typical `comma` workflow has six steps:
 # Installation
 
 ```{r install, eval = FALSE}
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install("comma")
+devtools::install_github("carl-stone/commaKit")
+# BiocManager::install("commaKit") after Bioconductor release
 ```
 
 ```{r load}
-library(comma)
+library(commaKit)
 ```
 
 # The `commaData` Object
 
 `commaData` extends `SummarizedExperiment` and is the central data container
-in `comma`. It stores:
+in commaKit. It stores:
 
 - **methylation** — a sites × samples matrix of beta values (0–1).
 - **coverage** — a sites × samples matrix of read depths.
@@ -215,7 +214,7 @@ results that follow methylKit's handling of differential methylation.
 
 `method = "quasi_f"` is a good general-purpose alternative for bacterial
 methylomes. It uses a quasibinomial model with empirical Bayes dispersion
-shrinkage, keeps multiple-testing correction inside `comma`, and can be a
+shrinkage, keeps multiple-testing correction inside commaKit, and can be a
 practical first alternative when methylKit convergence warnings,
 zero-variance sites, or runtime become distracting.
 

@@ -4,7 +4,7 @@
 ## KEGG access, or internet connectivity.
 
 library(testthat)
-library(comma)
+library(commaKit)
 
 # ── Shared fixtures ───────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ test_that(".siteToGeneMap returns data.frame with expected columns", {
         feature_names = I(list(c("geneA", "geneB"), character(0))),
         stringsAsFactors = FALSE
     )
-    sg <- comma:::.siteToGeneMap(res_df, "feature_names")
+    sg <- commaKit:::.siteToGeneMap(res_df, "feature_names")
 
     expect_s3_class(sg, "data.frame")
     expect_true(all(c("gene_id", "site_key", "dm_padj", "dm_delta_beta") %in% colnames(sg)))
@@ -57,7 +57,7 @@ test_that(".siteToGeneMap correctly explodes multi-gene sites", {
         feature_names = I(list(c("geneA", "geneB"))),
         stringsAsFactors = FALSE
     )
-    sg <- comma:::.siteToGeneMap(res_df, "feature_names")
+    sg <- commaKit:::.siteToGeneMap(res_df, "feature_names")
 
     expect_equal(nrow(sg), 2L)
     expect_setequal(sg$gene_id, c("geneA", "geneB"))
@@ -75,7 +75,7 @@ test_that(".siteToGeneMap excludes intergenic sites silently", {
         feature_names = I(list(c("geneA"), character(0))),  # second site intergenic
         stringsAsFactors = FALSE
     )
-    sg <- comma:::.siteToGeneMap(res_df, "feature_names")
+    sg <- commaKit:::.siteToGeneMap(res_df, "feature_names")
 
     expect_equal(nrow(sg), 1L)
     expect_equal(sg$gene_id, "geneA")
@@ -92,7 +92,7 @@ test_that(".siteToGeneMap returns empty data.frame when all sites intergenic", {
         stringsAsFactors = FALSE
     )
     expect_warning(
-        sg <- comma:::.siteToGeneMap(res_df, "feature_names"),
+        sg <- commaKit:::.siteToGeneMap(res_df, "feature_names"),
         "No sites have gene annotations"
     )
     expect_equal(nrow(sg), 0L)
@@ -103,7 +103,7 @@ test_that(".siteToGeneMap errors when gene_col is missing", {
                          dm_padj=0.01, dm_delta_beta=-0.3,
                          stringsAsFactors=FALSE)
     expect_error(
-        comma:::.siteToGeneMap(res_df, "feature_names"),
+        commaKit:::.siteToGeneMap(res_df, "feature_names"),
         "not found in results"
     )
 })
@@ -118,7 +118,7 @@ test_that(".siteToGeneMap constructs correct site_key", {
         feature_names = I(list("geneZ")),
         stringsAsFactors = FALSE
     )
-    sg <- comma:::.siteToGeneMap(res_df, "feature_names")
+    sg <- commaKit:::.siteToGeneMap(res_df, "feature_names")
     expect_equal(sg$site_key, "chrX:555:-")
 })
 
@@ -135,7 +135,7 @@ make_sg <- function() {
 }
 
 test_that(".computeGeneScores returns named sorted vector", {
-    scores <- comma:::.computeGeneScores(make_sg(), "combined", "max")
+    scores <- commaKit:::.computeGeneScores(make_sg(), "combined", "max")
 
     expect_true(is.numeric(scores))
     expect_true(!is.null(names(scores)))
@@ -151,23 +151,23 @@ test_that(".computeGeneScores 'combined' metric has correct sign", {
         dm_delta_beta = 0.5,   # positive delta_beta → positive score
         stringsAsFactors = FALSE
     )
-    scores <- comma:::.computeGeneScores(sg, "combined", "max")
+    scores <- commaKit:::.computeGeneScores(sg, "combined", "max")
     expect_true(scores[["geneA"]] > 0)
 
     sg$dm_delta_beta <- -0.5   # negative delta_beta → negative score
-    scores2 <- comma:::.computeGeneScores(sg, "combined", "max")
+    scores2 <- commaKit:::.computeGeneScores(sg, "combined", "max")
     expect_true(scores2[["geneA"]] < 0)
 })
 
 test_that(".computeGeneScores excludes sites with NA padj", {
     # geneC has NA padj; should not appear in scores
-    scores <- comma:::.computeGeneScores(make_sg(), "combined", "max")
+    scores <- commaKit:::.computeGeneScores(make_sg(), "combined", "max")
     expect_false("geneC" %in% names(scores))
 })
 
 test_that(".computeGeneScores 'max' aggregation picks largest absolute score", {
     # geneA has two sites: padj=0.001 (larger -log10) and padj=0.01
-    scores <- comma:::.computeGeneScores(make_sg(), "padj", "max")
+    scores <- commaKit:::.computeGeneScores(make_sg(), "padj", "max")
     # -log10(0.001) = 3 > -log10(0.01) = 2
     expect_equal(scores[["geneA"]], -log10(0.001), tolerance = 1e-6)
 })
@@ -180,7 +180,7 @@ test_that(".computeGeneScores 'mean' aggregation averages across sites", {
         dm_delta_beta = c(0.4, 0.6),
         stringsAsFactors = FALSE
     )
-    scores <- comma:::.computeGeneScores(sg, "delta_beta", "mean")
+    scores <- commaKit:::.computeGeneScores(sg, "delta_beta", "mean")
     expect_equal(scores[["geneA"]], 0.5, tolerance = 1e-6)
 })
 
@@ -189,13 +189,13 @@ test_that(".computeGeneScores returns empty vector when all NA", {
         gene_id=c("g1"), site_key="a", dm_padj=NA_real_, dm_delta_beta=NA_real_,
         stringsAsFactors=FALSE
     )
-    scores <- comma:::.computeGeneScores(sg)
+    scores <- commaKit:::.computeGeneScores(sg)
     expect_length(scores, 0L)
 })
 
 test_that(".computeGeneScores errors on unknown score_metric", {
     expect_error(
-        comma:::.computeGeneScores(make_sg(), "bogus"),
+        commaKit:::.computeGeneScores(make_sg(), "bogus"),
         "score_metric"
     )
 })
@@ -382,7 +382,7 @@ test_that(".siteToGeneMap drops NA gene IDs silently", {
         feature_names = I(list(c(NA_character_, "geneA"), c("geneB"))),
         stringsAsFactors = FALSE
     )
-    sg <- comma:::.siteToGeneMap(res_df, "feature_names")
+    sg <- commaKit:::.siteToGeneMap(res_df, "feature_names")
 
     expect_false(any(is.na(sg$gene_id)))
     expect_true("geneA" %in% sg$gene_id)
@@ -400,7 +400,7 @@ test_that(".computeGeneScores 'max' does not crash when gene_ids contain NA", {
         stringsAsFactors = FALSE
     )
     expect_no_error(
-        scores <- comma:::.computeGeneScores(sg, "combined", "max")
+        scores <- commaKit:::.computeGeneScores(sg, "combined", "max")
     )
     expect_false(is.null(names(scores)))
     expect_false(any(is.na(names(scores))))
@@ -414,7 +414,7 @@ test_that(".computeGeneScores 'mean' does not return empty when gene_ids contain
         dm_delta_beta = c(0.4, 0.5),
         stringsAsFactors = FALSE
     )
-    scores <- comma:::.computeGeneScores(sg, "delta_beta", "mean")
+    scores <- commaKit:::.computeGeneScores(sg, "delta_beta", "mean")
     expect_true(length(scores) > 0L)
     expect_true("geneA" %in% names(scores))
 })
@@ -466,7 +466,7 @@ test_that("enrichMethylation warns and returns NULL for unmatched feature_type",
 test_that(".parseTargetGenes identity for gene/CDS/tRNA/rRNA/ncRNA", {
     nms <- c("geneA", "geneB")
     for (ft in c("gene", "CDS", "tRNA", "rRNA", "ncRNA")) {
-        res <- comma:::.parseTargetGenes(nms, ft)
+        res <- commaKit:::.parseTargetGenes(nms, ft)
         expect_equal(res, as.list(nms), info = ft)
     }
 })
@@ -475,7 +475,7 @@ test_that(".parseTargetGenes strips promoter suffix for promoter/TFBS types", {
     nms <- c("aaeRp", "geneA-geneBp1", "flhDCp")
     for (ft in c("promoter", "minus_10_signal", "minus_35_signal",
                  "transcription_factor_binding_site")) {
-        res <- comma:::.parseTargetGenes(nms, ft)
+        res <- commaKit:::.parseTargetGenes(nms, ft)
         expect_equal(res[[1]], "aaeR", info = ft)
         expect_equal(res[[2]], c("geneA", "geneB"), info = paste(ft, "operon"))
         expect_equal(res[[3]], "flhDC", info = ft)
@@ -485,45 +485,45 @@ test_that(".parseTargetGenes strips promoter suffix for promoter/TFBS types", {
 test_that(".parseTargetGenes protein_binding_site prefers transcription_unit", {
     nms    <- "AcrR DNA-binding-site 5 bases of acrRp"
     tu_val <- "acrAB"
-    res <- comma:::.parseTargetGenes(nms, "protein_binding_site", tu_values = tu_val)
+    res <- commaKit:::.parseTargetGenes(nms, "protein_binding_site", tu_values = tu_val)
     expect_equal(res[[1]], "acrAB")
 })
 
 test_that(".parseTargetGenes protein_binding_site falls back to 'of' pattern", {
     nms <- "AcrR DNA-binding-site 5 bases of acrRp"
-    res <- comma:::.parseTargetGenes(nms, "protein_binding_site", tu_values = NA_character_)
+    res <- commaKit:::.parseTargetGenes(nms, "protein_binding_site", tu_values = NA_character_)
     expect_equal(res[[1]], "acrR")
 })
 
 test_that(".parseTargetGenes protein_binding_site returns NA when no info", {
     nms <- "unknown binding site"
-    res <- comma:::.parseTargetGenes(nms, "protein_binding_site", tu_values = NA_character_)
+    res <- commaKit:::.parseTargetGenes(nms, "protein_binding_site", tu_values = NA_character_)
     expect_true(is.na(res[[1]]))
 })
 
 test_that(".parseTargetGenes RNA_binding_site prefers transcription_unit", {
     nms    <- "ArcZ mRNA-binding-site regulating eptB"
     tu_val <- "eptB"
-    res <- comma:::.parseTargetGenes(nms, "RNA_binding_site", tu_values = tu_val)
+    res <- commaKit:::.parseTargetGenes(nms, "RNA_binding_site", tu_values = tu_val)
     expect_equal(res[[1]], "eptB")
 })
 
 test_that(".parseTargetGenes RNA_binding_site falls back to 'regulating' pattern", {
     nms <- "ArcZ mRNA-binding-site regulating eptB"
-    res <- comma:::.parseTargetGenes(nms, "RNA_binding_site", tu_values = NA_character_)
+    res <- commaKit:::.parseTargetGenes(nms, "RNA_binding_site", tu_values = NA_character_)
     expect_equal(res[[1]], "eptB")
 })
 
 test_that(".parseTargetGenes terminator strips ' terminator' suffix", {
     nms <- c("geneA terminator", "thrLABC terminator")
-    res <- comma:::.parseTargetGenes(nms, "terminator")
+    res <- commaKit:::.parseTargetGenes(nms, "terminator")
     expect_equal(res[[1]], "geneA")
     expect_equal(res[[2]], "thrLABC")
 })
 
 test_that(".parseTargetGenes default branch returns identity", {
     nms <- c("IS1", "IS10-right")
-    res <- comma:::.parseTargetGenes(nms, "insertion_sequence")
+    res <- commaKit:::.parseTargetGenes(nms, "insertion_sequence")
     expect_equal(res, as.list(nms))
 })
 
@@ -532,7 +532,7 @@ test_that(".parseTargetGenes default branch returns identity", {
 test_that(".parseRegulatorGenes returns NA for non-regulatory types", {
     nms <- c("geneA", "geneB")
     for (ft in c("gene", "CDS", "promoter", "terminator")) {
-        res <- comma:::.parseRegulatorGenes(nms, ft)
+        res <- commaKit:::.parseRegulatorGenes(nms, ft)
         expect_true(all(vapply(res, function(x) all(is.na(x)), logical(1))),
                     info = ft)
     }
@@ -543,19 +543,19 @@ test_that(".parseRegulatorGenes maps sigma factor for TFBS types", {
     subtypes <- c("Sigma70",      "Sigma32")
     for (ft in c("transcription_factor_binding_site",
                  "minus_10_signal", "minus_35_signal")) {
-        res <- comma:::.parseRegulatorGenes(nms, ft, subtype_values = subtypes)
+        res <- commaKit:::.parseRegulatorGenes(nms, ft, subtype_values = subtypes)
         expect_equal(res[[1]], "rpoD", info = ft)
         expect_equal(res[[2]], "rpoH", info = ft)
     }
 })
 
 test_that(".parseRegulatorGenes TFBS returns NA when no subtype", {
-    res <- comma:::.parseRegulatorGenes("some-site", "transcription_factor_binding_site")
+    res <- commaKit:::.parseRegulatorGenes("some-site", "transcription_factor_binding_site")
     expect_true(is.na(res[[1]]))
 })
 
 test_that(".parseRegulatorGenes TFBS returns NA for unknown sigma factor", {
-    res <- comma:::.parseRegulatorGenes("some-site",
+    res <- commaKit:::.parseRegulatorGenes("some-site",
                                          "transcription_factor_binding_site",
                                          subtype_values = "SigmaXX")
     expect_true(is.na(res[[1]]))
@@ -563,21 +563,21 @@ test_that(".parseRegulatorGenes TFBS returns NA for unknown sigma factor", {
 
 test_that(".parseRegulatorGenes protein_binding_site extracts protein name", {
     nms <- c("AcrR DNA-binding-site", "DnaA binding site of dnaA")
-    res <- comma:::.parseRegulatorGenes(nms, "protein_binding_site")
+    res <- commaKit:::.parseRegulatorGenes(nms, "protein_binding_site")
     expect_equal(res[[1]], "acrR")
     expect_equal(res[[2]], "dnaA")
 })
 
 test_that(".parseRegulatorGenes RNA_binding_site extracts gene-name first word", {
     # ArcZ matches gene-name pattern (3-5 lowercase after uppercase)
-    res_match <- comma:::.parseRegulatorGenes("ArcZ mRNA-binding-site regulating eptB",
+    res_match <- commaKit:::.parseRegulatorGenes("ArcZ mRNA-binding-site regulating eptB",
                                                "RNA_binding_site")
     expect_equal(res_match[[1]], "arcZ")
 })
 
 test_that(".parseRegulatorGenes RNA_binding_site returns NA for riboswitches", {
     # "adenosylcobalamin" is all-lowercase and too long — no match
-    res_no <- comma:::.parseRegulatorGenes("adenosylcobalamin riboswitch",
+    res_no <- commaKit:::.parseRegulatorGenes("adenosylcobalamin riboswitch",
                                             "RNA_binding_site")
     expect_true(is.na(res_no[[1]]))
 })
@@ -609,13 +609,13 @@ make_role_res_df <- function(feature_types_list, feature_names_list,
 
 test_that(".extractGeneRoles returns NULL when no sites match ft", {
     df  <- make_role_res_df(list(c("promoter")), list(c("geneAp1")))
-    out <- comma:::.extractGeneRoles(df, "gene", "feature_names")
+    out <- commaKit:::.extractGeneRoles(df, "gene", "feature_names")
     expect_null(out)
 })
 
 test_that(".extractGeneRoles gene type: target only, identity", {
     df  <- make_role_res_df(list(c("gene")), list(c("geneA")))
-    out <- comma:::.extractGeneRoles(df, "gene", "feature_names")
+    out <- commaKit:::.extractGeneRoles(df, "gene", "feature_names")
     expect_false(is.null(out))
     expect_equal(out$role, "target")
     expect_equal(out$gene_id, "geneA")
@@ -627,7 +627,7 @@ test_that(".extractGeneRoles promoter: strips suffix, operonic → multiple targ
         list(c("promoter", "promoter")),
         list(c("aaeRp1",   "geneA-geneBp"))
     )
-    out <- comma:::.extractGeneRoles(df, "promoter", "feature_names")
+    out <- commaKit:::.extractGeneRoles(df, "promoter", "feature_names")
     targets <- out$gene_id[out$role == "target"]
     expect_true("aaeR"  %in% targets)
     expect_true("geneA" %in% targets)
@@ -642,7 +642,7 @@ test_that(".extractGeneRoles TFBS: target from promoter name, regulator from sub
         list(c("acrRp")),
         subtype_values_list = list(c("Sigma70"))
     )
-    out <- comma:::.extractGeneRoles(df, "transcription_factor_binding_site",
+    out <- commaKit:::.extractGeneRoles(df, "transcription_factor_binding_site",
                                       "feature_names")
     expect_true("target"    %in% out$role)
     expect_true("regulator" %in% out$role)
@@ -657,7 +657,7 @@ test_that(".extractGeneRoles protein_binding_site: target from TU attr, regulato
         list(c("AcrR DNA-binding-site")),
         tu_values_list = list(c("acrAB"))
     )
-    out <- comma:::.extractGeneRoles(df, "protein_binding_site", "feature_names")
+    out <- commaKit:::.extractGeneRoles(df, "protein_binding_site", "feature_names")
     expect_equal(out$gene_id[out$role == "target"],    "acrAB")
     expect_equal(out$gene_id[out$role == "regulator"], "acrR")
     expect_equal(out$role_type[out$role == "regulator"], "TF_protein")
@@ -669,7 +669,7 @@ test_that(".extractGeneRoles RNA_binding_site: target from TU, regulator from fi
         list(c("ArcZ mRNA-binding-site regulating eptB")),
         tu_values_list = list(c("eptB"))
     )
-    out <- comma:::.extractGeneRoles(df, "RNA_binding_site", "feature_names")
+    out <- commaKit:::.extractGeneRoles(df, "RNA_binding_site", "feature_names")
     expect_equal(out$gene_id[out$role == "target"],    "eptB")
     expect_equal(out$gene_id[out$role == "regulator"], "arcZ")
     expect_equal(out$role_type[out$role == "regulator"], "RNA_regulator")
@@ -683,9 +683,9 @@ test_that(".extractGeneRoles overlap_only=TRUE filters by rel_position", {
     )
     df$rel_position <- list(0L, -20L)
 
-    out_all  <- comma:::.extractGeneRoles(df, "gene", "feature_names",
+    out_all  <- commaKit:::.extractGeneRoles(df, "gene", "feature_names",
                                            overlap_only = FALSE)
-    out_ovlp <- comma:::.extractGeneRoles(df, "gene", "feature_names",
+    out_ovlp <- commaKit:::.extractGeneRoles(df, "gene", "feature_names",
                                            overlap_only = TRUE)
 
     expect_true("geneA" %in% out_all$gene_id)

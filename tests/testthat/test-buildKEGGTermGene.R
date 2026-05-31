@@ -7,7 +7,7 @@
 ## access is required.
 
 library(testthat)
-library(comma)
+library(commaKit)
 
 # ── Shared mock data ──────────────────────────────────────────────────────────
 

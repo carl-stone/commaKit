@@ -34,7 +34,7 @@ Start by checking that each input sample can be parsed with the same caller and
 that the sample names are identical across `files` and `colData`.
 
 ```{r minimal-constructor, eval = FALSE}
-library(comma)
+library(commaKit)
 
 files <- c(
     ctrl_1 = "ctrl_1.modkit.bed",
@@ -59,15 +59,15 @@ obj <- commaData(
 
 Use `caller = "modkit"` for modkit pileup BED files. This is the recommended
 path for most Dorado-based workflows: call bases with Dorado, run
-`modkit pileup`, then import the resulting BED files into `comma`.
+`modkit pileup`, then import the resulting BED files into commaKit.
 
-Use `caller = "dorado"` only when you want `comma` to parse an aligned BAM file
+Use `caller = "dorado"` only when you want commaKit to parse an aligned BAM file
 with MM/ML base modification tags directly. The BAM must contain modification
 tags and should be indexed. Direct BAM parsing does not provide motif context,
 so per-site `motif` values will be `NA`.
 
 Use `caller = "megalodon"` for legacy Megalodon per-read modification BED
-files. Megalodon files do not encode the modification type in a way `comma`
+files. Megalodon files do not encode the modification type in a way commaKit
 can infer, so provide exactly one `mod_type` value.
 
 ```{r caller-examples, eval = FALSE}
@@ -88,7 +88,7 @@ obj_megalodon <- commaData(megalodon_files, col_data,
 
 # Modkit BED Format Problems
 
-`comma` expects modkit pileup bedMethyl output with at least 18 columns and no
+commaKit expects modkit pileup bedMethyl output with at least 18 columns and no
 header row. The parser uses the first 18 fields:
 
 - columns 1 to 3: chromosome, 0-based start, and end
@@ -110,7 +110,7 @@ Common symptoms and fixes:
 | Duplicate methylation site rows | The file has repeated rows for the same chromosome, position, strand, modification type, and motif. | Aggregate or regenerate the per-sample pileup before importing. |
 
 If the modkit `mod_code` field includes motif context, such as `a,GATC,1`,
-`comma` stores `mod_type = "6mA"` and `motif = "GATC"`. Older or derived files
+commaKit stores `mod_type = "6mA"` and `motif = "GATC"`. Older or derived files
 without motif context can still import, but `motif` will be `NA`.
 
 ```{r inspect-modkit, eval = FALSE}
@@ -156,7 +156,7 @@ genome <- BSgenome.Ecoli.NCBI.20080805::BSgenome.Ecoli.NCBI.20080805
 ```
 
 Do not pass a single unnamed sequence such as `BSgenomeObject$NC_000913`.
-That creates a `DNAString` without a chromosome name, so `comma` cannot attach
+That creates a `DNAString` without a chromosome name, so commaKit cannot attach
 the sequence length to methylation sites. Use the whole `BSgenome` object or a
 named vector instead.
 
@@ -176,7 +176,7 @@ setdiff(bed_chroms, names(genome))
 Annotation is optional. Use `annotation = NULL` while debugging methylation
 file import, then add annotation once the `commaData` object can be constructed.
 
-`comma` accepts annotation as a `GRanges` object or as a GFF, GFF3, or BED file
+commaKit accepts annotation as a `GRanges` object or as a GFF, GFF3, or BED file
 path. Loading annotation files requires the Bioconductor package
 `rtracklayer`.
 

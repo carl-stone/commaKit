@@ -1,10 +1,10 @@
-# Branches, Pull Requests, and Releases for comma
+# Branches, Pull Requests, and Releases for commaKit
 
 **Last updated:** 2026-05-14  
 **Maintained by:** commaBot  
 **Audience:** Carl, Claire, commaBot, and future contributors
 
-This document defines how comma uses branches, pull requests, versions, releases, and tags.
+This document defines how commaKit uses branches, pull requests, versions, releases, and tags.
 
 The goal is not office-job ceremony. The goal is to prevent avoidable chaos.
 
@@ -210,7 +210,7 @@ A tag means:
 
 ## Version Policy
 
-comma's canonical current version is `0.2.0`. Earlier version numbers were
+commaKit's canonical current version is `0.2.0`. Earlier version numbers were
 informal labels from the script-to-package transition and should not drive
 current metadata, badges, URLs, or release planning.
 

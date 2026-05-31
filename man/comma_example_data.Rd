@@ -3,7 +3,7 @@
 \docType{data}
 \name{comma_example_data}
 \alias{comma_example_data}
-\title{Synthetic example methylation dataset for the comma package}
+\title{Synthetic example methylation dataset for the commaKit package}
 \format{
 A \code{commaData} object with:
 \describe{

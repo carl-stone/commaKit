@@ -130,7 +130,7 @@ test_that("plot_metagene: extracts beta values from annotated row order", {
             )
             annotated[rev(seq_len(nrow(annotated))), ]
         },
-        .package = "comma"
+        .package = "commaKit"
     )
 
     observed <- plot_metagene(obj, feature = "gene", n_bins = 10L)$data

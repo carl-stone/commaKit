@@ -34,9 +34,9 @@ commaBot logs runtime package installs here. Carl reviews and either bakes them 
 
 ```bash
 # Sync renv files if R packages changed
-cp /home/carls/comma/renv.lock /home/carls/commabot-infrastructure/comma/ && \
-cp /home/carls/comma/renv/settings.json /home/carls/commabot-infrastructure/comma/renv/ && \
-cp /home/carls/comma/renv/activate.R /home/carls/commabot-infrastructure/comma/renv/
+cp /home/carls/commaKit/renv.lock /home/carls/commabot-infrastructure/commaKit/ && \
+cp /home/carls/commaKit/renv/settings.json /home/carls/commabot-infrastructure/commaKit/renv/ && \
+cp /home/carls/commaKit/renv/activate.R /home/carls/commabot-infrastructure/commaKit/renv/
 
 # Rebuild
 cd /home/carls/commabot-infrastructure && docker compose up -d --build

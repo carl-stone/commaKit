@@ -349,31 +349,31 @@ test_that("diffMethyl: method='quasi_f' errors informatively if limma absent", {
 
 test_that("applyMultipleTesting: BH correction returns values in [0, 1]", {
     pvals <- c(0.01, 0.05, 0.1, 0.5, 0.9)
-    padj  <- comma:::.applyMultipleTesting(pvals, method = "BH")
+    padj  <- commaKit:::.applyMultipleTesting(pvals, method = "BH")
     expect_true(all(padj >= 0 & padj <= 1))
 })
 
 test_that("applyMultipleTesting: method='none' returns original p-values unchanged", {
     pvals <- c(0.01, 0.05, 0.1, 0.5, 0.9)
-    padj  <- comma:::.applyMultipleTesting(pvals, method = "none")
+    padj  <- commaKit:::.applyMultipleTesting(pvals, method = "none")
     expect_equal(padj, pvals)
 })
 
 test_that("applyMultipleTesting: NA values pass through as NA", {
     pvals <- c(0.01, NA_real_, 0.1)
-    padj  <- comma:::.applyMultipleTesting(pvals, method = "BH")
+    padj  <- commaKit:::.applyMultipleTesting(pvals, method = "BH")
     expect_true(is.na(padj[2]))
 })
 
 test_that("applyMultipleTesting: output length equals input length", {
     pvals <- c(0.001, 0.01, 0.05, 0.1)
-    padj  <- comma:::.applyMultipleTesting(pvals, method = "BH")
+    padj  <- commaKit:::.applyMultipleTesting(pvals, method = "BH")
     expect_equal(length(padj), length(pvals))
 })
 
 test_that("applyMultipleTesting: bonferroni method accepted without error", {
     pvals <- c(0.01, 0.05, 0.1)
-    expect_no_error(comma:::.applyMultipleTesting(pvals, method = "bonferroni"))
+    expect_no_error(commaKit:::.applyMultipleTesting(pvals, method = "bonferroni"))
 })
 
 # ─── Edge cases ───────────────────────────────────────────────────────────────

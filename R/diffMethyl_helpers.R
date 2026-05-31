@@ -4,7 +4,7 @@ NULL
 
 #' Resolve the two-level differential methylation design contract
 #'
-#' Internal helper shared by diffMethyl() and all statistical backends. comma
+#' Internal helper shared by diffMethyl() and all statistical backends. commaKit
 #' currently supports one two-level contrast per diffMethyl() call. Multi-level
 #' primary variables must be modeled in a future explicit-contrast API.
 #'

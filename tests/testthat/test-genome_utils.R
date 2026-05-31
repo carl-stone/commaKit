@@ -9,7 +9,7 @@ library(GenomicRanges)
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that(".validateGenomeInfo() returns NULL for NULL input", {
-    expect_null(comma:::.validateGenomeInfo(NULL))
+    expect_null(commaKit:::.validateGenomeInfo(NULL))
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -18,13 +18,13 @@ test_that(".validateGenomeInfo() returns NULL for NULL input", {
 
 test_that(".validateGenomeInfo() returns a named integer vector unchanged", {
     gi <- c(chr1 = 1000L, chr2 = 2000L)
-    result <- comma:::.validateGenomeInfo(gi)
+    result <- commaKit:::.validateGenomeInfo(gi)
     expect_identical(result, gi)
 })
 
 test_that(".validateGenomeInfo() coerces a named numeric vector to integer", {
     gi_num <- c(chr1 = 1000, chr2 = 2000)
-    result  <- comma:::.validateGenomeInfo(gi_num)
+    result  <- commaKit:::.validateGenomeInfo(gi_num)
     expect_true(is.integer(result))
     expected <- as.integer(unname(gi_num))
     expect_equal(unname(result), expected)
@@ -33,14 +33,14 @@ test_that(".validateGenomeInfo() coerces a named numeric vector to integer", {
 
 test_that(".validateGenomeInfo() errors on unnamed integer vector", {
     expect_error(
-        comma:::.validateGenomeInfo(c(1000L, 2000L)),
+        commaKit:::.validateGenomeInfo(c(1000L, 2000L)),
         regexp = "named integer"
     )
 })
 
 test_that(".validateGenomeInfo() errors on invalid type (list)", {
     expect_error(
-        comma:::.validateGenomeInfo(list(chr1 = 1000L)),
+        commaKit:::.validateGenomeInfo(list(chr1 = 1000L)),
         regexp = "BSgenome"
     )
 })
@@ -51,7 +51,7 @@ test_that(".validateGenomeInfo() errors on invalid type (list)", {
 
 test_that(".validateGenomeInfo() errors on non-existent FASTA path", {
     expect_error(
-        comma:::.validateGenomeInfo("/nonexistent/path/genome.fa"),
+        commaKit:::.validateGenomeInfo("/nonexistent/path/genome.fa"),
         regexp = "not found"
     )
 })
@@ -61,7 +61,7 @@ test_that(".validateGenomeInfo() reads FASTA and returns named integer vector", 
     fa <- tempfile(fileext = ".fa")
     writeLines(c(">chr_a", "ATCGATCG", ">chr_b", "GGGGCCCC"), fa)
 
-    result <- comma:::.validateGenomeInfo(fa)
+    result <- commaKit:::.validateGenomeInfo(fa)
 
     expect_true(is.integer(result))
     expect_equal(names(result), c("chr_a", "chr_b"))
@@ -74,7 +74,7 @@ test_that(".validateGenomeInfo() FASTA result has correct sizes for unequal chro
     fa <- tempfile(fileext = ".fa")
     writeLines(c(">chrA", "AAAA", ">chrB", "TTTTTTTTTT"), fa)
 
-    result <- comma:::.validateGenomeInfo(fa)
+    result <- commaKit:::.validateGenomeInfo(fa)
 
     expect_equal(result[["chrA"]], 4L)
     expect_equal(result[["chrB"]], 10L)
@@ -87,7 +87,7 @@ test_that(".validateGenomeInfo() FASTA result has correct sizes for unequal chro
 test_that(".validateGenomeInfo() accepts a named DNAStringSet", {
     skip_if_not_installed("Biostrings")
     seqs   <- Biostrings::DNAStringSet(c(chr1 = "ATCGATCG", chr2 = "GGGGCCCC"))
-    result <- comma:::.validateGenomeInfo(seqs)
+    result <- commaKit:::.validateGenomeInfo(seqs)
     expect_true(is.integer(result))
     expect_equal(names(result), c("chr1", "chr2"))
     expect_equal(result[["chr1"]], 8L)
@@ -97,7 +97,7 @@ test_that(".validateGenomeInfo() accepts a named DNAStringSet", {
 test_that(".validateGenomeInfo() DNAStringSet single-sequence returns correct size", {
     skip_if_not_installed("Biostrings")
     seqs   <- Biostrings::DNAStringSet(c(NC_000913 = "GATCAAAA"))
-    result <- comma:::.validateGenomeInfo(seqs)
+    result <- commaKit:::.validateGenomeInfo(seqs)
     expect_equal(names(result), "NC_000913")
     expect_equal(result[["NC_000913"]], 8L)
 })
@@ -105,7 +105,7 @@ test_that(".validateGenomeInfo() DNAStringSet single-sequence returns correct si
 test_that(".validateGenomeInfo() errors on unnamed DNAStringSet", {
     skip_if_not_installed("Biostrings")
     seqs <- Biostrings::DNAStringSet(c("ATCGATCG", "GGGGCCCC"))
-    expect_error(comma:::.validateGenomeInfo(seqs), regexp = "names")
+    expect_error(commaKit:::.validateGenomeInfo(seqs), regexp = "names")
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -116,7 +116,7 @@ test_that(".validateGenomeInfo() errors on DNAString with helpful message", {
     skip_if_not_installed("Biostrings")
     seq <- Biostrings::DNAString("ATCGATCG")
     expect_error(
-        comma:::.validateGenomeInfo(seq),
+        commaKit:::.validateGenomeInfo(seq),
         regexp = "DNAString"
     )
 })
@@ -130,7 +130,7 @@ test_that(".loadGenomeSequences() reads a FASTA path", {
     fa <- tempfile(fileext = ".fa")
     writeLines(c(">chr_a", "ATCG", ">chr_b", "GGGGCC"), fa)
 
-    seqs <- comma:::.loadGenomeSequences(fa)
+    seqs <- commaKit:::.loadGenomeSequences(fa)
 
     expect_s4_class(seqs, "DNAStringSet")
     expect_equal(names(seqs), c("chr_a", "chr_b"))
@@ -141,7 +141,7 @@ test_that(".loadGenomeSequences() passes through named DNAStringSet input", {
     skip_if_not_installed("Biostrings")
     seqs <- Biostrings::DNAStringSet(c(chr1 = "ATCG", chr2 = "GGCC"))
 
-    result <- comma:::.loadGenomeSequences(seqs)
+    result <- commaKit:::.loadGenomeSequences(seqs)
 
     expect_s4_class(result, "DNAStringSet")
     expect_equal(names(result), names(seqs))
@@ -153,7 +153,7 @@ test_that(".loadGenomeSequences() requires named sequences", {
     seqs <- Biostrings::DNAStringSet(c("ATCG", "GGCC"))
 
     expect_error(
-        comma:::.loadGenomeSequences(seqs),
+        commaKit:::.loadGenomeSequences(seqs),
         "non-empty names"
     )
 })
@@ -162,8 +162,8 @@ test_that(".validateGenomeInfo() and .loadGenomeSequences() share sequence sizes
     skip_if_not_installed("Biostrings")
     seqs <- Biostrings::DNAStringSet(c(chr1 = "ATCG", chr2 = "GGCCCC"))
 
-    loaded <- comma:::.loadGenomeSequences(seqs)
-    sizes <- comma:::.validateGenomeInfo(seqs)
+    loaded <- commaKit:::.loadGenomeSequences(seqs)
+    sizes <- commaKit:::.validateGenomeInfo(seqs)
 
     expect_equal(sizes, stats::setNames(
         as.integer(Biostrings::width(loaded)),
@@ -176,9 +176,9 @@ test_that(".validateGenomeInfo() and .loadGenomeSequences() share sequence sizes
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that(".circularIndex() returns positions within range unchanged", {
-    expect_equal(comma:::.circularIndex(1L,   100L), 1L)
-    expect_equal(comma:::.circularIndex(50L,  100L), 50L)
-    expect_equal(comma:::.circularIndex(100L, 100L), 100L)
+    expect_equal(commaKit:::.circularIndex(1L,   100L), 1L)
+    expect_equal(commaKit:::.circularIndex(50L,  100L), 50L)
+    expect_equal(commaKit:::.circularIndex(100L, 100L), 100L)
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -186,14 +186,14 @@ test_that(".circularIndex() returns positions within range unchanged", {
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that(".circularIndex() wraps positions past the genome end", {
-    expect_equal(comma:::.circularIndex(101L, 100L), 1L)
-    expect_equal(comma:::.circularIndex(200L, 100L), 100L)
-    expect_equal(comma:::.circularIndex(201L, 100L), 1L)
+    expect_equal(commaKit:::.circularIndex(101L, 100L), 1L)
+    expect_equal(commaKit:::.circularIndex(200L, 100L), 100L)
+    expect_equal(commaKit:::.circularIndex(201L, 100L), 1L)
 })
 
 test_that(".circularIndex() wraps position 0 to the last position", {
     # position 0 is one step before position 1 on a circular genome
-    expect_equal(comma:::.circularIndex(0L, 100L), 100L)
+    expect_equal(commaKit:::.circularIndex(0L, 100L), 100L)
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -201,7 +201,7 @@ test_that(".circularIndex() wraps position 0 to the last position", {
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that(".circularIndex() is vectorised over positions", {
-    result <- comma:::.circularIndex(c(1L, 100L, 101L, 200L), 100L)
+    result <- commaKit:::.circularIndex(c(1L, 100L, 101L, 200L), 100L)
     expect_equal(result, c(1L, 100L, 1L, 100L))
 })
 
@@ -210,11 +210,11 @@ test_that(".circularIndex() is vectorised over positions", {
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that(".circularIndex() errors on genome_size = 0", {
-    expect_error(comma:::.circularIndex(5L, 0L))
+    expect_error(commaKit:::.circularIndex(5L, 0L))
 })
 
 test_that(".circularIndex() errors on negative genome_size", {
-    expect_error(comma:::.circularIndex(5L, -10L))
+    expect_error(commaKit:::.circularIndex(5L, -10L))
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -222,7 +222,7 @@ test_that(".circularIndex() errors on negative genome_size", {
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that(".makeSeqinfo() returns NULL for NULL input", {
-    expect_null(comma:::.makeSeqinfo(NULL))
+    expect_null(commaKit:::.makeSeqinfo(NULL))
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -231,37 +231,37 @@ test_that(".makeSeqinfo() returns NULL for NULL input", {
 
 test_that(".makeSeqinfo() returns a Seqinfo object", {
     gi     <- c(chr1 = 1000L, chr2 = 2000L)
-    result <- comma:::.makeSeqinfo(gi)
+    result <- commaKit:::.makeSeqinfo(gi)
     expect_true(is(result, "Seqinfo"))
 })
 
 test_that(".makeSeqinfo() has correct seqnames", {
     gi     <- c(chr1 = 1000L, chr2 = 2000L)
-    result <- comma:::.makeSeqinfo(gi)
+    result <- commaKit:::.makeSeqinfo(gi)
     expect_equal(GenomeInfoDb::seqnames(result), c("chr1", "chr2"))
 })
 
 test_that(".makeSeqinfo() has correct seqlengths", {
     gi     <- c(chr1 = 1000L, chr2 = 2000L)
-    result <- comma:::.makeSeqinfo(gi)
+    result <- commaKit:::.makeSeqinfo(gi)
     expect_equal(GenomeInfoDb::seqlengths(result), c(chr1 = 1000L, chr2 = 2000L))
 })
 
 test_that(".makeSeqinfo() defaults chromosomes to circular", {
     gi     <- c(chr1 = 1000L, chr2 = 2000L)
-    result <- comma:::.makeSeqinfo(gi)
+    result <- commaKit:::.makeSeqinfo(gi)
     expect_equal(GenomeInfoDb::isCircular(result), c(chr1 = TRUE, chr2 = TRUE))
 })
 
 test_that(".makeSeqinfo() records genome_name when provided", {
     gi     <- c(chr1 = 1000L)
-    result <- comma:::.makeSeqinfo(gi, genome_name = "test_genome")
+    result <- commaKit:::.makeSeqinfo(gi, genome_name = "test_genome")
     expect_equal(unique(GenomeInfoDb::genome(result)), "test_genome")
 })
 
 test_that(".makeSeqinfo() handles a single chromosome correctly", {
     gi     <- c(chr_sim = 100000L)
-    result <- comma:::.makeSeqinfo(gi)
+    result <- commaKit:::.makeSeqinfo(gi)
     expect_equal(length(result), 1L)
     expect_equal(GenomeInfoDb::seqnames(result), "chr_sim")
     expect_equal(GenomeInfoDb::seqlengths(result), c(chr_sim = 100000L))

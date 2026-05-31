@@ -17,7 +17,7 @@
 1. Read `R/commaData_class.R` and `R/commaData_constructor.R` (don't worry about every detail)
 2. In R console:
    ```r
-   library(comma)
+   library(commaKit)
    data(comma_example_data)
    comma_example_data
    ```
@@ -33,7 +33,7 @@
    ```
 4. Read the "Getting Started" vignette:
    ```r
-   vignette("getting-started", package = "comma")
+   vignette("getting-started", package = "commaKit")
    ```
 
 ### Questions to answer

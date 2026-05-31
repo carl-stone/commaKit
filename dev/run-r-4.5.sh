@@ -5,7 +5,7 @@ set -eu
 # /Library/Frameworks/R.framework/Current. This keeps Bioconductor 3.22 source
 # builds from accidentally compiling or linking against R 4.6 on local macOS.
 
-real_r_home=${COMMA_R45_HOME:-}
+real_r_home=${COMMAKIT_R45_HOME:-${COMMA_R45_HOME:-}}
 if [ -z "$real_r_home" ]; then
   for candidate in \
     /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources \
@@ -22,20 +22,23 @@ fi
 if [ -z "$real_r_home" ] || [ ! -x "$real_r_home/bin/exec/R" ]; then
   cat >&2 <<'EOF'
 Could not find a local R 4.5 framework.
-Install R 4.5 or set COMMA_R45_HOME to its Resources directory.
+Install R 4.5 or set COMMAKIT_R45_HOME to its Resources directory.
+COMMA_R45_HOME is still accepted for compatibility.
 EOF
   exit 1
 fi
 
 tmp_root=${TMPDIR:-/tmp}
-if [ -n "${COMMA_R45_OVERLAY_HOME:-}" ]; then
-  overlay_r_home=$COMMA_R45_OVERLAY_HOME
+overlay_env=${COMMAKIT_R45_OVERLAY_HOME:-${COMMA_R45_OVERLAY_HOME:-}}
+if [ -n "$overlay_env" ]; then
+  overlay_r_home=$overlay_env
   cleanup_overlay=false
   case $(basename "$overlay_r_home") in
-    comma-r-4.5-home.*) ;;
+    commakit-r-4.5-home.*|comma-r-4.5-home.*) ;;
     *)
       cat >&2 <<'EOF'
-COMMA_R45_OVERLAY_HOME must point to a scratch directory named comma-r-4.5-home.*.
+COMMAKIT_R45_OVERLAY_HOME must point to a scratch directory named commakit-r-4.5-home.*.
+COMMA_R45_OVERLAY_HOME with comma-r-4.5-home.* is still accepted for compatibility.
 Refusing to populate or remove an arbitrary path.
 EOF
       exit 1
@@ -43,13 +46,13 @@ EOF
   esac
   if [ -e "$overlay_r_home" ] && [ -n "$(find "$overlay_r_home" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
     cat >&2 <<'EOF'
-COMMA_R45_OVERLAY_HOME already exists and is not empty.
-Choose an empty scratch directory or unset COMMA_R45_OVERLAY_HOME.
+COMMAKIT_R45_OVERLAY_HOME already exists and is not empty.
+Choose an empty scratch directory or unset COMMAKIT_R45_OVERLAY_HOME.
 EOF
     exit 1
   fi
 else
-  overlay_r_home=$(mktemp -d "$tmp_root/comma-r-4.5-home.XXXXXX")
+  overlay_r_home=$(mktemp -d "$tmp_root/commakit-r-4.5-home.XXXXXX")
   cleanup_overlay=true
 fi
 

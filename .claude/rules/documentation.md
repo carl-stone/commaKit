@@ -37,7 +37,7 @@ Use `\donttest{}` for examples that require optional dependencies (e.g., cluster
 
 ## Package-level Documentation
 
-`R/comma-package.R` provides the `?comma` documentation page (Bioconductor requirement). It describes the five-step workflow: Load → QC → Annotate → Visualize → Differential methylation. Do not remove this file.
+`R/commaKit-package.R` provides the `?commaKit` documentation page (Bioconductor requirement). It describes the five-step workflow: Load → QC → Annotate → Visualize → Differential methylation. Do not remove this file.
 
 ## Vignettes
 

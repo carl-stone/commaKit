@@ -38,7 +38,7 @@ library(testthat)
 
 test_that(".parseMegalodon() returns a data.frame with correct columns", {
     f <- .write_tmp_megalodon(.megalodon_row())
-    result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
+    result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     expect_true(is.data.frame(result))
     expect_named(result, c("chrom", "position", "strand", "mod_type", "motif", "beta", "coverage"))
 })
@@ -49,19 +49,19 @@ test_that(".parseMegalodon() returns a data.frame with correct columns", {
 
 test_that(".parseMegalodon() converts 0-based start to 1-based position", {
     f <- .write_tmp_megalodon(.megalodon_row(start = 99L))
-    result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
+    result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     expect_equal(result$position, 100L)
 })
 
 test_that(".parseMegalodon() assigns mod_type from the argument", {
     f      <- .write_tmp_megalodon(.megalodon_row())
-    result <- comma:::.parseMegalodon(f, "s1", mod_type = "5mC", min_coverage = 1L)
+    result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "5mC", min_coverage = 1L)
     expect_equal(result$mod_type, "5mC")
 })
 
 test_that(".parseMegalodon() preserves chrom and strand", {
     f      <- .write_tmp_megalodon(.megalodon_row(chrom = "chrX", strand = "-"))
-    result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
+    result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     expect_equal(result$chrom,  "chrX")
     expect_equal(result$strand, "-")
 })
@@ -76,7 +76,7 @@ test_that(".parseMegalodon() computes beta as mean of per-read mod_prob", {
         .megalodon_row(start = 99L, read_id = "r2", mod_prob = 0.6)
     )
     f      <- .write_tmp_megalodon(rows)
-    result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
+    result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     # mean(0.8, 0.6) = 0.7
     expect_equal(result$beta, 0.7, tolerance = 1e-6)
 })
@@ -88,7 +88,7 @@ test_that(".parseMegalodon() computes coverage as read count per site", {
         .megalodon_row(start = 99L, read_id = "r3", mod_prob = 0.7)
     )
     f      <- .write_tmp_megalodon(rows)
-    result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
+    result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     expect_equal(result$coverage, 3L)
 })
 
@@ -100,7 +100,7 @@ test_that(".parseMegalodon() aggregates multiple sites independently", {
         .megalodon_row(start = 199L, read_id = "r4", mod_prob = 0.4)
     )
     f      <- .write_tmp_megalodon(rows)
-    result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
+    result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     result <- result[order(result$position), ]
 
     expect_equal(nrow(result), 2L)
@@ -116,7 +116,7 @@ test_that(".parseMegalodon() treats the same position on different strands as se
         .megalodon_row(start = 99L, strand = "-", read_id = "r2", mod_prob = 0.1)
     )
     f      <- .write_tmp_megalodon(rows)
-    result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
+    result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     # Same position, different strand → two separate sites
     expect_equal(nrow(result), 2L)
     expect_setequal(result$strand, c("-", "+"))
@@ -140,7 +140,7 @@ test_that(".parseMegalodon() drops sites below min_coverage", {
         .megalodon_row(start = 199L, read_id = "r8", mod_prob = 0.8)
     )
     f      <- .write_tmp_megalodon(rows)
-    result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 5L)
+    result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 5L)
     expect_equal(nrow(result),    1L)
     expect_equal(result$position, 200L)
 })
@@ -151,7 +151,7 @@ test_that(".parseMegalodon() retains all sites when min_coverage = 0", {
         .megalodon_row(start = 199L, read_id = "r2", mod_prob = 0.5)
     )
     f      <- .write_tmp_megalodon(rows)
-    result <- comma:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 0L)
+    result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 0L)
     expect_equal(nrow(result), 2L)
 })
 
@@ -162,7 +162,7 @@ test_that(".parseMegalodon() retains all sites when min_coverage = 0", {
 test_that(".parseMegalodon() requires explicit mod_type", {
     f <- .write_tmp_megalodon(.megalodon_row())
     expect_error(
-        comma:::.parseMegalodon(f, "s1", mod_type = NULL, min_coverage = 1L),
+        commaKit:::.parseMegalodon(f, "s1", mod_type = NULL, min_coverage = 1L),
         regexp = "explicitly supplied"
     )
 })
@@ -170,7 +170,7 @@ test_that(".parseMegalodon() requires explicit mod_type", {
 test_that(".parseMegalodon() rejects invalid mod_type values", {
     f <- .write_tmp_megalodon(.megalodon_row())
     expect_error(
-        comma:::.parseMegalodon(f, "s1", mod_type = "7mX", min_coverage = 1L),
+        commaKit:::.parseMegalodon(f, "s1", mod_type = "7mX", min_coverage = 1L),
         regexp = "unrecognized"
     )
 })
@@ -181,7 +181,7 @@ test_that(".parseMegalodon() rejects invalid mod_type values", {
 
 test_that(".parseMegalodon() errors on non-existent file", {
     expect_error(
-        comma:::.parseMegalodon("/nonexistent/path/file.bed", "s1", mod_type = "6mA"),
+        commaKit:::.parseMegalodon("/nonexistent/path/file.bed", "s1", mod_type = "6mA"),
         regexp = "not found"
     )
 })
@@ -190,14 +190,14 @@ test_that(".parseMegalodon() errors on file with fewer than 7 columns", {
     f <- tempfile(fileext = ".bed")
     writeLines("chr1\t99\t100\tread1\t255\t+", f)  # only 6 columns
     expect_error(
-        comma:::.parseMegalodon(f, "s1", mod_type = "6mA"),
+        commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA"),
         regexp = "7"
     )
 })
 
 test_that(".parseMegalodon() errors on non-character file argument", {
     expect_error(
-        comma:::.parseMegalodon(123L, "s1", mod_type = "6mA"),
+        commaKit:::.parseMegalodon(123L, "s1", mod_type = "6mA"),
         regexp = "character"
     )
 })

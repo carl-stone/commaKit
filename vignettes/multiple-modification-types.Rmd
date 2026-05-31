@@ -32,14 +32,14 @@ Bacterial genomes frequently carry multiple simultaneous DNA methylation marks:
 - **4mC** (N4-methylcytosine) — deposited by restriction-modification systems
   at various sequence motifs; protects against foreign DNA.
 
-`comma` stores all modification types in a single `commaData` object, enabling
+commaKit stores all modification types in a single `commaData` object, enabling
 joint analysis, comparison, and visualization across modification types.
 
 This vignette demonstrates multi-modification workflows using the built-in
 `comma_example_data` dataset, which contains both 6mA and 5mC sites.
 
 ```{r load}
-library(comma)
+library(commaKit)
 data(comma_example_data)
 ```
 

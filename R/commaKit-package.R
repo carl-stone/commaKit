@@ -1,11 +1,13 @@
-#' **co**mma: for **m**icrobial **m**ethylation **a**nalysis
+#' commaKit: Comparative Microbial Methylomics Analysis Kit
 #'
-#' The \pkg{comma} package provides a complete toolkit for genome-wide analysis
-#' of bacterial DNA methylation from Oxford Nanopore sequencing data. It
-#' supports the three major modification types (6mA, 5mC, 4mC), handles input
-#' from modkit pileup (primary), Dorado BAM, and Megalodon (legacy) callers,
-#' and provides a unified data container, annotation utilities, differential
-#' methylation testing, and a full set of visualization functions.
+#' The \pkg{commaKit} package provides a complete toolkit for genome-wide
+#' analysis of bacterial DNA methylation from Oxford Nanopore sequencing data.
+#' It supports the three major modification types (6mA, 5mC, 4mC), handles
+#' input from modkit pileup (primary), Dorado BAM, and Megalodon (legacy)
+#' callers, and provides a unified data container, annotation utilities,
+#' differential methylation testing, and a full set of visualization functions.
+#'
+#' commaKit was previously developed under the package names comma and CoMMA.
 #'
 #' @section Main workflow:
 #' \enumerate{
@@ -45,8 +47,8 @@
 #' The modkit pileup format is documented at
 #' \url{https://nanoporetech.github.io/modkit/}.
 #'
-#' @name comma-package
-#' @aliases comma
+#' @name commaKit-package
+#' @aliases commaKit comma
 #' @docType package
 #' @keywords package
 "_PACKAGE"

@@ -3,10 +3,10 @@
 **Last updated:** 2026-05-30
 **Current version:** 0.2.0
 **Public name:** commaKit (Comparative Microbial Methylomics Analysis Kit)
-**R package namespace:** comma (rename to commaKit planned, issue #168)
-**GitHub repo:** carl-stone/comma
+**R package namespace:** commaKit
+**GitHub repo:** carl-stone/commaKit
 
-This file is the strategic roadmap: where commaKit is going and why. Tactical work items are tracked in [GitHub Issues](https://github.com/carl-stone/comma/issues).
+This file is the strategic roadmap: where commaKit is going and why. Tactical work items are tracked in [GitHub Issues](https://github.com/carl-stone/commaKit/issues).
 
 ---
 
@@ -82,7 +82,7 @@ Current in-place mutation of assay matrices is lossy — running `diffMethyl()` 
 
 **Issues:** #118, #167
 
-### 6. Technical Rename to commaKit — planned (publishability)
+### 6. Technical Rename to commaKit — complete (publishability)
 
 Rename package namespace, repo, and all public references from `comma`/`CoMMA` to `commaKit`.
 
@@ -183,4 +183,4 @@ Why: Improves exploratory analysis and potentially increases detection power.
 - `dev/knowledge/design-decisions.md` — why the package is designed this way
 - `dev/knowledge/git-discipline.md` — branching and versioning conventions
 - `dev/knowledge/branching-releases.md` — release strategy
-- [GitHub Issues](https://github.com/carl-stone/comma/issues) — tactical work items
+- [GitHub Issues](https://github.com/carl-stone/commaKit/issues) — tactical work items

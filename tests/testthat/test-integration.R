@@ -166,7 +166,7 @@ test_that("full pipeline composes from modkit files through enrichment", {
     files <- .write_pipeline_modkit_files(comma_example_data)
     on.exit(unlink(dirname(files[[1L]]), recursive = TRUE), add = TRUE)
     col_data <- as.data.frame(sampleInfo(comma_example_data))
-    gff_file <- system.file("extdata", "example.gff3", package = "comma")
+    gff_file <- system.file("extdata", "example.gff3", package = "commaKit")
     expect_true(file.exists(gff_file))
 
     object <- commaData(

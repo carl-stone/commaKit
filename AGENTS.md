@@ -6,8 +6,8 @@
 
 **commaKit** (Comparative Microbial Methylomics Analysis Kit) is an R/Bioconductor-style package for analyzing bacterial DNA methylation from Oxford Nanopore sequencing data. It supports genome-wide characterization of methylation patterns across multiple modification types (6mA, 5mC, 4mC), annotation of methylation sites relative to genomic features, and identification of differentially methylated sites between conditions.
 
-- **Current R package namespace**: `comma` (rename to `commaKit` planned, issue #168)
-- **GitHub repo**: `carl-stone/comma`
+- **R package namespace**: `commaKit`
+- **GitHub repo**: `carl-stone/commaKit`
 - **Version**: 0.2.0
 - **R**: >= 4.3.0 (CI pinned to R 4.5)
 - **License**: MIT
@@ -148,9 +148,9 @@ Rscript -e "devtools::install()"
 - **Schema v2 milestone**: COMPLETE (merged to main 2026-05-21 as v0.2.0). All 14 issues closed.
 - **Test Quality**: In progress. Audit done, PRs #132/#133 strengthened tests. Plot tests still mostly smoke tests.
 - **Code Quality Audits**: In progress. Thermonuclear review filed ~30 findings as issues #135-#163, index #164. PRs #165 and #166 merged.
-- **Circle Ops** (issue #122): Pending — circular genome boundary behavior audit
+- **Circle Ops** (issue #122): Complete — circular genome boundary behavior audited and documented
 - **Layered Assays** (issue #118): Proposed for v0.3.0 — assay key system for multiple analysis runs
-- **Technical rename to commaKit** (#168-#173): Planned — package/repo rename from `comma`/`CoMMA` to `commaKit`
+- **Technical rename to commaKit** (#168-#173): Complete — package/repo identity renamed from `comma`/`CoMMA` to `commaKit`
 
 ## Durable knowledge in the repo
 

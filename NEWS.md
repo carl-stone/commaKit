@@ -1,10 +1,12 @@
-# comma 0.2.0
+# commaKit 0.2.0
 
 ## Current package baseline
 
-* The canonical package version is `0.2.0`. Repository URLs use
-  `carl-stone/comma` until the planned commaKit technical rename is done in one
-  deliberate pass.
+* The canonical package version is `0.2.0`.
+* The technical package identity has changed from `comma` to `commaKit`;
+  repository, documentation, and installation URLs now use
+  `carl-stone/commaKit`. The exported `commaData` class and
+  `comma_example_data` dataset keep their names for API continuity.
 
 ## New features
 

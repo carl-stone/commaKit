@@ -1,7 +1,7 @@
 ## Tests for the commaData S4 class, constructor, and show() method
 ##
 ## These tests use:
-##  - system.file("extdata", "example_modkit.bed", package = "comma") for file-based tests
+##  - system.file("extdata", "example_modkit.bed", package = "commaKit") for file-based tests
 ##  - Direct object construction for class/validity tests (avoids file I/O overhead)
 
 library(testthat)
@@ -150,7 +150,7 @@ test_that("validity passes when all motif values are NA", {
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("commaData() errors on colData missing required columns", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     expect_error(
@@ -164,7 +164,7 @@ test_that("commaData() errors on colData missing required columns", {
 })
 
 test_that("commaData() errors on non-named files vector", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     expect_error(
@@ -178,7 +178,7 @@ test_that("commaData() errors on non-named files vector", {
 })
 
 test_that("commaData() errors on mismatched sample names", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     expect_error(
@@ -192,7 +192,7 @@ test_that("commaData() errors on mismatched sample names", {
 })
 
 test_that("commaData() errors on invalid caller", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     expect_error(
@@ -210,7 +210,7 @@ test_that("commaData() errors on invalid caller", {
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("commaData() constructs valid object from example modkit BED", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     genome_info <- c(chr_sim = 100000L)
@@ -235,12 +235,12 @@ test_that("commaData() constructs valid object from example modkit BED", {
     expect_true(all(GenomeInfoDb::isCircular(GenomeInfoDb::seqinfo(cd))))
     expect_equal(
         GenomeInfoDb::seqinfo(SummarizedExperiment::rowRanges(cd)),
-        comma:::.makeSeqinfo(genome_info)
+        commaKit:::.makeSeqinfo(genome_info)
     )
 })
 
 test_that("commaData() applies min_coverage filter correctly", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     # All sites in example file have coverage >= 18, so min_coverage = 50
@@ -259,7 +259,7 @@ test_that("commaData() applies min_coverage filter correctly", {
 
 test_that("commaData() accepts a tibble as colData without warning", {
     skip_if_not_installed("tibble")
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     tbl_cd <- tibble::tibble(
@@ -278,7 +278,7 @@ test_that("commaData() accepts a tibble as colData without warning", {
 })
 
 test_that("commaData() mod_type filter reduces sites", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     cd_all  <- commaData(
@@ -304,7 +304,7 @@ test_that("commaData() mod_type filter reduces sites", {
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("commaData: expected_mod_contexts filters to specified contexts", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     cd_all <- commaData(
@@ -330,7 +330,7 @@ test_that("commaData: expected_mod_contexts filters to specified contexts", {
 })
 
 test_that("commaData: expected_mod_contexts accepts multiple mod types", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     cd <- commaData(
@@ -345,7 +345,7 @@ test_that("commaData: expected_mod_contexts accepts multiple mod types", {
 })
 
 test_that("commaData: expected_mod_contexts stops if no sites remain", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     expect_error(
@@ -361,7 +361,7 @@ test_that("commaData: expected_mod_contexts stops if no sites remain", {
 })
 
 test_that("commaData: expected_mod_contexts errors with unrecognized mod_type", {
-    bed_file <- system.file("extdata", "example_modkit.bed", package = "comma")
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
 
     expect_error(

@@ -1,10 +1,10 @@
-# Git Discipline for comma
+# Git Discipline for commaKit
 
 **Last updated:** 2026-05-14  
 **Maintained by:** commaBot  
 **Audience:** Carl, Claire, commaBot, and future contributors
 
-This document defines how we use git on comma from this point forward.
+This document defines how we use git on commaKit from this point forward.
 
 The goal is not bureaucracy. The goal is **trust**: every commit should tell a coherent story, be reviewable, and leave the repository in a working state.
 

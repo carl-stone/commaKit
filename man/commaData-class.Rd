@@ -3,7 +3,7 @@
 \docType{class}
 \name{commaData-class}
 \alias{commaData-class}
-\title{commaData: the central data object for the comma package}
+\title{commaData: the central data object for the commaKit package}
 \value{
 An object of class \code{commaData}. Use
 \code{\link{commaData}} to construct instances.
@@ -12,7 +12,7 @@ An object of class \code{commaData}. Use
 \code{commaData} is an S4 class that extends
 \code{\link[SummarizedExperiment]{RangedSummarizedExperiment}} to store
 genome-wide bacterial methylation data from Oxford Nanopore sequencing.
-It is the central object accepted and returned by all \code{comma}
+It is the central object accepted and returned by all commaKit
 analysis functions.
 }
 \details{

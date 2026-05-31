@@ -1,8 +1,8 @@
 # commaKit / comma — AI Assistant Guide
 
 **Public name:** commaKit (Comparative Microbial Methylomics Analysis Kit)
-**R package namespace:** `comma` (rename to `commaKit` planned, issue #168)
-**GitHub repo:** `carl-stone/comma`
+**R package namespace:** `commaKit`
+**GitHub repo:** `carl-stone/commaKit`
 **Author:** Carl Stone, Vanderbilt University (carl.j.stone@vanderbilt.edu)
 **Version:** 0.2.0 | **License:** MIT
 **Target:** Bioconductor submission is on hold; `0.99.0` is reserved for the eventual submission cycle.
@@ -11,7 +11,7 @@ This is an R package (Bioconductor ecosystem). Use R/Bioconductor idioms: S4 cla
 
 ## Scientific Scope
 
-`comma` is **modification-type agnostic** — originally conceived for 6mA (GATC/Dam), but 4mC and 5mC have equally important roles. Dorado detects all three simultaneously. Every data structure, function signature, and analysis module must treat methylation type as a first-class parameter, never an assumption. The package must work equally well for 6mA, 4mC, 5mC, and any future modification type.
+`commaKit` is **modification-type agnostic** — originally conceived for 6mA (GATC/Dam), but 4mC and 5mC have equally important roles. Dorado detects all three simultaneously. Every data structure, function signature, and analysis module must treat methylation type as a first-class parameter, never an assumption. The package must work equally well for 6mA, 4mC, 5mC, and any future modification type.
 
 ## Build History (version → key deliverable)
 

@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 # commaKit
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/carl-stone/comma/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/carl-stone/comma/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/carl-stone/commaKit/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/carl-stone/commaKit/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 **commaKit** (**Com**parative **M**icrobial **M**ethylomics **A**nalysis **Kit**) is
@@ -64,7 +64,7 @@ visualization.
 
 ```{r message=FALSE, eval = FALSE}
 # Development version from GitHub:
-devtools::install_github("carl-stone/comma")
+devtools::install_github("carl-stone/commaKit")
 
 # Bioconductor release forthcoming
 ```
@@ -75,7 +75,7 @@ devtools::install_github("carl-stone/comma")
 methylation files:
 
 ```{r eval=FALSE}
-library(comma)
+library(commaKit)
 
 # Named vector: sample_name -> path to modkit pileup BED
 files <- c(
@@ -108,7 +108,7 @@ A built-in synthetic dataset (588 sites, 6 samples, 100 kb genome) is included
 for testing and demonstrations:
 
 ```{r load-data}
-library(comma)
+library(commaKit)
 data(comma_example_data)
 comma_example_data
 ```
@@ -286,23 +286,23 @@ obj_6mA
 ```
 
 For a complete joint 6mA + 5mC analysis, see the
-**Multiple Modification Types** vignette (`vignette("multiple-modification-types", package = "comma")`).
+**Multiple Modification Types** vignette (`vignette("multiple-modification-types", package = "commaKit")`).
 
 ## Documentation
 
 ```{r eval=FALSE, include=TRUE}
-?comma        # Package overview and five-step workflow
+?commaKit     # Package overview and workflow
 ?commaData    # Constructor and commaData class
 ?diffMethyl   # Differential methylation testing
 ```
 
 Two vignettes are included:
 
-- **Getting Started** (`vignette("getting-started", package = "comma")`) —
+- **Getting Started** (`vignette("getting-started", package = "commaKit")`) —
   end-to-end workflow: load -> QC -> annotate -> differential methylation ->
   visualize.
 - **Multiple Modification Types**
-  (`vignette("multiple-modification-types", package = "comma")`) — joint 6mA
+  (`vignette("multiple-modification-types", package = "commaKit")`) — joint 6mA
   and 5mC analysis in a single `commaData` object.
 
 ## Roadmap
@@ -310,8 +310,8 @@ Two vignettes are included:
 | Version | Phase | Status |
 |---|---|---|
 | 0.2.0 | Schema v2: RangedSummarizedExperiment, Seqinfo, no-rownames alignment | Done |
-| 0.2.x | Test quality, code quality audits, circular boundary behavior | In progress |
-| 0.3.0 | Layered assays, commaKit rename | Planned |
+| 0.2.x | Test quality, code quality audits, rename validation | In progress |
+| 0.3.0 | Layered assays and assay provenance | Planned |
 | 0.x.y | Pre-Bioconductor hardening releases | Planned |
 | 0.99.0 | Bioconductor submission version | Future |
 | 1.0.0 | Stable public release after external confidence | Future |

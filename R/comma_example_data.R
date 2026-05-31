@@ -1,4 +1,4 @@
-#' Synthetic example methylation dataset for the comma package
+#' Synthetic example methylation dataset for the commaKit package
 #'
 #' A \code{\link{commaData}} object built from simulated Oxford Nanopore
 #' methylation data. This dataset is used in package examples, vignettes, and

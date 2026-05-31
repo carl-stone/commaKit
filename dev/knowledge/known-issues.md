@@ -39,7 +39,7 @@ None confirmed at this time. All known issues are potential, documented behavior
 
 **What happens:** `methylKit::calculateDiffMeth()` crashes when a site has zero coverage in all samples after filtering.
 
-**Fix:** comma wraps this and assigns `p = 1` (consistent with null hypothesis). Regression test exists in `test-diffMethyl.R`.
+**Fix:** commaKit wraps this and assigns `p = 1` (consistent with null hypothesis). Regression test exists in `test-diffMethyl.R`.
 
 **User impact:** Shouldn't crash anymore, but may be surprising that such sites get `padj = 1` instead of `NA`.
 

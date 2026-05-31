@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 # Why `commaData` matters
 
-Most `comma` workflow functions start from a `commaData` object, and many
+Most commaKit workflow functions start from a `commaData` object, and many
 return an updated `commaData` object with added analysis layers. Other
 functions expose those layers as tables, plots, or enrichment result lists.
 The object is the stable substrate for the workflow: rows are genomic
@@ -29,7 +29,7 @@ methylation sites, columns are samples, assays store measurements, and later
 analyses add named layers to the same biological coordinates.
 
 ```{r load}
-library(comma)
+library(commaKit)
 data(comma_example_data)
 
 comma_example_data
@@ -151,7 +151,7 @@ vapply(md, function(x) paste(class(x), collapse = "/"), character(1))
 
 # Analysis layers
 
-A useful way to learn `comma` is to think in layers:
+A useful way to learn commaKit is to think in layers:
 
 - the measurement layer contains methylation and coverage assays;
 - the coordinate layer is `rowRanges()`;

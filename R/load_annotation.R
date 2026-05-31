@@ -45,7 +45,7 @@ NULL
 #'
 #' @examples
 #' # Load the bundled example GFF3 annotation
-#' gff_file <- system.file("extdata", "example.gff3", package = "comma")
+#' gff_file <- system.file("extdata", "example.gff3", package = "commaKit")
 #' if (requireNamespace("rtracklayer", quietly = TRUE)) {
 #'   ann <- loadAnnotation(gff_file)
 #'   ann <- loadAnnotation(gff_file, feature_types = "gene")

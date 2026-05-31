@@ -5,7 +5,7 @@
         testthat::test_path(
             "..", "..", "vignettes", "understanding-commaData.Rmd"
         ),
-        system.file("doc", vignette_name, package = "comma", mustWork = FALSE)
+        system.file("doc", vignette_name, package = "commaKit", mustWork = FALSE)
     )
     candidates[file.exists(candidates)][1]
 }

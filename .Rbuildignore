@@ -1,6 +1,7 @@
 ^renv$
 ^renv\.lock$
 ^comma\.Rproj$
+^commaKit\.Rproj$
 ^\.Rproj\.user$
 ^\.R-version$
 ^LICENSE\.md$
@@ -13,8 +14,10 @@
 ^\.letta$
 ^\.lteams$
 ^comma\.Rcheck$
+^commaKit\.Rcheck$
 ^\.\.Rcheck$
 ^comma\.BiocCheck$
+^commaKit\.BiocCheck$
 ^.*\.deb$
 ^.*\.tar\.gz$
 ^_pkgdown\.yml$

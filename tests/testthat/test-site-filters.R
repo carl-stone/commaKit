@@ -1,15 +1,15 @@
 test_that(".applySiteFilters filters by mod_type, motif, and mod_context", {
     data(comma_example_data)
 
-    by_type <- comma:::.applySiteFilters(comma_example_data, mod_type = "6mA")
+    by_type <- commaKit:::.applySiteFilters(comma_example_data, mod_type = "6mA")
     expect_equal(nrow(by_type), 393L)
     expect_true(all(siteInfo(by_type)$mod_type == "6mA"))
 
-    by_motif <- comma:::.applySiteFilters(comma_example_data, motif = "CCWGG")
+    by_motif <- commaKit:::.applySiteFilters(comma_example_data, motif = "CCWGG")
     expect_equal(nrow(by_motif), 195L)
     expect_true(all(siteInfo(by_motif)$motif == "CCWGG"))
 
-    by_context <- comma:::.applySiteFilters(
+    by_context <- commaKit:::.applySiteFilters(
         comma_example_data,
         mod_context = "5mC_CCWGG"
     )
@@ -21,7 +21,7 @@ test_that(".applySiteFilters validates filters sequentially", {
     data(comma_example_data)
 
     expect_error(
-        comma:::.applySiteFilters(
+        commaKit:::.applySiteFilters(
             comma_example_data,
             mod_type = "6mA",
             motif = "CCWGG"
@@ -29,7 +29,7 @@ test_that(".applySiteFilters validates filters sequentially", {
         "'motif' value\\(s\\) not found"
     )
     expect_error(
-        comma:::.applySiteFilters(
+        commaKit:::.applySiteFilters(
             comma_example_data,
             motif = "GATC",
             mod_context = "5mC_CCWGG"

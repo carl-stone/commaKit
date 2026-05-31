@@ -1,13 +1,13 @@
 test_that("diffMethyl method docs preserve default and practical guidance", {
     source_path <- c(
         test_path("..", "..", "R", "diffMethyl.R"),
-        test_path("..", "..", "00_pkg_src", "comma", "R", "diffMethyl.R")
+        test_path("..", "..", "00_pkg_src", "commaKit", "R", "diffMethyl.R")
     )
     source <- paste(readLines(source_path[file.exists(source_path)][1]), collapse = "\n")
 
     vignette_path <- c(
         test_path("..", "..", "vignettes", "getting-started.Rmd"),
-        test_path("..", "..", "00_pkg_src", "comma", "vignettes", "getting-started.Rmd")
+        test_path("..", "..", "00_pkg_src", "commaKit", "vignettes", "getting-started.Rmd")
     )
     vignette <- paste(
         readLines(vignette_path[file.exists(vignette_path)][1]),

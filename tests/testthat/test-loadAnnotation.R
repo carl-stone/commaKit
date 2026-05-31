@@ -29,7 +29,7 @@ library(GenomicRanges)
 
 test_that("loadAnnotation() returns a GRanges from a GFF3 file", {
     skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "comma")
+    gff <- system.file("extdata", "example.gff3", package = "commaKit")
     skip_if(gff == "", message = "extdata not available")
 
     result <- loadAnnotation(gff)
@@ -38,7 +38,7 @@ test_that("loadAnnotation() returns a GRanges from a GFF3 file", {
 
 test_that("loadAnnotation() GRanges always has 'feature_type' and 'name' mcols", {
     skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "comma")
+    gff <- system.file("extdata", "example.gff3", package = "commaKit")
     skip_if(gff == "", message = "extdata not available")
 
     result <- loadAnnotation(gff)
@@ -48,7 +48,7 @@ test_that("loadAnnotation() GRanges always has 'feature_type' and 'name' mcols",
 
 test_that("loadAnnotation() feature_type reflects the GFF3 type column", {
     skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "comma")
+    gff <- system.file("extdata", "example.gff3", package = "commaKit")
     skip_if(gff == "", message = "extdata not available")
 
     result <- loadAnnotation(gff)
@@ -61,7 +61,7 @@ test_that("loadAnnotation() feature_type reflects the GFF3 type column", {
 
 test_that("loadAnnotation() name column uses the GFF3 Name attribute", {
     skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "comma")
+    gff <- system.file("extdata", "example.gff3", package = "commaKit")
     skip_if(gff == "", message = "extdata not available")
 
     result <- loadAnnotation(gff)
@@ -72,7 +72,7 @@ test_that("loadAnnotation() name column uses the GFF3 Name attribute", {
 
 test_that("loadAnnotation() returns the expected feature count from example GFF3", {
     skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "comma")
+    gff <- system.file("extdata", "example.gff3", package = "commaKit")
     skip_if(gff == "", message = "extdata not available")
 
     result <- loadAnnotation(gff)
@@ -86,7 +86,7 @@ test_that("loadAnnotation() returns the expected feature count from example GFF3
 
 test_that("loadAnnotation() filters to a single feature_type correctly", {
     skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "comma")
+    gff <- system.file("extdata", "example.gff3", package = "commaKit")
     skip_if(gff == "", message = "extdata not available")
 
     result <- loadAnnotation(gff, feature_types = "gene")
@@ -97,7 +97,7 @@ test_that("loadAnnotation() filters to a single feature_type correctly", {
 
 test_that("loadAnnotation() filters to multiple feature_types correctly", {
     skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "comma")
+    gff <- system.file("extdata", "example.gff3", package = "commaKit")
     skip_if(gff == "", message = "extdata not available")
 
     result <- loadAnnotation(gff, feature_types = c("gene", "CDS"))
@@ -108,7 +108,7 @@ test_that("loadAnnotation() filters to multiple feature_types correctly", {
 
 test_that("loadAnnotation() warns and returns empty GRanges when feature_types has no matches", {
     skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "comma")
+    gff <- system.file("extdata", "example.gff3", package = "commaKit")
     skip_if(gff == "", message = "extdata not available")
 
     expect_warning(
@@ -120,7 +120,7 @@ test_that("loadAnnotation() warns and returns empty GRanges when feature_types h
 
 test_that("loadAnnotation() with NULL feature_types returns all features", {
     skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "comma")
+    gff <- system.file("extdata", "example.gff3", package = "commaKit")
     skip_if(gff == "", message = "extdata not available")
 
     result_null <- loadAnnotation(gff, feature_types = NULL)
@@ -233,7 +233,7 @@ test_that("loadAnnotation() feature_type column contains GFF3 type column value,
 
 test_that("loadAnnotation() feature_subtype is absent when GFF3 has no feature_type attribute", {
     skip_if_not_installed("rtracklayer")
-    gff    <- system.file("extdata", "example.gff3", package = "comma")
+    gff    <- system.file("extdata", "example.gff3", package = "commaKit")
     skip_if(gff == "", message = "extdata not available")
     result <- loadAnnotation(gff)
     # example.gff3 has no 'feature_type' attribute in column 9

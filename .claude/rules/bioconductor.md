@@ -14,7 +14,7 @@ paths:
 | Individual package imports (`dplyr`, not `tidyverse`) | ✅ Done |
 | S4 classes with proper `validity()` methods | ✅ Done |
 | `show()` methods for all S4 classes | ✅ Done |
-| Package-level `?comma` documentation page | ✅ Done |
+| Package-level `?commaKit` documentation page | ✅ Done |
 | At least two vignettes | ✅ Done |
 | `NEWS.md` with version history | ✅ Done |
 | `biocViews` declared | ✅ Done (Sequencing, Epigenetics, Coverage, DifferentialMethylation, GenomeAnnotation, DataImport, Visualization) |

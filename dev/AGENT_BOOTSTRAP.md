@@ -4,7 +4,7 @@ This document is the setup guide for initializing or re-initializing commaBot's 
 
 ## Who commaBot is
 
-commaBot is a dedicated Letta agent that processes GitHub webhook events for the comma R package. It acts as the engineering team — making decisions, running code, filing issues, creating PRs — not just acknowledging notifications.
+commaBot is a dedicated Letta agent that processes GitHub webhook events for the commaKit R package. It acts as the engineering team — making decisions, running code, filing issues, creating PRs — not just acknowledging notifications.
 
 ## commaBot's environment
 
@@ -19,7 +19,7 @@ commaBot runs inside a Docker container on Carl's home PC (WSL2). Key facts:
 | Node.js | 22 + @letta-ai/letta-code-sdk 0.25.9 |
 | gh CLI | 2.92.0 (authenticate before use) |
 | letta CLI | 0.25.9 (at /usr/local/bin/letta) |
-| comma repo | `/home/commabot/comma/` (mounted from host, read-write) |
+| commaKit repo | `/home/commabot/commaKit/` (mounted from host, read-write) |
 | memfs volume | `/home/commabot/.letta/` (Docker named volume, persists across restarts) |
 | App scripts | `/app/` (webhook-listener.py, recovery.py, commabot-github-token.py, entrypoint.sh) |
 | SDK relay | `/app/sdk/` (index.mjs, node_modules) |
@@ -28,7 +28,7 @@ commaBot runs inside a Docker container on Carl's home PC (WSL2). Key facts:
 
 - Runtime installs (R packages, Python packages, apt packages) are **ephemeral** — lost on `docker compose up --build`. If commaBot needs a package baked in, add it to `dev/DOCKER_PACKAGES.md` and Carl will rebuild.
 - commaBot **cannot** edit the Dockerfile, compose.yaml, or rebuild the image. Those live on the host at `/home/carls/commabot-infrastructure/`.
-- The comma repo mount is the only persistent writable path (besides the memfs volume).
+- The commaKit repo mount is the only persistent writable path (besides the memfs volume).
 - No access to the host's `~/.letta/` or other host directories.
 
 ## GitHub authentication
@@ -45,9 +45,9 @@ Token expires after 1 hour. Re-run to refresh. The App ID is 3718770, installati
 
 commaBot's memory blocks should contain:
 
-1. **persona** — commaBot's identity: who it is, what it does, its relationship to Carl and the comma package
+1. **persona** — commaBot's identity: who it is, what it does, its relationship to Carl and the commaKit package
 2. **human** — Carl's identity and preferences (can be a subset of Engels' knowledge)
-3. **comma-context** — comma package architecture, conventions, and gotchas (from `dev/AGENTS.md`)
+3. **comma-context** — commaKit package architecture, conventions, and gotchas (from `dev/AGENTS.md`)
 4. **environment** — the container environment, tools, constraints, and paths (from this doc)
 5. **webhook-playbook** — per-event decision framework (the `handling-webhooks` skill content)
 
@@ -81,12 +81,12 @@ docker run --rm -v commabot-infrastructure_commabot-letta:/data alpine ls -la /d
 
 ## Syncing renv.lock
 
-When commaBot updates `renv.lock` in the mounted comma repo, the build context copy must be synced before the next image rebuild:
+When commaBot updates `renv.lock` in the mounted commaKit repo, the build context copy must be synced before the next image rebuild:
 
 ```bash
-cp /home/carls/comma/renv.lock /home/carls/commabot-infrastructure/comma/
-cp /home/carls/comma/renv/settings.json /home/carls/commabot-infrastructure/comma/renv/
-cp /home/carls/comma/renv/activate.R /home/carls/commabot-infrastructure/comma/renv/
+cp /home/carls/commaKit/renv.lock /home/carls/commabot-infrastructure/commaKit/
+cp /home/carls/commaKit/renv/settings.json /home/carls/commabot-infrastructure/commaKit/renv/
+cp /home/carls/commaKit/renv/activate.R /home/carls/commabot-infrastructure/commaKit/renv/
 ```
 
 ## Files reference
@@ -103,5 +103,5 @@ cp /home/carls/comma/renv/activate.R /home/carls/commabot-infrastructure/comma/r
 | `~/commabot-infrastructure/commabot-github-token.py` | `/app/commabot-github-token.py` | GitHub App token generator |
 | `~/commabot-infrastructure/commabot.private-key.pem` | `/app/commabot.private-key.pem` | GitHub App private key |
 | `~/webhook-conversation-prompt.md` | — | commaBot's webhook conversation prompt |
-| `~/comma/` | `/home/commabot/comma/` | comma R package (mounted) |
-| `~/comma/dev/DOCKER_PACKAGES.md` | `/home/commabot/comma/dev/DOCKER_PACKAGES.md` | Package request manifest |
+| `~/commaKit/` | `/home/commabot/commaKit/` | commaKit R package (mounted) |
+| `~/commaKit/dev/DOCKER_PACKAGES.md` | `/home/commabot/commaKit/dev/DOCKER_PACKAGES.md` | Package request manifest |

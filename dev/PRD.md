@@ -1,7 +1,7 @@
 # commaKit Product Requirements Document (PRD)
 
 **Package:** commaKit (Comparative Microbial Methylomics Analysis Kit)
-**R package namespace:** comma (rename to commaKit planned, issue #168)
+**R package namespace:** commaKit
 **Author:** Carl Stone, Vanderbilt University
 **Current version:** 0.2.0
 **Target version:** 0.99.0 for eventual Bioconductor submission
@@ -125,7 +125,7 @@ writeBED()           ->  Export to BED
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Roxygen2 docs for all exports | Done | All 35 exports documented |
-| `?comma` package-level docs | Done | Bioconductor requirement |
+| `?commaKit` package-level docs | Done | Bioconductor requirement |
 | Vignette: getting-started | Done | End-to-end workflow |
 | Vignette: multiple-modification-types | Done | Joint 6mA + 5mC |
 | Test suite | Done | 1100+ tests, 0 failures |

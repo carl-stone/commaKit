@@ -11,12 +11,12 @@ NULL
 
 # ─── Class definition ────────────────────────────────────────────────────────
 
-#' commaData: the central data object for the comma package
+#' commaData: the central data object for the commaKit package
 #'
 #' \code{commaData} is an S4 class that extends
 #' \code{\link[SummarizedExperiment]{RangedSummarizedExperiment}} to store
 #' genome-wide bacterial methylation data from Oxford Nanopore sequencing.
-#' It is the central object accepted and returned by all \code{comma}
+#' It is the central object accepted and returned by all commaKit
 #' analysis functions.
 #'
 #' @details
@@ -201,36 +201,43 @@ setMethod("show", "commaData", function(object) {
     n_samples <- ncol(object)
 
     cat("class: commaData\n")
-    cat("sites:", n_sites, "| samples:", n_samples, "\n")
+    cat("sites: ", n_sites, " | samples: ", n_samples, "\n", sep = "")
 
     # mod types, motifs, and contexts
     rd <- rowData(object)  # for RSE, rowData() returns mcols(rowRanges())
     if ("mod_type" %in% colnames(rd) && n_sites > 0) {
         mt <- sort(unique(rd$mod_type))
-        cat("mod types:", paste(mt, collapse = ", "), "\n")
+        cat("mod types: ", paste(mt, collapse = ", "), "\n", sep = "")
     }
     if ("motif" %in% colnames(rd) && n_sites > 0) {
         m <- sort(unique(rd$motif[!is.na(rd$motif)]))
-        cat("motifs:", if (length(m) == 0L) "not available" else paste(m, collapse = ", "), "\n")
+        cat("motifs: ",
+            if (length(m) == 0L) "not available" else paste(m, collapse = ", "),
+            "\n",
+            sep = "")
     }
     if (n_sites > 0) {
         mc <- sort(unique(modContexts(object)))
-        cat("mod contexts:", paste(mc, collapse = ", "), "\n")
+        cat("mod contexts: ", paste(mc, collapse = ", "), "\n", sep = "")
     }
 
     # conditions
     cd <- colData(object)
     if ("condition" %in% colnames(cd) && n_samples > 0) {
         cond <- sort(unique(cd$condition))
-        cat("conditions:", paste(cond, collapse = ", "), "\n")
+        cat("conditions: ", paste(cond, collapse = ", "), "\n", sep = "")
     }
 
     # genome info (from Seqinfo)
     sl <- GenomeInfoDb::seqlengths(object)
     if (length(sl) > 0 && !all(is.na(sl))) {
         total_bp <- sum(sl, na.rm = TRUE)
-        cat("genome:", length(sl), ifelse(length(sl) == 1, "chromosome", "chromosomes"),
-            paste0("(", format(total_bp, big.mark = ","), " bp total)"), "\n")
+        cat("genome: ",
+            length(sl), " ",
+            ifelse(length(sl) == 1, "chromosome", "chromosomes"), " ",
+            paste0("(", format(total_bp, big.mark = ","), " bp total)"),
+            "\n",
+            sep = "")
     } else {
         cat("genome: not provided\n")
     }
@@ -238,12 +245,15 @@ setMethod("show", "commaData", function(object) {
     # annotation / motif sites
     n_ann <- length(annotation(object))
     n_mot <- length(motifSites(object))
-    cat("annotation:", if (n_ann == 0) "none" else paste(n_ann, "features"), "\n")
-    cat("motif sites:", if (n_mot == 0) "none" else paste(format(n_mot, big.mark = ","), "sites"), "\n")
+    cat("annotation: ", if (n_ann == 0) "none" else paste(n_ann, "features"), "\n", sep = "")
+    cat("motif sites: ",
+        if (n_mot == 0) "none" else paste(format(n_mot, big.mark = ","), "sites"),
+        "\n",
+        sep = "")
 
     # caller and min_coverage
     cl <- S4Vectors::metadata(object)$caller
     mc <- S4Vectors::metadata(object)$min_coverage
-    if (!is.null(cl)) cat("caller:", cl, "\n")
-    if (!is.null(mc)) cat("min_coverage:", mc, "\n")
+    if (!is.null(cl)) cat("caller: ", cl, "\n", sep = "")
+    if (!is.null(mc)) cat("min_coverage: ", mc, "\n", sep = "")
 })

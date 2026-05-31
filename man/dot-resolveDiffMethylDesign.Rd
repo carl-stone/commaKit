@@ -18,7 +18,7 @@ A list containing primary_var, ref_level, treat_level, cond_levels,
 cond, and group_idx.
 }
 \description{
-Internal helper shared by diffMethyl() and all statistical backends. comma
+Internal helper shared by diffMethyl() and all statistical backends. commaKit
 currently supports one two-level contrast per diffMethyl() call. Multi-level
 primary variables must be modeled in a future explicit-contrast API.
 }

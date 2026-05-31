@@ -1,5 +1,5 @@
-Package: comma
-Title: comma: for microbial methylation analysis
+Package: commaKit
+Title: Comparative Microbial Methylomics Analysis Kit
 Version: 0.2.0
 Authors@R:
     person("Carl", "Stone", , "carl.j.stone@vanderbilt.edu", role = c("aut", "cre"),
@@ -11,10 +11,11 @@ Description: Analyze bacterial DNA methylation from Oxford Nanopore sequencing
     multiple modification types (6mA, 5mC, 4mC), annotation of methylation
     sites relative to genomic features, and identification of differentially
     methylated sites between conditions. Accepts input from modkit pileup
-    (primary), Dorado BAM, and Megalodon (legacy) callers.
+    (primary), Dorado BAM, and Megalodon (legacy) callers. Previously developed
+    as comma / CoMMA.
 License: MIT + file LICENSE
-URL: https://github.com/carl-stone/comma, https://carl-stone.github.io/comma/
-BugReports: https://github.com/carl-stone/comma/issues
+URL: https://github.com/carl-stone/commaKit, https://carl-stone.github.io/commaKit/
+BugReports: https://github.com/carl-stone/commaKit/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 biocViews: Sequencing, Epigenetics, Coverage, DifferentialMethylation,
@@ -41,7 +42,7 @@ Suggests:
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Collate:
-    'comma-package.R'
+    'commaKit-package.R'
     'commaData_class.R'
     'commaData_constructor.R'
     'accessors.R'

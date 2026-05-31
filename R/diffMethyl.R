@@ -7,7 +7,7 @@ NULL
 
 #' Identify differentially methylated sites between conditions
 #'
-#' The main function for differential methylation analysis in \pkg{comma}.
+#' The main function for differential methylation analysis in \pkg{commaKit}.
 #' Analogous to \code{DESeq2::DESeq()}, \code{diffMethyl()} accepts a
 #' \code{\link{commaData}} object, fits a statistical model to each methylation
 #' site, and returns the same object enriched with per-site test results stored
@@ -45,7 +45,7 @@ NULL
 #' methylKit's logistic-regression conventions. Use \code{"quasi_f"} as a
 #' good general-purpose alternative for bacterial methylomes when you want a
 #' count-aware model with empirical Bayes dispersion shrinkage and genome-wide
-#' multiple-testing correction handled entirely inside \pkg{comma}. It is often
+#' multiple-testing correction handled entirely inside \pkg{commaKit}. It is often
 #' a good first alternative if methylKit convergence warnings, zero-variance
 #' sites, or runtime become distracting. Use \code{"limma"} when you want the
 #' familiar \pkg{limma} empirical-Bayes linear-model workflow on M-values,

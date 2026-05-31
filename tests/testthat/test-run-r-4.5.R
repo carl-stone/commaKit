@@ -20,7 +20,7 @@ test_that("run-r-4.5 creates an overlay Rscript that uses overlay R", {
     )
 
     fake_home <- file.path(tempdir(), "fake-r-home")
-    overlay_home <- file.path(tempdir(), paste0("comma-r-4.5-home.", sample.int(1e6, 1)))
+    overlay_home <- file.path(tempdir(), paste0("commakit-r-4.5-home.", sample.int(1e6, 1)))
     unlink(c(fake_home, overlay_home), recursive = TRUE, force = TRUE)
     dir.create(file.path(fake_home, "bin", "exec"), recursive = TRUE)
     dir.create(file.path(fake_home, "etc"), recursive = TRUE)
@@ -54,13 +54,13 @@ test_that("run-r-4.5 creates an overlay Rscript that uses overlay R", {
         script,
         c("-e", shQuote("cat('ok')")),
         env = c(
-            paste0("COMMA_R45_HOME=", fake_home),
-            paste0("COMMA_R45_OVERLAY_HOME=", overlay_home)
+            paste0("COMMAKIT_R45_HOME=", fake_home),
+            paste0("COMMAKIT_R45_OVERLAY_HOME=", overlay_home)
         ),
         stdout = TRUE,
         stderr = TRUE
     )
-    expect_true(any(grepl("comma-r-4.5-home.", result, fixed = TRUE)))
+    expect_true(any(grepl("commakit-r-4.5-home.", result, fixed = TRUE)))
     expect_true(any(grepl("/bin/exec/R", result, fixed = TRUE)))
 
     rscript_result <- system2(
@@ -70,7 +70,7 @@ test_that("run-r-4.5 creates an overlay Rscript that uses overlay R", {
         stderr = TRUE
     )
 
-    expect_true(any(grepl("comma-r-4.5-home.", rscript_result, fixed = TRUE)))
+    expect_true(any(grepl("commakit-r-4.5-home.", rscript_result, fixed = TRUE)))
     expect_true(any(grepl("/bin/R", rscript_result, fixed = TRUE)))
     expect_true(any(grepl("--no-echo --no-restore -e", rscript_result, fixed = TRUE)))
 

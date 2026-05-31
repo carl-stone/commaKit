@@ -7,7 +7,7 @@
 - **Language:** R (>= 4.3.0)
 - **CI:** R 4.5 on Ubuntu (pinned — S4Vectors C API breaks in R 4.6.0)
 - **Package system:** Bioconductor conventions (not CRAN)
-- **R package namespace:** `comma` (rename to `commaKit` planned)
+- **R package namespace:** `commaKit`
 - **Version:** 0.2.0
 - **License:** MIT
 
@@ -112,7 +112,7 @@ AGENTS.md                   # AI coding tool context (see also CLAUDE.md)
 - `S4Vectors::rename()` masks `dplyr::rename()` — always use `dplyr::rename()` explicitly
 - `matrixStats::count()` masks `dplyr::count()` — always use `dplyr::count()` explicitly
 - `purrr::map()` / `mclust::map()` collision — use `lapply()` + `purrr::list_rbind()`
-- methylKit crashes on zero-variance sites — comma wraps this, assigns p=1
+- methylKit crashes on zero-variance sites — commaKit wraps this, assigns p=1
 - `org.EcK12.eg.db` requires `::` syntax in examples
 - Non-ASCII characters (e.g., x) cause R CMD check notes
 

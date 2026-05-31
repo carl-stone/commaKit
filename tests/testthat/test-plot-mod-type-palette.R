@@ -1,5 +1,5 @@
 test_that("mod_type palette uses consistent colors for known modification types", {
-    pal <- comma:::.modTypePalette(c("5mC", "6mA", "4mC", "6mA"))
+    pal <- commaKit:::.modTypePalette(c("5mC", "6mA", "4mC", "6mA"))
 
     expect_named(pal, c("6mA", "5mC", "4mC"))
     expect_equal(pal[["6mA"]], "#e41a1c")
@@ -9,7 +9,7 @@ test_that("mod_type palette uses consistent colors for known modification types"
 
 test_that("mod_type palette warns and falls back for unknown modification types", {
     expect_warning(
-        pal <- comma:::.modTypePalette(c("6mA", "9mX")),
+        pal <- commaKit:::.modTypePalette(c("6mA", "9mX")),
         "No palette color defined for mod_type"
     )
 
