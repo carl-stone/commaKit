@@ -106,28 +106,13 @@ slidingWindow <- function(object,
     }
 
     # ── Filter by mod_type, motif, and/or mod_context if requested ───────────
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        object <- filterSites(object, mod_type = mod_type)
-        if (nrow(object) == 0) {
-            stop("No sites remain after filtering for mod_type = '",
-                 paste(mod_type, collapse = "', '"), "'.")
-        }
-    }
-    if (!is.null(motif)) {
-        object <- filterSites(object, motif = motif)
-        if (nrow(object) == 0) {
-            stop("No sites remain after filtering for motif = '",
-                 paste(motif, collapse = "', '"), "'.")
-        }
-    }
-    if (!is.null(mod_context)) {
-        object <- filterSites(object, mod_context = mod_context)
-        if (nrow(object) == 0) {
-            stop("No sites remain after filtering for mod_context = '",
-                 paste(mod_context, collapse = "', '"), "'.")
-        }
-    }
+    object <- .applySiteFilters(
+        object,
+        mod_type = mod_type,
+        motif = motif,
+        mod_context = mod_context,
+        caller = "slidingWindow()"
+    )
 
     rd          <- as.data.frame(siteInfo(object))
     methyl_mat  <- methylation(object)

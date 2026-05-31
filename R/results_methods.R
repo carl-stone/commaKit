@@ -65,44 +65,15 @@ setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL
         )
     }
 
-    # ── Extract rowData as data.frame ─────────────────────────────────────────
-    rd <- as.data.frame(siteInfo(object))
+    object <- .applySiteFilters(
+        object,
+        mod_type = mod_type,
+        motif = motif,
+        mod_context = mod_context,
+        caller = "results()"
+    )
 
-    # ── Optional mod_type filter ──────────────────────────────────────────────
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        rd <- rd[rd$mod_type %in% mod_type, , drop = FALSE]
-    }
-
-    # ── Optional motif filter ─────────────────────────────────────────────────
-    if (!is.null(motif)) {
-        available_m <- sort(unique(rd$motif[!is.na(rd$motif)]))
-        bad_m <- setdiff(motif, available_m)
-        if (length(bad_m) > 0L) {
-            stop(
-                "'motif' value(s) not found: ",
-                paste(bad_m, collapse = ", "),
-                ". Available: ", paste(available_m, collapse = ", ")
-            )
-        }
-        rd <- rd[!is.na(rd$motif) & rd$motif %in% motif, , drop = FALSE]
-    }
-
-    # ── Optional mod_context filter ───────────────────────────────────────────
-    if (!is.null(mod_context) && "mod_context" %in% colnames(rd)) {
-        available_mc <- sort(unique(rd$mod_context))
-        bad_mc <- setdiff(mod_context, available_mc)
-        if (length(bad_mc) > 0L) {
-            stop(
-                "'mod_context' value(s) not found: ",
-                paste(bad_mc, collapse = ", "),
-                ". Available: ", paste(available_mc, collapse = ", ")
-            )
-        }
-        rd <- rd[rd$mod_context %in% mod_context, , drop = FALSE]
-    }
-
-    rd
+    as.data.frame(siteInfo(object))
 })
 
 # ─── filterResults() ──────────────────────────────────────────────────────────

@@ -84,17 +84,14 @@ plot_genome_track <- function(object,
         stop("'end' must be >= 'start'.")
     }
 
-    ## --- Optional mod_type filter -------------------------------------------
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        object <- filterSites(object, mod_type = mod_type)
-    }
-    if (!is.null(motif)) {
-        object <- filterSites(object, motif = motif)
-    }
-    if (!is.null(mod_context)) {
-        object <- filterSites(object, mod_context = mod_context)
-    }
+    ## --- Optional site filters ----------------------------------------------
+    object <- .applySiteFilters(
+        object,
+        mod_type = mod_type,
+        motif = motif,
+        mod_context = mod_context,
+        caller = "plot_genome_track()"
+    )
 
     ## --- Extract and filter site data ---------------------------------------
     si_df      <- siteInfo(object)

@@ -199,19 +199,13 @@ plot_tss_profile <- function(object,
     tss_gr <- tss_1bp
 
     ## ── C. Filter by mod_type / motif / mod_context ──────────────────────────
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        object <- filterSites(object, mod_type = mod_type)
-    }
-    if (!is.null(motif)) {
-        object <- filterSites(object, motif = motif)
-    }
-    if (!is.null(mod_context)) {
-        object <- filterSites(object, mod_context = mod_context)
-    }
-    if (nrow(object) == 0L) {
-        stop("No sites remain after filtering.")
-    }
+    object <- .applySiteFilters(
+        object,
+        mod_type = mod_type,
+        motif = motif,
+        mod_context = mod_context,
+        caller = "plot_tss_profile()"
+    )
 
     ## ── D. Proximity annotation ───────────────────────────────────────────────
     ## annotateSites(keep = "proximity") on 1-bp TSS GRanges adds rel_position

@@ -172,23 +172,12 @@ varianceByDepth <- function(object,
         stop("'object' must be a commaData object.")
     }
 
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        object <- filterSites(object, mod_type = mod_type)
-    }
-
-    if (!is.null(motif)) {
-        available_m <- motifs(object)
-        bad_m <- setdiff(motif, available_m)
-        if (length(bad_m) > 0L) {
-            stop(
-                "'motif' value(s) not found in object: ",
-                paste(bad_m, collapse = ", "),
-                ". Available: ", paste(available_m, collapse = ", ")
-            )
-        }
-        object <- filterSites(object, motif = motif)
-    }
+    object <- .applySiteFilters(
+        object,
+        mod_type = mod_type,
+        motif = motif,
+        caller = "varianceByDepth()"
+    )
 
     methyl_mat <- methylation(object)
     cov_mat    <- siteCoverage(object)

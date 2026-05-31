@@ -85,17 +85,14 @@ plot_pca <- function(object,
         stop("'object' must be a commaData object.")
     }
 
-    ## --- Optional mod_type filter -------------------------------------------
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        object <- filterSites(object, mod_type = mod_type)
-    }
-    if (!is.null(motif)) {
-        object <- filterSites(object, motif = motif)
-    }
-    if (!is.null(mod_context)) {
-        object <- filterSites(object, mod_context = mod_context)
-    }
+    ## --- Optional site filters ----------------------------------------------
+    object <- .applySiteFilters(
+        object,
+        mod_type = mod_type,
+        motif = motif,
+        mod_context = mod_context,
+        caller = "plot_pca()"
+    )
 
     ## --- Validate color_by / shape_by ---------------------------------------
     si <- sampleInfo(object)

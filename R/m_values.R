@@ -72,35 +72,14 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
         stop("'alpha' must be a single positive finite number.")
     }
 
-    ## --- Optional mod_type filter -------------------------------------------
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        object <- filterSites(object, mod_type = mod_type)
-    }
-
-    ## --- Optional motif filter ----------------------------------------------
-    if (!is.null(motif)) {
-        available_m <- motifs(object)
-        bad_m <- setdiff(motif, available_m)
-        if (length(bad_m) > 0L) {
-            stop("'motif' value(s) not found in object: ",
-                 paste(bad_m, collapse = ", "),
-                 ". Available: ", paste(available_m, collapse = ", "), ".")
-        }
-        object <- filterSites(object, motif = motif)
-    }
-
-    ## --- Optional mod_context filter ----------------------------------------
-    if (!is.null(mod_context)) {
-        available_mc <- modContexts(object)
-        bad_mc <- setdiff(mod_context, available_mc)
-        if (length(bad_mc) > 0L) {
-            stop("'mod_context' value(s) not found in object: ",
-                 paste(bad_mc, collapse = ", "),
-                 ". Available: ", paste(available_mc, collapse = ", "), ".")
-        }
-        object <- filterSites(object, mod_context = mod_context)
-    }
+    ## --- Optional site filters ----------------------------------------------
+    object <- .applySiteFilters(
+        object,
+        mod_type = mod_type,
+        motif = motif,
+        mod_context = mod_context,
+        caller = "mValues()"
+    )
 
     ## --- Compute M-values ---------------------------------------------------
     beta_mat <- methylation(object)   # sites × samples, values in [0, 1]

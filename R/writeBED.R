@@ -76,14 +76,11 @@ writeBED <- function(object,
     }
 
     # ── Filter by mod_type ────────────────────────────────────────────────────
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        object <- filterSites(object, mod_type = mod_type)
-        if (nrow(object) == 0) {
-            stop("No sites remain after filtering for mod_type = '",
-                 paste(mod_type, collapse = "', '"), "'.")
-        }
-    }
+    object <- .applySiteFilters(
+        object,
+        mod_type = mod_type,
+        caller = "writeBED()"
+    )
 
     # ── Extract data ──────────────────────────────────────────────────────────
     rd    <- as.data.frame(siteInfo(object))

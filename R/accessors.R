@@ -563,6 +563,77 @@ setMethod("minCoverage", "commaData", function(object) {
     invisible(NULL)
 }
 
+# Centralized validator for site-level filters used by exported helpers.
+.validateSiteFilterValues <- function(arg, values, available, object_label = "object") {
+    bad <- setdiff(values, available)
+    if (length(bad) > 0L) {
+        available_label <- if (length(available) > 0L) {
+            paste(available, collapse = ", ")
+        } else {
+            "<none>"
+        }
+        stop(
+            "'", arg, "' value(s) not found in ", object_label, ": ",
+            paste(bad, collapse = ", "),
+            ". Available: ", available_label, "."
+        )
+    }
+    invisible(NULL)
+}
+
+.siteFilterLabel <- function(arg, values) {
+    paste0(arg, " = '", paste(values, collapse = "', '"), "'")
+}
+
+.stopEmptySiteFilter <- function(filters, caller = NULL) {
+    where <- if (is.null(caller)) "" else paste0(" in ", caller)
+    stop(
+        "No sites remain after applying site filters", where, ": ",
+        paste(filters, collapse = "; "), "."
+    )
+}
+
+# Apply mod_type, motif, and mod_context filters with consistent validation and
+# empty-result handling. Filters are applied sequentially so motif/mod_context
+# values are validated against the sites that remain after earlier filters.
+.applySiteFilters <- function(object, mod_type = NULL, motif = NULL,
+                              mod_context = NULL, stop_on_empty = TRUE,
+                              caller = NULL) {
+    if (!is(object, "commaData")) {
+        stop("'object' must be a commaData object.")
+    }
+
+    filters <- character(0)
+    if (!is.null(mod_type)) {
+        .validateModType(mod_type, object)
+        object <- filterSites(object, mod_type = mod_type)
+        filters <- c(filters, .siteFilterLabel("mod_type", mod_type))
+        if (stop_on_empty && nrow(object) == 0L) {
+            .stopEmptySiteFilter(filters, caller = caller)
+        }
+    }
+
+    if (!is.null(motif)) {
+        .validateSiteFilterValues("motif", motif, motifs(object))
+        object <- filterSites(object, motif = motif)
+        filters <- c(filters, .siteFilterLabel("motif", motif))
+        if (stop_on_empty && nrow(object) == 0L) {
+            .stopEmptySiteFilter(filters, caller = caller)
+        }
+    }
+
+    if (!is.null(mod_context)) {
+        .validateSiteFilterValues("mod_context", mod_context, modContexts(object))
+        object <- filterSites(object, mod_context = mod_context)
+        filters <- c(filters, .siteFilterLabel("mod_context", mod_context))
+        if (stop_on_empty && nrow(object) == 0L) {
+            .stopEmptySiteFilter(filters, caller = caller)
+        }
+    }
+
+    object
+}
+
 # ─── .checkModTypeValues() ────────────────────────────────────────────────
 
 # Internal helper: check that values and/or factor levels are valid mod_types.

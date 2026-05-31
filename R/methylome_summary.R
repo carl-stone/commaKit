@@ -85,38 +85,13 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
     # ── Filter by mod_type ────────────────────────────────────────────────────
     mt_label <- if (is.null(mod_type)) "all" else paste(mod_type, collapse = ",")
 
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        object <- filterSites(object, mod_type = mod_type)
-    }
-
-    # ── Filter by motif ───────────────────────────────────────────────────────
-    if (!is.null(motif)) {
-        available_m <- motifs(object)
-        bad_m <- setdiff(motif, available_m)
-        if (length(bad_m) > 0L) {
-            stop(
-                "'motif' value(s) not found in object: ",
-                paste(bad_m, collapse = ", "),
-                ". Available: ", paste(available_m, collapse = ", ")
-            )
-        }
-        object <- filterSites(object, motif = motif)
-    }
-
-    # ── Filter by mod_context ─────────────────────────────────────────────────
-    if (!is.null(mod_context)) {
-        available_mc <- modContexts(object)
-        bad_mc <- setdiff(mod_context, available_mc)
-        if (length(bad_mc) > 0L) {
-            stop(
-                "'mod_context' value(s) not found in object: ",
-                paste(bad_mc, collapse = ", "),
-                ". Available: ", paste(available_mc, collapse = ", ")
-            )
-        }
-        object <- filterSites(object, mod_context = mod_context)
-    }
+    object <- .applySiteFilters(
+        object,
+        mod_type = mod_type,
+        motif = motif,
+        mod_context = mod_context,
+        caller = "methylomeSummary()"
+    )
 
     methyl_mat <- methylation(object)
     cov_mat    <- siteCoverage(object)
