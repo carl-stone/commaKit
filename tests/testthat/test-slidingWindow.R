@@ -145,6 +145,51 @@ test_that("slidingWindow: circular=TRUE and FALSE give different edge results", 
     expect_false(isTRUE(all.equal(v_circ, v_linear)))
 })
 
+test_that("slidingWindow: circular boundary values match manual calculation", {
+    beta <- matrix(
+        c(0.1, 0.9, 0.7),
+        nrow = 3L,
+        dimnames = list(NULL, "samp1")
+    )
+    obj <- .make_commaData_fixture(
+        beta = beta,
+        sample_info = data.frame(
+            sample_name = "samp1",
+            condition = "ctrl",
+            replicate = 1L,
+            stringsAsFactors = FALSE
+        ),
+        positions = c(1L, 9L, 10L),
+        chrom = "chr_wrap",
+        seqlength = 10L
+    )
+    rr <- rowRanges(obj)
+    si <- GenomeInfoDb::seqinfo(rr)
+    GenomeInfoDb::isCircular(si) <- TRUE
+    GenomeInfoDb::seqinfo(rr) <- si
+    rowRanges(obj) <- rr
+
+    circular_mean <- slidingWindow(obj, window = 3L, stat = "mean",
+                                   circular = TRUE)
+    linear_mean <- slidingWindow(obj, window = 3L, stat = "mean",
+                                 circular = FALSE)
+    circular_median <- slidingWindow(obj, window = 3L, circular = TRUE)
+
+    circ_start <- circular_mean$window_mean[circular_mean$position == 1L]
+    circ_end <- circular_mean$window_mean[circular_mean$position == 10L]
+    linear_start <- linear_mean$window_mean[linear_mean$position == 1L]
+    linear_end <- linear_mean$window_mean[linear_mean$position == 10L]
+    median_end <- circular_median$window_median[
+        circular_median$position == 10L
+    ]
+
+    expect_equal(circ_start, mean(c(0.7, 0.1)), tolerance = 1e-12)
+    expect_equal(circ_end, mean(c(0.9, 0.7, 0.1)), tolerance = 1e-12)
+    expect_equal(linear_start, 0.1, tolerance = 1e-12)
+    expect_equal(linear_end, mean(c(0.9, 0.7)), tolerance = 1e-12)
+    expect_equal(median_end, 0.7, tolerance = 1e-12)
+})
+
 test_that("slidingWindow: circular=NULL follows Seqinfo circularity", {
     obj_linear <- tiny_data
     r_default_linear <- slidingWindow(obj_linear, window = 16, circular = NULL)
