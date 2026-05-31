@@ -16,30 +16,13 @@
         nrow = n_sites, ncol = 2L,
         dimnames = dimnames(betas)
     )
-    site_gr <- GenomicRanges::GRanges(
-        seqnames = rep("chr_sim", n_sites),
-        ranges   = IRanges::IRanges(start = positions, width = 1L),
-        strand   = rep("+", n_sites),
-        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
-        motif       = rep("GATC", n_sites)
-    )
-    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
-        seqnames = "chr_sim",
-        seqlengths = 100000L,
-        isCircular = FALSE
-    )
-    cd <- S4Vectors::DataFrame(
+    sample_info <- data.frame(
         sample_name = c("samp1", "samp2"),
         condition   = c("ctrl", "treat"),
         replicate   = 1:2,
-        row.names   = c("samp1", "samp2")
+        stringsAsFactors = FALSE
     )
-    rse <- SummarizedExperiment::SummarizedExperiment(
-        assays     = list(methylation = betas, coverage = depths),
-        rowRanges  = site_gr,
-        colData    = cd
-    )
-    new("commaData", rse)
+    .make_commaData_fixture(betas, depths, sample_info, positions)
 }
 
 # ─── Data mapping ─────────────────────────────────────────────────────────────

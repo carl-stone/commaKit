@@ -18,30 +18,18 @@ library(GenomicRanges)
     cov       <- matrix(as.integer(runif(n_sites * n_samples, 10, 50)),
                         nrow = n_sites, ncol = n_samples,
                         dimnames = list(NULL, paste0("s", seq_len(n_samples))))
-    site_gr <- GenomicRanges::GRanges(
-        seqnames = rep("chr_sim", n_sites),
-        ranges   = IRanges::IRanges(start = seq_len(n_sites) * 100L, width = 1L),
-        strand   = rep("+", n_sites),
-        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
-        motif       = rep("GATC", n_sites)
-    )
-    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
-        seqnames = "chr_sim",
-        seqlengths = 100000L,
-        isCircular = FALSE
-    )
-    cd <- S4Vectors::DataFrame(
+    sample_info <- data.frame(
         sample_name = paste0("s", seq_len(n_samples)),
         condition   = rep(c("control", "treatment"), length.out = n_samples),
         replicate   = seq_len(n_samples),
-        row.names   = paste0("s", seq_len(n_samples))
+        stringsAsFactors = FALSE
     )
-    rse <- SummarizedExperiment::SummarizedExperiment(
-        assays     = list(methylation = methyl, coverage = cov),
-        rowRanges  = site_gr,
-        colData    = cd
+    .make_commaData_fixture(
+        methyl,
+        cov,
+        sample_info,
+        positions = seq_len(n_sites) * 100L
     )
-    new("commaData", rse)
 }
 
 # ─────────────────────────────────────────────────────────────────────────────

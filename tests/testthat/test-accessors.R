@@ -11,43 +11,14 @@ library(GenomicRanges)
 # ─────────────────────────────────────────────────────────────────────────────
 
 .make_two_modtype <- function() {
-    n_6ma <- 10L; n_5mc <- 5L; n_samp <- 3L
-    n_total <- n_6ma + n_5mc
-    samp_names <- c("ctrl_1", "ctrl_2", "treat_1")
-
-    methyl <- matrix(runif(n_total * n_samp, 0.1, 0.95),
-                     nrow = n_total, dimnames = list(NULL, samp_names))
-    cov    <- matrix(as.integer(runif(n_total * n_samp, 10, 50)),
-                     nrow = n_total, dimnames = list(NULL, samp_names))
-
-    site_gr <- GenomicRanges::GRanges(
-        seqnames = rep("chr_sim", n_total),
-        ranges   = IRanges::IRanges(
-            start = c(seq_len(n_6ma) * 100L, seq_len(n_5mc) * 200L),
-            width = 1L
-        ),
-        strand   = c(rep("+", n_6ma), rep("-", n_5mc)),
-        mod_type    = factor(c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
-                             levels = c("4mC", "5mC", "6mA")),
-        motif       = c(rep("GATC", n_6ma), rep("CCWGG", n_5mc))
+    obj <- .make_two_modtype_fixture(
+        n_6ma = 10L,
+        n_5mc = 5L,
+        sample_names = c("ctrl_1", "ctrl_2", "treat_1"),
+        conditions = c("control", "control", "treatment"),
+        replicate = c(1L, 2L, 1L),
+        seed = 11L
     )
-    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
-        seqnames = "chr_sim",
-        seqlengths = 100000L,
-        isCircular = FALSE
-    )
-    cd <- S4Vectors::DataFrame(
-        sample_name = samp_names,
-        condition   = c("control", "control", "treatment"),
-        replicate   = c(1L, 2L, 1L),
-        row.names   = samp_names
-    )
-    rse <- SummarizedExperiment::SummarizedExperiment(
-        assays     = list(methylation = methyl, coverage = cov),
-        rowRanges  = site_gr,
-        colData    = cd
-    )
-    obj <- new("commaData", rse)
 
     # Store annotation in metadata
     ann <- GenomicRanges::GRanges(

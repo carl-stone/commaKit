@@ -13,72 +13,25 @@
     )
     cov_mat <- matrix(20L, nrow = n_sites, ncol = 3L,
                       dimnames = dimnames(betas))
-    site_gr <- GenomicRanges::GRanges(
-        seqnames = rep("chr_sim", n_sites),
-        ranges   = IRanges::IRanges(start = positions, width = 1L),
-        strand   = rep("+", n_sites),
-        mod_type    = factor(rep("6mA", n_sites), levels = c("4mC", "5mC", "6mA")),
-        motif       = rep("GATC", n_sites)
-    )
-    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
-        seqnames = "chr_sim",
-        seqlengths = 100000L,
-        isCircular = FALSE
-    )
-    cd <- S4Vectors::DataFrame(
+    sample_info <- data.frame(
         sample_name = c("ctrl_1", "ctrl_2", "treat_1"),
         condition   = c("control", "control", "treatment"),
         replicate   = 1:3,
-        row.names   = c("ctrl_1", "ctrl_2", "treat_1")
+        stringsAsFactors = FALSE
     )
-    rse <- SummarizedExperiment::SummarizedExperiment(
-        assays     = list(methylation = betas, coverage = cov_mat),
-        rowRanges  = site_gr,
-        colData    = cd
-    )
-    new("commaData", rse)
+    .make_commaData_fixture(betas, cov_mat, sample_info, positions)
 }
 
 ## Object with two modification types
 .make_dist_data_two_mods <- function() {
-    n_6ma <- 8L; n_5mc <- 4L
-    n_sites <- n_6ma + n_5mc
-    positions <- seq(1000L, n_sites * 1000L, by = 1000L)
-    mod_types  <- factor(c(rep("6mA", n_6ma), rep("5mC", n_5mc)),
-                         levels = c("4mC", "5mC", "6mA"))
-    motif_vals <- c(rep("GATC", n_6ma), rep("CCWGG", n_5mc))
-    set.seed(2L)
-    betas <- matrix(
-        runif(n_sites * 2L, 0.1, 0.9),
-        nrow = n_sites, ncol = 2L,
-        dimnames = list(NULL, c("samp1", "samp2"))
+    .make_two_modtype_fixture(
+        n_6ma = 8L,
+        n_5mc = 4L,
+        sample_names = c("samp1", "samp2"),
+        conditions = c("ctrl", "treat"),
+        replicate = 1:2,
+        seed = 2L
     )
-    cov_mat <- matrix(20L, nrow = n_sites, ncol = 2L,
-                      dimnames = dimnames(betas))
-    site_gr <- GenomicRanges::GRanges(
-        seqnames = rep("chr_sim", n_sites),
-        ranges   = IRanges::IRanges(start = positions, width = 1L),
-        strand   = rep("+", n_sites),
-        mod_type    = mod_types,
-        motif       = motif_vals
-    )
-    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
-        seqnames = "chr_sim",
-        seqlengths = 100000L,
-        isCircular = FALSE
-    )
-    cd <- S4Vectors::DataFrame(
-        sample_name = c("samp1", "samp2"),
-        condition   = c("ctrl", "treat"),
-        replicate   = 1:2,
-        row.names   = c("samp1", "samp2")
-    )
-    rse <- SummarizedExperiment::SummarizedExperiment(
-        assays     = list(methylation = betas, coverage = cov_mat),
-        rowRanges  = site_gr,
-        colData    = cd
-    )
-    new("commaData", rse)
 }
 
 # ─── Basic return type ────────────────────────────────────────────────────────
