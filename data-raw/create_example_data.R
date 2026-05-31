@@ -161,7 +161,7 @@ site_gr <- GenomicRanges::GRanges(
 GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
     seqnames = CHR_NAME,
     seqlengths = GENOME_SIZE,
-    isCircular = FALSE
+    isCircular = TRUE
 )
 
 # ── Build colData ─────────────────────────────────────────────────────────────

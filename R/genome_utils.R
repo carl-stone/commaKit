@@ -121,7 +121,7 @@ NULL
     GenomeInfoDb::Seqinfo(
         seqnames  = names(genome_info),
         seqlengths = genome_info,
-        isCircular = rep(NA, length(genome_info)),
+        isCircular = rep(TRUE, length(genome_info)),
         genome     = genome_name
     )
 }

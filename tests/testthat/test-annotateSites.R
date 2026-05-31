@@ -294,6 +294,90 @@ test_that("annotateSites keep='proximity' abs(rel_position) within window", {
     expect_true(all(abs(all_rp) <= window))
 })
 
+test_that("annotateSites uses circular signed distances across chromosome origin", {
+    beta <- matrix(0.8, nrow = 1L, ncol = 1L, dimnames = list(NULL, "s1"))
+    obj <- .make_commaData_fixture(
+        beta = beta,
+        sample_info = data.frame(
+            sample_name = "s1",
+            condition = "ctrl",
+            replicate = 1L,
+            stringsAsFactors = FALSE
+        ),
+        positions = 990L,
+        chrom = "chr_test",
+        seqlength = 1000L
+    )
+    rr <- rowRanges(obj)
+    si <- GenomeInfoDb::seqinfo(rr)
+    GenomeInfoDb::isCircular(si) <- TRUE
+    GenomeInfoDb::seqinfo(rr) <- si
+    rowRanges(obj) <- rr
+
+    features <- GenomicRanges::GRanges(
+        seqnames = c("chr_test", "chr_test"),
+        ranges = IRanges::IRanges(start = c(1L, 1L), end = c(100L, 100L)),
+        strand = c("+", "-"),
+        feature_type = "gene",
+        name = c("plus_gene", "minus_gene")
+    )
+    GenomeInfoDb::seqinfo(features) <- GenomeInfoDb::seqinfo(rowRanges(obj))
+
+    result <- annotateSites(obj, features = features, keep = "proximity",
+                            window = 20L)
+    res_si <- siteInfo(result)
+    rel_by_name <- stats::setNames(
+        as.integer(res_si$rel_position[[1L]]),
+        as.character(res_si$feature_names[[1L]])
+    )
+
+    expect_equal(rel_by_name[["plus_gene"]], -11L)
+    expect_equal(rel_by_name[["minus_gene"]], 11L)
+    expect_true(all(abs(rel_by_name) <= 20L))
+})
+
+test_that("annotateSites wraps circular proximity windows near chromosome start", {
+    beta <- matrix(0.8, nrow = 1L, ncol = 1L, dimnames = list(NULL, "s1"))
+    obj <- .make_commaData_fixture(
+        beta = beta,
+        sample_info = data.frame(
+            sample_name = "s1",
+            condition = "ctrl",
+            replicate = 1L,
+            stringsAsFactors = FALSE
+        ),
+        positions = 10L,
+        chrom = "chr_test",
+        seqlength = 1000L
+    )
+    rr <- rowRanges(obj)
+    si <- GenomeInfoDb::seqinfo(rr)
+    GenomeInfoDb::isCircular(si) <- TRUE
+    GenomeInfoDb::seqinfo(rr) <- si
+    rowRanges(obj) <- rr
+
+    features <- GenomicRanges::GRanges(
+        seqnames = c("chr_test", "chr_test"),
+        ranges = IRanges::IRanges(start = c(950L, 950L), end = c(1000L, 1000L)),
+        strand = c("+", "-"),
+        feature_type = "gene",
+        name = c("plus_gene", "minus_gene")
+    )
+    GenomeInfoDb::seqinfo(features) <- GenomeInfoDb::seqinfo(rowRanges(obj))
+
+    result <- annotateSites(obj, features = features, keep = "proximity",
+                            window = 20L)
+    res_si <- siteInfo(result)
+    rel_by_name <- stats::setNames(
+        as.integer(res_si$rel_position[[1L]]),
+        as.character(res_si$feature_names[[1L]])
+    )
+
+    expect_equal(rel_by_name[["plus_gene"]], 10L)
+    expect_equal(rel_by_name[["minus_gene"]], -10L)
+    expect_true(all(abs(rel_by_name) <= 20L))
+})
+
 # ── keep = "metagene" ─────────────────────────────────────────────────────────
 
 test_that("annotateSites keep='metagene' has feature_types, feature_names, frac_position but not rel_position", {

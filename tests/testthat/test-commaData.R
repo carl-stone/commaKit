@@ -231,6 +231,7 @@ test_that("commaData() constructs valid object from example modkit BED", {
     expect_equal(ncol(cd), 1L)
     expect_true("methylation" %in% assayNames(cd))
     expect_true("coverage" %in% assayNames(cd))
+    expect_true(all(GenomeInfoDb::isCircular(GenomeInfoDb::seqinfo(cd))))
 })
 
 test_that("commaData() applies min_coverage filter correctly", {

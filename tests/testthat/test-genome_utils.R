@@ -197,6 +197,12 @@ test_that(".makeSeqinfo() has correct seqlengths", {
     expect_equal(GenomeInfoDb::seqlengths(result), c(chr1 = 1000L, chr2 = 2000L))
 })
 
+test_that(".makeSeqinfo() defaults chromosomes to circular", {
+    gi     <- c(chr1 = 1000L, chr2 = 2000L)
+    result <- comma:::.makeSeqinfo(gi)
+    expect_equal(GenomeInfoDb::isCircular(result), c(chr1 = TRUE, chr2 = TRUE))
+})
+
 test_that(".makeSeqinfo() records genome_name when provided", {
     gi     <- c(chr1 = 1000L)
     result <- comma:::.makeSeqinfo(gi, genome_name = "test_genome")

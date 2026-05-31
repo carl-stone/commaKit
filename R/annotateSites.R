@@ -182,11 +182,11 @@ annotateSites <- function(object,
     empty_il     <- S4Vectors::splitAsList(integer(0),   site_factor0)
     empty_nl     <- S4Vectors::splitAsList(numeric(0),   site_factor0)
 
-    # Expand a search window around each site; clip start to 1
-    sites_expanded <- GenomicRanges::resize(sites_gr, width = 2L * window + 1L, fix = "center")
-    GenomicRanges::start(sites_expanded) <- pmax(GenomicRanges::start(sites_expanded), 1L)
+    # Expand search windows around each site. For circular chromosomes, windows
+    # crossing the origin are split so findOverlaps() can see both segments.
+    expanded <- .expandSiteWindows(sites_gr, window)
 
-    hits <- GenomicRanges::findOverlaps(sites_expanded, features, ignore.strand = TRUE)
+    hits <- GenomicRanges::findOverlaps(expanded$windows, features, ignore.strand = TRUE)
 
     if (length(hits) == 0L) {
         rd$feature_types <- empty_cl
@@ -201,8 +201,12 @@ annotateSites <- function(object,
         return(rd)
     }
 
-    q_idx <- S4Vectors::queryHits(hits)
+    q_idx <- expanded$query_map[S4Vectors::queryHits(hits)]
     s_idx <- S4Vectors::subjectHits(hits)
+    hit_key <- paste(q_idx, s_idx, sep = "\001")
+    keep_hits <- !duplicated(hit_key)
+    q_idx <- q_idx[keep_hits]
+    s_idx <- s_idx[keep_hits]
 
     feat_starts <- GenomicRanges::start(features)[s_idx]
     feat_ends   <- GenomicRanges::end(features)[s_idx]
@@ -226,6 +230,25 @@ annotateSites <- function(object,
                              feat_ends - site_pos,     # negative: upstream on -
                              feat_starts - site_pos))  # positive: downstream on -
     rel_pos <- as.integer(ifelse(feat_strand == "-", neg_signed, pos_signed))
+
+    seq_info <- GenomeInfoDb::seqinfo(sites_gr)
+    seq_lengths <- GenomeInfoDb::seqlengths(seq_info)
+    seq_circular <- GenomeInfoDb::isCircular(seq_info)
+    hit_seqnames <- as.character(GenomicRanges::seqnames(sites_gr))[q_idx]
+    hit_lengths <- as.integer(seq_lengths[hit_seqnames])
+    hit_circular <- seq_circular[hit_seqnames]
+    circular_hits <- !inside & !is.na(hit_lengths) & hit_lengths > 0L &
+        !is.na(hit_circular) & hit_circular
+
+    if (any(circular_hits)) {
+        rel_pos[circular_hits] <- .circularFeatureRelPosition(
+            site_pos = site_pos[circular_hits],
+            feat_start = feat_starts[circular_hits],
+            feat_end = feat_ends[circular_hits],
+            feat_strand = feat_strand[circular_hits],
+            genome_size = hit_lengths[circular_hits]
+        )
+    }
 
     # ── frac_position: [0, 1] inside features, NA outside ────────────────────
     # TSS = 0, TTS = 1 (strand-aware).
@@ -255,6 +278,94 @@ annotateSites <- function(object,
     }
 
     rd
+}
+
+.expandSiteWindows <- function(sites_gr, window) {
+    site_seqnames <- as.character(GenomicRanges::seqnames(sites_gr))
+    site_strands <- as.character(GenomicRanges::strand(sites_gr))
+    site_pos <- BiocGenerics::start(sites_gr)
+
+    raw_start <- site_pos - window
+    raw_end <- site_pos + window
+
+    seq_info <- GenomeInfoDb::seqinfo(sites_gr)
+    seq_lengths <- as.integer(GenomeInfoDb::seqlengths(seq_info)[site_seqnames])
+    seq_circular <- GenomeInfoDb::isCircular(seq_info)[site_seqnames]
+    has_size <- !is.na(seq_lengths) & seq_lengths > 0L
+    is_circular <- has_size & !is.na(seq_circular) & seq_circular
+
+    full_circle <- is_circular & ((2L * window + 1L) >= seq_lengths)
+    wrap_left <- is_circular & !full_circle & raw_start < 1L
+    wrap_right <- is_circular & !full_circle & raw_end > seq_lengths
+    normal <- !(full_circle | wrap_left | wrap_right)
+
+    normal_idx <- which(normal)
+    normal_start <- pmax(raw_start[normal_idx], 1L)
+    normal_end <- raw_end[normal_idx]
+    normal_sizes <- seq_lengths[normal_idx]
+    sized_normal <- !is.na(normal_sizes)
+    normal_end[sized_normal] <- pmin(normal_end[sized_normal],
+                                     normal_sizes[sized_normal])
+    normal_keep <- normal_start <= normal_end
+    normal_idx <- normal_idx[normal_keep]
+
+    full_idx <- which(full_circle)
+    left_idx <- which(wrap_left)
+    right_idx <- which(wrap_right)
+
+    query_map <- c(
+        normal_idx,
+        full_idx,
+        left_idx,
+        left_idx,
+        right_idx,
+        right_idx
+    )
+    starts <- c(
+        normal_start[normal_keep],
+        rep.int(1L, length(full_idx)),
+        rep.int(1L, length(left_idx)),
+        seq_lengths[left_idx] + raw_start[left_idx],
+        raw_start[right_idx],
+        rep.int(1L, length(right_idx))
+    )
+    ends <- c(
+        normal_end[normal_keep],
+        seq_lengths[full_idx],
+        raw_end[left_idx],
+        seq_lengths[left_idx],
+        seq_lengths[right_idx],
+        raw_end[right_idx] - seq_lengths[right_idx]
+    )
+
+    windows <- GenomicRanges::GRanges(
+        seqnames = site_seqnames[query_map],
+        ranges = IRanges::IRanges(start = as.integer(starts),
+                                  end = as.integer(ends)),
+        strand = site_strands[query_map]
+    )
+    GenomeInfoDb::seqinfo(windows) <- seq_info
+
+    list(windows = windows, query_map = query_map)
+}
+
+.circularFeatureRelPosition <- function(site_pos, feat_start, feat_end,
+                                        feat_strand, genome_size) {
+    dist_site_to_start <- (feat_start - site_pos) %% genome_size
+    dist_end_to_site <- (site_pos - feat_end) %% genome_size
+
+    plus_like <- feat_strand != "-"
+    rel_pos <- integer(length(site_pos))
+
+    upstream_plus <- dist_site_to_start <= dist_end_to_site
+    rel_pos[plus_like & upstream_plus] <- -dist_site_to_start[plus_like & upstream_plus]
+    rel_pos[plus_like & !upstream_plus] <- dist_end_to_site[plus_like & !upstream_plus]
+
+    upstream_minus <- dist_end_to_site <= dist_site_to_start
+    rel_pos[!plus_like & upstream_minus] <- -dist_end_to_site[!plus_like & upstream_minus]
+    rel_pos[!plus_like & !upstream_minus] <- dist_site_to_start[!plus_like & !upstream_minus]
+
+    as.integer(rel_pos)
 }
 
 # ── Internal: post-annotation keep filter ─────────────────────────────────────

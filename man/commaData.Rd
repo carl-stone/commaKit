@@ -34,7 +34,10 @@ named integer vector — do not index into the BSgenome with \code{$}
 \code{DNAString} which has no chromosome name and cannot be used. Set to
 \code{NULL} to omit genome information (not recommended). When a
 multi-sequence source is provided, genome info is automatically restricted
-to chromosomes present in the data.}
+to chromosomes present in the data. Chromosomes are assumed circular by
+default when genome information is attached, matching the package's
+bacterial genome default; edit \code{seqinfo(rowRanges(object))} after
+construction if a chromosome should be treated as linear.}
 
 \item{annotation}{Optional. Path to a GFF3 or BED annotation file, or a
 pre-loaded \code{\link[GenomicRanges]{GRanges}} object. If \code{NULL},

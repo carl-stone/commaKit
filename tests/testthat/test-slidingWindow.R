@@ -145,6 +145,57 @@ test_that("slidingWindow: circular=TRUE and FALSE give different edge results", 
     expect_false(isTRUE(all.equal(v_circ, v_linear)))
 })
 
+test_that("slidingWindow: circular=NULL follows Seqinfo circularity", {
+    obj_linear <- tiny_data
+    r_default_linear <- slidingWindow(obj_linear, window = 16, circular = NULL)
+    r_explicit_linear <- slidingWindow(obj_linear, window = 16, circular = FALSE)
+    expect_equal(r_default_linear, r_explicit_linear)
+
+    obj_circular <- tiny_data
+    rr <- rowRanges(obj_circular)
+    si <- GenomeInfoDb::seqinfo(rr)
+    GenomeInfoDb::isCircular(si) <- TRUE
+    GenomeInfoDb::seqinfo(rr) <- si
+    rowRanges(obj_circular) <- rr
+    r_default_circular <- slidingWindow(obj_circular, window = 16, circular = NULL)
+    r_explicit_circular <- slidingWindow(obj_circular, window = 16, circular = TRUE)
+    expect_equal(r_default_circular, r_explicit_circular)
+})
+
+test_that("slidingWindow: circular=NULL treats missing Seqinfo circularity as circular", {
+    obj <- tiny_data
+    rr <- rowRanges(obj)
+    si <- GenomeInfoDb::seqinfo(rr)
+    GenomeInfoDb::isCircular(si) <- NA
+    GenomeInfoDb::seqinfo(rr) <- si
+    rowRanges(obj) <- rr
+
+    r_default <- slidingWindow(obj, window = 16, circular = NULL)
+    r_explicit <- slidingWindow(obj, window = 16, circular = TRUE)
+    expect_equal(r_default, r_explicit)
+})
+
+test_that("slidingWindow: example data is circular by default", {
+    data(comma_example_data)
+    expect_true(all(GenomeInfoDb::isCircular(GenomeInfoDb::seqinfo(comma_example_data))))
+
+    obj <- comma_example_data[, 1L]
+    r_default <- slidingWindow(obj, window = 100L, circular = NULL)
+    r_circular <- slidingWindow(obj, window = 100L, circular = TRUE)
+    expect_equal(r_default, r_circular)
+})
+
+test_that("slidingWindow: circular must be TRUE, FALSE, or NULL", {
+    expect_error(
+        slidingWindow(tiny_data, window = W, circular = NA),
+        "TRUE, FALSE, or NULL"
+    )
+    expect_error(
+        slidingWindow(tiny_data, window = W, circular = c(TRUE, FALSE)),
+        "TRUE, FALSE, or NULL"
+    )
+})
+
 test_that("slidingWindow: error on non-commaData input", {
     expect_error(slidingWindow(data.frame(x = 1), window = 100), "'object' must be a commaData")
 })

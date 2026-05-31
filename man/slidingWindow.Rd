@@ -11,7 +11,7 @@ slidingWindow(
   mod_type = NULL,
   motif = NULL,
   mod_context = NULL,
-  circular = TRUE
+  circular = NULL
 )
 }
 \arguments{
@@ -40,10 +40,14 @@ with a matching modification context are included (e.g.,
 \code{"6mA_GATC"}). Applied after any \code{mod_type} and \code{motif}
 filters.}
 
-\item{circular}{Logical. If \code{TRUE} (default), positions at the ends of
-each chromosome are wrapped around so that the window at position 1 can
-draw from positions near the chromosome end, and vice versa. Appropriate
-for circular bacterial chromosomes.}
+\item{circular}{Logical scalar or \code{NULL}. If \code{NULL} (default),
+circularity is read from \code{seqinfo(object)} for each chromosome.
+Chromosomes with missing circularity metadata are treated as circular,
+matching the package assumption for bacterial genomes. If \code{TRUE} or
+\code{FALSE}, that value overrides \code{seqinfo(object)} for all
+chromosomes. Circular chromosomes wrap windows across chromosome ends so
+that the window at position 1 can draw from positions near the chromosome
+end, and vice versa.}
 }
 \value{
 A \code{data.frame} with one row per (chromosome, position, sample)
@@ -62,8 +66,8 @@ Computes a per-position sliding window statistic (median or mean) of
 methylation beta values for each sample in a \code{\link{commaData}}
 object. The genome size for each chromosome is read from
 \code{genome(object)}, so no organism-specific values are ever hardcoded.
-Circular genome wrap-around is supported via
-\code{.circularIndex()}.
+Circular genome wrap-around is controlled by the \code{isCircular} values
+stored in \code{seqinfo(object)} unless \code{circular} is explicitly set.
 }
 \details{
 Because most positions in a genome have no methylation site, the beta value

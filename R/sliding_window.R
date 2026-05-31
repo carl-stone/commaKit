@@ -9,8 +9,8 @@ NULL
 #' methylation beta values for each sample in a \code{\link{commaData}}
 #' object. The genome size for each chromosome is read from
 #' \code{genome(object)}, so no organism-specific values are ever hardcoded.
-#' Circular genome wrap-around is supported via
-#' \code{.circularIndex()}.
+#' Circular genome wrap-around is controlled by the \code{isCircular} values
+#' stored in \code{seqinfo(object)} unless \code{circular} is explicitly set.
 #'
 #' @param object A \code{\link{commaData}} object. Must have genome size
 #'   information in \code{genome(object)} (i.e., it must have been constructed
@@ -31,10 +31,14 @@ NULL
 #'   with a matching modification context are included (e.g.,
 #'   \code{"6mA_GATC"}). Applied after any \code{mod_type} and \code{motif}
 #'   filters.
-#' @param circular Logical. If \code{TRUE} (default), positions at the ends of
-#'   each chromosome are wrapped around so that the window at position 1 can
-#'   draw from positions near the chromosome end, and vice versa. Appropriate
-#'   for circular bacterial chromosomes.
+#' @param circular Logical scalar or \code{NULL}. If \code{NULL} (default),
+#'   circularity is read from \code{seqinfo(object)} for each chromosome.
+#'   Chromosomes with missing circularity metadata are treated as circular,
+#'   matching the package assumption for bacterial genomes. If \code{TRUE} or
+#'   \code{FALSE}, that value overrides \code{seqinfo(object)} for all
+#'   chromosomes. Circular chromosomes wrap windows across chromosome ends so
+#'   that the window at position 1 can draw from positions near the chromosome
+#'   end, and vice versa.
 #'
 #' @return A \code{data.frame} with one row per (chromosome, position, sample)
 #'   combination, containing:
@@ -76,7 +80,7 @@ slidingWindow <- function(object,
                           mod_type    = NULL,
                           motif       = NULL,
                           mod_context = NULL,
-                          circular    = TRUE) {
+                          circular    = NULL) {
     # ── Input validation ──────────────────────────────────────────────────────
     if (!is(object, "commaData")) {
         stop("'object' must be a commaData object.")
@@ -88,6 +92,10 @@ slidingWindow <- function(object,
         stop("'window' must be a positive integer specifying window size in bp.")
     }
     window <- as.integer(window)
+    if (!is.null(circular) &&
+            (!is.logical(circular) || length(circular) != 1L || is.na(circular))) {
+        stop("'circular' must be TRUE, FALSE, or NULL.")
+    }
 
     genome_info <- genome(object)
     if (is.null(genome_info) || length(genome_info) == 0) {
@@ -95,6 +103,15 @@ slidingWindow <- function(object,
             "genome(object) is NULL or empty. ",
             "Provide genome size information when constructing the commaData object."
         )
+    }
+
+    circular_by_chr <- if (is.null(circular)) {
+        seq_circular <- GenomeInfoDb::isCircular(GenomeInfoDb::seqinfo(object))
+        seq_circular <- seq_circular[names(genome_info)]
+        seq_circular[is.na(seq_circular)] <- TRUE
+        seq_circular
+    } else {
+        stats::setNames(rep(circular, length(genome_info)), names(genome_info))
     }
 
     min_chr <- min(genome_info)
@@ -125,6 +142,7 @@ slidingWindow <- function(object,
     for (ci in seq_along(genome_info)) {
         chr      <- names(genome_info)[ci]
         chr_size <- genome_info[ci]
+        chr_circular <- isTRUE(circular_by_chr[[chr]])
 
         # Sites on this chromosome
         chr_idx  <- which(rd$chrom == chr)
@@ -145,7 +163,7 @@ slidingWindow <- function(object,
             }
 
             # Circular padding: prepend tail and append head
-            if (circular) {
+            if (chr_circular) {
                 half    <- as.integer(floor(window / 2))
                 padded  <- c(beta_vec[(chr_size - half + 1L):chr_size],
                               beta_vec,
