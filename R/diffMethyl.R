@@ -286,6 +286,8 @@ diffMethyl <- function(
     # -- Extract full matrices -------------------------------------------------
     methyl_full  <- methylation(object)
     cov_full     <- siteCoverage(object)
+    mod_counts_full <- .optionalAssay(object, "mod_counts")
+    canonical_counts_full <- .optionalAssay(object, "canonical_counts")
     rd_full      <- as.data.frame(siteInfo(object))
     n_sites_all  <- nrow(methyl_full)
 
@@ -310,6 +312,16 @@ diffMethyl <- function(
 
         methyl_sub <- methyl_full[site_idx, , drop = FALSE]
         cov_sub    <- cov_full[site_idx, , drop = FALSE]
+        mod_counts_sub <- if (is.null(mod_counts_full)) {
+            NULL
+        } else {
+            mod_counts_full[site_idx, , drop = FALSE]
+        }
+        canonical_counts_sub <- if (is.null(canonical_counts_full)) {
+            NULL
+        } else {
+            canonical_counts_full[site_idx, , drop = FALSE]
+        }
         site_sub   <- rd_full[site_idx, , drop = FALSE]
 
         # Apply min_coverage: set beta to NA where coverage < threshold
@@ -320,13 +332,19 @@ diffMethyl <- function(
         res_sub <- tryCatch(
             if (method == "limma") {
                 .runLimma(methyl_sub, cov_sub, site_sub, cd, formula, alpha = alpha,
-                          ref_level = ref_level, design_info = design_info)
+                          ref_level = ref_level, design_info = design_info,
+                          mod_counts_mat = mod_counts_sub,
+                          canonical_counts_mat = canonical_counts_sub)
             } else if (method == "quasi_f") {
                 .runQuasiF(methyl_sub, cov_sub, site_sub, cd, formula,
-                           ref_level = ref_level, design_info = design_info)
+                           ref_level = ref_level, design_info = design_info,
+                           mod_counts_mat = mod_counts_sub,
+                           canonical_counts_mat = canonical_counts_sub)
             } else {
                 .runMethylKit(methyl_sub, cov_sub, site_sub, cd, formula,
-                              ref_level = ref_level, design_info = design_info)
+                              ref_level = ref_level, design_info = design_info,
+                              mod_counts_mat = mod_counts_sub,
+                              canonical_counts_mat = canonical_counts_sub)
             },
             error = function(e) {
                 warning(

@@ -22,7 +22,9 @@ supplied explicitly.}
 A \code{data.frame} with columns: \code{chrom}, \code{position}
 (1-based), \code{strand}, \code{mod_type}, \code{motif} (always
 \code{NA} — Megalodon files do not encode motif context), \code{beta},
-\code{coverage}.
+\code{coverage}, \code{mod_counts}, and \code{canonical_counts}. Count
+columns are \code{NA_integer_} because this parser aggregates per-read
+probabilities rather than caller-reported count calls.
 }
 \description{
 Reads a Megalodon per-read modification output file, aggregates per-read

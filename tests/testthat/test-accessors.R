@@ -79,6 +79,45 @@ test_that("siteCoverage() has correct dimensions", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
+# modCounts(), canonicalCounts(), assayProvenance()
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("modCounts() and canonicalCounts() return raw count assays", {
+    obj <- .make_two_modtype()
+    mod <- modCounts(obj)
+    canonical <- canonicalCounts(obj)
+
+    expect_true(is.matrix(mod))
+    expect_true(is.matrix(canonical))
+    expect_equal(dim(mod), dim(methylation(obj)))
+    expect_equal(dim(canonical), dim(methylation(obj)))
+    expect_true(all(mod + canonical <= siteCoverage(obj), na.rm = TRUE))
+})
+
+test_that("raw count accessors error clearly for legacy objects", {
+    obj <- .make_two_modtype()
+    SummarizedExperiment::assays(obj) <-
+        SummarizedExperiment::assays(obj)[c("methylation", "coverage")]
+
+    expect_error(modCounts(obj), "mod_counts")
+    expect_error(canonicalCounts(obj), "canonical_counts")
+    expect_no_error(validObject(obj))
+})
+
+test_that("assayProvenance() returns recorded layer metadata or an empty list", {
+    obj <- .make_two_modtype()
+    provenance <- assayProvenance(obj)
+
+    expect_true(is.list(provenance))
+    expect_true(all(c("methylation", "coverage", "mod_counts",
+                      "canonical_counts") %in% names(provenance)))
+    expect_equal(provenance$mod_counts$type, "reconstructed_counts")
+
+    S4Vectors::metadata(obj)$assay_provenance <- NULL
+    expect_identical(assayProvenance(obj), list())
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
 # sampleInfo()
 # ─────────────────────────────────────────────────────────────────────────────
 

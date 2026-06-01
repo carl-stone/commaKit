@@ -1,5 +1,5 @@
 #' @importFrom methods setGeneric setMethod callNextMethod
-#' @importFrom SummarizedExperiment assay rowData "rowData<-" colData rowRanges
+#' @importFrom SummarizedExperiment assay assayNames rowData "rowData<-" colData rowRanges
 #' @importFrom BiocGenerics annotation start strand
 #' @importFrom IRanges coverage
 #' @importFrom GenomeInfoDb genome seqnames seqlengths seqinfo
@@ -65,6 +65,107 @@ setGeneric("siteCoverage", function(object) standardGeneric("siteCoverage"))
 #' @rdname siteCoverage
 setMethod("siteCoverage", "commaData", function(object) {
     assay(object, "coverage")
+})
+
+# ─── modCounts() ─────────────────────────────────────────────────────────────
+
+#' Accessor for observed modified-read counts
+#'
+#' Retrieves the sites × samples matrix of observed reads called as the target
+#' modification. This assay is available for callers that report count-like
+#' methylation evidence directly, such as modkit pileup. Older objects or
+#' probability-only callers may contain \code{NA} values.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return An integer matrix with rows corresponding to methylation sites and
+#'   columns corresponding to samples.
+#'
+#' @seealso \code{\link{canonicalCounts}}, \code{\link{siteCoverage}},
+#'   \code{\link{methylation}}
+#'
+#' @examples
+#' data(comma_example_data)
+#' mod <- modCounts(comma_example_data)
+#' dim(mod)
+#'
+#' @export
+setGeneric("modCounts", function(object) standardGeneric("modCounts"))
+
+#' @rdname modCounts
+setMethod("modCounts", "commaData", function(object) {
+    if (!"mod_counts" %in% assayNames(object)) {
+        stop(
+            "assay 'mod_counts' not found. This object may have been created ",
+            "before raw count assays were added."
+        )
+    }
+    assay(object, "mod_counts")
+})
+
+# ─── canonicalCounts() ───────────────────────────────────────────────────────
+
+#' Accessor for observed canonical-read counts
+#'
+#' Retrieves the sites × samples matrix of observed reads called as canonical
+#' or unmodified for the site. For callers that cannot provide a true
+#' canonical-count decomposition, values may be \code{NA}; consult
+#' \code{\link{assayProvenance}} for source details.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return An integer matrix with rows corresponding to methylation sites and
+#'   columns corresponding to samples.
+#'
+#' @seealso \code{\link{modCounts}}, \code{\link{siteCoverage}},
+#'   \code{\link{methylation}}
+#'
+#' @examples
+#' data(comma_example_data)
+#' canonical <- canonicalCounts(comma_example_data)
+#' dim(canonical)
+#'
+#' @export
+setGeneric("canonicalCounts", function(object) standardGeneric("canonicalCounts"))
+
+#' @rdname canonicalCounts
+setMethod("canonicalCounts", "commaData", function(object) {
+    if (!"canonical_counts" %in% assayNames(object)) {
+        stop(
+            "assay 'canonical_counts' not found. This object may have been ",
+            "created before raw count assays were added."
+        )
+    }
+    assay(object, "canonical_counts")
+})
+
+# ─── assayProvenance() ───────────────────────────────────────────────────────
+
+#' Accessor for assay provenance metadata
+#'
+#' Returns metadata describing how assay matrices were produced. The constructor
+#' records whether count assays were observed directly from caller output,
+#' unavailable, or reconstructed for synthetic/test objects.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return A named \code{list}. Returns an empty list for legacy objects without
+#'   assay provenance metadata.
+#'
+#' @seealso \code{\link{modCounts}}, \code{\link{canonicalCounts}},
+#'   \code{\link{methylation}}
+#'
+#' @examples
+#' data(comma_example_data)
+#' assayProvenance(comma_example_data)
+#'
+#' @export
+setGeneric("assayProvenance", function(object) standardGeneric("assayProvenance"))
+
+#' @rdname assayProvenance
+setMethod("assayProvenance", "commaData", function(object) {
+    provenance <- S4Vectors::metadata(object)$assay_provenance
+    if (is.null(provenance)) list() else provenance
 })
 
 # ─── coverage() compatibility wrapper ────────────────────────────────────────
@@ -477,10 +578,19 @@ filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
 #' @export
 subset.commaData <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
                              motif = NULL, mod_context = NULL, ...) {
-    .Deprecated("filterSites")
+    warning(
+        "subset.commaData() is deprecated; use filterSites() instead.",
+        call. = FALSE
+    )
     filterSites(x, mod_type = mod_type, condition = condition, chrom = chrom,
                 motif = motif, mod_context = mod_context, ...)
 }
+
+# SummarizedExperiment/S4Vectors promote subset() to an S4 generic when
+# attached, so register the same compatibility path for S4 dispatch.
+setMethod("subset", "commaData", function(x, ...) {
+    subset.commaData(x, ...)
+})
 
 # ─── caller() ────────────────────────────────────────────────────────────────
 

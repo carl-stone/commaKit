@@ -46,10 +46,11 @@ The M-value for a site in one sample is computed as:
 
 \deqn{M = \log_2\!\left(\frac{M_{\mathrm{reads}} + \alpha}{U_{\mathrm{reads}} + \alpha}\right)}
 
-where \eqn{M_{\mathrm{reads}} = \mathrm{round}(\beta \times \mathrm{coverage})}
-is the estimated number of methylated reads, \eqn{U_{\mathrm{reads}} =
-\mathrm{coverage} - M_{\mathrm{reads}}} is the estimated number of
-unmethylated reads, and \eqn{\alpha} is the pseudocount offset.
+where \eqn{M_{\mathrm{reads}}} and \eqn{U_{\mathrm{reads}}} are observed
+modified and canonical/unmodified read counts when count assays are
+available. For legacy or probability-only objects, counts are reconstructed
+from \code{round(beta * coverage)} as a documented fallback. The
+pseudocount offset is \eqn{\alpha}.
 
 Sites with zero coverage or \code{NA} beta values are returned as \code{NA}.
 The pseudocount \code{alpha} must be strictly positive to avoid \code{-Inf}
@@ -71,6 +72,7 @@ m_tight <- mValues(comma_example_data, alpha = 0.1)
 
 }
 \seealso{
-\code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
+\code{\link{methylation}}, \code{\link{siteCoverage}},
+\code{\link{modCounts}}, \code{\link{canonicalCounts}},
 \code{\link{plot_pca}}
 }

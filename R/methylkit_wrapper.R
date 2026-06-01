@@ -24,6 +24,11 @@ NULL
 #'
 #' @param methyl_mat Numeric matrix (sites × samples) of beta values.
 #' @param coverage_mat Integer matrix (sites × samples) of read depths.
+#' @param mod_counts_mat Optional integer matrix of observed modified-read
+#'   counts. If supplied, these counts are preferred over reconstructing from
+#'   beta values.
+#' @param canonical_counts_mat Optional integer matrix of observed
+#'   canonical-read counts.
 #' @param site_df Data frame with columns \code{chrom}, \code{position},
 #'   \code{strand}, \code{mod_type}, \code{motif} — one row per site.
 #' @param coldata \code{data.frame} with at least one column matching the
@@ -36,7 +41,8 @@ NULL
 #'
 #' @keywords internal
 .runMethylKit <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
-                          ref_level = NULL, design_info = NULL) {
+                          ref_level = NULL, design_info = NULL,
+                          mod_counts_mat = NULL, canonical_counts_mat = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("methylKit", quietly = TRUE)) {
         stop(
@@ -56,6 +62,12 @@ NULL
     cond_levels <- design_info$cond_levels
     cond        <- design_info$cond
     treatment   <- as.integer(cond == treat_level)  # 0 = reference, 1 = treatment
+    count_mats <- .resolveCountMatrices(
+        methyl_mat,
+        coverage_mat,
+        mod_counts_mat = mod_counts_mat,
+        canonical_counts_mat = canonical_counts_mat
+    )
 
     message(
         "methylKit: comparing '", treat_level, "' (treatment) vs '",
@@ -111,16 +123,18 @@ NULL
       # accepts file paths, not in-memory data frames
       sample_list <- lapply(seq_len(ncol(methyl_mat)), function(j) {
         beta_j <- methyl_mat[keep_idx, j]
-        cov_j  <- as.integer(coverage_mat[keep_idx, j])
+        n_meth <- as.integer(count_mats$modified[keep_idx, j])
+        n_unmeth <- as.integer(count_mats$unmodified[keep_idx, j])
+        cov_j <- n_meth + n_unmeth
 
         # Replace NA with 0 coverage for methylKit (it handles 0-coverage sites
         # via unite() with min.per.group)
         cov_j[is.na(cov_j)]  <- 0L
-        cov_j[is.na(beta_j)] <- 0L
-
-        n_meth <- as.integer(round(beta_j * cov_j))
         n_meth[is.na(n_meth)] <- 0L
+        n_unmeth[is.na(n_unmeth)] <- 0L
+        cov_j[is.na(beta_j)] <- 0L
         n_meth <- pmax(0L, pmin(n_meth, cov_j))
+        n_unmeth <- pmax(0L, cov_j - n_meth)
 
         df <- data.frame(
           chr      = chroms[keep_idx],
@@ -129,7 +143,7 @@ NULL
           strand   = strands[keep_idx],
           coverage = cov_j,
           numCs    = n_meth,
-          numTs    = cov_j - n_meth,
+          numTs    = n_unmeth,
           stringsAsFactors = FALSE
         )
 

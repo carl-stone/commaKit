@@ -34,6 +34,8 @@ information (older modkit formats).}
 \item{\code{beta}}{Proportion of reads called methylated, range 0–1
 (numeric).}
 \item{\code{coverage}}{Total read depth at this site (integer).}
+\item{\code{mod_counts}}{Observed reads called as this modification.}
+\item{\code{canonical_counts}}{Observed reads called canonical/unmodified.}
 }
 }
 \description{

@@ -26,13 +26,17 @@ Genome size information is stored in the \code{Seqinfo} attached to
 \code{seqinfo(object)}. The \code{genome()} accessor returns the same
 named integer vector for backward compatibility.
 
-The class stores methylation data in two assay matrices (accessible via
+The class stores methylation data in assay matrices (accessible via
 \code{\link[SummarizedExperiment]{assay}}):
 \describe{
 \item{\code{"methylation"}}{Beta values (proportion of reads called
 methylated, range 0-1). Sites with coverage below the
 \code{min_coverage} threshold are stored as \code{NA}.}
 \item{\code{"coverage"}}{Integer read depth at each site.}
+\item{\code{"mod_counts"}}{Observed reads called as the target
+modification, when available from the caller.}
+\item{\code{"canonical_counts"}}{Observed reads called canonical or
+unmodified, when available from the caller.}
 }
 
 Genomic positions are stored in
@@ -66,7 +70,9 @@ and \code{\link{minCoverage}(object)}.
 }
 \seealso{
 \code{\link{commaData}} for the constructor,
-\code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
+\code{\link{methylation}}, \code{\link{siteCoverage}},
+\code{\link{modCounts}}, \code{\link{canonicalCounts}},
+\code{\link{assayProvenance}},
 \code{\link{sampleInfo}}, \code{\link{siteInfo}},
 \code{\link{modTypes}}, \code{\link{modContexts}},
 \code{\link[BiocGenerics]{annotation}} for accessors.

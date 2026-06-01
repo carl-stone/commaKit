@@ -49,6 +49,8 @@ NULL
 #'     \item{\code{beta}}{Proportion of reads called methylated, range 0–1
 #'       (numeric).}
 #'     \item{\code{coverage}}{Total read depth at this site (integer).}
+#'     \item{\code{mod_counts}}{Observed reads called as this modification.}
+#'     \item{\code{canonical_counts}}{Observed reads called canonical/unmodified.}
 #'   }
 #'
 #' @keywords internal
@@ -144,6 +146,8 @@ NULL
         motif    = raw$motif,
         beta     = as.numeric(raw$fraction_modified) / 100,  # percentage → fraction
         coverage = raw$Nvalid_cov,
+        mod_counts = as.integer(raw$Nmod),
+        canonical_counts = as.integer(raw$Ncanonical),
         stringsAsFactors = FALSE
     )
 }
@@ -151,7 +155,8 @@ NULL
 #' Empty parser result (zero-row data frame with shared parse schema)
 #' @return A zero-row \code{data.frame} with columns \code{chrom},
 #'   \code{position}, \code{strand}, \code{mod_type}, \code{motif},
-#'   \code{beta}, \code{coverage}.
+#'   \code{beta}, \code{coverage}, \code{mod_counts}, and
+#'   \code{canonical_counts}.
 #' @keywords internal
 .emptyParseResult <- function() {
     data.frame(
@@ -162,6 +167,8 @@ NULL
         motif    = character(0),
         beta     = numeric(0),
         coverage = integer(0),
+        mod_counts = integer(0),
+        canonical_counts = integer(0),
         stringsAsFactors = FALSE
     )
 }

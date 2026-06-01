@@ -103,6 +103,9 @@ strand) plus modification type and motif context.
 \code{findOverlaps()} for alignment.
 \item Beta values and coverage are arranged into sites \eqn{\times} samples
 matrices, with \code{NA} for samples that do not cover a given site.
+\item Observed modified and canonical read counts are preserved as
+\code{mod_counts} and \code{canonical_counts} assays when reported by
+the caller; probability-only callers store \code{NA} in those assays.
 \item Sites where coverage is below \code{min_coverage} in a sample have
 their beta value set to \code{NA} (but coverage is preserved).
 }
@@ -134,7 +137,9 @@ cd
 }
 \seealso{
 \code{\link{commaData-class}}, \code{\link{methylation}},
-\code{\link[=coverage,commaData-method]{coverage}}, \code{\link{sampleInfo}}, \code{\link{siteInfo}},
+\code{\link{siteCoverage}}, \code{\link{modCounts}},
+\code{\link{canonicalCounts}}, \code{\link{assayProvenance}},
+\code{\link{sampleInfo}}, \code{\link{siteInfo}},
 \code{\link{modTypes}}, \code{\link{loadAnnotation}},
 \code{\link{findMotifSites}}
 }

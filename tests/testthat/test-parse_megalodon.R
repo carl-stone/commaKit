@@ -40,7 +40,8 @@ test_that(".parseMegalodon() returns a data.frame with correct columns", {
     f <- .write_tmp_megalodon(.megalodon_row())
     result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     expect_true(is.data.frame(result))
-    expect_named(result, c("chrom", "position", "strand", "mod_type", "motif", "beta", "coverage"))
+    expect_named(result, c("chrom", "position", "strand", "mod_type", "motif",
+                           "beta", "coverage", "mod_counts", "canonical_counts"))
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -90,6 +91,8 @@ test_that(".parseMegalodon() computes coverage as read count per site", {
     f      <- .write_tmp_megalodon(rows)
     result <- commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA", min_coverage = 1L)
     expect_equal(result$coverage, 3L)
+    expect_true(all(is.na(result$mod_counts)))
+    expect_true(all(is.na(result$canonical_counts)))
 })
 
 test_that(".parseMegalodon() aggregates multiple sites independently", {

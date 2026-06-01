@@ -27,10 +27,11 @@
 #'
 #' \deqn{M = \log_2\!\left(\frac{M_{\mathrm{reads}} + \alpha}{U_{\mathrm{reads}} + \alpha}\right)}
 #'
-#' where \eqn{M_{\mathrm{reads}} = \mathrm{round}(\beta \times \mathrm{coverage})}
-#' is the estimated number of methylated reads, \eqn{U_{\mathrm{reads}} =
-#' \mathrm{coverage} - M_{\mathrm{reads}}} is the estimated number of
-#' unmethylated reads, and \eqn{\alpha} is the pseudocount offset.
+#' where \eqn{M_{\mathrm{reads}}} and \eqn{U_{\mathrm{reads}}} are observed
+#' modified and canonical/unmodified read counts when count assays are
+#' available. For legacy or probability-only objects, counts are reconstructed
+#' from \code{round(beta * coverage)} as a documented fallback. The
+#' pseudocount offset is \eqn{\alpha}.
 #'
 #' Sites with zero coverage or \code{NA} beta values are returned as \code{NA}.
 #' The pseudocount \code{alpha} must be strictly positive to avoid \code{-Inf}
@@ -56,7 +57,8 @@
 #' # Use a smaller pseudocount
 #' m_tight <- mValues(comma_example_data, alpha = 0.1)
 #'
-#' @seealso \code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
+#' @seealso \code{\link{methylation}}, \code{\link{siteCoverage}},
+#'   \code{\link{modCounts}}, \code{\link{canonicalCounts}},
 #'   \code{\link{plot_pca}}
 #'
 #' @export
@@ -84,22 +86,29 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
     ## --- Compute M-values ---------------------------------------------------
     beta_mat <- methylation(object)   # sites × samples, values in [0, 1]
     cov_mat  <- siteCoverage(object)      # sites × samples, non-negative integers
+    count_mats <- .resolveCountMatrices(
+        beta_mat,
+        cov_mat,
+        mod_counts_mat = .optionalAssay(object, "mod_counts"),
+        canonical_counts_mat = .optionalAssay(object, "canonical_counts")
+    )
 
-    ## Estimated methylated read counts (round to nearest integer). Clamp to the
-    ## physically possible range so malformed/manual objects cannot produce
-    ## negative unmethylated counts and NaN M-values.
-    m_reads <- round(beta_mat * cov_mat)
+    ## Clamp to the physically possible range so malformed/manual objects cannot
+    ## produce negative unmethylated counts and NaN M-values.
+    m_reads <- count_mats$modified
     m_reads <- pmax(0, pmin(m_reads, cov_mat))
-    u_reads <- pmax(0, cov_mat - m_reads)
+    u_reads <- pmax(0, count_mats$unmodified)
     dim(m_reads) <- dim(beta_mat)
     dim(u_reads) <- dim(beta_mat)
     dimnames(m_reads) <- dimnames(beta_mat)
     dimnames(u_reads) <- dimnames(beta_mat)
 
-    ## Sites with coverage == 0: set m_reads and u_reads to NA so that the
-    ## log ratio returns NA rather than log2(alpha / alpha) = 0 (misleading).
-    m_reads[cov_mat == 0L] <- NA_real_
-    u_reads[cov_mat == 0L] <- NA_real_
+    ## Sites with coverage == 0 or filtered beta values return NA rather than a
+    ## pseudocount-only log ratio. Count assays may preserve raw observations
+    ## even when the beta layer has been filtered by min_coverage.
+    missing_value <- is.na(beta_mat) | is.na(cov_mat) | cov_mat == 0L
+    m_reads[missing_value] <- NA_real_
+    u_reads[missing_value] <- NA_real_
 
     ## M-value = log2((M + alpha) / (U + alpha))
     log2((m_reads + alpha) / (u_reads + alpha))

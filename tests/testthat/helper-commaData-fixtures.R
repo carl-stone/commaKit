@@ -2,7 +2,9 @@
                                     positions = NULL, mod_type = "6mA",
                                     motif = "GATC", chrom = "chr_sim",
                                     seqlength = 100000L, strand = "+",
-                                    site_metadata = NULL) {
+                                    site_metadata = NULL,
+                                    mod_counts = NULL,
+                                    canonical_counts = NULL) {
     stopifnot(is.matrix(beta))
 
     n_sites <- nrow(beta)
@@ -20,6 +22,21 @@
     if (is.null(dimnames(coverage))) {
         dimnames(coverage) <- dimnames(beta)
     }
+    if (is.null(mod_counts)) {
+        mod_counts <- round(beta * coverage)
+    }
+    mod_counts[is.na(mod_counts)] <- NA_integer_
+    mod_counts <- pmax(0L, pmin(as.integer(mod_counts), coverage))
+    dim(mod_counts) <- dim(beta)
+    dimnames(mod_counts) <- dimnames(beta)
+
+    if (is.null(canonical_counts)) {
+        canonical_counts <- coverage - mod_counts
+    }
+    canonical_counts[is.na(canonical_counts)] <- NA_integer_
+    canonical_counts <- pmax(0L, as.integer(canonical_counts))
+    dim(canonical_counts) <- dim(beta)
+    dimnames(canonical_counts) <- dimnames(beta)
 
     if (is.null(positions)) {
         positions <- seq_len(n_sites) * 1000L
@@ -65,11 +82,23 @@
     rownames(cd) <- cd$sample_name
 
     rse <- SummarizedExperiment::SummarizedExperiment(
-        assays = list(methylation = beta, coverage = coverage),
+        assays = list(
+            methylation = beta,
+            coverage = coverage,
+            mod_counts = mod_counts,
+            canonical_counts = canonical_counts
+        ),
         rowRanges = site_gr,
         colData = cd
     )
-    new("commaData", rse)
+    obj <- new("commaData", rse)
+    S4Vectors::metadata(obj)$assay_provenance <- list(
+        methylation = list(type = "filtered_beta", source = "test_fixture"),
+        coverage = list(type = "observed_total_coverage", source = "test_fixture"),
+        mod_counts = list(type = "reconstructed_counts", source = "test_fixture"),
+        canonical_counts = list(type = "reconstructed_counts", source = "test_fixture")
+    )
+    obj
 }
 
 .make_two_modtype_fixture <- function(n_6ma = 8L, n_5mc = 4L,

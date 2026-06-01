@@ -143,6 +143,14 @@ coverage_mat <- matrix(
 )
 storage.mode(coverage_mat) <- "integer"
 
+mod_counts_mat <- round(methyl_mat * coverage_mat)
+mod_counts_mat <- pmax(0L, pmin(as.integer(mod_counts_mat), coverage_mat))
+dim(mod_counts_mat) <- dim(methyl_mat)
+dimnames(mod_counts_mat) <- dimnames(methyl_mat)
+
+canonical_counts_mat <- coverage_mat - mod_counts_mat
+storage.mode(canonical_counts_mat) <- "integer"
+
 # ── Build rowRanges (GRanges) ────────────────────────────────────────────────
 site_gr <- GenomicRanges::GRanges(
     seqnames = rep(CHR_NAME, n_total),
@@ -189,7 +197,12 @@ GenomicRanges::mcols(ann_gr)$name         <- c("geneA", "geneB", "geneC", "geneD
 library(SummarizedExperiment)
 
 rse <- SummarizedExperiment(
-    assays     = list(methylation = methyl_mat, coverage = coverage_mat),
+    assays     = list(
+        methylation = methyl_mat,
+        coverage = coverage_mat,
+        mod_counts = mod_counts_mat,
+        canonical_counts = canonical_counts_mat
+    ),
     rowRanges  = site_gr,
     colData    = col_df
 )
@@ -203,9 +216,16 @@ S4Vectors::metadata(comma_example_data)$motifSites <- GenomicRanges::GRanges()
 # Store caller and min_coverage in metadata
 S4Vectors::metadata(comma_example_data)$caller <- "modkit"
 S4Vectors::metadata(comma_example_data)$min_coverage <- 5L
+S4Vectors::metadata(comma_example_data)$assay_provenance <- list(
+    methylation = list(type = "filtered_beta", source = "synthetic_example"),
+    coverage = list(type = "observed_total_coverage", source = "synthetic_example"),
+    mod_counts = list(type = "reconstructed_counts", source = "synthetic_example"),
+    canonical_counts = list(type = "reconstructed_counts", source = "synthetic_example")
+)
 
 # ── Save ──────────────────────────────────────────────────────────────────────
-usethis::use_data(comma_example_data, overwrite = TRUE, compress = "xz")
+dir.create("data", showWarnings = FALSE)
+save(comma_example_data, file = "data/comma_example_data.rda", compress = "xz")
 
 message("comma_example_data saved. Object size: ",
         format(object.size(comma_example_data), units = "KB"))
