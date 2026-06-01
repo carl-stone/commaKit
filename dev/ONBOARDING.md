@@ -24,7 +24,7 @@
 3. Explore accessors:
    ```r
    methylation(comma_example_data)
-   coverage(comma_example_data)
+   siteCoverage(comma_example_data)
    modTypes(comma_example_data)
    modContexts(comma_example_data)
    siteInfo(comma_example_data)
@@ -39,7 +39,7 @@
 ### Questions to answer
 - What's the difference between `mod_type` and `mod_context`?
 - Why are genomic positions stored in `rowRanges()` instead of rowData?
-- What does the `coverage()` matrix represent?
+- What does the `siteCoverage()` matrix represent?
 
 ---
 

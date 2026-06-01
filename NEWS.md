@@ -10,11 +10,11 @@
 
 ## New features
 
-* **`mod_context` rowData column** — every `commaData` object now stores a
-  `mod_context` column in `rowData` that combines `mod_type` and `motif` (e.g.
-  `"6mA_GATC"`, `"5mC_CCWGG"`). When `motif` is `NA` (Dorado/Megalodon
-  callers), the fallback is the `mod_type` string alone (never `"6mA_NA"`).
-  `mod_context` is required and enforced by `setValidity()`.
+* **`mod_context` is derived on demand** — `mod_context` is computed from
+  `mod_type` and `motif` (e.g. `"6mA_GATC"`, `"5mC_CCWGG"`) by
+  `modContexts()` and `siteInfo()` rather than stored as a persistent
+  `rowData` column. When `motif` is `NA` (Dorado/Megalodon callers), the
+  fallback is the `mod_type` string alone (never `"6mA_NA"`).
 
 * **`modContexts()`** — new exported S4 accessor that returns sorted unique
   modification context strings from a `commaData` object.
@@ -25,8 +25,10 @@
   unexpected mod_type × motif combinations are dropped at construction time
   with an informative message per mod type.
 
-* **`subset(object, mod_context = ...)` filter** — `subset()` gains a
+* **`filterSites(object, mod_context = ...)` filter** — `filterSites()` gains a
   `mod_context` parameter for filtering by modification context.
+  `subset.commaData()` remains as deprecated compatibility and forwards to
+  `filterSites()`.
 
 * **`diffMethyl()` loops by `mod_context`** — differential methylation is now
   computed independently for each `mod_context` group (e.g. 6mA@GATC and
@@ -42,9 +44,11 @@
 
 ## Breaking changes
 
-* **Old `commaData` objects are invalid** — `rowData` must include a
-  `mod_context` character column. Objects created with earlier versions will
-  fail `validObject()`. Re-create from source files using the updated
+* **Old `commaData` objects should be recreated** — the Schema v2 data model
+  moved genomic positions into `rowRanges()`, stores `mod_type`/`motif` as
+  row-range metadata, derives `mod_context` on demand, and stores caller and
+  minimum-coverage metadata in `metadata(object)`. Objects created with earlier
+  informal versions should be recreated from source files using the updated
   constructor.
 
 ## Bug fixes
@@ -60,6 +64,12 @@
 
 ## Package improvements
 
+* Added `siteCoverage()` as the preferred package-specific coverage matrix
+  accessor. `coverage(commaData)` remains as deprecated compatibility because
+  `coverage()` already has an established Bioconductor meaning.
+* Added `filterSites()` as the preferred high-level site/sample filter.
+  `subset.commaData()` remains as deprecated compatibility because exporting a
+  broad `subset()` workflow conflicts with base R expectations.
 * Added explicit `Author` and `Maintainer` fields to DESCRIPTION for
   R 4.6.0 compatibility.
 * Replaced non-ASCII character in `writeBED()` documentation with

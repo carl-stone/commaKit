@@ -101,7 +101,7 @@ This document records significant architectural and API decisions. When you're t
 
 **Consequence:**
 - Genomic positions stored in `rowRanges()` as 1-bp `GRanges`
-- `methylation()` and `coverage()` are assay accessors
+- `methylation()` and `siteCoverage()` are assay accessors (`coverage()` is deprecated compatibility because of the Bioconductor generic)
 - `siteInfo()` provides backward-compatible flat DataFrame access
 - Genome info from `Seqinfo` (per `seqinfo(object)`)
 - Annotation and motif sites stored in `metadata()`

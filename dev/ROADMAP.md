@@ -1,6 +1,6 @@
 # commaKit Roadmap — Strategic Direction
 
-**Last updated:** 2026-05-30
+**Last updated:** 2026-06-01
 **Current version:** 0.2.0
 **Public name:** commaKit (Comparative Microbial Methylomics Analysis Kit)
 **R package namespace:** commaKit
@@ -48,14 +48,19 @@ Key changes:
 
 The test suite has too many smoke tests and not enough discriminating tests. We don't really believe the tests yet — they verify "doesn't crash" but not "produces correct results."
 
-**Issues:** #73, #74, #75, #124, #128, #129
-**PRs:** #132, #133 (strengthened tests)
+**Open issues:** #75, #153
+**Completed issues:** #73, #74, #124, #126–#129
+**Notable PRs:** #132, #133, #190, #204
 
 What this milestone looks like when done:
-- Plot tests verify data mappings (not just ggplot class)
-- slidingWindow circular correctness verified with known boundary values
+- Remaining plot tests verify data mappings (not just ggplot class)
 - enrichMethylation tested with real clusterProfiler (not fake TERM2GENE)
-- Integration test across full pipeline is reliable and meaningful
+- Integration test across full pipeline remains reliable and meaningful
+
+Already completed:
+- Full test audit and smoke-test cleanup
+- Full-pipeline integration test
+- slidingWindow circular correctness verified with known boundary values
 
 See `dev/knowledge/test-quality.md` for the full audit.
 
@@ -66,14 +71,15 @@ Thermonuclear review completed 2026-05-25. Findings filed as issues #135–#163,
 **Merged PRs:**
 - #165 — diffMethyl multi-level formula support (#135–#138)
 - #166 — import/enrichment hardening (#139–#143, #146)
+- #174, #177–#187, #192, #194, #197–#201, #203 — follow-up cleanup, plotting, docs, fixtures, and helper extraction
 
-**Remaining:** ~20 issues still open (plots, cleanup, docs gaps).
+**Remaining:** one open code-quality issue: #150 (plot coverage/distribution behavior when `condition` metadata is absent).
 
-### 4. Circle Ops — next (correctness + robustness)
+### 4. Circle Ops — COMPLETE (correctness + robustness)
 
-Decide on behavior of all functions at circular genome boundaries.
+Audited and documented behavior at circular genome boundaries. `slidingWindow()` now reads per-chromosome circularity from `Seqinfo`, defaults missing circularity metadata to circular for bacterial genomes, and has known-value boundary tests.
 
-**Issues:** #122, #112
+**Issues:** #112, #122, #129
 **Key functions:** slidingWindow(), plot_metagene(), plot_tss_profile(), annotateSites() with proximity method
 
 ### 5. Layered Assays — proposed for v0.3.0 (robustness)
@@ -81,30 +87,37 @@ Decide on behavior of all functions at circular genome boundaries.
 Current in-place mutation of assay matrices is lossy — running `diffMethyl()` with different parameters overwrites previous results. The right pattern is layered assays (assay keys for different analysis runs).
 
 **Issues:** #118, #167
+**Current PRs:** #208 (layered assay foundation) and #209 (assay layer registry API), stacked and requiring careful review before merge.
 
-### 6. Technical Rename to commaKit — complete (publishability)
+### 6. Technical Rename to commaKit — COMPLETE (publishability)
 
-Rename package namespace, repo, and all public references from `comma`/`CoMMA` to `commaKit`.
+Renamed package namespace, docs, vignettes, pkgdown configuration, and public references from `comma`/`CoMMA` to `commaKit`. The exported `commaData` class and `comma_example_data` dataset keep their names for API continuity.
 
 **Issues:** #168–#173
+**PR:** #207
 
 ### 7. Usability (usability)
 
 Make commaKit usable by someone other than Carl. Documentation, guidance, error messages.
 
-**Issues:** #62, #64, #68, #134, #161
+**Open issue:** #68
+**Completed issues:** #62, #64, #134, #161
 
 What this milestone looks like when done:
-- Troubleshooting guide for data import
-- Method selection guidance for diffMethyl backends
 - Performance expectations documented
 - Claire can work through the getting-started vignette and the troubleshooting guide without Carl's help
+
+Already completed:
+- Troubleshooting guide for data import
+- Method selection guidance for diffMethyl backends
+- commaData object vignette
+- Onboarding guide function names synchronized with the API
 
 ### 8. Real-World Readiness (robustness + publishability)
 
 Make commaKit handle real data and be ready for broader distribution.
 
-**Issues:** #67, #70, #76, #77
+**Issues:** #67, #76, #77, #162, #206
 
 This is the lowest priority milestone. Bioconductor submission is way down the list.
 

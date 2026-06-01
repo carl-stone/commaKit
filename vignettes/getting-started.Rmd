@@ -52,16 +52,19 @@ library(commaKit)
 
 # The `commaData` Object
 
-`commaData` extends `SummarizedExperiment` and is the central data container
-in commaKit. It stores:
+`commaData` extends Bioconductor's `RangedSummarizedExperiment` and is the
+central data container in commaKit. It stores:
 
 - **methylation** — a sites × samples matrix of beta values (0–1).
-- **coverage** — a sites × samples matrix of read depths.
-- **rowData** — per-site metadata: chromosome, position, strand, mod_type, mod_context.
+- **siteCoverage** — a sites × samples matrix of read depths.
+- **rowRanges** — one 1-bp `GRanges` range per methylation site, with
+  `mod_type` and `motif` metadata.
+- **mod_context** — computed on demand from `mod_type` and `motif` by
+  `modContexts()` and `siteInfo()`.
 - **colData** — per-sample metadata: sample_name, condition, replicate.
-- **genomeInfo** — chromosome names and lengths.
-- **annotation** — genomic features as a `GRanges` object.
-- **motifSites** — motif instances as a `GRanges` object.
+- **Seqinfo** — chromosome names, lengths, and circularity metadata.
+- **annotation** — genomic features as a `GRanges` object in `metadata()`.
+- **motifSites** — motif instances as a `GRanges` object in `metadata()`.
 
 The built-in `comma_example_data` contains 588 synthetic methylation sites
 (393 × 6mA, 195 × 5mC) on a simulated 100 kb chromosome across six samples:
