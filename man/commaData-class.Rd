@@ -67,12 +67,17 @@ Per-sample metadata is in \code{colData(object)} and includes at minimum:
 The methylation caller and minimum coverage threshold are stored in
 \code{metadata(object)} and accessible via \code{\link{caller}(object)}
 and \code{\link{minCoverage}(object)}.
+
+Assay-layer provenance and defaults are stored in
+\code{metadata(object)$assay_provenance} and
+\code{metadata(object)$assay_defaults}. Use \code{\link{assayLayers}} for a
+tabular summary.
 }
 \seealso{
 \code{\link{commaData}} for the constructor,
 \code{\link{methylation}}, \code{\link{siteCoverage}},
 \code{\link{modCounts}}, \code{\link{canonicalCounts}},
-\code{\link{assayProvenance}},
+\code{\link{assayLayers}}, \code{\link{assayProvenance}},
 \code{\link{sampleInfo}}, \code{\link{siteInfo}},
 \code{\link{modTypes}}, \code{\link{modContexts}},
 \code{\link[BiocGenerics]{annotation}} for accessors.

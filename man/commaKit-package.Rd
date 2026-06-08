@@ -51,6 +51,8 @@ the findings.
 modified-count, and canonical-count matrices, per-site and per-sample
 metadata, genome information,
 genomic annotation, and motif site locations.}
+\item{\code{\link{assayLayers}}}{Tabular registry of assay layers,
+provenance, and default roles.}
 }
 }
 

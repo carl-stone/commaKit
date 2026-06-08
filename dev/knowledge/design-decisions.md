@@ -178,6 +178,22 @@ This document records significant architectural and API decisions. When you're t
 
 ---
 
+## D-013: Assay layers are additive, named, and defaulted by role
+
+**Decision:** Assay layers are stored as named `SummarizedExperiment` assays, with a small registry in `metadata(object)$assay_provenance` and default role mapping in `metadata(object)$assay_defaults`.
+
+**Rationale:** This follows the spirit of DESeq2 and Seurat-style layered assays: raw observations stay present, derived layers are added under explicit names, and a role can point at the current/default layer without deleting older versions. This lets multiple transformations or analysis runs coexist for audit and comparison.
+
+**Consequence:**
+- Core raw assays (`methylation`, `coverage`, `mod_counts`, `canonical_counts`) remain stable.
+- Derived assays must use unique names unless overwrite is explicit.
+- `assayLayers()` is the public registry view for assay names, types, provenance, parent assays, and default roles.
+- Internal layer writers should use `.addAssayLayer()` instead of mutating assay metadata ad hoc.
+
+**Do not change without:** Preserving raw-layer immutability and multi-version derived-layer behavior.
+
+---
+
 ## How to Add New Decisions
 
 When making a significant design or API decision:

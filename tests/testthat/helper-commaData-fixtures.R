@@ -92,11 +92,44 @@
         colData = cd
     )
     obj <- new("commaData", rse)
+    S4Vectors::metadata(obj)$assay_defaults <- list(
+        methylation = "methylation",
+        coverage = "coverage",
+        mod_counts = "mod_counts",
+        canonical_counts = "canonical_counts"
+    )
     S4Vectors::metadata(obj)$assay_provenance <- list(
-        methylation = list(type = "filtered_beta", source = "test_fixture"),
-        coverage = list(type = "observed_total_coverage", source = "test_fixture"),
-        mod_counts = list(type = "reconstructed_counts", source = "test_fixture"),
-        canonical_counts = list(type = "reconstructed_counts", source = "test_fixture")
+        methylation = commaKit:::.makeAssayLayerRecord(
+            type = "filtered_beta",
+            source = "test_fixture",
+            role = "methylation",
+            parent_assays = "coverage",
+            method = "test_fixture",
+            default_for = "methylation"
+        ),
+        coverage = commaKit:::.makeAssayLayerRecord(
+            type = "observed_total_coverage",
+            source = "test_fixture",
+            role = "coverage",
+            method = "test_fixture",
+            default_for = "coverage"
+        ),
+        mod_counts = commaKit:::.makeAssayLayerRecord(
+            type = "reconstructed_counts",
+            source = "test_fixture",
+            role = "mod_counts",
+            parent_assays = c("methylation", "coverage"),
+            method = "round_beta_times_coverage",
+            default_for = "mod_counts"
+        ),
+        canonical_counts = commaKit:::.makeAssayLayerRecord(
+            type = "reconstructed_counts",
+            source = "test_fixture",
+            role = "canonical_counts",
+            parent_assays = c("coverage", "mod_counts"),
+            method = "coverage_minus_mod_counts",
+            default_for = "canonical_counts"
+        )
     )
     obj
 }

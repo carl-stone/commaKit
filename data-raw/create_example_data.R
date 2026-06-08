@@ -216,11 +216,45 @@ S4Vectors::metadata(comma_example_data)$motifSites <- GenomicRanges::GRanges()
 # Store caller and min_coverage in metadata
 S4Vectors::metadata(comma_example_data)$caller <- "modkit"
 S4Vectors::metadata(comma_example_data)$min_coverage <- 5L
+S4Vectors::metadata(comma_example_data)$assay_defaults <- list(
+    methylation = "methylation",
+    coverage = "coverage",
+    mod_counts = "mod_counts",
+    canonical_counts = "canonical_counts"
+)
 S4Vectors::metadata(comma_example_data)$assay_provenance <- list(
-    methylation = list(type = "filtered_beta", source = "synthetic_example"),
-    coverage = list(type = "observed_total_coverage", source = "synthetic_example"),
-    mod_counts = list(type = "reconstructed_counts", source = "synthetic_example"),
-    canonical_counts = list(type = "reconstructed_counts", source = "synthetic_example")
+    methylation = commaKit:::.makeAssayLayerRecord(
+        type = "filtered_beta",
+        source = "synthetic_example",
+        role = "methylation",
+        parent_assays = "coverage",
+        method = "simulation",
+        params = list(min_coverage = 5L),
+        default_for = "methylation"
+    ),
+    coverage = commaKit:::.makeAssayLayerRecord(
+        type = "observed_total_coverage",
+        source = "synthetic_example",
+        role = "coverage",
+        method = "simulation",
+        default_for = "coverage"
+    ),
+    mod_counts = commaKit:::.makeAssayLayerRecord(
+        type = "reconstructed_counts",
+        source = "synthetic_example",
+        role = "mod_counts",
+        parent_assays = c("methylation", "coverage"),
+        method = "round_beta_times_coverage",
+        default_for = "mod_counts"
+    ),
+    canonical_counts = commaKit:::.makeAssayLayerRecord(
+        type = "reconstructed_counts",
+        source = "synthetic_example",
+        role = "canonical_counts",
+        parent_assays = c("coverage", "mod_counts"),
+        method = "coverage_minus_mod_counts",
+        default_for = "canonical_counts"
+    )
 )
 
 # ── Save ──────────────────────────────────────────────────────────────────────

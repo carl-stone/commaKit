@@ -152,7 +152,7 @@ setMethod("canonicalCounts", "commaData", function(object) {
 #' @return A named \code{list}. Returns an empty list for legacy objects without
 #'   assay provenance metadata.
 #'
-#' @seealso \code{\link{modCounts}}, \code{\link{canonicalCounts}},
+#' @seealso \code{\link{assayLayers}}, \code{\link{modCounts}}, \code{\link{canonicalCounts}},
 #'   \code{\link{methylation}}
 #'
 #' @examples

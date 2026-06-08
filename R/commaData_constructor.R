@@ -87,6 +87,9 @@ NULL
 #'   \item Observed modified and canonical read counts are preserved as
 #'     \code{mod_counts} and \code{canonical_counts} assays when reported by
 #'     the caller; probability-only callers store \code{NA} in those assays.
+#'   \item Assay-layer provenance and default roles are recorded in
+#'     \code{metadata(object)$assay_provenance} and
+#'     \code{metadata(object)$assay_defaults}.
 #'   \item Sites where coverage is below \code{min_coverage} in a sample have
 #'     their beta value set to \code{NA} (but coverage is preserved).
 #' }
@@ -117,7 +120,8 @@ NULL
 #'
 #' @seealso \code{\link{commaData-class}}, \code{\link{methylation}},
 #'   \code{\link{siteCoverage}}, \code{\link{modCounts}},
-#'   \code{\link{canonicalCounts}}, \code{\link{assayProvenance}},
+#'   \code{\link{canonicalCounts}}, \code{\link{assayLayers}},
+#'   \code{\link{assayProvenance}},
 #'   \code{\link{sampleInfo}}, \code{\link{siteInfo}},
 #'   \code{\link{modTypes}}, \code{\link{loadAnnotation}},
 #'   \code{\link{findMotifSites}}
@@ -458,24 +462,44 @@ commaData <- function(files,
         dorado = "observed_probability_threshold",
         megalodon = "unavailable_probability_input"
     )
+    S4Vectors::metadata(obj)$assay_defaults <- list(
+        methylation = "methylation",
+        coverage = "coverage",
+        mod_counts = "mod_counts",
+        canonical_counts = "canonical_counts"
+    )
     S4Vectors::metadata(obj)$assay_provenance <- list(
-        methylation = list(
+        methylation = .makeAssayLayerRecord(
             type = "filtered_beta",
             source = caller,
-            min_coverage = min_coverage,
-            filtered_assay = TRUE
+            role = "methylation",
+            parent_assays = c("coverage"),
+            method = "caller_beta_filter",
+            params = list(min_coverage = min_coverage, filtered_assay = TRUE),
+            default_for = "methylation"
         ),
-        coverage = list(
+        coverage = .makeAssayLayerRecord(
             type = "observed_total_coverage",
-            source = caller
+            source = caller,
+            role = "coverage",
+            method = "caller_coverage",
+            default_for = "coverage"
         ),
-        mod_counts = list(
+        mod_counts = .makeAssayLayerRecord(
             type = if (caller == "megalodon") "unavailable" else "observed_counts",
-            source = count_provenance
+            source = count_provenance,
+            role = "mod_counts",
+            parent_assays = "coverage",
+            method = count_provenance,
+            default_for = "mod_counts"
         ),
-        canonical_counts = list(
+        canonical_counts = .makeAssayLayerRecord(
             type = if (caller == "megalodon") "unavailable" else "observed_counts",
-            source = count_provenance
+            source = count_provenance,
+            role = "canonical_counts",
+            parent_assays = "coverage",
+            method = count_provenance,
+            default_for = "canonical_counts"
         )
     )
 
