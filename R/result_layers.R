@@ -342,7 +342,7 @@ setMethod("resultLayers", "commaData", function(object) {
             source = record$source %||% "diffMethyl",
             is_default = identical(nm, default_name),
             method = params$method %||% NA_character_,
-            formula = params$formula %||% NA_character_,
+            formula = paste(as.character(params$formula %||% NA_character_), collapse = " "),
             reference = params$reference %||% NA_character_,
             treatment = params$treatment %||% NA_character_,
             mod_context = as.character(params$mod_context %||% character()),

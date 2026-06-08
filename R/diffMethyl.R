@@ -436,7 +436,7 @@ diffMethyl <- function(
     }
 
     params <- list(
-        formula         = deparse(formula),
+        formula         = paste(deparse(formula), collapse = " "),
         reference       = ref_level,
         treatment       = treat_level_dm,
         method          = method,

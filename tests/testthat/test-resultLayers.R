@@ -223,6 +223,27 @@ test_that("results() validates selected result layer arguments", {
     )
 })
 
+
+
+test_that("resultLayers() handles formulas whose deparse spans multiple lines", {
+    skip_if_not_installed("limma")
+    obj <- .make_diff_methyl_fixture(n_sites = 8L, n_ctrl = 2L, n_treat = 2L)
+    long_var <- "very_long_batch_covariate_name_used_to_force_formula_deparse_wrapping"
+    SummarizedExperiment::colData(obj)[[long_var]] <- c("a", "a", "b", "b")
+    form <- stats::as.formula(paste("~ condition +", long_var))
+
+    dm <- diffMethyl(
+        obj,
+        formula = form,
+        method = "quasi_f",
+        result_name = "quasi_f.long_formula"
+    )
+
+    layers <- resultLayers(dm)
+    expect_length(layers$formula, 1L)
+    expect_equal(layers$formula, paste(deparse(form), collapse = " "))
+})
+
 test_that("resultLayers() infers a legacy diffMethyl result row", {
     skip_if_not_installed("limma")
     obj <- .make_diff_methyl_fixture(n_sites = 8L, n_ctrl = 2L, n_treat = 2L)
