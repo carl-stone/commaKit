@@ -79,6 +79,11 @@ NULL
 #' \code{metadata(object)$assay_defaults}. Use \code{\link{assayLayers}} for a
 #' tabular summary.
 #'
+#' Differential methylation result layers are stored in
+#' \code{metadata(object)$diffMethyl_results} with provenance in
+#' \code{metadata(object)$diffMethyl_result_layers}. Use
+#' \code{\link{resultLayers}} to list named result runs.
+#'
 #' @return An object of class \code{commaData}. Use
 #'   \code{\link{commaData}} to construct instances.
 #'
@@ -86,6 +91,7 @@ NULL
 #'   \code{\link{methylation}}, \code{\link{siteCoverage}},
 #'   \code{\link{modCounts}}, \code{\link{canonicalCounts}},
 #'   \code{\link{assayLayers}}, \code{\link{assayProvenance}},
+#'   \code{\link{resultLayers}},
 #'   \code{\link{sampleInfo}}, \code{\link{siteInfo}},
 #'   \code{\link{modTypes}}, \code{\link{modContexts}},
 #'   \code{\link[BiocGenerics]{annotation}} for accessors.

@@ -45,6 +45,7 @@ Collate:
     'commaKit-package.R'
     'commaData_class.R'
     'assay_layers.R'
+    'result_layers.R'
     'commaData_constructor.R'
     'accessors.R'
     'annotateSites.R'

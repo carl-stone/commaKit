@@ -227,6 +227,7 @@ differ.
 Extract the results as a tidy data frame:
 
 ```{r results}
+resultLayers(cd_dm)
 res <- results(cd_dm)
 # Top sites by adjusted p-value
 head(res[order(res$dm_padj),

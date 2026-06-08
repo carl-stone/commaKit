@@ -38,6 +38,8 @@
 #'     genomic annotation, and motif site locations.}
 #'   \item{\code{\link{assayLayers}}}{Tabular registry of assay layers,
 #'     provenance, and default roles.}
+#'   \item{\code{\link{resultLayers}}}{Tabular registry of named differential
+#'     methylation result runs.}
 #' }
 #'
 #' @section Package options:

@@ -194,6 +194,34 @@ This document records significant architectural and API decisions. When you're t
 
 ---
 
+## D-014: diffMethyl results are named result layers with a compatibility mirror
+
+**Decision:** Each `diffMethyl()` run can be stored as a named result layer in
+`metadata(object)$diffMethyl_results`, with provenance in
+`metadata(object)$diffMethyl_result_layers` and the active/default run tracked
+by `metadata(object)$diffMethyl_default_result`.
+
+**Rationale:** Differential methylation outputs are site-level result tables,
+not site-by-sample assays. Keeping them as named result layers lets multiple
+methods, thresholds, or filters coexist without pretending p-values are assay
+matrices. The current/default result is still mirrored into bare `dm_*`
+columns in `rowData` so existing `results()`, plotting, enrichment, and
+downstream code keep working.
+
+**Consequence:**
+- Repeated unnamed `diffMethyl()` calls replace the compatibility
+  `"diffMethyl"` layer, matching historical overwrite behavior.
+- Explicitly named runs must use unique names unless `overwrite = TRUE`.
+- `resultLayers()` is the public registry view for available differential
+  methylation runs.
+- `results()` and `filterResults()` default to the active result layer, and can
+  retrieve older named layers through `result` or `result_name`.
+
+**Do not change without:** Preserving backward compatibility for bare `dm_*`
+columns and preserving named multi-run access.
+
+---
+
 ## How to Add New Decisions
 
 When making a significant design or API decision:

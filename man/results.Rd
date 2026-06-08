@@ -7,7 +7,15 @@
 \usage{
 results(object, ...)
 
-\S4method{results}{commaData}(object, mod_type = NULL, motif = NULL, mod_context = NULL, ...)
+\S4method{results}{commaData}(
+  object,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  result = NULL,
+  result_name = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object on which
@@ -27,6 +35,13 @@ all motifs are returned.}
 with a matching modification context (e.g., \code{"6mA_GATC"}) are
 returned. Use \code{\link{modContexts}(object)} to see available values.
 Applied in addition to any \code{mod_type} or \code{motif} filters.}
+
+\item{result}{Character string or \code{NULL}. Name of a differential
+methylation result layer to extract. If \code{NULL} (default), the active
+default layer is used.}
+
+\item{result_name}{Character string or \code{NULL}. Alias for
+\code{result}; provided for consistency with \code{\link{diffMethyl}()}.}
 }
 \value{
 A \code{data.frame} with one row per methylation site, containing:
@@ -48,7 +63,9 @@ from \code{\link{annotateSites}}) are also included.
 \description{
 Retrieves the per-site differential methylation statistics added by
 \code{\link{diffMethyl}} and returns them as a tidy \code{data.frame}
-suitable for downstream analysis and plotting.
+suitable for downstream analysis and plotting. When multiple named
+differential methylation result layers are present, \code{result} or
+\code{result_name} selects which layer to extract.
 }
 \examples{
 data(comma_example_data)

@@ -476,10 +476,25 @@ setMethod("motifSites", "commaData", function(object) {
 #'
 #' @export
 setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
+    marker <- ".commaKit_internal_row_index"
+    rr <- rowRanges(x)
+    while (marker %in% colnames(GenomicRanges::mcols(rr))) {
+        marker <- paste0(marker, "_")
+    }
+    GenomicRanges::mcols(rr)[[marker]] <- seq_len(nrow(x))
+    rowRanges(x) <- rr
+
     # Delegate to SummarizedExperiment's [ method, then re-wrap
     se_sub <- callNextMethod()
 
-    # metadata is automatically preserved by RSE subsetting
+    rr_sub <- rowRanges(se_sub)
+    row_index <- GenomicRanges::mcols(rr_sub)[[marker]]
+    GenomicRanges::mcols(rr_sub)[[marker]] <- NULL
+    rowRanges(se_sub) <- rr_sub
+
+    md <- S4Vectors::metadata(se_sub)
+    S4Vectors::metadata(se_sub) <- .subsetDiffMethylResultLayers(md, row_index)
+
     new("commaData", se_sub)
 })
 

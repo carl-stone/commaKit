@@ -173,9 +173,10 @@ annotation_cols
 identical(dim(comma_example_data), dim(annotated))
 ```
 
-Layering is intended to be idempotent: rerunning the same layer with the same
-arguments recomputes the named layer columns rather than creating a second copy
-of the biological rows.
+Layering is intended to be explicit: rerunning an unnamed compatibility layer
+updates the active/default view, while explicitly named layers can coexist for
+comparison. In either case, commaKit never creates a second copy of the
+biological rows.
 
 ```{r idempotent-annotation}
 annotated_again <- annotateSites(annotated, keep = "overlap")
@@ -193,10 +194,12 @@ dm_cols <- setdiff(colnames(siteInfo(dm)), colnames(siteInfo(annotated)))
 dm_cols
 
 S4Vectors::metadata(dm)$diffMethyl_params[c("method", "p_adjust_method")]
+resultLayers(dm)
 ```
 
-`results()` exposes that layer as a tidy data frame while preserving the site
-metadata needed to interpret each row.
+`results()` exposes the active result layer as a tidy data frame while
+preserving the site metadata needed to interpret each row. When you keep
+multiple named runs, pass `result` or `result_name` to retrieve an older layer.
 
 ```{r results-layer}
 res <- results(dm)
