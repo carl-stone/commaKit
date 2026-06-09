@@ -15,6 +15,7 @@ filterResults(object, ...)
   motif = NULL,
   mod_context = NULL,
   result = NULL,
+  name = NULL,
   result_name = NULL,
   ...
 )
@@ -46,6 +47,9 @@ disable filtering on effect size.}
 methylation result layer to filter. If \code{NULL} (default), the active
 default layer is used.}
 
+\item{name}{Character string or \code{NULL}. Alias for \code{result};
+provided for concise layer selection.}
+
 \item{result_name}{Character string or \code{NULL}. Alias for
 \code{result}; provided for consistency with \code{\link{diffMethyl}()}.}
 }
@@ -58,8 +62,8 @@ either column are excluded.
 \description{
 A convenience wrapper around \code{\link{results}} that filters sites by
 adjusted p-value and absolute effect size. When multiple named result layers
-are present, \code{result} or \code{result_name} selects which layer to
-filter.
+are present, \code{result}, \code{name}, or \code{result_name} selects which
+layer to filter.
 }
 \examples{
 data(comma_example_data)

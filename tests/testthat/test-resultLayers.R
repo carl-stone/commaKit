@@ -172,7 +172,7 @@ test_that("filterResults() can filter a selected result layer", {
         dm,
         padj = 1,
         delta_beta = 0,
-        result_name = "quasi_f.empty"
+        name = "quasi_f.empty"
     )
 
     expect_gt(nrow(sig_loose), 0L)
@@ -217,8 +217,16 @@ test_that("results() validates selected result layer arguments", {
     )
 
     expect_error(results(dm, result_name = "missing"), "not found")
+    expect_equal(
+        results(dm, name = "quasi_f.v1")$dm_pvalue,
+        results(dm, result_name = "quasi_f.v1")$dm_pvalue
+    )
     expect_error(
         results(dm, result = "quasi_f.v1", result_name = "other"),
+        "only one"
+    )
+    expect_error(
+        results(dm, result = "quasi_f.v1", name = "other"),
         "only one"
     )
 })

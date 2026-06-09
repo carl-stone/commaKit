@@ -13,6 +13,7 @@ results(object, ...)
   motif = NULL,
   mod_context = NULL,
   result = NULL,
+  name = NULL,
   result_name = NULL,
   ...
 )
@@ -40,6 +41,9 @@ Applied in addition to any \code{mod_type} or \code{motif} filters.}
 methylation result layer to extract. If \code{NULL} (default), the active
 default layer is used.}
 
+\item{name}{Character string or \code{NULL}. Alias for \code{result};
+provided for concise layer selection.}
+
 \item{result_name}{Character string or \code{NULL}. Alias for
 \code{result}; provided for consistency with \code{\link{diffMethyl}()}.}
 }
@@ -64,8 +68,8 @@ from \code{\link{annotateSites}}) are also included.
 Retrieves the per-site differential methylation statistics added by
 \code{\link{diffMethyl}} and returns them as a tidy \code{data.frame}
 suitable for downstream analysis and plotting. When multiple named
-differential methylation result layers are present, \code{result} or
-\code{result_name} selects which layer to extract.
+differential methylation result layers are present, \code{result},
+\code{name}, or \code{result_name} selects which layer to extract.
 }
 \examples{
 data(comma_example_data)

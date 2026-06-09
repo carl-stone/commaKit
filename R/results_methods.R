@@ -77,6 +77,8 @@ NULL
 #' @param result Character string or \code{NULL}. Name of a differential
 #'   methylation result layer to extract. If \code{NULL} (default), the active
 #'   default layer is used.
+#' @param name Character string or \code{NULL}. Alias for \code{result};
+#'   provided for concise layer selection.
 #' @param result_name Character string or \code{NULL}. Alias for
 #'   \code{result}; provided for consistency with \code{\link{diffMethyl}()}.
 #' @param ... Ignored (for S4 generic compatibility).
@@ -111,7 +113,7 @@ setGeneric("results", function(object, ...) standardGeneric("results"))
 #' @rdname results
 setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL,
                                            mod_context = NULL, result = NULL,
-                                           result_name = NULL, ...) {
+                                           name = NULL, result_name = NULL, ...) {
     # ── Check diffMethyl has been run ─────────────────────────────────────────
     if (!.hasDiffMethylResults(object)) {
         stop(
@@ -120,11 +122,16 @@ setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL
             "  dm <- diffMethyl(object, formula = ~ condition)"
         )
     }
-    if (!is.null(result) && !is.null(result_name) &&
-            !identical(result, result_name)) {
-        stop("Use only one of 'result' or 'result_name'.")
+    provided_names <- list(result = result, name = name, result_name = result_name)
+    provided_names <- provided_names[!vapply(provided_names, is.null, logical(1L))]
+    if (length(provided_names) > 1L) {
+        values <- unname(provided_names)
+        same <- all(vapply(values[-1L], identical, logical(1L), values[[1L]]))
+        if (!same) {
+            stop("Use only one of 'result', 'name', or 'result_name'.")
+        }
     }
-    selected_result <- if (!is.null(result_name)) result_name else result
+    selected_result <- if (length(provided_names) == 0L) NULL else provided_names[[1L]]
     selected_result <- .resolveDiffMethylResultName(object, selected_result)
 
     idx <- .siteFilterIndex(
@@ -184,6 +191,8 @@ setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL
 #' @param result Character string or \code{NULL}. Name of a differential
 #'   methylation result layer to filter. If \code{NULL} (default), the active
 #'   default layer is used.
+#' @param name Character string or \code{NULL}. Alias for \code{result};
+#'   provided for concise layer selection.
 #' @param result_name Character string or \code{NULL}. Alias for
 #'   \code{result}; provided for consistency with \code{\link{diffMethyl}()}.
 #' @param ... Ignored.
@@ -209,9 +218,9 @@ setGeneric("filterResults",
 setMethod("filterResults", "commaData",
           function(object, padj = 0.05, delta_beta = 0.1,
                    mod_type = NULL, motif = NULL, mod_context = NULL,
-                   result = NULL, result_name = NULL, ...) {
+                   result = NULL, name = NULL, result_name = NULL, ...) {
     res <- results(object, mod_type = mod_type, motif = motif,
-                   mod_context = mod_context, result = result,
+                   mod_context = mod_context, result = result, name = name,
                    result_name = result_name)
 
     if (!"dm_padj" %in% colnames(res)) {
