@@ -28,6 +28,7 @@ Suggests:
     clusterProfiler,
     KEGGREST,
     ComplexHeatmap,
+    DelayedArray,
     ggrepel,
     limma,
     methylKit,
