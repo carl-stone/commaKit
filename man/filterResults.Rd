@@ -14,6 +14,8 @@ filterResults(object, ...)
   mod_type = NULL,
   motif = NULL,
   mod_context = NULL,
+  result = NULL,
+  result_name = NULL,
   ...
 )
 }
@@ -39,6 +41,13 @@ disable filtering on effect size.}
 \item{mod_context}{Character vector or \code{NULL}. Passed to
 \code{\link{results}} for optional modification context filtering
 (e.g., \code{"6mA_GATC"}).}
+
+\item{result}{Character string or \code{NULL}. Name of a differential
+methylation result layer to filter. If \code{NULL} (default), the active
+default layer is used.}
+
+\item{result_name}{Character string or \code{NULL}. Alias for
+\code{result}; provided for consistency with \code{\link{diffMethyl}()}.}
 }
 \value{
 A \code{data.frame} (same format as \code{\link{results}}) containing
@@ -48,7 +57,9 @@ either column are excluded.
 }
 \description{
 A convenience wrapper around \code{\link{results}} that filters sites by
-adjusted p-value and absolute effect size.
+adjusted p-value and absolute effect size. When multiple named result layers
+are present, \code{result} or \code{result_name} selects which layer to
+filter.
 }
 \examples{
 data(comma_example_data)

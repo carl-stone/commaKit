@@ -32,9 +32,14 @@
 #' @section Key classes and constructors:
 #' \describe{
 #'   \item{\code{\link{commaData}}}{The central S4 data container, extending
-#'     \code{SummarizedExperiment}. Stores methylation (beta) and coverage
-#'     matrices, per-site and per-sample metadata, genome information,
+#'     \code{SummarizedExperiment}. Stores methylation (beta), coverage,
+#'     modified-count, and canonical-count matrices, per-site and per-sample
+#'     metadata, genome information,
 #'     genomic annotation, and motif site locations.}
+#'   \item{\code{\link{assayLayers}}}{Tabular registry of assay layers,
+#'     provenance, and default roles.}
+#'   \item{\code{\link{resultLayers}}}{Tabular registry of named differential
+#'     methylation result runs.}
 #' }
 #'
 #' @section Package options:

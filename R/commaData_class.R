@@ -32,13 +32,17 @@ NULL
 #' named integer vector for backward compatibility.
 #'
 #' @details
-#' The class stores methylation data in two assay matrices (accessible via
+#' The class stores methylation data in assay matrices (accessible via
 #' \code{\link[SummarizedExperiment]{assay}}):
 #' \describe{
 #'   \item{\code{"methylation"}}{Beta values (proportion of reads called
 #'     methylated, range 0-1). Sites with coverage below the
 #'     \code{min_coverage} threshold are stored as \code{NA}.}
 #'   \item{\code{"coverage"}}{Integer read depth at each site.}
+#'   \item{\code{"mod_counts"}}{Observed reads called as the target
+#'     modification, when available from the caller.}
+#'   \item{\code{"canonical_counts"}}{Observed reads called canonical or
+#'     unmodified, when available from the caller.}
 #' }
 #'
 #' Genomic positions are stored in
@@ -70,11 +74,24 @@ NULL
 #' \code{metadata(object)} and accessible via \code{\link{caller}(object)}
 #' and \code{\link{minCoverage}(object)}.
 #'
+#' Assay-layer provenance and defaults are stored in
+#' \code{metadata(object)$assay_provenance} and
+#' \code{metadata(object)$assay_defaults}. Use \code{\link{assayLayers}} for a
+#' tabular summary.
+#'
+#' Differential methylation result layers are stored in
+#' \code{metadata(object)$diffMethyl_results} with provenance in
+#' \code{metadata(object)$diffMethyl_result_layers}. Use
+#' \code{\link{resultLayers}} to list named result runs.
+#'
 #' @return An object of class \code{commaData}. Use
 #'   \code{\link{commaData}} to construct instances.
 #'
 #' @seealso \code{\link{commaData}} for the constructor,
-#'   \code{\link{methylation}}, \code{\link[GenomicRanges]{coverage}},
+#'   \code{\link{methylation}}, \code{\link{siteCoverage}},
+#'   \code{\link{modCounts}}, \code{\link{canonicalCounts}},
+#'   \code{\link{assayLayers}}, \code{\link{assayProvenance}},
+#'   \code{\link{resultLayers}},
 #'   \code{\link{sampleInfo}}, \code{\link{siteInfo}},
 #'   \code{\link{modTypes}}, \code{\link{modContexts}},
 #'   \code{\link[BiocGenerics]{annotation}} for accessors.
@@ -187,6 +204,34 @@ setValidity("commaData", function(object) {
                     "assay 'coverage' must contain non-negative integer-like values or NA"
                 )
             }
+        }
+    }
+    for (assay_name in c("mod_counts", "canonical_counts")) {
+        if (assay_name %in% assayNames(object)) {
+            counts <- SummarizedExperiment::assay(object, assay_name)
+            count_vals <- counts[!is.na(counts)]
+            if (length(count_vals) > 0L) {
+                bad_counts <- !is.finite(count_vals) | count_vals < 0 |
+                    abs(count_vals - round(count_vals)) > sqrt(.Machine$double.eps)
+                if (any(bad_counts)) {
+                    errors <- c(errors, paste0(
+                        "assay '", assay_name,
+                        "' must contain non-negative integer-like values or NA"
+                    ))
+                }
+            }
+        }
+    }
+    if (all(c("mod_counts", "canonical_counts", "coverage") %in% assayNames(object))) {
+        mod_counts <- SummarizedExperiment::assay(object, "mod_counts")
+        canonical_counts <- SummarizedExperiment::assay(object, "canonical_counts")
+        cov <- SummarizedExperiment::assay(object, "coverage")
+        comparable <- !is.na(mod_counts) & !is.na(canonical_counts) & !is.na(cov)
+        too_large <- comparable & (mod_counts + canonical_counts > cov)
+        if (any(too_large)) {
+            errors <- c(errors,
+                "assays 'mod_counts' + 'canonical_counts' must be <= assay 'coverage'"
+            )
         }
     }
 

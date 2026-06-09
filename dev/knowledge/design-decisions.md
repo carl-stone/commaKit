@@ -178,6 +178,50 @@ This document records significant architectural and API decisions. When you're t
 
 ---
 
+## D-013: Assay layers are additive, named, and defaulted by role
+
+**Decision:** Assay layers are stored as named `SummarizedExperiment` assays, with a small registry in `metadata(object)$assay_provenance` and default role mapping in `metadata(object)$assay_defaults`.
+
+**Rationale:** This follows the spirit of DESeq2 and Seurat-style layered assays: raw observations stay present, derived layers are added under explicit names, and a role can point at the current/default layer without deleting older versions. This lets multiple transformations or analysis runs coexist for audit and comparison.
+
+**Consequence:**
+- Core raw assays (`methylation`, `coverage`, `mod_counts`, `canonical_counts`) remain stable.
+- Derived assays must use unique names unless overwrite is explicit.
+- `assayLayers()` is the public registry view for assay names, types, provenance, parent assays, and default roles.
+- Internal layer writers should use `.addAssayLayer()` instead of mutating assay metadata ad hoc.
+
+**Do not change without:** Preserving raw-layer immutability and multi-version derived-layer behavior.
+
+---
+
+## D-014: diffMethyl results are named result layers with a compatibility mirror
+
+**Decision:** Each `diffMethyl()` run can be stored as a named result layer in
+`metadata(object)$diffMethyl_results`, with provenance in
+`metadata(object)$diffMethyl_result_layers` and the active/default run tracked
+by `metadata(object)$diffMethyl_default_result`.
+
+**Rationale:** Differential methylation outputs are site-level result tables,
+not site-by-sample assays. Keeping them as named result layers lets multiple
+methods, thresholds, or filters coexist without pretending p-values are assay
+matrices. The current/default result is still mirrored into bare `dm_*`
+columns in `rowData` so existing `results()`, plotting, enrichment, and
+downstream code keep working.
+
+**Consequence:**
+- Repeated unnamed `diffMethyl()` calls replace the compatibility
+  `"diffMethyl"` layer, matching historical overwrite behavior.
+- Explicitly named runs must use unique names unless `overwrite = TRUE`.
+- `resultLayers()` is the public registry view for available differential
+  methylation runs.
+- `results()` and `filterResults()` default to the active result layer, and can
+  retrieve older named layers through `result` or `result_name`.
+
+**Do not change without:** Preserving backward compatibility for bare `dm_*`
+columns and preserving named multi-run access.
+
+---
+
 ## How to Add New Decisions
 
 When making a significant design or API decision:

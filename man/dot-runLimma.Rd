@@ -12,7 +12,9 @@
   formula,
   alpha = 0.5,
   ref_level = NULL,
-  design_info = NULL
+  design_info = NULL,
+  mod_counts_mat = NULL,
+  canonical_counts_mat = NULL
 )
 }
 \arguments{
@@ -20,6 +22,13 @@
 \code{NA} indicates below-coverage sites.}
 
 \item{coverage_mat}{Integer matrix (sites × samples) of read depths.}
+
+\item{mod_counts_mat}{Optional integer matrix of observed modified-read
+counts. If supplied, these counts are preferred over reconstructing from
+beta values.}
+
+\item{canonical_counts_mat}{Optional integer matrix of observed
+canonical-read counts.}
 
 \item{site_df}{Data frame with columns \code{chrom}, \code{position},
 \code{strand}, \code{mod_type}, \code{motif} — one row per site.}
@@ -32,6 +41,11 @@ RHS variable in \code{formula} (typically \code{condition}).}
 
 \item{alpha}{Positive numeric pseudocount added to modified and unmodified
 read counts before log-transformation. Default \code{0.5}.}
+
+\item{ref_level}{Optional reference level for the two-level contrast.}
+
+\item{design_info}{Optional precomputed design information from
+\code{.resolveDiffMethylDesign()}.}
 }
 \value{
 A \code{data.frame} with one row per site (same row order as

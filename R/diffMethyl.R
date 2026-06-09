@@ -80,6 +80,11 @@ NULL
 #' Analysis parameters and result column names are stored in
 #' \code{metadata(object)$diffMethyl_params} and
 #' \code{metadata(object)$diffMethyl_result_cols}.
+#' Named result layers are stored in
+#' \code{metadata(object)$diffMethyl_results} and listed by
+#' \code{\link{resultLayers}()}. By default, the active result layer is also
+#' mirrored into the legacy \code{dm_*} columns in \code{rowData} so existing
+#' \code{\link{results}()} and plotting workflows keep working.
 #'
 #' @param object A \code{\link{commaData}} object with at least two samples in
 #'   distinct conditions.
@@ -136,13 +141,25 @@ NULL
 #'   passed to \code{\link[stats]{p.adjust}}. Default \code{"BH"}
 #'   (Benjamini-Hochberg). Other options: \code{"bonferroni"}, \code{"holm"},
 #'   \code{"BY"}, \code{"none"}.
+#' @param result_name Character string or \code{NULL}. Name for the
+#'   differential methylation result layer. If \code{NULL} (default), results
+#'   are written to the compatibility layer \code{"diffMethyl"}, replacing that
+#'   layer on repeated unnamed calls. Provide explicit names such as
+#'   \code{"quasi_f.min5"} or \code{"limma.alpha05"} to keep multiple runs.
+#' @param overwrite Logical or \code{NULL}. Whether an existing named result
+#'   layer may be replaced. If \code{NULL} (default), unnamed compatibility
+#'   runs may replace \code{"diffMethyl"}, while explicit \code{result_name}
+#'   values must be unique unless \code{overwrite = TRUE}.
+#' @param make_default Logical. If \code{TRUE} (default), the new result layer
+#'   becomes the default used by \code{\link{results}()} and is mirrored into
+#'   \code{rowData} as bare \code{dm_*} columns.
 #' @param ... Additional arguments (reserved for future use).
 #'
 #' @return The input \code{commaData} object with additional columns in
 #'   \code{rowData}: \code{dm_pvalue}, \code{dm_padj}, \code{dm_delta_beta},
 #'   and one \code{dm_mean_beta_<condition>} column per condition level. The
-#'   \code{metadata} slot is updated with analysis parameters and result
-#'   column names.
+#'   \code{metadata} slot is updated with analysis parameters, result column
+#'   names, and a named result layer registry.
 #'
 #' @seealso \code{\link{results}} to extract the test results as a tidy
 #'   \code{data.frame}; \code{\link{filterResults}} to filter by significance
@@ -169,6 +186,9 @@ diffMethyl <- function(
     min_coverage    = 5L,
     alpha           = 0.5,
     p_adjust_method = "BH",
+    result_name     = NULL,
+    overwrite       = NULL,
+    make_default    = TRUE,
     ...
 ) {
     # -- Input validation ------------------------------------------------------
@@ -179,6 +199,37 @@ diffMethyl <- function(
         stop("'formula' must be a formula object (e.g., ~ condition).")
     }
     method <- match.arg(method)
+
+    unnamed_result <- is.null(result_name)
+    if (unnamed_result) {
+        result_name <- .DIFFMETHYL_DEFAULT_RESULT_NAME
+    }
+    .validateResultLayerName(result_name)
+    if (is.null(overwrite)) {
+        overwrite <- unnamed_result
+    }
+    if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) {
+        stop("'overwrite' must be TRUE, FALSE, or NULL.")
+    }
+    if (!is.logical(make_default) || length(make_default) != 1L ||
+            is.na(make_default)) {
+        stop("'make_default' must be TRUE or FALSE.")
+    }
+    if (!isTRUE(overwrite) && result_name %in% .diffMethylResultNames(object)) {
+        stop(
+            "Differential methylation result layer '", result_name,
+            "' already exists. Use a new 'result_name' or set overwrite = TRUE."
+        )
+    }
+    if (isTRUE(overwrite) && !isTRUE(make_default) &&
+            identical(result_name, .diffMethylDefaultResultName(object))) {
+        stop(
+            "Cannot overwrite the active differential methylation result layer ",
+            "with make_default = FALSE because the rowData dm_* mirror would ",
+            "no longer match the active result. Use make_default = TRUE or ",
+            "write to a different result_name."
+        )
+    }
 
     if (!is.numeric(min_coverage) || length(min_coverage) != 1L ||
             is.na(min_coverage) || min_coverage < 0L) {
@@ -286,6 +337,8 @@ diffMethyl <- function(
     # -- Extract full matrices -------------------------------------------------
     methyl_full  <- methylation(object)
     cov_full     <- siteCoverage(object)
+    mod_counts_full <- .optionalAssay(object, "mod_counts")
+    canonical_counts_full <- .optionalAssay(object, "canonical_counts")
     rd_full      <- as.data.frame(siteInfo(object))
     n_sites_all  <- nrow(methyl_full)
 
@@ -310,6 +363,16 @@ diffMethyl <- function(
 
         methyl_sub <- methyl_full[site_idx, , drop = FALSE]
         cov_sub    <- cov_full[site_idx, , drop = FALSE]
+        mod_counts_sub <- if (is.null(mod_counts_full)) {
+            NULL
+        } else {
+            mod_counts_full[site_idx, , drop = FALSE]
+        }
+        canonical_counts_sub <- if (is.null(canonical_counts_full)) {
+            NULL
+        } else {
+            canonical_counts_full[site_idx, , drop = FALSE]
+        }
         site_sub   <- rd_full[site_idx, , drop = FALSE]
 
         # Apply min_coverage: set beta to NA where coverage < threshold
@@ -320,13 +383,19 @@ diffMethyl <- function(
         res_sub <- tryCatch(
             if (method == "limma") {
                 .runLimma(methyl_sub, cov_sub, site_sub, cd, formula, alpha = alpha,
-                          ref_level = ref_level, design_info = design_info)
+                          ref_level = ref_level, design_info = design_info,
+                          mod_counts_mat = mod_counts_sub,
+                          canonical_counts_mat = canonical_counts_sub)
             } else if (method == "quasi_f") {
                 .runQuasiF(methyl_sub, cov_sub, site_sub, cd, formula,
-                           ref_level = ref_level, design_info = design_info)
+                           ref_level = ref_level, design_info = design_info,
+                           mod_counts_mat = mod_counts_sub,
+                           canonical_counts_mat = canonical_counts_sub)
             } else {
                 .runMethylKit(methyl_sub, cov_sub, site_sub, cd, formula,
-                              ref_level = ref_level, design_info = design_info)
+                              ref_level = ref_level, design_info = design_info,
+                              mod_counts_mat = mod_counts_sub,
+                              canonical_counts_mat = canonical_counts_sub)
             },
             error = function(e) {
                 warning(
@@ -355,43 +424,41 @@ diffMethyl <- function(
     # -- Apply genome-wide multiple testing correction -------------------------
     padj_all <- .applyMultipleTesting(pvalue_all, method = p_adjust_method)
 
-    # -- Update rowRanges mcols --------------------------------------------------
-    rr_new <- rowRanges(object)
-    GenomicRanges::mcols(rr_new)$dm_pvalue     <- pvalue_all
-    GenomicRanges::mcols(rr_new)$dm_padj       <- padj_all
-    GenomicRanges::mcols(rr_new)$dm_delta_beta <- delta_beta_all
-    for (col_nm in names(mean_beta_cols)) {
-        GenomicRanges::mcols(rr_new)[[col_nm]] <- mean_beta_cols[[col_nm]]
-    }
-
     result_cols <- c("dm_pvalue", "dm_padj", "dm_delta_beta",
                      names(mean_beta_cols))
-
-    # -- Build returned object -------------------------------------------------
-    # Reconstruct commaData with updated rowRanges
-    rse_new <- SummarizedExperiment::SummarizedExperiment(
-        assays     = SummarizedExperiment::assays(object),
-        rowRanges  = rr_new,
-        colData    = colData(object)
+    result_data <- S4Vectors::DataFrame(
+        dm_pvalue = pvalue_all,
+        dm_padj = padj_all,
+        dm_delta_beta = delta_beta_all
     )
-    out <- new("commaData", rse_new)
+    for (col_nm in names(mean_beta_cols)) {
+        result_data[[col_nm]] <- mean_beta_cols[[col_nm]]
+    }
 
-    # Copy existing metadata, then add diffMethyl entries
-    S4Vectors::metadata(out) <- S4Vectors::metadata(object)
-    S4Vectors::metadata(out)$diffMethyl_result_cols <- result_cols
-    S4Vectors::metadata(out)$diffMethyl_params <- list(
-        formula         = deparse(formula),
+    params <- list(
+        formula         = paste(deparse(formula), collapse = " "),
         reference       = ref_level,
         treatment       = treat_level_dm,
         method          = method,
         mod_context     = mod_context,
         mod_type        = mod_type,
         motif           = motif,
+        result_name     = result_name,
+        test_contexts   = test_contexts,
         p_adjust_method = p_adjust_method,
         min_coverage    = min_coverage,
         alpha           = alpha,
         timestamp       = Sys.time()
     )
 
-    out
+    .addDiffMethylResultLayer(
+        object = object,
+        result_name = result_name,
+        result_data = result_data,
+        params = params,
+        result_cols = result_cols,
+        make_default = make_default,
+        overwrite = overwrite,
+        timestamp = params$timestamp
+    )
 }

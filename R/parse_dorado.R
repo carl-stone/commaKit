@@ -55,6 +55,10 @@ NULL
 #'     \item{\code{beta}}{Proportion of reads called methylated, range 0–1
 #'       (numeric).}
 #'     \item{\code{coverage}}{Total read depth at this site (integer).}
+#'     \item{\code{mod_counts}}{Reads called modified using the ML probability
+#'       threshold.}
+#'     \item{\code{canonical_counts}}{Reads not called modified using the ML
+#'       probability threshold.}
 #'   }
 #'
 #' @keywords internal
@@ -190,6 +194,8 @@ NULL
         motif    = NA_character_,
         beta     = as.numeric(agg_df$beta),
         coverage = as.integer(agg_df$coverage),
+        mod_counts = as.integer(agg_df$n_mod),
+        canonical_counts = as.integer(agg_df$coverage - agg_df$n_mod),
         stringsAsFactors = FALSE,
         row.names = NULL
     )

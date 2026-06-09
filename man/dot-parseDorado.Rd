@@ -34,6 +34,10 @@ post-hoc with \code{\link{findMotifSites}} if needed.}
 \item{\code{beta}}{Proportion of reads called methylated, range 0–1
 (numeric).}
 \item{\code{coverage}}{Total read depth at this site (integer).}
+\item{\code{mod_counts}}{Reads called modified using the ML probability
+threshold.}
+\item{\code{canonical_counts}}{Reads not called modified using the ML
+probability threshold.}
 }
 }
 \description{

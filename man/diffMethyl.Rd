@@ -15,6 +15,9 @@ diffMethyl(
   min_coverage = 5L,
   alpha = 0.5,
   p_adjust_method = "BH",
+  result_name = NULL,
+  overwrite = NULL,
+  make_default = TRUE,
   ...
 )
 }
@@ -84,14 +87,29 @@ passed to \code{\link[stats]{p.adjust}}. Default \code{"BH"}
 (Benjamini-Hochberg). Other options: \code{"bonferroni"}, \code{"holm"},
 \code{"BY"}, \code{"none"}.}
 
+\item{result_name}{Character string or \code{NULL}. Name for the
+differential methylation result layer. If \code{NULL} (default), results
+are written to the compatibility layer \code{"diffMethyl"}, replacing that
+layer on repeated unnamed calls. Provide explicit names such as
+\code{"quasi_f.min5"} or \code{"limma.alpha05"} to keep multiple runs.}
+
+\item{overwrite}{Logical or \code{NULL}. Whether an existing named result
+layer may be replaced. If \code{NULL} (default), unnamed compatibility
+runs may replace \code{"diffMethyl"}, while explicit \code{result_name}
+values must be unique unless \code{overwrite = TRUE}.}
+
+\item{make_default}{Logical. If \code{TRUE} (default), the new result layer
+becomes the default used by \code{\link{results}()} and is mirrored into
+\code{rowData} as bare \code{dm_*} columns.}
+
 \item{...}{Additional arguments (reserved for future use).}
 }
 \value{
 The input \code{commaData} object with additional columns in
 \code{rowData}: \code{dm_pvalue}, \code{dm_padj}, \code{dm_delta_beta},
 and one \code{dm_mean_beta_<condition>} column per condition level. The
-\code{metadata} slot is updated with analysis parameters and result
-column names.
+\code{metadata} slot is updated with analysis parameters, result column
+names, and a named result layer registry.
 }
 \description{
 The main function for differential methylation analysis in \pkg{commaKit}.
@@ -167,6 +185,11 @@ mean beta value for each site.}
 Analysis parameters and result column names are stored in
 \code{metadata(object)$diffMethyl_params} and
 \code{metadata(object)$diffMethyl_result_cols}.
+Named result layers are stored in
+\code{metadata(object)$diffMethyl_results} and listed by
+\code{\link{resultLayers}()}. By default, the active result layer is also
+mirrored into the legacy \code{dm_*} columns in \code{rowData} so existing
+\code{\link{results}()} and plotting workflows keep working.
 }
 \examples{
 data(comma_example_data)

@@ -74,6 +74,19 @@ test_that("mValues: formula is correct for known values", {
     expect_equal(unname(m[1, 1]), expected)
 })
 
+test_that("mValues: observed count assays override beta-derived counts", {
+    obj <- .make_mval_data(n_sites = 1L, n_samples = 1L, cov_val = 10L)
+    SummarizedExperiment::assay(obj, "methylation")[1, 1] <- 0.1
+    SummarizedExperiment::assay(obj, "mod_counts") <-
+        matrix(9L, nrow = 1L, ncol = 1L, dimnames = dimnames(methylation(obj)))
+    SummarizedExperiment::assay(obj, "canonical_counts") <-
+        matrix(1L, nrow = 1L, ncol = 1L, dimnames = dimnames(methylation(obj)))
+
+    m <- mValues(obj, alpha = 0.5)
+
+    expect_equal(unname(m[1, 1]), log2((9 + 0.5) / (1 + 0.5)))
+})
+
 test_that("mValues: M-value at beta=0.5 is near zero", {
     obj <- .make_mval_data(n_sites = 1L, n_samples = 1L, cov_val = 100L)
     SummarizedExperiment::assay(obj, "methylation")[1, 1] <- 0.5
@@ -107,6 +120,19 @@ test_that("mValues: NA beta propagates to NA M-value", {
     obj <- .make_mval_data()
     SummarizedExperiment::assay(obj, "methylation")[1, 1] <- NA_real_
     m <- mValues(obj)
+    expect_true(is.na(m[1, 1]))
+})
+
+test_that("mValues: NA beta masks preserved observed count assays", {
+    obj <- .make_mval_data(n_sites = 1L, n_samples = 1L, cov_val = 10L)
+    SummarizedExperiment::assay(obj, "methylation")[1, 1] <- NA_real_
+    SummarizedExperiment::assay(obj, "mod_counts") <-
+        matrix(9L, nrow = 1L, ncol = 1L, dimnames = dimnames(methylation(obj)))
+    SummarizedExperiment::assay(obj, "canonical_counts") <-
+        matrix(1L, nrow = 1L, ncol = 1L, dimnames = dimnames(methylation(obj)))
+
+    m <- mValues(obj)
+
     expect_true(is.na(m[1, 1]))
 })
 

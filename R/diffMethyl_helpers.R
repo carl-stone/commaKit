@@ -121,3 +121,63 @@ NULL
                       group_means[, design$ref_level]
     )
 }
+
+.optionalAssay <- function(object, assay_name) {
+    if (assay_name %in% SummarizedExperiment::assayNames(object)) {
+        SummarizedExperiment::assay(object, assay_name)
+    } else {
+        NULL
+    }
+}
+
+.reconstructModifiedCounts <- function(methyl_mat, coverage_mat) {
+    n_mod <- round(methyl_mat * coverage_mat)
+    n_mod[is.na(methyl_mat) | is.na(coverage_mat)] <- NA_real_
+    n_mod <- pmax(0, pmin(n_mod, coverage_mat))
+    dim(n_mod) <- dim(coverage_mat)
+    dimnames(n_mod) <- dimnames(coverage_mat)
+    n_mod
+}
+
+.resolveCountMatrices <- function(methyl_mat, coverage_mat,
+                                  mod_counts_mat = NULL,
+                                  canonical_counts_mat = NULL) {
+    n_mod <- .reconstructModifiedCounts(methyl_mat, coverage_mat)
+    n_unmod <- coverage_mat - n_mod
+
+    observed_mod <- matrix(FALSE, nrow = nrow(coverage_mat), ncol = ncol(coverage_mat),
+                           dimnames = dimnames(coverage_mat))
+    observed_canonical <- observed_mod
+
+    if (!is.null(mod_counts_mat)) {
+        observed_mod <- !is.na(mod_counts_mat)
+        n_mod[observed_mod] <- mod_counts_mat[observed_mod]
+    }
+
+    if (!is.null(canonical_counts_mat)) {
+        observed_canonical <- !is.na(canonical_counts_mat)
+        n_unmod[observed_canonical] <- canonical_counts_mat[observed_canonical]
+    }
+
+    if (!is.null(mod_counts_mat)) {
+        infer_unmod_from_observed_mod <- observed_mod & !observed_canonical &
+            !is.na(coverage_mat)
+        n_unmod[infer_unmod_from_observed_mod] <-
+            coverage_mat[infer_unmod_from_observed_mod] -
+            n_mod[infer_unmod_from_observed_mod]
+    }
+
+    n_mod <- pmax(0, n_mod)
+    n_unmod <- pmax(0, n_unmod)
+    dim(n_mod) <- dim(coverage_mat)
+    dim(n_unmod) <- dim(coverage_mat)
+    dimnames(n_mod) <- dimnames(coverage_mat)
+    dimnames(n_unmod) <- dimnames(coverage_mat)
+
+    list(
+        modified = n_mod,
+        unmodified = n_unmod,
+        observed_modified = observed_mod,
+        observed_canonical = observed_canonical
+    )
+}

@@ -17,6 +17,10 @@
 #'       \item{\code{methylation}}{Beta values (proportion methylated reads,
 #'         0–1). \code{NA} where coverage < 5.}
 #'       \item{\code{coverage}}{Integer read depth (10–150 per site).}
+#'       \item{\code{mod_counts}}{Integer modified-read counts reconstructed
+#'         from the simulated beta and coverage values.}
+#'       \item{\code{canonical_counts}}{Integer canonical-read counts
+#'         reconstructed from the simulated beta and coverage values.}
 #'     }
 #'   }
 #'   \item{\strong{rowRanges}}{GRanges with 1-bp ranges per site. mcols include

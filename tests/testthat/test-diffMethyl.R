@@ -104,6 +104,60 @@ test_that("diffMethyl: delta_beta sign matches direction (treat - ctrl)", {
     expect_true(all(delta[!is.na(delta)] < 0))
 })
 
+test_that("diffMethyl: limma uses observed count assays when present", {
+    skip_if_not_installed("limma")
+    n_sites <- 12L
+    sample_names <- c("ctrl_1", "ctrl_2", "treat_1", "treat_2")
+    beta <- matrix(
+        0.5,
+        nrow = n_sites,
+        ncol = length(sample_names),
+        dimnames = list(NULL, sample_names)
+    )
+    coverage <- matrix(
+        20L,
+        nrow = n_sites,
+        ncol = length(sample_names),
+        dimnames = dimnames(beta)
+    )
+    mod_counts <- matrix(
+        rep(c(2L, 2L, 18L, 18L), each = n_sites),
+        nrow = n_sites,
+        dimnames = dimnames(beta)
+    )
+    canonical_counts <- coverage - mod_counts
+    sample_info <- data.frame(
+        sample_name = sample_names,
+        condition = c("control", "control", "treatment", "treatment"),
+        replicate = c(1L, 2L, 1L, 2L),
+        stringsAsFactors = FALSE
+    )
+    obj <- .make_commaData_fixture(
+        beta = beta,
+        coverage = coverage,
+        sample_info = sample_info,
+        positions = seq_len(n_sites) * 100L,
+        mod_counts = mod_counts,
+        canonical_counts = canonical_counts
+    )
+    legacy <- obj
+    SummarizedExperiment::assays(legacy) <-
+        SummarizedExperiment::assays(legacy)[c("methylation", "coverage")]
+
+    dm_observed <- suppressWarnings(
+        diffMethyl(obj, formula = ~ condition, method = "limma")
+    )
+    dm_legacy <- suppressWarnings(
+        diffMethyl(legacy, formula = ~ condition, method = "limma")
+    )
+    p_observed <- SummarizedExperiment::rowData(dm_observed)$dm_pvalue
+    p_legacy <- SummarizedExperiment::rowData(dm_legacy)$dm_pvalue
+
+    expect_true(any(!is.na(p_observed)))
+    expect_true(median(p_observed, na.rm = TRUE) < 0.05)
+    expect_true(all(is.na(p_legacy) | p_legacy > 0.5))
+})
+
 # ─── mod_type filtering ───────────────────────────────────────────────────────
 
 test_that("diffMethyl: mod_type = '6mA' tests only 6mA sites", {
@@ -414,6 +468,8 @@ test_that("diffMethyl: site with zero coverage in all samples gets NA p-value", 
     cov    <- SummarizedExperiment::assay(obj, "coverage")
     cov[1L, ] <- 0L
     SummarizedExperiment::assay(obj, "coverage") <- cov
+    SummarizedExperiment::assay(obj, "mod_counts")[1L, ] <- 0L
+    SummarizedExperiment::assay(obj, "canonical_counts")[1L, ] <- 0L
     methyl <- SummarizedExperiment::assay(obj, "methylation")
     methyl[1L, ] <- NA_real_
     SummarizedExperiment::assay(obj, "methylation") <- methyl
@@ -432,6 +488,8 @@ test_that("diffMethyl methylkit: all-zero-coverage site does not crash calculate
     cov  <- SummarizedExperiment::assay(obj, "coverage")
     cov[2L, ] <- 0L
     SummarizedExperiment::assay(obj, "coverage") <- cov
+    SummarizedExperiment::assay(obj, "mod_counts")[2L, ] <- 0L
+    SummarizedExperiment::assay(obj, "canonical_counts")[2L, ] <- 0L
     mth  <- SummarizedExperiment::assay(obj, "methylation")
     mth[2L, ] <- NA_real_
     SummarizedExperiment::assay(obj, "methylation") <- mth

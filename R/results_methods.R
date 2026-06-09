@@ -3,6 +3,57 @@
 #' @importFrom S4Vectors metadata
 NULL
 
+.siteFilterIndex <- function(object, mod_type = NULL, motif = NULL,
+                             mod_context = NULL, stop_on_empty = TRUE,
+                             caller = NULL) {
+    if (!is(object, "commaData")) {
+        stop("'object' must be a commaData object.")
+    }
+
+    current <- object
+    idx <- seq_len(nrow(object))
+    filters <- character(0)
+
+    if (!is.null(mod_type)) {
+        .validateModType(mod_type, current)
+        rd <- rowData(current)
+        keep <- rd$mod_type %in% mod_type
+        current <- current[keep, ]
+        idx <- idx[keep]
+        filters <- c(filters, .siteFilterLabel("mod_type", mod_type))
+        if (stop_on_empty && nrow(current) == 0L) {
+            .stopEmptySiteFilter(filters, caller = caller)
+        }
+    }
+
+    if (!is.null(motif)) {
+        .validateSiteFilterValues("motif", motif, motifs(current))
+        rd <- rowData(current)
+        keep <- !is.na(rd$motif) & rd$motif %in% motif
+        current <- current[keep, ]
+        idx <- idx[keep]
+        filters <- c(filters, .siteFilterLabel("motif", motif))
+        if (stop_on_empty && nrow(current) == 0L) {
+            .stopEmptySiteFilter(filters, caller = caller)
+        }
+    }
+
+    if (!is.null(mod_context)) {
+        .validateSiteFilterValues("mod_context", mod_context, modContexts(current))
+        rd <- rowData(current)
+        computed_ctx <- .computeModContext(rd$mod_type, rd$motif)
+        keep <- computed_ctx %in% mod_context
+        current <- current[keep, ]
+        idx <- idx[keep]
+        filters <- c(filters, .siteFilterLabel("mod_context", mod_context))
+        if (stop_on_empty && nrow(current) == 0L) {
+            .stopEmptySiteFilter(filters, caller = caller)
+        }
+    }
+
+    idx
+}
+
 # ─── results() ────────────────────────────────────────────────────────────────
 
 #' Extract differential methylation results as a tidy data frame
@@ -23,6 +74,11 @@ NULL
 #'   with a matching modification context (e.g., \code{"6mA_GATC"}) are
 #'   returned. Use \code{\link{modContexts}(object)} to see available values.
 #'   Applied in addition to any \code{mod_type} or \code{motif} filters.
+#' @param result Character string or \code{NULL}. Name of a differential
+#'   methylation result layer to extract. If \code{NULL} (default), the active
+#'   default layer is used.
+#' @param result_name Character string or \code{NULL}. Alias for
+#'   \code{result}; provided for consistency with \code{\link{diffMethyl}()}.
 #' @param ... Ignored (for S4 generic compatibility).
 #'
 #' @return A \code{data.frame} with one row per methylation site, containing:
@@ -54,18 +110,24 @@ setGeneric("results", function(object, ...) standardGeneric("results"))
 
 #' @rdname results
 setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL,
-                                           mod_context = NULL, ...) {
+                                           mod_context = NULL, result = NULL,
+                                           result_name = NULL, ...) {
     # ── Check diffMethyl has been run ─────────────────────────────────────────
-    md <- metadata(object)
-    if (is.null(md$diffMethyl_result_cols)) {
+    if (!.hasDiffMethylResults(object)) {
         stop(
             "No differential methylation results found in this commaData object.\n",
             "run diffMethyl() first:\n",
             "  dm <- diffMethyl(object, formula = ~ condition)"
         )
     }
+    if (!is.null(result) && !is.null(result_name) &&
+            !identical(result, result_name)) {
+        stop("Use only one of 'result' or 'result_name'.")
+    }
+    selected_result <- if (!is.null(result_name)) result_name else result
+    selected_result <- .resolveDiffMethylResultName(object, selected_result)
 
-    object <- .applySiteFilters(
+    idx <- .siteFilterIndex(
         object,
         mod_type = mod_type,
         motif = motif,
@@ -73,7 +135,29 @@ setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL
         caller = "results()"
     )
 
-    as.data.frame(siteInfo(object))
+    result_data <- .diffMethylResultData(object, selected_result)
+    if (is.null(result_data)) {
+        stop(
+            "Differential methylation result layer '", selected_result,
+            "' is registered but has no aligned result table."
+        )
+    }
+    if (nrow(result_data) != nrow(object)) {
+        stop(
+            "Differential methylation result layer '", selected_result,
+            "' is not aligned with this object."
+        )
+    }
+
+    site_df <- as.data.frame(siteInfo(object))
+    drop_cols <- intersect(.knownDiffMethylResultCols(object), colnames(site_df))
+    if (length(drop_cols) > 0L) {
+        site_df <- site_df[, setdiff(colnames(site_df), drop_cols), drop = FALSE]
+    }
+    out <- cbind(site_df, as.data.frame(result_data))
+    out <- out[idx, , drop = FALSE]
+    rownames(out) <- as.character(idx)
+    out
 })
 
 # ─── filterResults() ──────────────────────────────────────────────────────────
@@ -97,6 +181,11 @@ setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL
 #' @param mod_context Character vector or \code{NULL}. Passed to
 #'   \code{\link{results}} for optional modification context filtering
 #'   (e.g., \code{"6mA_GATC"}).
+#' @param result Character string or \code{NULL}. Name of a differential
+#'   methylation result layer to filter. If \code{NULL} (default), the active
+#'   default layer is used.
+#' @param result_name Character string or \code{NULL}. Alias for
+#'   \code{result}; provided for consistency with \code{\link{diffMethyl}()}.
 #' @param ... Ignored.
 #'
 #' @return A \code{data.frame} (same format as \code{\link{results}}) containing
@@ -119,9 +208,11 @@ setGeneric("filterResults",
 #' @rdname filterResults
 setMethod("filterResults", "commaData",
           function(object, padj = 0.05, delta_beta = 0.1,
-                   mod_type = NULL, motif = NULL, mod_context = NULL, ...) {
+                   mod_type = NULL, motif = NULL, mod_context = NULL,
+                   result = NULL, result_name = NULL, ...) {
     res <- results(object, mod_type = mod_type, motif = motif,
-                   mod_context = mod_context)
+                   mod_context = mod_context, result = result,
+                   result_name = result_name)
 
     if (!"dm_padj" %in% colnames(res)) {
         stop(

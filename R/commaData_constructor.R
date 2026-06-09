@@ -84,6 +84,12 @@ NULL
 #'     \code{findOverlaps()} for alignment.
 #'   \item Beta values and coverage are arranged into sites \eqn{\times} samples
 #'     matrices, with \code{NA} for samples that do not cover a given site.
+#'   \item Observed modified and canonical read counts are preserved as
+#'     \code{mod_counts} and \code{canonical_counts} assays when reported by
+#'     the caller; probability-only callers store \code{NA} in those assays.
+#'   \item Assay-layer provenance and default roles are recorded in
+#'     \code{metadata(object)$assay_provenance} and
+#'     \code{metadata(object)$assay_defaults}.
 #'   \item Sites where coverage is below \code{min_coverage} in a sample have
 #'     their beta value set to \code{NA} (but coverage is preserved).
 #' }
@@ -113,7 +119,10 @@ NULL
 #' }
 #'
 #' @seealso \code{\link{commaData-class}}, \code{\link{methylation}},
-#'   \code{\link[=coverage,commaData-method]{coverage}}, \code{\link{sampleInfo}}, \code{\link{siteInfo}},
+#'   \code{\link{siteCoverage}}, \code{\link{modCounts}},
+#'   \code{\link{canonicalCounts}}, \code{\link{assayLayers}},
+#'   \code{\link{assayProvenance}},
+#'   \code{\link{sampleInfo}}, \code{\link{siteInfo}},
 #'   \code{\link{modTypes}}, \code{\link{loadAnnotation}},
 #'   \code{\link{findMotifSites}}
 #'
@@ -287,6 +296,10 @@ commaData <- function(files,
                            dimnames = list(NULL, sample_names))
     coverage_mat <- matrix(NA_integer_, nrow = n_sites, ncol = n_samples,
                            dimnames = list(NULL, sample_names))
+    mod_counts_mat <- matrix(NA_integer_, nrow = n_sites, ncol = n_samples,
+                             dimnames = list(NULL, sample_names))
+    canonical_counts_mat <- matrix(NA_integer_, nrow = n_sites, ncol = n_samples,
+                                   dimnames = list(NULL, sample_names))
 
     # ── Build rowRanges (GRanges) for findOverlaps merge ────────────────────
     site_gr <- GenomicRanges::GRanges(
@@ -353,6 +366,12 @@ commaData <- function(files,
         valid_idx <- !is.na(idx)
         methyl_mat[idx[valid_idx], sn]   <- df$beta[valid_idx]
         coverage_mat[idx[valid_idx], sn] <- df$coverage[valid_idx]
+        if ("mod_counts" %in% colnames(df)) {
+            mod_counts_mat[idx[valid_idx], sn] <- df$mod_counts[valid_idx]
+        }
+        if ("canonical_counts" %in% colnames(df)) {
+            canonical_counts_mat[idx[valid_idx], sn] <- df$canonical_counts[valid_idx]
+        }
     }
 
     # ── Apply min_coverage: set beta NA where coverage < threshold ──────────
@@ -418,7 +437,12 @@ commaData <- function(files,
 
     # ── Assemble RangedSummarizedExperiment ─────────────────────────────────
     rse <- SummarizedExperiment::SummarizedExperiment(
-        assays     = list(methylation = methyl_mat, coverage = coverage_mat),
+        assays     = list(
+            methylation = methyl_mat,
+            coverage = coverage_mat,
+            mod_counts = mod_counts_mat,
+            canonical_counts = canonical_counts_mat
+        ),
         rowRanges  = site_gr,
         colData    = col_df
     )
@@ -433,6 +457,51 @@ commaData <- function(files,
     # Store caller and min_coverage in metadata for reproducibility
     S4Vectors::metadata(obj)$caller <- caller
     S4Vectors::metadata(obj)$min_coverage <- min_coverage
+    count_provenance <- switch(caller,
+        modkit = "observed_modkit_pileup",
+        dorado = "observed_probability_threshold",
+        megalodon = "unavailable_probability_input"
+    )
+    S4Vectors::metadata(obj)$assay_defaults <- list(
+        methylation = "methylation",
+        coverage = "coverage",
+        mod_counts = "mod_counts",
+        canonical_counts = "canonical_counts"
+    )
+    S4Vectors::metadata(obj)$assay_provenance <- list(
+        methylation = .makeAssayLayerRecord(
+            type = "filtered_beta",
+            source = caller,
+            role = "methylation",
+            parent_assays = c("coverage"),
+            method = "caller_beta_filter",
+            params = list(min_coverage = min_coverage, filtered_assay = TRUE),
+            default_for = "methylation"
+        ),
+        coverage = .makeAssayLayerRecord(
+            type = "observed_total_coverage",
+            source = caller,
+            role = "coverage",
+            method = "caller_coverage",
+            default_for = "coverage"
+        ),
+        mod_counts = .makeAssayLayerRecord(
+            type = if (caller == "megalodon") "unavailable" else "observed_counts",
+            source = count_provenance,
+            role = "mod_counts",
+            parent_assays = "coverage",
+            method = count_provenance,
+            default_for = "mod_counts"
+        ),
+        canonical_counts = .makeAssayLayerRecord(
+            type = if (caller == "megalodon") "unavailable" else "observed_counts",
+            source = count_provenance,
+            role = "canonical_counts",
+            parent_assays = "coverage",
+            method = count_provenance,
+            default_for = "canonical_counts"
+        )
+    )
 
     validObject(obj)
     obj

@@ -232,6 +232,11 @@ test_that("commaData() constructs valid object from example modkit BED", {
     expect_equal(ncol(cd), 1L)
     expect_true("methylation" %in% assayNames(cd))
     expect_true("coverage" %in% assayNames(cd))
+    expect_true("mod_counts" %in% assayNames(cd))
+    expect_true("canonical_counts" %in% assayNames(cd))
+    expect_true(all(!is.na(modCounts(cd))))
+    expect_true(all(!is.na(canonicalCounts(cd))))
+    expect_true(all(modCounts(cd) + canonicalCounts(cd) <= siteCoverage(cd)))
     expect_true(all(GenomeInfoDb::isCircular(GenomeInfoDb::seqinfo(cd))))
     expect_equal(
         GenomeInfoDb::seqinfo(SummarizedExperiment::rowRanges(cd)),
@@ -416,6 +421,23 @@ test_that("validity rejects negative or non-integer-like coverage values", {
     obj <- .make_minimal_commaData()
     assay(obj, "coverage")[1, 1] <- 1.5
     expect_error(validObject(obj), regexp = "coverage.*integer-like")
+})
+
+test_that("validity rejects invalid raw count assay values", {
+    obj <- .make_minimal_commaData()
+    assay(obj, "mod_counts")[1, 1] <- -1
+    expect_error(validObject(obj), regexp = "mod_counts.*non-negative")
+
+    obj <- .make_minimal_commaData()
+    assay(obj, "canonical_counts")[1, 1] <- 1.5
+    expect_error(validObject(obj), regexp = "canonical_counts.*integer-like")
+})
+
+test_that("validity rejects raw count sums above coverage", {
+    obj <- .make_minimal_commaData()
+    assay(obj, "mod_counts")[1, 1] <- assay(obj, "coverage")[1, 1]
+    assay(obj, "canonical_counts")[1, 1] <- 1L
+    expect_error(validObject(obj), regexp = "mod_counts.*canonical_counts.*coverage")
 })
 
 test_that("commaData() rejects duplicate parsed site identities before merge assignment", {

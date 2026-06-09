@@ -2,6 +2,7 @@
 % Please edit documentation in R/accessors.R
 \name{subset.commaData}
 \alias{subset.commaData}
+\alias{subset,commaData-method}
 \title{Deprecated subset method for commaData objects}
 \usage{
 \method{subset}{commaData}(
@@ -13,6 +14,8 @@
   mod_context = NULL,
   ...
 )
+
+\S4method{subset}{commaData}(x, ...)
 }
 \arguments{
 \item{x}{A \code{commaData} object.}

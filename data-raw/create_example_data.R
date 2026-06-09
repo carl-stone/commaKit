@@ -143,6 +143,14 @@ coverage_mat <- matrix(
 )
 storage.mode(coverage_mat) <- "integer"
 
+mod_counts_mat <- round(methyl_mat * coverage_mat)
+mod_counts_mat <- pmax(0L, pmin(as.integer(mod_counts_mat), coverage_mat))
+dim(mod_counts_mat) <- dim(methyl_mat)
+dimnames(mod_counts_mat) <- dimnames(methyl_mat)
+
+canonical_counts_mat <- coverage_mat - mod_counts_mat
+storage.mode(canonical_counts_mat) <- "integer"
+
 # ── Build rowRanges (GRanges) ────────────────────────────────────────────────
 site_gr <- GenomicRanges::GRanges(
     seqnames = rep(CHR_NAME, n_total),
@@ -189,7 +197,12 @@ GenomicRanges::mcols(ann_gr)$name         <- c("geneA", "geneB", "geneC", "geneD
 library(SummarizedExperiment)
 
 rse <- SummarizedExperiment(
-    assays     = list(methylation = methyl_mat, coverage = coverage_mat),
+    assays     = list(
+        methylation = methyl_mat,
+        coverage = coverage_mat,
+        mod_counts = mod_counts_mat,
+        canonical_counts = canonical_counts_mat
+    ),
     rowRanges  = site_gr,
     colData    = col_df
 )
@@ -203,9 +216,50 @@ S4Vectors::metadata(comma_example_data)$motifSites <- GenomicRanges::GRanges()
 # Store caller and min_coverage in metadata
 S4Vectors::metadata(comma_example_data)$caller <- "modkit"
 S4Vectors::metadata(comma_example_data)$min_coverage <- 5L
+S4Vectors::metadata(comma_example_data)$assay_defaults <- list(
+    methylation = "methylation",
+    coverage = "coverage",
+    mod_counts = "mod_counts",
+    canonical_counts = "canonical_counts"
+)
+S4Vectors::metadata(comma_example_data)$assay_provenance <- list(
+    methylation = commaKit:::.makeAssayLayerRecord(
+        type = "filtered_beta",
+        source = "synthetic_example",
+        role = "methylation",
+        parent_assays = "coverage",
+        method = "simulation",
+        params = list(min_coverage = 5L),
+        default_for = "methylation"
+    ),
+    coverage = commaKit:::.makeAssayLayerRecord(
+        type = "observed_total_coverage",
+        source = "synthetic_example",
+        role = "coverage",
+        method = "simulation",
+        default_for = "coverage"
+    ),
+    mod_counts = commaKit:::.makeAssayLayerRecord(
+        type = "reconstructed_counts",
+        source = "synthetic_example",
+        role = "mod_counts",
+        parent_assays = c("methylation", "coverage"),
+        method = "round_beta_times_coverage",
+        default_for = "mod_counts"
+    ),
+    canonical_counts = commaKit:::.makeAssayLayerRecord(
+        type = "reconstructed_counts",
+        source = "synthetic_example",
+        role = "canonical_counts",
+        parent_assays = c("coverage", "mod_counts"),
+        method = "coverage_minus_mod_counts",
+        default_for = "canonical_counts"
+    )
+)
 
 # ── Save ──────────────────────────────────────────────────────────────────────
-usethis::use_data(comma_example_data, overwrite = TRUE, compress = "xz")
+dir.create("data", showWarnings = FALSE)
+save(comma_example_data, file = "data/comma_example_data.rda", compress = "xz")
 
 message("comma_example_data saved. Object size: ",
         format(object.size(comma_example_data), units = "KB"))

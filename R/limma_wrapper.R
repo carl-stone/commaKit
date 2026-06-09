@@ -38,6 +38,11 @@ NULL
 #' @param methyl_mat Numeric matrix (sites × samples) of beta values.
 #'   \code{NA} indicates below-coverage sites.
 #' @param coverage_mat Integer matrix (sites × samples) of read depths.
+#' @param mod_counts_mat Optional integer matrix of observed modified-read
+#'   counts. If supplied, these counts are preferred over reconstructing from
+#'   beta values.
+#' @param canonical_counts_mat Optional integer matrix of observed
+#'   canonical-read counts.
 #' @param site_df Data frame with columns \code{chrom}, \code{position},
 #'   \code{strand}, \code{mod_type}, \code{motif} — one row per site.
 #' @param coldata \code{data.frame} with at least one column matching the
@@ -61,7 +66,8 @@ NULL
 #'
 #' @keywords internal
 .runLimma <- function(methyl_mat, coverage_mat, site_df, coldata, formula, alpha = 0.5,
-                      ref_level = NULL, design_info = NULL) {
+                      ref_level = NULL, design_info = NULL,
+                      mod_counts_mat = NULL, canonical_counts_mat = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("limma", quietly = TRUE)) {
         stop(
@@ -92,10 +98,16 @@ NULL
     group_stats    <- .computeDiffMethylGroupStats(methyl_mat, design_info)
     group_means    <- group_stats$group_means
     delta_beta_vec <- group_stats$delta_beta
+    count_mats <- .resolveCountMatrices(
+        methyl_mat,
+        coverage_mat,
+        mod_counts_mat = mod_counts_mat,
+        canonical_counts_mat = canonical_counts_mat
+    )
 
     # ── Compute M-value matrix ────────────────────────────────────────────────
-    n_mod   <- round(methyl_mat * coverage_mat)
-    n_unmod <- coverage_mat - n_mod
+    n_mod   <- count_mats$modified
+    n_unmod <- count_mats$unmodified
     # Clamp to [0, coverage] to guard against floating-point edge cases
     n_mod   <- pmax(0, pmin(n_mod,   coverage_mat))
     n_unmod <- pmax(0, n_unmod)
@@ -103,7 +115,7 @@ NULL
     dim(M_mat)      <- dim(coverage_mat)
     dimnames(M_mat) <- dimnames(coverage_mat)
     # Sites with zero or NA coverage → NA
-    M_mat[is.na(coverage_mat) | coverage_mat == 0L] <- NA_real_
+    M_mat[is.na(methyl_mat) | is.na(coverage_mat) | coverage_mat == 0L] <- NA_real_
 
     # ── Identify complete-case sites ──────────────────────────────────────────
     complete_sites <- which(apply(!is.na(M_mat), 1L, all))
