@@ -61,9 +61,7 @@ either column are excluded.
 }
 \description{
 A convenience wrapper around \code{\link{results}} that filters sites by
-adjusted p-value and absolute effect size. When multiple named result layers
-are present, \code{result}, \code{name}, or \code{result_name} selects which
-layer to filter.
+adjusted p-value and absolute effect size.
 }
 \examples{
 data(comma_example_data)

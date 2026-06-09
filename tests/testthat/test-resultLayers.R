@@ -206,6 +206,49 @@ test_that("row subsetting keeps named result layers aligned", {
     expect_true(all(is.na(results(sub, result_name = "quasi_f.empty")$dm_pvalue)))
 })
 
+test_that("results() can return selected result layers as GRanges", {
+    skip_if_not_installed("limma")
+    obj <- .make_diff_methyl_fixture(n_sites = 12L, n_ctrl = 2L, n_treat = 2L)
+    dm <- diffMethyl(
+        obj,
+        formula = ~ condition,
+        method = "quasi_f",
+        result_name = "quasi_f.loose",
+        min_coverage = 0L
+    )
+    dm <- diffMethyl(
+        dm,
+        formula = ~ condition,
+        method = "quasi_f",
+        result_name = "quasi_f.empty",
+        min_coverage = 1000L
+    )
+
+    gr <- results(dm, name = "quasi_f.loose", as = "GRanges")
+    df <- results(dm, name = "quasi_f.loose")
+
+    expect_s4_class(gr, "GRanges")
+    expect_equal(length(gr), nrow(df))
+    expect_true(all(c("dm_pvalue", "dm_padj", "dm_delta_beta") %in%
+                    colnames(GenomicRanges::mcols(gr))))
+    expect_equal(GenomicRanges::mcols(gr)$dm_pvalue, df$dm_pvalue)
+
+    gr_empty <- results(dm, name = "quasi_f.empty", as = "GRanges")
+    expect_true(all(is.na(GenomicRanges::mcols(gr_empty)$dm_pvalue)))
+})
+
+test_that("results(as = 'GRanges') applies site filters", {
+    skip_if_not_installed("limma")
+    obj <- .make_two_modtype_fixture(n_6ma = 8L, n_5mc = 4L)
+    dm <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")
+
+    gr <- results(dm, mod_type = "6mA", as = "GRanges")
+
+    expect_s4_class(gr, "GRanges")
+    expect_true(all(GenomicRanges::mcols(gr)$mod_type == "6mA"))
+    expect_equal(length(gr), sum(as.data.frame(siteInfo(dm))$mod_type == "6mA"))
+})
+
 test_that("results() validates selected result layer arguments", {
     skip_if_not_installed("limma")
     obj <- .make_diff_methyl_fixture(n_sites = 8L, n_ctrl = 2L, n_treat = 2L)

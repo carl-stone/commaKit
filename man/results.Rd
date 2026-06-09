@@ -15,6 +15,7 @@ results(object, ...)
   result = NULL,
   name = NULL,
   result_name = NULL,
+  as = c("data.frame", "GRanges"),
   ...
 )
 }
@@ -46,6 +47,10 @@ provided for concise layer selection.}
 
 \item{result_name}{Character string or \code{NULL}. Alias for
 \code{result}; provided for consistency with \code{\link{diffMethyl}()}.}
+
+\item{as}{Character string. Output format: \code{"data.frame"} (default)
+or \code{"GRanges"}. \code{"GRanges"} returns filtered
+\code{rowRanges(object)} with the selected result columns in \code{mcols}.}
 }
 \value{
 A \code{data.frame} with one row per methylation site, containing:
@@ -67,9 +72,7 @@ from \code{\link{annotateSites}}) are also included.
 \description{
 Retrieves the per-site differential methylation statistics added by
 \code{\link{diffMethyl}} and returns them as a tidy \code{data.frame}
-suitable for downstream analysis and plotting. When multiple named
-differential methylation result layers are present, \code{result},
-\code{name}, or \code{result_name} selects which layer to extract.
+suitable for downstream analysis and plotting.
 }
 \examples{
 data(comma_example_data)

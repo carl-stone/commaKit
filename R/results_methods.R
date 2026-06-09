@@ -1,6 +1,6 @@
 #' @importFrom methods setGeneric setMethod is
-#' @importFrom SummarizedExperiment rowData
-#' @importFrom S4Vectors metadata
+#' @importFrom SummarizedExperiment rowData rowRanges
+#' @importFrom S4Vectors metadata DataFrame
 NULL
 
 .siteFilterIndex <- function(object, mod_type = NULL, motif = NULL,
@@ -81,6 +81,9 @@ NULL
 #'   provided for concise layer selection.
 #' @param result_name Character string or \code{NULL}. Alias for
 #'   \code{result}; provided for consistency with \code{\link{diffMethyl}()}.
+#' @param as Character string. Output format: \code{"data.frame"} (default)
+#'   or \code{"GRanges"}. \code{"GRanges"} returns filtered
+#'   \code{rowRanges(object)} with the selected result columns in \code{mcols}.
 #' @param ... Ignored (for S4 generic compatibility).
 #'
 #' @return A \code{data.frame} with one row per methylation site, containing:
@@ -113,7 +116,10 @@ setGeneric("results", function(object, ...) standardGeneric("results"))
 #' @rdname results
 setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL,
                                            mod_context = NULL, result = NULL,
-                                           name = NULL, result_name = NULL, ...) {
+                                           name = NULL, result_name = NULL,
+                                           as = c("data.frame", "GRanges"),
+                                           ...) {
+    as <- match.arg(as)
     # ── Check diffMethyl has been run ─────────────────────────────────────────
     if (!.hasDiffMethylResults(object)) {
         stop(
@@ -161,7 +167,23 @@ setMethod("results", "commaData", function(object, mod_type = NULL, motif = NULL
     if (length(drop_cols) > 0L) {
         site_df <- site_df[, setdiff(colnames(site_df), drop_cols), drop = FALSE]
     }
-    out <- cbind(site_df, as.data.frame(result_data))
+    result_data <- result_data[idx, , drop = FALSE]
+    if (identical(as, "GRanges")) {
+        gr <- SummarizedExperiment::rowRanges(object)[idx]
+        drop_cols_gr <- intersect(.knownDiffMethylResultCols(object),
+                                  colnames(GenomicRanges::mcols(gr)))
+        if (length(drop_cols_gr) > 0L) {
+            keep_cols <- setdiff(colnames(GenomicRanges::mcols(gr)), drop_cols_gr)
+            GenomicRanges::mcols(gr) <- GenomicRanges::mcols(gr)[, keep_cols, drop = FALSE]
+        }
+        GenomicRanges::mcols(gr) <- cbind(
+            GenomicRanges::mcols(gr),
+            S4Vectors::DataFrame(result_data)
+        )
+        return(gr)
+    }
+
+    out <- cbind(site_df, as.data.frame(.diffMethylResultData(object, selected_result)))
     out <- out[idx, , drop = FALSE]
     rownames(out) <- as.character(idx)
     out
