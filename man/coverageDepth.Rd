@@ -45,7 +45,7 @@ median) sequencing depth in each window for each sample. Returns a tidy
 Depth is computed only at positions with observed methylation sites. Windows
 with no sites have \code{depth = NA}.
 
-If genome size information is stored in \code{genome(object)}, windows are
+If genome size information is stored in \code{genomeSizes(object)}, windows are
 sized to fit the chromosomes exactly (the last window may be smaller than
 \code{window}). If genome information is absent, only the range spanned by
 observed sites is covered.

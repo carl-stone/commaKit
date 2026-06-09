@@ -10,7 +10,7 @@ NULL
 #'
 #' @param object A \code{\link{commaData}} object.
 #' @param chromosome Character string. The chromosome (sequence name) to plot.
-#'   Must be present in \code{names(genome(object))}.
+#'   Must be present in \code{names(genomeSizes(object))}.
 #' @param start Integer or \code{NULL}. Start position of the region to display
 #'   (1-based, inclusive). If \code{NULL}, the plot begins at position 1.
 #' @param end Integer or \code{NULL}. End position of the region to display
@@ -68,10 +68,10 @@ plot_genome_track <- function(object,
     if (!is.character(chromosome) || length(chromosome) != 1L) {
         stop("'chromosome' must be a single character string.")
     }
-    genome_info <- genome(object)
+    genome_info <- genomeSizes(object)
     if (!is.null(genome_info) && length(genome_info) > 0L &&
         !chromosome %in% names(genome_info)) {
-        stop("'chromosome' = '", chromosome, "' not found in genome(object). ",
+        stop("'chromosome' = '", chromosome, "' not found in genomeSizes(object). ",
              "Available chromosomes: ", paste(names(genome_info), collapse = ", "), ".")
     }
     if (!is.null(start) && (!is.numeric(start) || length(start) != 1L || start < 1)) {

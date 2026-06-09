@@ -65,7 +65,7 @@ test_that("slidingWindow: stat='mean' produces window_mean column", {
 })
 
 test_that("slidingWindow: number of rows equals genome_size * n_samples", {
-    gi <- genome(tiny_data)
+    gi <- genomeSizes(tiny_data)
     n_pos <- sum(gi)
     n_samp <- ncol(tiny_data)
     result <- slidingWindow(tiny_data, window = W)
@@ -73,7 +73,7 @@ test_that("slidingWindow: number of rows equals genome_size * n_samples", {
 })
 
 test_that("slidingWindow: positions span 1 to chromosome size", {
-    gi <- genome(tiny_data)
+    gi <- genomeSizes(tiny_data)
     chr_size <- gi[1]
     result <- slidingWindow(tiny_data, window = W)
     chr_result <- result[result$chrom == names(gi)[1], ]
@@ -100,7 +100,7 @@ test_that("slidingWindow: mod_type filtering works", {
     result_6mA <- slidingWindow(tiny_data, window = W, mod_type = "6mA")
     result_5mC <- slidingWindow(tiny_data, window = W, mod_type = "5mC")
     # Both still produce full-genome output (genome size × n_samples)
-    gi <- genome(tiny_data)
+    gi <- genomeSizes(tiny_data)
     n_samp <- ncol(tiny_data)
     expect_equal(nrow(result_6mA), sum(gi) * n_samp)
     expect_equal(nrow(result_5mC), sum(gi) * n_samp)
@@ -121,7 +121,7 @@ test_that("slidingWindow: circular=FALSE returns correct row count with valid va
     expect_s3_class(result, "data.frame")
     expect_true("window_median" %in% colnames(result))
     # Row count should be genome_size * n_samples
-    gi <- genome(tiny_data)
+    gi <- genomeSizes(tiny_data)
     n_samp <- ncol(tiny_data)
     expect_equal(nrow(result), sum(gi) * n_samp)
     # window_median should be in [0,1] for beta values
@@ -133,7 +133,7 @@ test_that("slidingWindow: circular=FALSE returns correct row count with valid va
 test_that("slidingWindow: circular=TRUE and FALSE give different edge results", {
     r_circ   <- slidingWindow(tiny_data, window = 16, circular = TRUE)
     r_linear <- slidingWindow(tiny_data, window = 16, circular = FALSE)
-    gi   <- genome(tiny_data)
+    gi   <- genomeSizes(tiny_data)
     chr  <- names(gi)[1]
     samp <- sampleInfo(tiny_data)$sample_name[1]
     # Compare all positions for one sample on the chromosome.
@@ -259,11 +259,11 @@ test_that("slidingWindow: error when genome is NULL", {
     obj_no_genome <- new("commaData", rse_no_genome)
     # Copy metadata from original
     S4Vectors::metadata(obj_no_genome) <- S4Vectors::metadata(comma_example_data)
-    expect_error(slidingWindow(obj_no_genome, window = 1000L), "genome\\(object\\)")
+    expect_error(slidingWindow(obj_no_genome, window = 1000L), "genomeSizes\\(object\\)")
 })
 
 test_that("slidingWindow: error when window exceeds chromosome size", {
-    gi <- genome(tiny_data)   # chr_sim = 20 bp
+    gi <- genomeSizes(tiny_data)   # chr_sim = 20 bp
     expect_error(
         slidingWindow(tiny_data, window = 200000L),
         "exceeds the smallest chromosome size"

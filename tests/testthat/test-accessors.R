@@ -231,6 +231,12 @@ test_that("genome() returns correct chromosome sizes", {
     expect_equal(genome(obj), c(chr_sim = 100000L))
 })
 
+test_that("genomeSizes() returns chromosome sizes with genome() compatibility", {
+    obj <- .make_two_modtype()
+    expect_equal(genomeSizes(obj), c(chr_sim = 100000L))
+    expect_equal(genome(obj), genomeSizes(obj))
+})
+
 test_that("genome() returns NULL when no Seqinfo", {
     obj <- .make_two_modtype()
     rr <- rowRanges(obj)

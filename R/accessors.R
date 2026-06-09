@@ -377,20 +377,47 @@ setMethod("modContexts", "commaData", function(object) {
     sort(unique(.computeModContext(mc$mod_type, mc$motif)))
 })
 
-# ─── genome() ────────────────────────────────────────────────────────────────
+# ─── genomeSizes() / genome() compatibility ─────────────────────────────────
 
-#' Accessor for genome size information
+#' Accessor for chromosome size information
 #'
 #' Returns the chromosome sizes stored in a \code{\link{commaData}} object.
-#' Genome size information is stored in the \code{Seqinfo} attached to
-#' \code{rowRanges(object)}. This accessor returns \code{seqlengths(object)}
-#' for backward compatibility.
+#' Size information is stored in the \code{Seqinfo} attached to
+#' \code{rowRanges(object)} and corresponds to \code{seqlengths(object)}.
+#' This package-specific accessor avoids overloading
+#' \code{GenomeInfoDb::genome()}, whose conventional Bioconductor meaning is
+#' genome build/name metadata rather than chromosome lengths.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return A named integer vector of chromosome sizes
+#'   (chromosome name -> length in bp), or \code{NULL} if no size information
+#'   was provided at construction.
+#'
+#' @examples
+#' data(comma_example_data)
+#' genomeSizes(comma_example_data)
+#'
+#' @export
+setGeneric("genomeSizes", function(object) standardGeneric("genomeSizes"))
+
+#' @rdname genomeSizes
+setMethod("genomeSizes", "commaData", function(object) {
+    sl <- GenomeInfoDb::seqlengths(object)
+    if (length(sl) == 0 || all(is.na(sl))) NULL else sl
+})
+
+#' GenomeInfoDb genome accessor compatibility method for commaData
+#'
+#' Historically, \code{genome(commaData)} returned chromosome sizes. New code
+#' should use \code{\link{genomeSizes}} for chromosome lengths and
+#' \code{GenomeInfoDb::genome(seqinfo(object))} for genome build/name metadata.
+#' This method preserves the historical size-vector behavior for compatibility.
 #'
 #' @param x A \code{commaData} object.
 #'
-#' @return A named integer vector of chromosome sizes
-#'   (chromosome name -> length in bp), or \code{NULL} if no genome information
-#'   was provided at construction.
+#' @return A named integer vector of chromosome sizes, or \code{NULL} if no
+#'   size information was provided at construction.
 #'
 #' @examples
 #' data(comma_example_data)
@@ -398,8 +425,7 @@ setMethod("modContexts", "commaData", function(object) {
 #'
 #' @export
 setMethod("genome", "commaData", function(x) {
-    sl <- GenomeInfoDb::seqlengths(x)
-    if (length(sl) == 0 || all(is.na(sl))) NULL else sl
+    genomeSizes(x)
 })
 
 # ─── annotation() ────────────────────────────────────────────────────────────

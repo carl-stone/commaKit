@@ -23,8 +23,8 @@ Genomic annotation and motif site positions are stored in
 
 Genome size information is stored in the \code{Seqinfo} attached to
 \code{rowRanges(object)}, accessible via \code{seqlengths(object)} or
-\code{seqinfo(object)}. The \code{genome()} accessor returns the same
-named integer vector for backward compatibility.
+\code{seqinfo(object)}. Use \code{\link{genomeSizes}} for chromosome sizes; \code{genome()}
+is retained only as a backward-compatible size-vector method.
 
 The class stores methylation data in assay matrices (accessible via
 \code{\link[SummarizedExperiment]{assay}}):

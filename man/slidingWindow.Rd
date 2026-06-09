@@ -16,7 +16,7 @@ slidingWindow(
 }
 \arguments{
 \item{object}{A \code{\link{commaData}} object. Must have genome size
-information in \code{genome(object)} (i.e., it must have been constructed
+information in \code{genomeSizes(object)} (i.e., it must have been constructed
 with a \code{genome} argument).}
 
 \item{window}{Positive integer. Window size in base pairs. The smoothed
@@ -65,7 +65,7 @@ named \code{window_median} or \code{window_mean} depending on
 Computes a per-position sliding window statistic (median or mean) of
 methylation beta values for each sample in a \code{\link{commaData}}
 object. The genome size for each chromosome is read from
-\code{genome(object)}, so no organism-specific values are ever hardcoded.
+\code{genomeSizes(object)}, so no organism-specific values are ever hardcoded.
 Circular genome wrap-around is controlled by the \code{isCircular} values
 stored in \code{seqinfo(object)} unless \code{circular} is explicitly set.
 }

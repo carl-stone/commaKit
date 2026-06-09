@@ -8,12 +8,12 @@ NULL
 #' Computes a per-position sliding window statistic (median or mean) of
 #' methylation beta values for each sample in a \code{\link{commaData}}
 #' object. The genome size for each chromosome is read from
-#' \code{genome(object)}, so no organism-specific values are ever hardcoded.
+#' \code{genomeSizes(object)}, so no organism-specific values are ever hardcoded.
 #' Circular genome wrap-around is controlled by the \code{isCircular} values
 #' stored in \code{seqinfo(object)} unless \code{circular} is explicitly set.
 #'
 #' @param object A \code{\link{commaData}} object. Must have genome size
-#'   information in \code{genome(object)} (i.e., it must have been constructed
+#'   information in \code{genomeSizes(object)} (i.e., it must have been constructed
 #'   with a \code{genome} argument).
 #' @param window Positive integer. Window size in base pairs. The smoothed
 #'   value at position \eqn{p} is computed from positions
@@ -97,10 +97,10 @@ slidingWindow <- function(object,
         stop("'circular' must be TRUE, FALSE, or NULL.")
     }
 
-    genome_info <- genome(object)
+    genome_info <- genomeSizes(object)
     if (is.null(genome_info) || length(genome_info) == 0) {
         stop(
-            "genome(object) is NULL or empty. ",
+            "genomeSizes(object) is NULL or empty. ",
             "Provide genome size information when constructing the commaData object."
         )
     }

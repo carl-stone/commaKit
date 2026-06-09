@@ -2,7 +2,7 @@
 % Please edit documentation in R/accessors.R
 \name{genome,commaData-method}
 \alias{genome,commaData-method}
-\title{Accessor for genome size information}
+\title{GenomeInfoDb genome accessor compatibility method for commaData}
 \usage{
 \S4method{genome}{commaData}(x)
 }
@@ -10,15 +10,14 @@
 \item{x}{A \code{commaData} object.}
 }
 \value{
-A named integer vector of chromosome sizes
-(chromosome name -> length in bp), or \code{NULL} if no genome information
-was provided at construction.
+A named integer vector of chromosome sizes, or \code{NULL} if no
+size information was provided at construction.
 }
 \description{
-Returns the chromosome sizes stored in a \code{\link{commaData}} object.
-Genome size information is stored in the \code{Seqinfo} attached to
-\code{rowRanges(object)}. This accessor returns \code{seqlengths(object)}
-for backward compatibility.
+Historically, \code{genome(commaData)} returned chromosome sizes. New code
+should use \code{\link{genomeSizes}} for chromosome lengths and
+\code{GenomeInfoDb::genome(seqinfo(object))} for genome build/name metadata.
+This method preserves the historical size-vector behavior for compatibility.
 }
 \examples{
 data(comma_example_data)

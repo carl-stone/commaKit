@@ -19,7 +19,7 @@ plot_genome_track(
 \item{object}{A \code{\link{commaData}} object.}
 
 \item{chromosome}{Character string. The chromosome (sequence name) to plot.
-Must be present in \code{names(genome(object))}.}
+Must be present in \code{names(genomeSizes(object))}.}
 
 \item{start}{Integer or \code{NULL}. Start position of the region to display
 (1-based, inclusive). If \code{NULL}, the plot begins at position 1.}
