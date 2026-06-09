@@ -241,6 +241,33 @@ test_that("diffMethyl: error when formula variable not in colData", {
     )
 })
 
+test_that("diffMethyl: rejects multi-factor formulas before v1", {
+    obj <- .make_dm_data(n_ctrl = 2L, n_treat = 2L)
+    SummarizedExperiment::colData(obj)$batch <- c("b1", "b2", "b1", "b2")
+    expect_error(
+        diffMethyl(obj, formula = ~ condition + batch, method = "quasi_f"),
+        "exactly one two-level RHS variable"
+    )
+})
+
+test_that("diffMethyl: rejects interaction formulas before v1", {
+    obj <- .make_dm_data(n_ctrl = 2L, n_treat = 2L)
+    SummarizedExperiment::colData(obj)$batch <- c("b1", "b2", "b1", "b2")
+    expect_error(
+        diffMethyl(obj, formula = ~ condition:batch, method = "quasi_f"),
+        "exactly one two-level RHS variable"
+    )
+})
+
+test_that("diffMethyl: rejects transformed RHS terms before v1", {
+    obj <- .make_dm_data(n_ctrl = 2L, n_treat = 2L)
+    SummarizedExperiment::colData(obj)$batch <- c(1, 2, 1, 2)
+    expect_error(
+        diffMethyl(obj, formula = ~ factor(batch), method = "quasi_f"),
+        "untransformed two-level RHS variable"
+    )
+})
+
 test_that("diffMethyl: error when mod_type not present in object", {
     obj <- .make_dm_data()
     expect_error(diffMethyl(obj, mod_type = "4mC"), "not found in object")

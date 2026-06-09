@@ -279,20 +279,28 @@ test_that("results() validates selected result layer arguments", {
 test_that("resultLayers() handles formulas whose deparse spans multiple lines", {
     skip_if_not_installed("limma")
     obj <- .make_diff_methyl_fixture(n_sites = 8L, n_ctrl = 2L, n_treat = 2L)
-    long_var <- "very_long_batch_covariate_name_used_to_force_formula_deparse_wrapping"
-    SummarizedExperiment::colData(obj)[[long_var]] <- c("a", "a", "b", "b")
-    form <- stats::as.formula(paste("~ condition +", long_var))
-
     dm <- diffMethyl(
         obj,
-        formula = form,
+        formula = ~ condition,
         method = "quasi_f",
         result_name = "quasi_f.long_formula"
     )
 
+    ## Simulate a legacy/loaded result record whose formula was stored from a
+    ## multi-element deparse(). diffMethyl() now rejects multi-factor formulas,
+    ## but resultLayers() should still collapse older vector-valued formula
+    ## metadata defensively when listing result layers.
+    formula_lines <- c(
+        "~ very_long_single_rhs_variable_name_used_to_force_formula_deparse",
+        "    _wrapping_in_legacy_metadata"
+    )
+    S4Vectors::metadata(dm)$diffMethyl_result_layers[[
+        "quasi_f.long_formula"
+    ]]$params$formula <- formula_lines
+
     layers <- resultLayers(dm)
     expect_length(layers$formula, 1L)
-    expect_equal(layers$formula, paste(deparse(form), collapse = " "))
+    expect_equal(layers$formula, paste(formula_lines, collapse = " "))
 })
 
 test_that("resultLayers() infers a legacy diffMethyl result row", {

@@ -199,8 +199,11 @@ plot_genome_track(comma_example_data, chromosome = "chr_sim",
 # Differential Methylation
 
 `diffMethyl()` tests each site for differential methylation between conditions.
-It is modeled on DESeq2's workflow: pass a `commaData` object and a design
-formula, and receive back the same object with statistical results in `rowData`.
+For v1, pass a one-sided formula with exactly one two-level comparison
+variable, such as `~ condition`. Multi-factor formulas (`~ condition + batch`),
+interactions, offsets, and continuous covariates are not interpreted yet; run
+one two-group comparison per `diffMethyl()` call. The result is the same object
+with statistical results in `rowData` and in the active result layer.
 
 ```{r diff-methyl}
 cd_dm <- diffMethyl(comma_example_data, formula = ~ condition,

@@ -20,9 +20,28 @@ NULL
         stop("'formula' must be a formula object (e.g., ~ condition).")
     }
 
+    terms_obj <- terms(formula)
+    term_labels <- attr(terms_obj, "term.labels")
+    term_order <- attr(terms_obj, "order")
+    if (length(term_labels) == 0L) {
+        stop("'formula' must contain exactly one RHS variable (e.g., ~ condition).")
+    }
+    if (length(term_labels) != 1L || any(term_order != 1L)) {
+        stop(
+            "diffMethyl() currently supports exactly one two-level RHS variable ",
+            "per call, e.g. ~ condition. Multi-factor formulas, interactions, ",
+            "offsets, and transformed terms are not yet supported; run a ",
+            "single two-group comparison or track expanded design support in #215."
+        )
+    }
+
     rhs_vars <- all.vars(formula)
-    if (length(rhs_vars) == 0L) {
-        stop("'formula' must contain at least one RHS variable (e.g., ~ condition).")
+    if (length(rhs_vars) != 1L || !identical(rhs_vars[[1L]], term_labels[[1L]])) {
+        stop(
+            "diffMethyl() currently supports exactly one untransformed two-level ",
+            "RHS variable per call, e.g. ~ condition. Transformed terms and ",
+            "offsets are not yet supported; track expanded design support in #215."
+        )
     }
     primary_var <- rhs_vars[[1L]]
 

@@ -88,11 +88,13 @@ NULL
 #'
 #' @param object A \code{\link{commaData}} object with at least two samples in
 #'   distinct conditions.
-#' @param formula A one-sided formula specifying the design. The first RHS
-#'   variable must match a column in \code{sampleInfo(object)} and must have
-#'   exactly 2 distinct levels. Multi-level variables are not currently
-#'   supported in a single \code{diffMethyl()} call; subset to the two groups to
-#'   compare. Default is \code{~ condition}.
+#' @param formula A one-sided formula specifying one two-level comparison
+#'   variable, e.g. \code{~ condition}. The RHS variable must match a column in
+#'   \code{sampleInfo(object)} and must have exactly 2 distinct levels.
+#'   Multi-factor formulas, interactions, offsets, transformed terms, and
+#'   continuous covariates are intentionally not interpreted in v1; subset or
+#'   define one two-group comparison per \code{diffMethyl()} call. Default is
+#'   \code{~ condition}.
 #' @param method Character string selecting the statistical backend.
 #'   \code{"methylkit"} (default) wraps \code{methylKit::calculateDiffMeth()}
 #'   with logistic regression and SLIM p-value correction; robust for small n
