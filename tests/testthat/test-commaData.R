@@ -92,10 +92,16 @@ test_that("validity rejects rowRanges with width != 1", {
     expect_error(validObject(obj), regexp = "1-bp ranges")
 })
 
-test_that("validity rejects missing colData columns", {
+test_that("validity allows missing optional condition metadata", {
     obj <- .make_minimal_commaData()
     colData(obj)$condition <- NULL
-    expect_error(validObject(obj), regexp = "condition")
+    expect_no_error(validObject(obj))
+})
+
+test_that("validity rejects missing required colData columns", {
+    obj <- .make_minimal_commaData()
+    colData(obj)$replicate <- NULL
+    expect_error(validObject(obj), regexp = "replicate")
 })
 
 
@@ -149,6 +155,20 @@ test_that("validity passes when all motif values are NA", {
 # Constructor: argument validation
 # ─────────────────────────────────────────────────────────────────────────────
 
+test_that("commaData() allows optional condition to be absent", {
+    bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
+    skip_if(bed_file == "", message = "extdata not available")
+
+    expect_s4_class(
+        commaData(
+            files   = c(sample_1 = bed_file),
+            colData = data.frame(sample_name = "sample_1", replicate = 1L),
+            genome  = c(chr_sim = 100000L)
+        ),
+        "commaData"
+    )
+})
+
 test_that("commaData() errors on colData missing required columns", {
     bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
     skip_if(bed_file == "", message = "extdata not available")
@@ -156,10 +176,10 @@ test_that("commaData() errors on colData missing required columns", {
     expect_error(
         commaData(
             files   = c(s1 = bed_file),
-            colData = data.frame(sample_name = "s1", replicate = 1L),
+            colData = data.frame(sample_name = "s1"),
             genome  = c(chr_sim = 100000L)
         ),
-        regexp = "condition"
+        regexp = "replicate"
     )
 })
 

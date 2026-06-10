@@ -136,6 +136,29 @@ test_that("plot_pca: return_data data.frame includes sampleInfo columns", {
     expect_true("sample_name" %in% colnames(d))
 })
 
+test_that("plot_pca: default color falls back to sample_name without condition", {
+    obj <- .make_pca_data()
+    SummarizedExperiment::colData(obj)$condition <- NULL
+
+    p <- plot_pca(obj)
+    d <- plot_pca(obj, return_data = TRUE)
+
+    expect_s3_class(p, "ggplot")
+    expect_equal(p$labels$colour, "sample_name")
+    expect_true("sample_name" %in% colnames(d))
+    expect_false("condition" %in% colnames(d))
+})
+
+test_that("plot_pca: explicit condition color still validates missing column", {
+    obj <- .make_pca_data()
+    SummarizedExperiment::colData(obj)$condition <- NULL
+
+    expect_error(
+        plot_pca(obj, color_by = "condition"),
+        "'color_by' column 'condition' not found"
+    )
+})
+
 test_that("plot_pca: return_data attaches percentVar attribute", {
     obj <- .make_pca_data()
     d <- plot_pca(obj, return_data = TRUE)

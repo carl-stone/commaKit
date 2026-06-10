@@ -211,8 +211,8 @@ setMethod("coverage", "commaData", function(x, shift = 0L, width = NULL, weight 
 #' @param object A \code{commaData} object.
 #'
 #' @return A \code{data.frame} with one row per sample. Always contains columns
-#'   \code{sample_name}, \code{condition}, and \code{replicate}. May contain
-#'   additional columns such as \code{caller} and \code{file_path}.
+#'   \code{sample_name} and \code{replicate}. May contain optional columns such
+#'   as \code{condition}, \code{caller}, and \code{file_path}.
 #'
 #' @seealso \code{\link{siteInfo}}, \code{\link{modTypes}}
 #'
@@ -601,6 +601,9 @@ filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
     # Sample filter
     samp_keep <- rep(TRUE, ncol(x))
     if (!is.null(condition)) {
+        if (!"condition" %in% colnames(cd)) {
+            stop("Cannot filter by 'condition': sampleInfo(object) has no condition column.")
+        }
         samp_keep <- samp_keep & (cd$condition %in% condition)
     }
 

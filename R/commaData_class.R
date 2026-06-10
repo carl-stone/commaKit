@@ -68,7 +68,9 @@ NULL
 #' strand) with the mcols columns.
 #'
 #' Per-sample metadata is in \code{colData(object)} and includes at minimum:
-#' \code{sample_name}, \code{condition}, \code{replicate}.
+#' \code{sample_name} and \code{replicate}. A \code{condition} column is
+#' optional container metadata; functions that need a grouping/design variable
+#' (such as \code{\link{diffMethyl}}) validate that requirement locally.
 #'
 #' The methylation caller and minimum coverage threshold are stored in
 #' \code{metadata(object)} and accessible via \code{\link{caller}(object)}
@@ -160,7 +162,7 @@ setValidity("commaData", function(object) {
 
 
     # ── colData required columns ────────────────────────────────────────────
-    required_col_cols <- c("sample_name", "condition", "replicate")
+    required_col_cols <- c("sample_name", "replicate")
     cd <- colData(object)
     missing_cols2 <- setdiff(required_col_cols, colnames(cd))
     if (length(missing_cols2) > 0) {

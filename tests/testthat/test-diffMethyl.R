@@ -18,6 +18,21 @@ test_that("diffMethyl: returns a commaData object", {
     expect_s4_class(dm, "commaData")
 })
 
+test_that("diffMethyl: condition is required only when requested by formula", {
+    obj <- .make_dm_data()
+    SummarizedExperiment::colData(obj)$group <-
+        SummarizedExperiment::colData(obj)$condition
+    SummarizedExperiment::colData(obj)$condition <- NULL
+
+    expect_error(
+        diffMethyl(obj, formula = ~ condition, method = "quasi_f"),
+        "Variable 'condition' from formula not found"
+    )
+
+    dm <- diffMethyl(obj, formula = ~ group, method = "quasi_f")
+    expect_s4_class(dm, "commaData")
+})
+
 test_that("diffMethyl: dimension unchanged after running", {
     obj <- .make_dm_data()
     dm  <- diffMethyl(obj, formula = ~ condition, method = "quasi_f")

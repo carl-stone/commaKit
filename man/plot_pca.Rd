@@ -32,7 +32,9 @@ included.}
 
 \item{color_by}{Character string naming a column in \code{sampleInfo(object)}
 to use for point color. When \code{return_data = TRUE}, this column is
-validated and included in the returned data. Default \code{"condition"}.}
+validated and included in the returned data. Default \code{"condition"};
+if \code{condition} is absent, the default falls back to
+\code{"sample_name"} so QC-only objects still plot.}
 
 \item{shape_by}{Character string naming a column in \code{sampleInfo(object)}
 to use for point shape. If \code{NULL} (default), all points use the same

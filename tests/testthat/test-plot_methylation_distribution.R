@@ -51,6 +51,18 @@ test_that("plot_methylation_distribution: returns ggplot for valid input", {
     expect_equal(sort(d$beta), sort(as.vector(methyl_mat)))
 })
 
+test_that("plot_methylation_distribution: works without optional condition metadata", {
+    obj <- .make_dist_data()
+    SummarizedExperiment::colData(obj)$condition <- NULL
+
+    expect_no_error(validObject(obj))
+    p <- plot_methylation_distribution(obj)
+
+    expect_s3_class(p, "ggplot")
+    expect_true("sample_name" %in% colnames(p$data))
+    expect_false("condition" %in% colnames(p$data))
+})
+
 test_that("plot_methylation_distribution: mod_type filter returns ggplot", {
     obj <- .make_dist_data_two_mods()
     p_unfiltered <- plot_methylation_distribution(obj)

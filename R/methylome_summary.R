@@ -35,7 +35,8 @@ NULL
 #'   \describe{
 #'     \item{\code{sample_name}}{Sample identifier.}
 #'     \item{\code{condition}}{Experimental condition, from
-#'       the \code{condition} column in \code{sampleInfo(object)}.}
+#'       the optional \code{condition} column in \code{sampleInfo(object)}, or
+#'       \code{NA} when that metadata is absent.}
 #'     \item{\code{mod_type}}{The modification type summarized
 #'       (\code{"all"} if \code{mod_type = NULL}).}
 #'     \item{\code{n_sites}}{Total number of sites considered after filters.}
@@ -105,6 +106,11 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
     rows <- lapply(sample_nms, function(samp) {
         betas <- methyl_mat[, samp]
         covs  <- cov_mat[, samp]
+        condition_value <- if ("condition" %in% colnames(si)) {
+            si$condition[si$sample_name == samp]
+        } else {
+            NA_character_
+        }
 
         covered   <- !is.na(betas)
         n_covered <- sum(covered)
@@ -113,7 +119,7 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
 
         data.frame(
             sample_name      = samp,
-            condition        = si$condition[si$sample_name == samp],
+            condition        = condition_value,
             mod_type         = mt_label,
             n_sites          = n_sites,
             n_covered        = n_covered,
