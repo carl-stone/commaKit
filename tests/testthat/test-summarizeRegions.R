@@ -134,9 +134,9 @@ test_that("summarizeRegions() validates motif and mod_context filters", {
     regions <- .make_regions()
 
     expect_error(summarizeRegions(obj, regions, motif = "BAD"),
-                 "Requested motif")
+                 "motif.*not found")
     expect_error(summarizeRegions(obj, regions, mod_context = "6mA_BAD"),
-                 "Requested mod_context")
+                 "mod_context.*not found")
 })
 
 test_that("summarizeRegions() returns a typed 0-row data frame for empty regions", {
@@ -220,4 +220,30 @@ test_that("summarizeRegions() rejects non-integer min_sites", {
     obj <- .make_region_summary_fixture()
     expect_error(summarizeRegions(obj, .make_regions(), min_sites = 1.5),
                  "min_sites")
+})
+
+
+test_that("summarizeRegions() rejects contradictory valid site filters", {
+    obj <- .make_region_summary_fixture()
+    regions <- .make_regions()
+
+    expect_error(
+        summarizeRegions(obj, regions, mod_type = "6mA", motif = "CCWGG"),
+        "motif.*not found"
+    )
+    expect_error(
+        summarizeRegions(obj, regions, mod_type = "6mA", mod_context = "5mC_CCWGG"),
+        "mod_context.*not found"
+    )
+})
+
+test_that("summarizeRegions() requires count evidence in the filtered site set", {
+    obj <- .make_region_summary_fixture()
+    SummarizedExperiment::assay(obj, "mod_counts")[3, ] <- NA_integer_
+    SummarizedExperiment::assay(obj, "coverage")[3, ] <- 0L
+
+    expect_error(
+        summarizeRegions(obj, .make_regions(), mod_context = "5mC_CCWGG"),
+        "after site filtering"
+    )
 })

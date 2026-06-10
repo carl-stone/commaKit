@@ -71,53 +71,30 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
     }
 
     rr <- SummarizedExperiment::rowRanges(object)
-    rd <- SummarizedExperiment::rowData(object)
-    keep <- rep(TRUE, nrow(object))
-
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        keep <- keep & rd$mod_type %in% mod_type
-    }
-    if (!is.null(motif)) {
-        available_motifs <- sort(unique(as.character(rd$motif[!is.na(rd$motif)])))
-        missing_motifs <- setdiff(motif, available_motifs)
-        if (length(missing_motifs) > 0L) {
-            stop(
-                "Requested motif value(s) not found: ",
-                paste(missing_motifs, collapse = ", "), ". Available motifs: ",
-                paste(available_motifs, collapse = ", "), "."
-            )
-        }
-        keep <- keep & rd$motif %in% motif
-    }
-    site_mod_context <- .computeModContext(rd$mod_type, rd$motif)
-    if (!is.null(mod_context)) {
-        available_contexts <- sort(unique(site_mod_context[!is.na(site_mod_context)]))
-        missing_contexts <- setdiff(mod_context, available_contexts)
-        if (length(missing_contexts) > 0L) {
-            stop(
-                "Requested mod_context value(s) not found: ",
-                paste(missing_contexts, collapse = ", "),
-                ". Available mod_contexts: ",
-                paste(available_contexts, collapse = ", "), "."
-            )
-        }
-        keep <- keep & site_mod_context %in% mod_context
-    }
-
-    site_idx <- which(keep)
+    site_idx <- .siteFilterIndex(
+        object,
+        mod_type = mod_type,
+        motif = motif,
+        mod_context = mod_context,
+        caller = "summarizeRegions()"
+    )
     overlaps <- GenomicRanges::findOverlaps(regions, rr[site_idx], ignore.strand = TRUE)
     overlap_region <- S4Vectors::queryHits(overlaps)
     overlap_site <- site_idx[S4Vectors::subjectHits(overlaps)]
 
     mod_counts <- SummarizedExperiment::assay(object, "mod_counts")
     valid_coverage <- SummarizedExperiment::assay(object, "coverage")
-    has_count_evidence <- any(!is.na(mod_counts) & !is.na(valid_coverage) &
-                              valid_coverage > 0)
+    has_count_evidence <- if (length(site_idx) == 0L) {
+        FALSE
+    } else {
+        any(!is.na(mod_counts[site_idx, , drop = FALSE]) &
+            !is.na(valid_coverage[site_idx, , drop = FALSE]) &
+            valid_coverage[site_idx, , drop = FALSE] > 0)
+    }
     if (!has_count_evidence) {
         stop(
-            "summarizeRegions() requires count evidence: assays 'mod_counts' ",
-            "and 'coverage' must contain at least one site/sample with ",
+            "summarizeRegions() requires count evidence after site filtering: ",
+            "selected sites must contain at least one site/sample with ",
             "non-missing modified counts and positive valid coverage."
         )
     }
