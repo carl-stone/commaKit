@@ -195,3 +195,29 @@ test_that("summarizeRegions() ignores strand for coordinate region summaries", {
     expect_equal(first_s1$n_sites, 2L)
     expect_equal(first_s1$total_mod_counts, 6)
 })
+
+test_that("summarizeRegions() reports optional component totals conservatively", {
+    obj <- .make_region_summary_fixture()
+    SummarizedExperiment::assay(obj, "canonical_counts")[2, 1] <- NA_integer_
+    SummarizedExperiment::assay(obj, "other_mod_counts") <- matrix(
+        c(1L, NA, 3L, 4L,
+          2L, 2L, 2L, 2L),
+        nrow = nrow(obj),
+        ncol = ncol(obj),
+        dimnames = dimnames(SummarizedExperiment::assay(obj, "coverage"))
+    )
+
+    out <- summarizeRegions(obj, .make_regions())
+    first_s1 <- out[out$region_id == "region_1" & out$sample_name == "s1", ]
+    first_s2 <- out[out$region_id == "region_1" & out$sample_name == "s2", ]
+
+    expect_true(is.na(first_s1$total_canonical_counts))
+    expect_true(is.na(first_s1$total_other_mod_counts))
+    expect_equal(first_s2$total_other_mod_counts, 6)
+})
+
+test_that("summarizeRegions() rejects non-integer min_sites", {
+    obj <- .make_region_summary_fixture()
+    expect_error(summarizeRegions(obj, .make_regions(), min_sites = 1.5),
+                 "min_sites")
+})

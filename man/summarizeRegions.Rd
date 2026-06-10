@@ -20,18 +20,23 @@ summarizeRegions(
 regions to summarize.}
 
 \item{min_sites}{Integer. Minimum number of overlapping sites with usable
-count evidence required before \code{region_methylation} is reported.
-Regions with fewer usable sites return \code{NA} methylation for that
-sample. Default: \code{1L}.}
+count evidence and positive valid coverage required before
+\code{region_methylation} is reported. Regions with fewer usable sites
+return \code{NA} methylation for that sample. Default: \code{1L}.}
 
 \item{mod_type, motif, mod_context}{Optional site filters. If provided, only
-sites matching these modification annotations are summarized.}
+sites matching these modification annotations are summarized.
+\code{mod_context} values use commaKit's \code{"<mod_type>_<motif>"}
+format, e.g. \code{"6mA_GATC"}. Requested values are validated and
+misspellings are errors.}
 }
 \value{
 A tidy \code{data.frame} with one row per region × sample containing
 region coordinates/metadata, \code{sample_name}, \code{n_sites}, summed
 count evidence, and \code{region_methylation} computed as
-\code{sum(mod_counts) / sum(valid_coverage)}.
+\code{sum(mod_counts) / sum(valid_coverage)}. Regions with no overlaps
+are retained with zero counts and \code{NA} methylation; empty
+\code{regions} input returns a typed 0-row \code{data.frame}.
 }
 \description{
 Aggregates site-level count evidence over user-supplied genomic regions.
