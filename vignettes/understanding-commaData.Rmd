@@ -173,9 +173,11 @@ are added or recomputed. The v1 policy is deliberately small and strong:
   future Seurat-like transformations should be added as explicit assay layers
   with provenance and parent assays, rather than replacing the raw assays.
 - **Filtering returns subset objects.** `filterSites()` and `[` follow
-  Bioconductor subsetting semantics: they return a `commaData` object with the
-  same assay/result layers subset to the requested rows or samples. commaKit
-  does not create hidden lazy views.
+  Bioconductor subsetting semantics: they return a `commaData` object with
+  assay layers subset to the requested rows or samples. Site-level result
+  layers are trimmed for row filters; sample filters keep those site-level
+  results attached to the remaining sites. commaKit does not create hidden lazy
+  views.
 
 ```{r annotation-layer}
 base_cols <- colnames(siteInfo(comma_example_data))
