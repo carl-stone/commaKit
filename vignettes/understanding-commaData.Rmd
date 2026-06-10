@@ -161,7 +161,21 @@ A useful way to learn commaKit is to think in layers:
 - plotting, filtering, and enrichment functions interpret those layers.
 
 The object dimensions stay anchored to the same sites and samples while layers
-are added or recomputed.
+are added or recomputed. The v1 policy is deliberately small and strong:
+
+- **Raw evidence assays are canonical.** `methylation`, `coverage`,
+  `mod_counts`, `canonical_counts`, and `other_mod_counts` store caller or
+  reconstructed evidence. commaKit functions do not mutate these raw assays in
+  place. Users can still edit assays manually with standard
+  `SummarizedExperiment` tools, but package-level transformations should not
+  silently rewrite the raw evidence layer.
+- **Transformations are named layers.** Normalized beta values, M-values, or
+  future Seurat-like transformations should be added as explicit assay layers
+  with provenance and parent assays, rather than replacing the raw assays.
+- **Filtering returns subset objects.** `filterSites()` and `[` follow
+  Bioconductor subsetting semantics: they return a `commaData` object with the
+  same assay/result layers subset to the requested rows or samples. commaKit
+  does not create hidden lazy views.
 
 ```{r annotation-layer}
 base_cols <- colnames(siteInfo(comma_example_data))

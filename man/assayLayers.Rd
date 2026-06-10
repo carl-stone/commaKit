@@ -27,6 +27,21 @@ used by Bioconductor and single-cell workflows: raw layers remain present,
 while derived layers are named explicitly and can be marked as defaults for a
 role without overwriting the raw data.
 }
+\details{
+commaKit's v1 layer policy is intentionally minimal:
+\itemize{
+\item Raw evidence assays such as \code{methylation}, \code{coverage},
+\code{mod_counts}, \code{canonical_counts}, and
+\code{other_mod_counts} are canonical input evidence. Package APIs do
+not mutate them in place, though users may still edit assays manually
+through normal \code{SummarizedExperiment} mechanisms.
+\item Transformations should be stored as explicitly named derived assay
+layers with provenance and parent assays rather than replacing raw
+assays.
+\item Filtering returns a subset \code{commaData} object with all assay
+layers subset to the same rows/samples. There are no hidden lazy views.
+}
+}
 \examples{
 data(comma_example_data)
 assayLayers(comma_example_data)
