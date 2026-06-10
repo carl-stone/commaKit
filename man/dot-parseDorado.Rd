@@ -38,6 +38,8 @@ post-hoc with \code{\link{findMotifSites}} if needed.}
 threshold.}
 \item{\code{canonical_counts}}{Reads not called modified using the ML
 probability threshold.}
+\item{\code{other_mod_counts}}{Always \code{NA}; direct Dorado BAM parsing
+does not decompose non-target modified-read classes.}
 }
 }
 \description{
