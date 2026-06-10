@@ -341,6 +341,7 @@ diffMethyl <- function(
     cov_full     <- siteCoverage(object)
     mod_counts_full <- .optionalAssay(object, "mod_counts")
     canonical_counts_full <- .optionalAssay(object, "canonical_counts")
+    other_mod_counts_full <- .optionalAssay(object, "other_mod_counts")
     rd_full      <- as.data.frame(siteInfo(object))
     n_sites_all  <- nrow(methyl_full)
 
@@ -375,6 +376,11 @@ diffMethyl <- function(
         } else {
             canonical_counts_full[site_idx, , drop = FALSE]
         }
+        other_mod_counts_sub <- if (is.null(other_mod_counts_full)) {
+            NULL
+        } else {
+            other_mod_counts_full[site_idx, , drop = FALSE]
+        }
         site_sub   <- rd_full[site_idx, , drop = FALSE]
 
         # Apply min_coverage: set beta to NA where coverage < threshold
@@ -387,17 +393,20 @@ diffMethyl <- function(
                 .runLimma(methyl_sub, cov_sub, site_sub, cd, formula, alpha = alpha,
                           ref_level = ref_level, design_info = design_info,
                           mod_counts_mat = mod_counts_sub,
-                          canonical_counts_mat = canonical_counts_sub)
+                          canonical_counts_mat = canonical_counts_sub,
+                          other_mod_counts_mat = other_mod_counts_sub)
             } else if (method == "quasi_f") {
                 .runQuasiF(methyl_sub, cov_sub, site_sub, cd, formula,
                            ref_level = ref_level, design_info = design_info,
                            mod_counts_mat = mod_counts_sub,
-                           canonical_counts_mat = canonical_counts_sub)
+                           canonical_counts_mat = canonical_counts_sub,
+                           other_mod_counts_mat = other_mod_counts_sub)
             } else {
                 .runMethylKit(methyl_sub, cov_sub, site_sub, cd, formula,
                               ref_level = ref_level, design_info = design_info,
                               mod_counts_mat = mod_counts_sub,
-                              canonical_counts_mat = canonical_counts_sub)
+                              canonical_counts_mat = canonical_counts_sub,
+                              other_mod_counts_mat = other_mod_counts_sub)
             },
             error = function(e) {
                 warning(

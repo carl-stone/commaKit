@@ -160,7 +160,8 @@ NULL
 
 .resolveCountMatrices <- function(methyl_mat, coverage_mat,
                                   mod_counts_mat = NULL,
-                                  canonical_counts_mat = NULL) {
+                                  canonical_counts_mat = NULL,
+                                  other_mod_counts_mat = NULL) {
     n_mod <- .reconstructModifiedCounts(methyl_mat, coverage_mat)
     n_unmod <- coverage_mat - n_mod
 
@@ -176,6 +177,18 @@ NULL
     if (!is.null(canonical_counts_mat)) {
         observed_canonical <- !is.na(canonical_counts_mat)
         n_unmod[observed_canonical] <- canonical_counts_mat[observed_canonical]
+    }
+
+    if (!is.null(other_mod_counts_mat)) {
+        observed_other <- !is.na(other_mod_counts_mat)
+        add_other <- observed_canonical & observed_other
+        n_unmod[add_other] <- n_unmod[add_other] + other_mod_counts_mat[add_other]
+
+        infer_canonical_from_observed_mod_other <- observed_mod &
+            !observed_canonical & observed_other & !is.na(coverage_mat)
+        n_unmod[infer_canonical_from_observed_mod_other] <-
+            coverage_mat[infer_canonical_from_observed_mod_other] -
+            n_mod[infer_canonical_from_observed_mod_other]
     }
 
     if (!is.null(mod_counts_mat)) {

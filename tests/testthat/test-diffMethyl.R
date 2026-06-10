@@ -173,6 +173,25 @@ test_that("diffMethyl: limma uses observed count assays when present", {
     expect_true(all(is.na(p_legacy) | p_legacy > 0.5))
 })
 
+test_that("diffMethyl count resolver includes other_mod_counts in denominator", {
+    beta <- matrix(0.4, nrow = 1L, ncol = 1L)
+    coverage <- matrix(10L, nrow = 1L, ncol = 1L)
+    mod_counts <- matrix(4L, nrow = 1L, ncol = 1L)
+    canonical_counts <- matrix(3L, nrow = 1L, ncol = 1L)
+    other_mod_counts <- matrix(3L, nrow = 1L, ncol = 1L)
+
+    counts <- commaKit:::.resolveCountMatrices(
+        beta,
+        coverage,
+        mod_counts_mat = mod_counts,
+        canonical_counts_mat = canonical_counts,
+        other_mod_counts_mat = other_mod_counts
+    )
+
+    expect_equal(unname(counts$modified[1, 1]), 4)
+    expect_equal(unname(counts$unmodified[1, 1]), 6)
+})
+
 # ─── mod_type filtering ───────────────────────────────────────────────────────
 
 test_that("diffMethyl: mod_type = '6mA' tests only 6mA sites", {

@@ -22,6 +22,9 @@ A \code{commaData} object with:
 from the simulated beta and coverage values.}
 \item{\code{canonical_counts}}{Integer canonical-read counts
 reconstructed as \code{coverage - mod_counts}.}
+\item{\code{other_mod_counts}}{Not present in this legacy simulated
+dataset; newly constructed modkit objects include this assay when
+\code{Nother_mod} is available.}
 }
 }
 \item{\strong{rowRanges}}{GRanges with 1-bp ranges per site. mcols include
