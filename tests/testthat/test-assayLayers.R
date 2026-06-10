@@ -117,6 +117,33 @@ test_that("commaKit:::.addAssayLayer() protects existing layers unless overwrite
     expect_s4_class(obj2, "commaData")
 })
 
+test_that("filterSites() subsets derived assay layers without mutating raw layers", {
+    obj <- .make_two_modtype_fixture()
+    original_methyl <- methylation(obj)
+    scaled <- methylation(obj) + 0.01
+    obj_layered <- commaKit:::.addAssayLayer(
+        obj,
+        assay_name = "methylation_norm.v1",
+        value = scaled,
+        type = "normalized_beta",
+        source = "test",
+        parent_assays = "methylation",
+        method = "normalize_test"
+    )
+
+    keep <- as.character(SummarizedExperiment::rowData(obj_layered)$mod_type) == "6mA"
+    filtered <- filterSites(obj_layered, mod_type = "6mA")
+
+    expect_equal(methylation(obj_layered), original_methyl)
+    expect_equal(methylation(filtered), original_methyl[keep, , drop = FALSE])
+    expect_equal(
+        SummarizedExperiment::assay(filtered, "methylation_norm.v1"),
+        scaled[keep, , drop = FALSE]
+    )
+    expect_true("methylation_norm.v1" %in% SummarizedExperiment::assayNames(filtered))
+    expect_equal(nrow(filtered), sum(keep))
+})
+
 test_that("commaKit:::.addAssayLayer() validates names, dimensions, and parents", {
     obj <- .make_two_modtype_fixture()
     expect_error(
