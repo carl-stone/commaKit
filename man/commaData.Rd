@@ -22,7 +22,9 @@ Names must match \code{colData$sample_name}. Example:
 \code{c(ctrl_1 = "/path/to/ctrl_1.bed", treat_1 = "/path/to/treat_1.bed")}.}
 
 \item{colData}{A \code{data.frame} with one row per sample. Must contain
-columns \code{sample_name}, \code{condition}, and \code{replicate}.
+columns \code{sample_name} and \code{replicate}. A \code{condition}
+column is optional and is used by design-aware functions such as
+\code{\link{diffMethyl}} when requested in their formula.
 Additional columns (e.g., \code{file_path}, \code{batch}) are preserved.}
 
 \item{genome}{Genome size information: a named integer vector of chromosome

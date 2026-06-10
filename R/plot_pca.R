@@ -21,7 +21,9 @@ NULL
 #'   included.
 #' @param color_by Character string naming a column in \code{sampleInfo(object)}
 #'   to use for point color. When \code{return_data = TRUE}, this column is
-#'   validated and included in the returned data. Default \code{"condition"}.
+#'   validated and included in the returned data. Default \code{"condition"};
+#'   if \code{condition} is absent, the default falls back to
+#'   \code{"sample_name"} so QC-only objects still plot.
 #' @param shape_by Character string naming a column in \code{sampleInfo(object)}
 #'   to use for point shape. If \code{NULL} (default), all points use the same
 #'   shape. When \code{return_data = TRUE}, a non-\code{NULL} column is
@@ -97,6 +99,9 @@ plot_pca <- function(object,
     ## --- Validate color_by / shape_by ---------------------------------------
     si <- sampleInfo(object)
     si_cols <- colnames(si)
+    if (identical(color_by, "condition") && !"condition" %in% si_cols) {
+        color_by <- "sample_name"
+    }
     if (!is.character(color_by) || length(color_by) != 1L ||
         is.na(color_by) || !nzchar(color_by)) {
         stop("'color_by' must be a single non-empty character string naming ",

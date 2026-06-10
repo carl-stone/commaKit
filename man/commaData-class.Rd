@@ -62,7 +62,9 @@ For convenience, \code{\link{siteInfo}(object)} returns a flat
 strand) with the mcols columns.
 
 Per-sample metadata is in \code{colData(object)} and includes at minimum:
-\code{sample_name}, \code{condition}, \code{replicate}.
+\code{sample_name} and \code{replicate}. A \code{condition} column is
+optional container metadata; functions that need a grouping/design variable
+(such as \code{\link{diffMethyl}}) validate that requirement locally.
 
 The methylation caller and minimum coverage threshold are stored in
 \code{metadata(object)} and accessible via \code{\link{caller}(object)}

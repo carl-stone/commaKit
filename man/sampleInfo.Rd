@@ -14,8 +14,8 @@ sampleInfo(object)
 }
 \value{
 A \code{data.frame} with one row per sample. Always contains columns
-\code{sample_name}, \code{condition}, and \code{replicate}. May contain
-additional columns such as \code{caller} and \code{file_path}.
+\code{sample_name} and \code{replicate}. May contain optional columns such
+as \code{condition}, \code{caller}, and \code{file_path}.
 }
 \description{
 Returns the per-sample metadata table from a \code{\link{commaData}} object.

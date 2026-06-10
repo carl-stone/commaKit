@@ -36,6 +36,16 @@ test_that("methylomeSummary: condition column populated from sampleInfo", {
     }
 })
 
+test_that("methylomeSummary: missing optional condition returns NA condition", {
+    data(comma_example_data)
+    obj <- comma_example_data
+    SummarizedExperiment::colData(obj)$condition <- NULL
+
+    result <- methylomeSummary(obj)
+    expect_true("condition" %in% colnames(result))
+    expect_true(all(is.na(result$condition)))
+})
+
 test_that("methylomeSummary: mod_type='all' when not filtered", {
     data(comma_example_data)
     result <- methylomeSummary(comma_example_data)

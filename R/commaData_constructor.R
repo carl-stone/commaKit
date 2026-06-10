@@ -17,7 +17,9 @@ NULL
 #'   Names must match \code{colData$sample_name}. Example:
 #'   \code{c(ctrl_1 = "/path/to/ctrl_1.bed", treat_1 = "/path/to/treat_1.bed")}.
 #' @param colData A \code{data.frame} with one row per sample. Must contain
-#'   columns \code{sample_name}, \code{condition}, and \code{replicate}.
+#'   columns \code{sample_name} and \code{replicate}. A \code{condition}
+#'   column is optional and is used by design-aware functions such as
+#'   \code{\link{diffMethyl}} when requested in their formula.
 #'   Additional columns (e.g., \code{file_path}, \code{batch}) are preserved.
 #' @param genome Genome size information: a named integer vector of chromosome
 #'   sizes (e.g., \code{c(NC_000913 = 4641652L)}), a path to a FASTA file, a
@@ -165,7 +167,7 @@ commaData <- function(files,
     if (!is.data.frame(colData)) {
         stop("colData must be a data.frame")
     }
-    required_cd_cols <- c("sample_name", "condition", "replicate")
+    required_cd_cols <- c("sample_name", "replicate")
     missing_cd <- setdiff(required_cd_cols, colnames(colData))
     if (length(missing_cd) > 0) {
         stop(

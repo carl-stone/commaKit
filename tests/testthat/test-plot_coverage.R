@@ -43,6 +43,18 @@ test_that("plot_coverage: maps exact coverage depths to x aesthetic with correct
     expect_equal(sort(p$data$depth), sort(as.vector(cov_mat)))
 })
 
+test_that("plot_coverage: works without optional condition metadata", {
+    obj <- .make_cov_data()
+    SummarizedExperiment::colData(obj)$condition <- NULL
+
+    expect_no_error(validObject(obj))
+    p <- plot_coverage(obj)
+
+    expect_s3_class(p, "ggplot")
+    expect_true("sample_name" %in% colnames(p$data))
+    expect_false("condition" %in% colnames(p$data))
+})
+
 test_that("plot_coverage: mod_type filter to 6mA produces identical data (all sites are 6mA)", {
     obj <- .make_cov_data()
     p_all <- plot_coverage(obj)

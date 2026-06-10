@@ -87,8 +87,10 @@ plot_coverage <- function(object,
         stop("No non-NA coverage values found after filtering.")
     }
 
-    ## Join condition from sampleInfo
-    si_sub <- si[, c("sample_name", "condition"), drop = FALSE]
+    ## Join optional condition from sampleInfo when present. condition is not a
+    ## commaData invariant; QC plots must still work for import/QC-only objects.
+    si_cols <- intersect(c("sample_name", "condition"), colnames(si))
+    si_sub <- si[, si_cols, drop = FALSE]
     df <- merge(df, si_sub, by = "sample_name", all.x = TRUE)
 
     ## Compute median coverage per sample for vlines

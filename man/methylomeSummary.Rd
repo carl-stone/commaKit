@@ -28,7 +28,8 @@ A \code{data.frame} with one row per sample, containing:
 \describe{
 \item{\code{sample_name}}{Sample identifier.}
 \item{\code{condition}}{Experimental condition, from
-the \code{condition} column in \code{sampleInfo(object)}.}
+the optional \code{condition} column in \code{sampleInfo(object)}, or
+\code{NA} when that metadata is absent.}
 \item{\code{mod_type}}{The modification type summarized
 (\code{"all"} if \code{mod_type = NULL}).}
 \item{\code{n_sites}}{Total number of sites considered after filters.}

@@ -132,10 +132,20 @@ test_that("sampleInfo() has one row per sample", {
     expect_equal(nrow(sampleInfo(obj)), ncol(obj))
 })
 
-test_that("sampleInfo() contains required columns", {
+test_that("sampleInfo() contains required and optional fixture columns", {
     obj <- .make_two_modtype()
     si <- sampleInfo(obj)
     expect_true(all(c("sample_name", "condition", "replicate") %in% colnames(si)))
+})
+
+test_that("filterSites() errors clearly when filtering by absent condition", {
+    obj <- .make_two_modtype()
+    SummarizedExperiment::colData(obj)$condition <- NULL
+
+    expect_error(
+        filterSites(obj, condition = "control"),
+        "has no condition column"
+    )
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
