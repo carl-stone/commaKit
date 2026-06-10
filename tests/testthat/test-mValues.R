@@ -87,6 +87,21 @@ test_that("mValues: observed count assays override beta-derived counts", {
     expect_equal(unname(m[1, 1]), log2((9 + 0.5) / (1 + 0.5)))
 })
 
+test_that("mValues: other_mod_counts contribute to non-target denominator", {
+    obj <- .make_mval_data(n_sites = 1L, n_samples = 1L, cov_val = 10L)
+    SummarizedExperiment::assay(obj, "methylation")[1, 1] <- 0.1
+    SummarizedExperiment::assay(obj, "mod_counts") <-
+        matrix(4L, nrow = 1L, ncol = 1L, dimnames = dimnames(methylation(obj)))
+    SummarizedExperiment::assay(obj, "canonical_counts") <-
+        matrix(3L, nrow = 1L, ncol = 1L, dimnames = dimnames(methylation(obj)))
+    SummarizedExperiment::assay(obj, "other_mod_counts") <-
+        matrix(3L, nrow = 1L, ncol = 1L, dimnames = dimnames(methylation(obj)))
+
+    m <- mValues(obj, alpha = 0.5)
+
+    expect_equal(unname(m[1, 1]), log2((4 + 0.5) / (6 + 0.5)))
+})
+
 test_that("mValues: M-value at beta=0.5 is near zero", {
     obj <- .make_mval_data(n_sites = 1L, n_samples = 1L, cov_val = 100L)
     SummarizedExperiment::assay(obj, "methylation")[1, 1] <- 0.5

@@ -105,9 +105,10 @@ strand) plus modification type and motif context.
 \code{findOverlaps()} for alignment.
 \item Beta values and coverage are arranged into sites \eqn{\times} samples
 matrices, with \code{NA} for samples that do not cover a given site.
-\item Observed modified and canonical read counts are preserved as
-\code{mod_counts} and \code{canonical_counts} assays when reported by
-the caller; probability-only callers store \code{NA} in those assays.
+\item Observed modified, canonical, and non-target modified read counts
+are preserved as \code{mod_counts}, \code{canonical_counts}, and
+\code{other_mod_counts} assays when reported by the caller;
+probability-only callers store \code{NA} in those assays.
 \item Assay-layer provenance and default roles are recorded in
 \code{metadata(object)$assay_provenance} and
 \code{metadata(object)$assay_defaults}.

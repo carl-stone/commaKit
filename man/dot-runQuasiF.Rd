@@ -13,7 +13,8 @@
   ref_level = NULL,
   design_info = NULL,
   mod_counts_mat = NULL,
-  canonical_counts_mat = NULL
+  canonical_counts_mat = NULL,
+  other_mod_counts_mat = NULL
 )
 }
 \arguments{
@@ -28,6 +29,10 @@ beta values.}
 
 \item{canonical_counts_mat}{Optional integer matrix of observed
 canonical-read counts.}
+
+\item{other_mod_counts_mat}{Optional integer matrix of observed non-target
+modified-read counts. When present with \code{canonical_counts_mat}, these
+counts are included in the non-target denominator so it matches coverage.}
 
 \item{site_df}{Data frame with columns \code{chrom}, \code{position},
 \code{strand}, \code{mod_type}, \code{motif} — one row per site.}

@@ -56,6 +56,9 @@ NULL
 #'   beta values.
 #' @param canonical_counts_mat Optional integer matrix of observed
 #'   canonical-read counts.
+#' @param other_mod_counts_mat Optional integer matrix of observed non-target
+#'   modified-read counts. When present with \code{canonical_counts_mat}, these
+#'   counts are included in the non-target denominator so it matches coverage.
 #' @param site_df Data frame with columns \code{chrom}, \code{position},
 #'   \code{strand}, \code{mod_type}, \code{motif} — one row per site.
 #' @param coldata \code{data.frame} with at least one column matching the
@@ -77,7 +80,8 @@ NULL
 #' @keywords internal
 .runQuasiF <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
                        ref_level = NULL, design_info = NULL,
-                       mod_counts_mat = NULL, canonical_counts_mat = NULL) {
+                       mod_counts_mat = NULL, canonical_counts_mat = NULL,
+                       other_mod_counts_mat = NULL) {
     # ── Dependency check ──────────────────────────────────────────────────────
     if (!requireNamespace("limma", quietly = TRUE)) {
         stop(
@@ -106,7 +110,8 @@ NULL
         methyl_mat,
         coverage_mat,
         mod_counts_mat = mod_counts_mat,
-        canonical_counts_mat = canonical_counts_mat
+        canonical_counts_mat = canonical_counts_mat,
+        other_mod_counts_mat = other_mod_counts_mat
     )
 
     # ── Pass 1: per-site GLM — collect dispersion and unscaled t ─────────────

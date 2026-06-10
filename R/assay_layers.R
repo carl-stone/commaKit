@@ -8,21 +8,24 @@ NULL
     methylation = "methylation",
     coverage = "coverage",
     mod_counts = "mod_counts",
-    canonical_counts = "canonical_counts"
+    canonical_counts = "canonical_counts",
+    other_mod_counts = "other_mod_counts"
 )
 
 .ASSAY_LAYER_DEFAULT_TYPES <- c(
     methylation = "filtered_beta",
     coverage = "observed_total_coverage",
     mod_counts = "observed_counts",
-    canonical_counts = "observed_counts"
+    canonical_counts = "observed_counts",
+    other_mod_counts = "observed_counts"
 )
 
 .ASSAY_LAYER_DEFAULT_SOURCES <- c(
     methylation = "unknown",
     coverage = "unknown",
     mod_counts = "unknown",
-    canonical_counts = "unknown"
+    canonical_counts = "unknown",
+    other_mod_counts = "unknown"
 )
 
 .validateAssayLayerName <- function(assay_name) {

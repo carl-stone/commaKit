@@ -90,7 +90,8 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
         beta_mat,
         cov_mat,
         mod_counts_mat = .optionalAssay(object, "mod_counts"),
-        canonical_counts_mat = .optionalAssay(object, "canonical_counts")
+        canonical_counts_mat = .optionalAssay(object, "canonical_counts"),
+        other_mod_counts_mat = .optionalAssay(object, "other_mod_counts")
     )
 
     ## Clamp to the physically possible range so malformed/manual objects cannot

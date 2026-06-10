@@ -30,5 +30,5 @@ dim(canonical)
 }
 \seealso{
 \code{\link{modCounts}}, \code{\link{siteCoverage}},
-\code{\link{methylation}}
+\code{\link{otherModCounts}}, \code{\link{methylation}}
 }

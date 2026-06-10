@@ -29,6 +29,6 @@ dim(mod)
 
 }
 \seealso{
-\code{\link{canonicalCounts}}, \code{\link{siteCoverage}},
-\code{\link{methylation}}
+\code{\link{canonicalCounts}}, \code{\link{otherModCounts}},
+\code{\link{siteCoverage}}, \code{\link{methylation}}
 }
