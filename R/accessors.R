@@ -158,13 +158,6 @@ setMethod("canonicalCounts", "commaData", function(object) {
 #' @seealso \code{\link{modCounts}}, \code{\link{canonicalCounts}},
 #'   \code{\link{siteCoverage}}, \code{\link{methylation}}
 #'
-#' @examples
-#' data(comma_example_data)
-#' if ("other_mod_counts" %in% SummarizedExperiment::assayNames(comma_example_data)) {
-#'   other <- otherModCounts(comma_example_data)
-#'   dim(other)
-#' }
-#'
 #' @export
 setGeneric("otherModCounts", function(object) standardGeneric("otherModCounts"))
 

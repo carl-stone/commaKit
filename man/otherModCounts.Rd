@@ -24,14 +24,6 @@ non-target modification at the same site. For modkit pileup this is the
 cannot provide this decomposition, values may be \code{NA}; consult
 \code{\link{assayProvenance}} for source details.
 }
-\examples{
-data(comma_example_data)
-if ("other_mod_counts" %in% SummarizedExperiment::assayNames(comma_example_data)) {
-  other <- otherModCounts(comma_example_data)
-  dim(other)
-}
-
-}
 \seealso{
 \code{\link{modCounts}}, \code{\link{canonicalCounts}},
 \code{\link{siteCoverage}}, \code{\link{methylation}}

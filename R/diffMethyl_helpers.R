@@ -1,3 +1,4 @@
+#' @importFrom stats terms
 NULL
 
 # ─── diffMethyl design helpers ────────────────────────────────────────────────
