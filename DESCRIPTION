@@ -78,6 +78,7 @@ Collate:
     'quasi_f.R'
     'results_methods.R'
     'sliding_window.R'
+    'summarizeRegions.R'
     'writeBED.R'
 Depends:
     R (>= 4.3.0)
