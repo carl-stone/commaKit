@@ -8,13 +8,14 @@ test_that("assayLayers() lists core assays and inferred defaults", {
                       "default_for", "parent_assays", "method") %in%
                         colnames(layers)))
     expect_true(all(c("methylation", "coverage", "mod_counts",
-                      "canonical_counts") %in% layers$assay))
+                      "canonical_counts", "other_mod_counts") %in% layers$assay))
     expect_true(layers$is_default[layers$assay == "methylation"])
     expect_equal(
         as.character(layers$default_for[layers$assay == "methylation"][[1L]]),
         "methylation"
     )
     expect_equal(layers$type[layers$assay == "mod_counts"], "reconstructed_counts")
+    expect_equal(layers$type[layers$assay == "other_mod_counts"], "observed_counts")
 })
 
 test_that("assayLayers() infers registry rows for legacy objects", {

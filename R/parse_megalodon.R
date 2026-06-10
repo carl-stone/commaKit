@@ -34,9 +34,9 @@ NULL
 #' @return A \code{data.frame} with columns: \code{chrom}, \code{position}
 #'   (1-based), \code{strand}, \code{mod_type}, \code{motif} (always
 #'   \code{NA} — Megalodon files do not encode motif context), \code{beta},
-#'   \code{coverage}, \code{mod_counts}, and \code{canonical_counts}. Count
-#'   columns are \code{NA} because this parser aggregates probabilities rather
-#'   than observed calls.
+#'   \code{coverage}, \code{mod_counts}, \code{canonical_counts}, and
+#'   \code{other_mod_counts}. Count columns are \code{NA} because this parser
+#'   aggregates probabilities rather than observed calls.
 #'
 #' @keywords internal
 .parseMegalodon <- function(file, sample_name, mod_type = NULL, min_coverage = 5L) {
@@ -124,6 +124,7 @@ NULL
         coverage = agg_cov$mod_prob,
         mod_counts = NA_integer_,
         canonical_counts = NA_integer_,
+        other_mod_counts = NA_integer_,
         stringsAsFactors = FALSE
     )
 

@@ -51,6 +51,10 @@ NULL
 #'     \item{\code{coverage}}{Total read depth at this site (integer).}
 #'     \item{\code{mod_counts}}{Observed reads called as this modification.}
 #'     \item{\code{canonical_counts}}{Observed reads called canonical/unmodified.}
+#'     \item{\code{other_mod_counts}}{Observed reads called as a non-target
+#'       modification. Together, \code{mod_counts + canonical_counts +
+#'       other_mod_counts} is the modkit \code{Nvalid_cov} denominator used for
+#'       \code{coverage}.}
 #'   }
 #'
 #' @keywords internal
@@ -148,6 +152,7 @@ NULL
         coverage = raw$Nvalid_cov,
         mod_counts = as.integer(raw$Nmod),
         canonical_counts = as.integer(raw$Ncanonical),
+        other_mod_counts = as.integer(raw$Nother_mod),
         stringsAsFactors = FALSE
     )
 }
@@ -155,8 +160,8 @@ NULL
 #' Empty parser result (zero-row data frame with shared parse schema)
 #' @return A zero-row \code{data.frame} with columns \code{chrom},
 #'   \code{position}, \code{strand}, \code{mod_type}, \code{motif},
-#'   \code{beta}, \code{coverage}, \code{mod_counts}, and
-#'   \code{canonical_counts}.
+#'   \code{beta}, \code{coverage}, \code{mod_counts},
+#'   \code{canonical_counts}, and \code{other_mod_counts}.
 #' @keywords internal
 .emptyParseResult <- function() {
     data.frame(
@@ -169,6 +174,7 @@ NULL
         coverage = integer(0),
         mod_counts = integer(0),
         canonical_counts = integer(0),
+        other_mod_counts = integer(0),
         stringsAsFactors = FALSE
     )
 }

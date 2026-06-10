@@ -4,7 +4,8 @@
                                     seqlength = 100000L, strand = "+",
                                     site_metadata = NULL,
                                     mod_counts = NULL,
-                                    canonical_counts = NULL) {
+                                    canonical_counts = NULL,
+                                    other_mod_counts = NULL) {
     stopifnot(is.matrix(beta))
 
     n_sites <- nrow(beta)
@@ -37,6 +38,15 @@
     canonical_counts <- pmax(0L, as.integer(canonical_counts))
     dim(canonical_counts) <- dim(beta)
     dimnames(canonical_counts) <- dimnames(beta)
+
+    if (is.null(other_mod_counts)) {
+        other_mod_counts <- matrix(0L, nrow = n_sites, ncol = ncol(beta),
+                                   dimnames = dimnames(beta))
+    }
+    other_mod_counts[is.na(other_mod_counts)] <- NA_integer_
+    other_mod_counts <- pmax(0L, as.integer(other_mod_counts))
+    dim(other_mod_counts) <- dim(beta)
+    dimnames(other_mod_counts) <- dimnames(beta)
 
     if (is.null(positions)) {
         positions <- seq_len(n_sites) * 1000L
@@ -86,7 +96,8 @@
             methylation = beta,
             coverage = coverage,
             mod_counts = mod_counts,
-            canonical_counts = canonical_counts
+            canonical_counts = canonical_counts,
+            other_mod_counts = other_mod_counts
         ),
         rowRanges = site_gr,
         colData = cd
@@ -96,7 +107,8 @@
         methylation = "methylation",
         coverage = "coverage",
         mod_counts = "mod_counts",
-        canonical_counts = "canonical_counts"
+        canonical_counts = "canonical_counts",
+        other_mod_counts = "other_mod_counts"
     )
     S4Vectors::metadata(obj)$assay_provenance <- list(
         methylation = commaKit:::.makeAssayLayerRecord(
@@ -129,6 +141,14 @@
             parent_assays = c("coverage", "mod_counts"),
             method = "coverage_minus_mod_counts",
             default_for = "canonical_counts"
+        ),
+        other_mod_counts = commaKit:::.makeAssayLayerRecord(
+            type = "observed_counts",
+            source = "test_fixture",
+            role = "other_mod_counts",
+            parent_assays = "coverage",
+            method = "test_fixture_zero_other_mod_counts",
+            default_for = "other_mod_counts"
         )
     )
     obj

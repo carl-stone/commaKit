@@ -37,6 +37,10 @@ methylated, range 0-1). Sites with coverage below the
 modification, when available from the caller.}
 \item{\code{"canonical_counts"}}{Observed reads called canonical or
 unmodified, when available from the caller.}
+\item{\code{"other_mod_counts"}}{Observed reads called as non-target
+modifications, when available from the caller. For modkit pileup,
+\code{coverage} is the valid denominator
+\code{mod_counts + canonical_counts + other_mod_counts}.}
 }
 
 Genomic positions are stored in

@@ -35,5 +35,5 @@ assayLayers(comma_example_data)
 \seealso{
 \code{\link{assayProvenance}}, \code{\link{methylation}},
 \code{\link{siteCoverage}}, \code{\link{modCounts}},
-\code{\link{canonicalCounts}}
+\code{\link{canonicalCounts}}, \code{\link{otherModCounts}}
 }

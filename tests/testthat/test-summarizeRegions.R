@@ -73,6 +73,19 @@ test_that("summarizeRegions() aggregates count evidence by region and sample", {
     expect_equal(first_b$region_region_label, "first")
 })
 
+test_that("summarizeRegions() uses count assays rather than averaging beta", {
+    obj <- .make_region_summary_fixture()
+    regions <- .make_regions()
+    SummarizedExperiment::assay(obj, "methylation")[] <- 0.99
+
+    out <- summarizeRegions(obj, regions)
+
+    first_a <- out[out$region_id == "region_1" & out$sample_name == "s1", ]
+    expect_equal(first_a$total_mod_counts, 6)
+    expect_equal(first_a$total_valid_coverage, 20)
+    expect_equal(first_a$region_methylation, 6 / 20)
+})
+
 test_that("summarizeRegions() applies min_sites and keeps empty regions", {
     obj <- .make_region_summary_fixture()
     regions <- .make_regions()

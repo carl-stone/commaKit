@@ -59,6 +59,8 @@ NULL
 #'       threshold.}
 #'     \item{\code{canonical_counts}}{Reads not called modified using the ML
 #'       probability threshold.}
+#'     \item{\code{other_mod_counts}}{Always \code{NA}; direct Dorado BAM
+#'       parsing does not decompose non-target modified-read classes.}
 #'   }
 #'
 #' @keywords internal
@@ -196,6 +198,7 @@ NULL
         coverage = as.integer(agg_df$coverage),
         mod_counts = as.integer(agg_df$n_mod),
         canonical_counts = as.integer(agg_df$coverage - agg_df$n_mod),
+        other_mod_counts = NA_integer_,
         stringsAsFactors = FALSE,
         row.names = NULL
     )

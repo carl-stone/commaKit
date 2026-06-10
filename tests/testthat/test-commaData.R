@@ -32,6 +32,22 @@ library(GenomicRanges)
     )
 }
 
+.write_constructor_modkit <- function(file = tempfile(fileext = ".bed")) {
+    rows <- data.frame(
+        chrom = "chr_sim", start = c(99L, 199L), end = c(100L, 200L),
+        mod_code = c("a,GATC,1", "a,GATC,1"), score = c(20L, 20L),
+        strand = "+", thickStart = c(99L, 199L), thickEnd = c(100L, 200L),
+        itemRgb = "255,0,0", Nvalid_cov = c(20L, 20L),
+        fraction_modified = c(50, 25), Nmod = c(10L, 5L),
+        Ncanonical = c(7L, 14L), Nother_mod = c(3L, 1L),
+        Ndelete = 0L, Nfail = 0L, Ndiff = 0L, Nnocall = 0L,
+        stringsAsFactors = FALSE
+    )
+    write.table(rows, file = file, sep = "\t", quote = FALSE,
+                row.names = FALSE, col.names = FALSE)
+    file
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Class instantiation and validity
 # ─────────────────────────────────────────────────────────────────────────────
@@ -41,6 +57,31 @@ test_that("minimal commaData object is valid", {
     expect_true(is(obj, "commaData"))
     expect_true(is(obj, "RangedSummarizedExperiment"))
     expect_no_error(validObject(obj))
+})
+
+test_that("commaData() preserves modkit canonical count assays and provenance", {
+    bed_file <- .write_constructor_modkit()
+    obj <- suppressMessages(commaData(
+        files = c(s1 = bed_file),
+        colData = data.frame(sample_name = "s1", replicate = 1L),
+        genome = c(chr_sim = 1000L),
+        caller = "modkit",
+        min_coverage = 1L
+    ))
+
+    expect_equal(as.integer(modCounts(obj)[, "s1"]), c(10L, 5L))
+    expect_equal(as.integer(canonicalCounts(obj)[, "s1"]), c(7L, 14L))
+    expect_equal(as.integer(otherModCounts(obj)[, "s1"]), c(3L, 1L))
+    expect_equal(
+        as.integer(modCounts(obj) + canonicalCounts(obj) + otherModCounts(obj)),
+        as.integer(siteCoverage(obj))
+    )
+
+    provenance <- assayProvenance(obj)
+    expect_equal(provenance$mod_counts$type, "observed_counts")
+    expect_equal(provenance$canonical_counts$type, "observed_counts")
+    expect_equal(provenance$other_mod_counts$type, "observed_counts")
+    expect_equal(provenance$coverage$type, "observed_total_coverage")
 })
 
 test_that("assay matrices have no rownames", {
@@ -96,6 +137,16 @@ test_that("validity allows missing optional condition metadata", {
     obj <- .make_minimal_commaData()
     colData(obj)$condition <- NULL
     expect_no_error(validObject(obj))
+})
+
+test_that("validity rejects count components exceeding coverage denominator", {
+    obj <- .make_minimal_commaData(n_sites = 1L, n_samples = 1L)
+    SummarizedExperiment::assay(obj, "coverage")[1, 1] <- 10L
+    SummarizedExperiment::assay(obj, "mod_counts")[1, 1] <- 5L
+    SummarizedExperiment::assay(obj, "canonical_counts")[1, 1] <- 5L
+    SummarizedExperiment::assay(obj, "other_mod_counts")[1, 1] <- 1L
+
+    expect_error(validObject(obj), regexp = "other_mod_counts")
 })
 
 test_that("validity rejects missing required colData columns", {

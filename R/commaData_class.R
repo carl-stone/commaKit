@@ -43,6 +43,10 @@ NULL
 #'     modification, when available from the caller.}
 #'   \item{\code{"canonical_counts"}}{Observed reads called canonical or
 #'     unmodified, when available from the caller.}
+#'   \item{\code{"other_mod_counts"}}{Observed reads called as non-target
+#'     modifications, when available from the caller. For modkit pileup,
+#'     \code{coverage} is the valid denominator
+#'     \code{mod_counts + canonical_counts + other_mod_counts}.}
 #' }
 #'
 #' Genomic positions are stored in
@@ -208,7 +212,7 @@ setValidity("commaData", function(object) {
             }
         }
     }
-    for (assay_name in c("mod_counts", "canonical_counts")) {
+    for (assay_name in c("mod_counts", "canonical_counts", "other_mod_counts")) {
         if (assay_name %in% assayNames(object)) {
             counts <- SummarizedExperiment::assay(object, assay_name)
             count_vals <- counts[!is.na(counts)]
@@ -228,11 +232,18 @@ setValidity("commaData", function(object) {
         mod_counts <- SummarizedExperiment::assay(object, "mod_counts")
         canonical_counts <- SummarizedExperiment::assay(object, "canonical_counts")
         cov <- SummarizedExperiment::assay(object, "coverage")
+        other_mod_counts <- if ("other_mod_counts" %in% assayNames(object)) {
+            SummarizedExperiment::assay(object, "other_mod_counts")
+        } else {
+            matrix(0L, nrow = nrow(object), ncol = ncol(object), dimnames = dimnames(cov))
+        }
+        other_for_sum <- other_mod_counts
+        other_for_sum[is.na(other_for_sum)] <- 0L
         comparable <- !is.na(mod_counts) & !is.na(canonical_counts) & !is.na(cov)
-        too_large <- comparable & (mod_counts + canonical_counts > cov)
+        too_large <- comparable & (mod_counts + canonical_counts + other_for_sum > cov)
         if (any(too_large)) {
             errors <- c(errors,
-                "assays 'mod_counts' + 'canonical_counts' must be <= assay 'coverage'"
+                "assays 'mod_counts' + 'canonical_counts' + 'other_mod_counts' must be <= assay 'coverage'"
             )
         }
     }

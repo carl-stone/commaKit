@@ -26,14 +26,15 @@ library(testthat)
 # mod_code uses compound "code,motif,position" format (e.g. "a,GATC,1")
 # fraction_modified is a percentage (0-100)
 .modkit_row <- function(chrom = "chr1", start = 99L, mod_code = "a,GATC,1",
-                         strand = "+", cov = 20L, mod_freq = 0.9) {
+                         strand = "+", cov = 20L, mod_freq = 0.9,
+                         other_mod = 0L) {
     n_mod <- as.integer(round(mod_freq * cov))
-    n_can <- cov - n_mod
+    n_can <- cov - n_mod - as.integer(other_mod)
     data.frame(chrom, start, start + 1L, mod_code, cov, strand,
                start, start + 1L, "255,0,0",
                cov, mod_freq * 100,
                n_mod, n_can,
-               0L, 0L, 0L, 0L, 0L,
+               as.integer(other_mod), 0L, 0L, 0L, 0L,
                stringsAsFactors = FALSE)
 }
 
@@ -45,7 +46,8 @@ test_that(".parseModkit() returns correct columns", {
     f <- .write_tmp_modkit(.modkit_row())
     result <- commaKit:::.parseModkit(f, "s1")
     expect_named(result, c("chrom", "position", "strand", "mod_type", "motif",
-                           "beta", "coverage", "mod_counts", "canonical_counts"))
+                           "beta", "coverage", "mod_counts", "canonical_counts",
+                           "other_mod_counts"))
 })
 
 test_that(".parseModkit() extracts motif from compound mod_code 'a,GATC,1'", {
@@ -103,10 +105,13 @@ test_that(".parseModkit() preserves coverage correctly", {
 })
 
 test_that(".parseModkit() preserves observed count columns", {
-    f <- .write_tmp_modkit(.modkit_row(cov = 20L, mod_freq = 0.75))
+    f <- .write_tmp_modkit(.modkit_row(cov = 20L, mod_freq = 0.75, other_mod = 2L))
     result <- commaKit:::.parseModkit(f, "s1")
     expect_equal(result$mod_counts, 15L)
-    expect_equal(result$canonical_counts, 5L)
+    expect_equal(result$canonical_counts, 3L)
+    expect_equal(result$other_mod_counts, 2L)
+    expect_equal(result$mod_counts + result$canonical_counts + result$other_mod_counts,
+                 result$coverage)
 })
 
 test_that(".parseModkit() parses multiple mod types correctly", {
@@ -204,7 +209,8 @@ test_that(".parseModkit() returns empty data frame for empty file", {
     )
     expect_equal(nrow(result), 0L)
     expect_named(result, c("chrom", "position", "strand", "mod_type", "motif",
-                           "beta", "coverage", "mod_counts", "canonical_counts"))
+                           "beta", "coverage", "mod_counts", "canonical_counts",
+                           "other_mod_counts"))
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -221,4 +227,3 @@ test_that(".parseModkit() parses the bundled example file without error", {
     expect_true(all(result$beta >= 0 & result$beta <= 1))
     expect_true(all(result$coverage > 0))
 })
-

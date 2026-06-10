@@ -118,7 +118,7 @@ setMethod("modCounts", "commaData", function(object) {
 #'   columns corresponding to samples.
 #'
 #' @seealso \code{\link{modCounts}}, \code{\link{siteCoverage}},
-#'   \code{\link{methylation}}
+#'   \code{\link{otherModCounts}}, \code{\link{methylation}}
 #'
 #' @examples
 #' data(comma_example_data)
@@ -139,6 +139,46 @@ setMethod("canonicalCounts", "commaData", function(object) {
     assay(object, "canonical_counts")
 })
 
+# ─── otherModCounts() ────────────────────────────────────────────────────────
+
+#' Accessor for observed non-target modified-read counts
+#'
+#' Retrieves the sites × samples matrix of observed reads called as a
+#' non-target modification at the same site. For modkit pileup this is the
+#' \code{Nother_mod} column, and \code{coverage} is the denominator
+#' \code{mod_counts + canonical_counts + other_mod_counts}. For callers that
+#' cannot provide this decomposition, values may be \code{NA}; consult
+#' \code{\link{assayProvenance}} for source details.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return An integer matrix with rows corresponding to methylation sites and
+#'   columns corresponding to samples.
+#'
+#' @seealso \code{\link{modCounts}}, \code{\link{canonicalCounts}},
+#'   \code{\link{siteCoverage}}, \code{\link{methylation}}
+#'
+#' @examples
+#' data(comma_example_data)
+#' if ("other_mod_counts" %in% SummarizedExperiment::assayNames(comma_example_data)) {
+#'   other <- otherModCounts(comma_example_data)
+#'   dim(other)
+#' }
+#'
+#' @export
+setGeneric("otherModCounts", function(object) standardGeneric("otherModCounts"))
+
+#' @rdname otherModCounts
+setMethod("otherModCounts", "commaData", function(object) {
+    if (!"other_mod_counts" %in% assayNames(object)) {
+        stop(
+            "assay 'other_mod_counts' not found. This object may have been ",
+            "created before non-target modified count assays were added."
+        )
+    }
+    assay(object, "other_mod_counts")
+})
+
 # ─── assayProvenance() ───────────────────────────────────────────────────────
 
 #' Accessor for assay provenance metadata
@@ -152,7 +192,8 @@ setMethod("canonicalCounts", "commaData", function(object) {
 #' @return A named \code{list}. Returns an empty list for legacy objects without
 #'   assay provenance metadata.
 #'
-#' @seealso \code{\link{assayLayers}}, \code{\link{modCounts}}, \code{\link{canonicalCounts}},
+#' @seealso \code{\link{assayLayers}}, \code{\link{modCounts}},
+#'   \code{\link{canonicalCounts}}, \code{\link{otherModCounts}},
 #'   \code{\link{methylation}}
 #'
 #' @examples

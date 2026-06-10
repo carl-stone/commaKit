@@ -86,9 +86,10 @@ NULL
 #'     \code{findOverlaps()} for alignment.
 #'   \item Beta values and coverage are arranged into sites \eqn{\times} samples
 #'     matrices, with \code{NA} for samples that do not cover a given site.
-#'   \item Observed modified and canonical read counts are preserved as
-#'     \code{mod_counts} and \code{canonical_counts} assays when reported by
-#'     the caller; probability-only callers store \code{NA} in those assays.
+#'   \item Observed modified, canonical, and non-target modified read counts
+#'     are preserved as \code{mod_counts}, \code{canonical_counts}, and
+#'     \code{other_mod_counts} assays when reported by the caller;
+#'     probability-only callers store \code{NA} in those assays.
 #'   \item Assay-layer provenance and default roles are recorded in
 #'     \code{metadata(object)$assay_provenance} and
 #'     \code{metadata(object)$assay_defaults}.
@@ -302,6 +303,8 @@ commaData <- function(files,
                              dimnames = list(NULL, sample_names))
     canonical_counts_mat <- matrix(NA_integer_, nrow = n_sites, ncol = n_samples,
                                    dimnames = list(NULL, sample_names))
+    other_mod_counts_mat <- matrix(NA_integer_, nrow = n_sites, ncol = n_samples,
+                                   dimnames = list(NULL, sample_names))
 
     # ── Build rowRanges (GRanges) for findOverlaps merge ────────────────────
     site_gr <- GenomicRanges::GRanges(
@@ -374,6 +377,9 @@ commaData <- function(files,
         if ("canonical_counts" %in% colnames(df)) {
             canonical_counts_mat[idx[valid_idx], sn] <- df$canonical_counts[valid_idx]
         }
+        if ("other_mod_counts" %in% colnames(df)) {
+            other_mod_counts_mat[idx[valid_idx], sn] <- df$other_mod_counts[valid_idx]
+        }
     }
 
     # ── Apply min_coverage: set beta NA where coverage < threshold ──────────
@@ -443,7 +449,8 @@ commaData <- function(files,
             methylation = methyl_mat,
             coverage = coverage_mat,
             mod_counts = mod_counts_mat,
-            canonical_counts = canonical_counts_mat
+            canonical_counts = canonical_counts_mat,
+            other_mod_counts = other_mod_counts_mat
         ),
         rowRanges  = site_gr,
         colData    = col_df
@@ -464,11 +471,17 @@ commaData <- function(files,
         dorado = "observed_probability_threshold",
         megalodon = "unavailable_probability_input"
     )
+    other_count_provenance <- switch(caller,
+        modkit = "observed_modkit_pileup",
+        dorado = "unavailable_direct_bam_parser",
+        megalodon = "unavailable_probability_input"
+    )
     S4Vectors::metadata(obj)$assay_defaults <- list(
         methylation = "methylation",
         coverage = "coverage",
         mod_counts = "mod_counts",
-        canonical_counts = "canonical_counts"
+        canonical_counts = "canonical_counts",
+        other_mod_counts = "other_mod_counts"
     )
     S4Vectors::metadata(obj)$assay_provenance <- list(
         methylation = .makeAssayLayerRecord(
@@ -502,6 +515,14 @@ commaData <- function(files,
             parent_assays = "coverage",
             method = count_provenance,
             default_for = "canonical_counts"
+        ),
+        other_mod_counts = .makeAssayLayerRecord(
+            type = if (caller == "modkit") "observed_counts" else "unavailable",
+            source = other_count_provenance,
+            role = "other_mod_counts",
+            parent_assays = "coverage",
+            method = other_count_provenance,
+            default_for = "other_mod_counts"
         )
     )
 
