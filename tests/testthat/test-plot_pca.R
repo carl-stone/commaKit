@@ -149,6 +149,16 @@ test_that("plot_pca: default color falls back to sample_name without condition",
     expect_false("condition" %in% colnames(d))
 })
 
+test_that("plot_pca: explicit condition color still validates missing column", {
+    obj <- .make_pca_data()
+    SummarizedExperiment::colData(obj)$condition <- NULL
+
+    expect_error(
+        plot_pca(obj, color_by = "condition"),
+        "'color_by' column 'condition' not found"
+    )
+})
+
 test_that("plot_pca: return_data attaches percentVar attribute", {
     obj <- .make_pca_data()
     d <- plot_pca(obj, return_data = TRUE)

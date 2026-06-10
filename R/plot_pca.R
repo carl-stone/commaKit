@@ -83,6 +83,7 @@ plot_pca <- function(object,
                      return_data = FALSE) {
 
     ## --- Input validation ---------------------------------------------------
+    color_by_default <- missing(color_by)
     if (!is(object, "commaData")) {
         stop("'object' must be a commaData object.")
     }
@@ -99,7 +100,8 @@ plot_pca <- function(object,
     ## --- Validate color_by / shape_by ---------------------------------------
     si <- sampleInfo(object)
     si_cols <- colnames(si)
-    if (identical(color_by, "condition") && !"condition" %in% si_cols) {
+    if (color_by_default && identical(color_by, "condition") &&
+            !"condition" %in% si_cols) {
         color_by <- "sample_name"
     }
     if (!is.character(color_by) || length(color_by) != 1L ||
