@@ -23,7 +23,7 @@
 #' The primary regional methylation statistic is count-based:
 #' \deqn{region\_methylation = sum(mod\_counts) / sum(valid\_coverage)}
 #' where \code{valid_coverage} is the \code{coverage} assay for sites with
-#' non-missing modified counts and coverage. For modkit-style inputs this
+#' non-missing modified counts and positive coverage. For modkit-style inputs this
 #' corresponds to \code{Nvalid_cov = Nmod + Nother_mod + Ncanonical}.
 #'
 #' \code{summarizeRegions()} intentionally does not average beta values by
@@ -73,19 +73,48 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
         keep <- keep & rd$mod_type %in% mod_type
     }
     if (!is.null(motif)) {
+        available_motifs <- sort(unique(as.character(rd$motif[!is.na(rd$motif)])))
+        missing_motifs <- setdiff(motif, available_motifs)
+        if (length(missing_motifs) > 0L) {
+            stop(
+                "Requested motif value(s) not found: ",
+                paste(missing_motifs, collapse = ", "), ". Available motifs: ",
+                paste(available_motifs, collapse = ", "), "."
+            )
+        }
         keep <- keep & rd$motif %in% motif
     }
+    site_mod_context <- .computeModContext(rd$mod_type, rd$motif)
     if (!is.null(mod_context)) {
-        keep <- keep & .computeModContext(rd$mod_type, rd$motif) %in% mod_context
+        available_contexts <- sort(unique(site_mod_context[!is.na(site_mod_context)]))
+        missing_contexts <- setdiff(mod_context, available_contexts)
+        if (length(missing_contexts) > 0L) {
+            stop(
+                "Requested mod_context value(s) not found: ",
+                paste(missing_contexts, collapse = ", "),
+                ". Available mod_contexts: ",
+                paste(available_contexts, collapse = ", "), "."
+            )
+        }
+        keep <- keep & site_mod_context %in% mod_context
     }
 
     site_idx <- which(keep)
-    overlaps <- GenomicRanges::findOverlaps(regions, rr[site_idx])
+    overlaps <- GenomicRanges::findOverlaps(regions, rr[site_idx], ignore.strand = TRUE)
     overlap_region <- S4Vectors::queryHits(overlaps)
     overlap_site <- site_idx[S4Vectors::subjectHits(overlaps)]
 
     mod_counts <- SummarizedExperiment::assay(object, "mod_counts")
     valid_coverage <- SummarizedExperiment::assay(object, "coverage")
+    has_count_evidence <- any(!is.na(mod_counts) & !is.na(valid_coverage) &
+                              valid_coverage > 0)
+    if (!has_count_evidence) {
+        stop(
+            "summarizeRegions() requires count evidence: assays 'mod_counts' ",
+            "and 'coverage' must contain at least one site/sample with ",
+            "non-missing modified counts and positive valid coverage."
+        )
+    }
     canonical_counts <- if ("canonical_counts" %in% assay_names) {
         SummarizedExperiment::assay(object, "canonical_counts")
     } else {
@@ -108,9 +137,13 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
     }
 
     region_df <- .regionSummaryFrame(regions)
+    if (length(regions) == 0L) {
+        return(.emptyRegionSummaryOutput(region_df, !is.null(canonical_counts),
+                                         !is.null(other_mod_counts)))
+    }
     rows <- vector("list", length(regions) * ncol(object))
     row_i <- 0L
-    for (region_i in seq_along(regions)) {
+    for (region_i in seq_len(length(regions))) {
         sites <- overlap_site[overlap_region == region_i]
         for (sample_i in seq_len(ncol(object))) {
             row_i <- row_i + 1L
@@ -138,8 +171,10 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
 
 .regionSummaryFrame <- function(regions) {
     region_id <- names(regions)
-    if (is.null(region_id)) {
-        region_id <- paste0("region_", seq_along(regions))
+    if (length(regions) == 0L) {
+        region_id <- character(0)
+    } else if (is.null(region_id)) {
+        region_id <- paste0("region_", seq_len(length(regions)))
     }
     missing_id <- is.na(region_id) | !nzchar(region_id)
     region_id[missing_id] <- paste0("region_", which(missing_id))
@@ -161,6 +196,30 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
     out
 }
 
+
+.emptyRegionSummaryOutput <- function(region_df, has_canonical_counts,
+                                      has_other_mod_counts) {
+    out <- cbind(
+        region_df[0L, , drop = FALSE],
+        data.frame(
+            sample_name = character(0),
+            n_sites = integer(0),
+            total_mod_counts = numeric(0),
+            total_valid_coverage = numeric(0),
+            region_methylation = numeric(0),
+            stringsAsFactors = FALSE
+        ),
+        stringsAsFactors = FALSE
+    )
+    if (has_canonical_counts) {
+        out$total_canonical_counts <- numeric(0)
+    }
+    if (has_other_mod_counts) {
+        out$total_other_mod_counts <- numeric(0)
+    }
+    out
+}
+
 .summarizeRegionSample <- function(sites, sample_i, sample_name,
                                    mod_counts, valid_coverage,
                                    canonical_counts = NULL,
@@ -172,7 +231,7 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
     } else {
         mod_vals <- mod_counts[sites, sample_i]
         cov_vals <- valid_coverage[sites, sample_i]
-        valid <- !is.na(mod_vals) & !is.na(cov_vals)
+        valid <- !is.na(mod_vals) & !is.na(cov_vals) & cov_vals > 0
         mod_vals <- mod_vals[valid]
         cov_vals <- cov_vals[valid]
     }

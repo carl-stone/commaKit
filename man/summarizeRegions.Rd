@@ -42,7 +42,7 @@ or region-level statistical test.
 The primary regional methylation statistic is count-based:
 \deqn{region\_methylation = sum(mod\_counts) / sum(valid\_coverage)}
 where \code{valid_coverage} is the \code{coverage} assay for sites with
-non-missing modified counts and coverage. For modkit-style inputs this
+non-missing modified counts and positive coverage. For modkit-style inputs this
 corresponds to \code{Nvalid_cov = Nmod + Nother_mod + Ncanonical}.
 
 \code{summarizeRegions()} intentionally does not average beta values by

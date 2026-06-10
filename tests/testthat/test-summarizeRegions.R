@@ -127,3 +127,71 @@ test_that("summarizeRegions() validates inputs", {
     expect_error(summarizeRegions(obj, .make_regions(), min_sites = -1),
                  "min_sites")
 })
+
+
+test_that("summarizeRegions() validates motif and mod_context filters", {
+    obj <- .make_region_summary_fixture()
+    regions <- .make_regions()
+
+    expect_error(summarizeRegions(obj, regions, motif = "BAD"),
+                 "Requested motif")
+    expect_error(summarizeRegions(obj, regions, mod_context = "6mA_BAD"),
+                 "Requested mod_context")
+})
+
+test_that("summarizeRegions() returns a typed 0-row data frame for empty regions", {
+    obj <- .make_region_summary_fixture()
+    empty_regions <- GenomicRanges::GRanges(
+        seqnames = character(0),
+        ranges = IRanges::IRanges(start = integer(0), end = integer(0))
+    )
+
+    out <- summarizeRegions(obj, empty_regions)
+
+    expect_s3_class(out, "data.frame")
+    expect_equal(nrow(out), 0L)
+    expect_true(all(c("region_id", "sample_name", "n_sites",
+                      "total_mod_counts", "total_valid_coverage",
+                      "region_methylation", "total_canonical_counts") %in%
+                    colnames(out)))
+})
+
+test_that("summarizeRegions() rejects assays with no usable count evidence", {
+    obj <- .make_region_summary_fixture()
+    SummarizedExperiment::assay(obj, "mod_counts")[] <- NA_integer_
+
+    expect_error(
+        summarizeRegions(obj, .make_regions()),
+        "requires count evidence"
+    )
+})
+
+test_that("summarizeRegions() excludes zero-coverage sites from usable counts", {
+    obj <- .make_region_summary_fixture()
+    SummarizedExperiment::assay(obj, "coverage")[1, 1] <- 0L
+    SummarizedExperiment::assay(obj, "mod_counts")[1, 1] <- 0L
+    SummarizedExperiment::assay(obj, "canonical_counts")[1, 1] <- 0L
+
+    out <- summarizeRegions(obj, .make_regions())
+    first_s1 <- out[out$region_id == "region_1" & out$sample_name == "s1", ]
+
+    expect_equal(first_s1$n_sites, 1L)
+    expect_equal(first_s1$total_mod_counts, 4)
+    expect_equal(first_s1$total_valid_coverage, 10)
+    expect_equal(first_s1$region_methylation, 4 / 10)
+})
+
+test_that("summarizeRegions() ignores strand for coordinate region summaries", {
+    obj <- .make_region_summary_fixture()
+    regions <- GenomicRanges::GRanges(
+        seqnames = "chr_sim",
+        ranges = IRanges::IRanges(start = 50L, end = 350L),
+        strand = "-"
+    )
+
+    out <- summarizeRegions(obj, regions, mod_type = "6mA")
+    first_s1 <- out[out$region_id == "region_1" & out$sample_name == "s1", ]
+
+    expect_equal(first_s1$n_sites, 2L)
+    expect_equal(first_s1$total_mod_counts, 6)
+})
