@@ -122,8 +122,9 @@ first_rows[, c(1, 2, 3, 4, 6, 10, 11)]
 # Sample Metadata Problems
 
 `files` must be a named character vector, and its names must match
-`colData$sample_name`. The constructor also requires `sample_name`, `condition`,
-and `replicate` columns in `colData`.
+`colData$sample_name`. The constructor requires `sample_name` and `replicate`
+columns in `colData`; `condition` is optional sample metadata used by grouping
+and design workflows when present.
 
 ```{r sample-name-checks, eval = FALSE}
 setdiff(names(files), col_data$sample_name)

@@ -182,6 +182,14 @@ test_that("plot_pca: return_data includes requested color and shape columns", {
     expect_equal(d$replicate, si$replicate)
 })
 
+test_that("plot_pca: numeric shape_by columns render as discrete shapes", {
+    obj <- .make_pca_data()
+    p <- plot_pca(obj, color_by = "condition", shape_by = "replicate")
+
+    expect_s3_class(p, "ggplot")
+    expect_true(is.factor(p$data$replicate))
+})
+
 test_that("plot_pca: return_data = TRUE validates missing color_by column", {
     obj <- .make_pca_data()
     expect_error(

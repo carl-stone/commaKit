@@ -62,7 +62,7 @@ NULL
 #' plot_pca(comma_example_data)
 #'
 #' # Color by condition, shape by replicate
-#' plot_pca(comma_example_data, color_by = "condition")
+#' plot_pca(comma_example_data, color_by = "condition", shape_by = "replicate")
 #'
 #' # Only 6mA sites
 #' plot_pca(comma_example_data, mod_type = "6mA")
@@ -179,10 +179,15 @@ plot_pca <- function(object,
         paste0("PC2 (", pct_var[2L], "% variance)")
     } else "PC2"
 
-    ## Build aes dynamically to support optional shape_by
+    ## Build aes dynamically to support optional shape_by. ggplot2 shape scales
+    ## are discrete, so coerce numeric/integer grouping columns (for example
+    ## replicate numbers) to factors in the plotting data without changing
+    ## return_data output.
     if (!is.null(shape_by)) {
+        plot_df <- scores_df
+        plot_df[[shape_by]] <- as.factor(plot_df[[shape_by]])
         p <- ggplot2::ggplot(
-            scores_df,
+            plot_df,
             ggplot2::aes(
                 x     = .data[["PC1"]],
                 y     = .data[["PC2"]],
