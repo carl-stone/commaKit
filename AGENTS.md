@@ -12,6 +12,35 @@
 - **R**: >= 4.3.0 (CI pinned to R 4.5)
 - **License**: MIT
 
+## How agents should use this repo
+
+commaKit now uses a Symphony-style operating loop for agent work:
+
+- **Linear project `commaKit Symphony`** is the steward queue for Carl-facing tasks and worker dispatch.
+- **GitHub branches/PRs** are the integration surface for code changes.
+- **Hierarchical `AGENTS.md` files** are the repo-local context map. Always read this file first, then read the nearest `AGENTS.md` in any directory you touch.
+- **Done means integrated state**, not a chat response: issue context, branch/PR state, validation evidence, durable report, and follow-up issues all need to match reality.
+
+Worker protocol:
+
+1. Start with `git status --short --branch` and identify the issue branch/PR.
+2. Read relevant source, tests, docs, and nearer `AGENTS.md` files before editing.
+3. Make the smallest coherent change that satisfies the acceptance criteria.
+4. Run targeted validation and record exact commands/results.
+5. Commit intentional changes only; never stage secrets, local caches, generated junk, or unrelated files.
+6. Open/update a PR for code changes and include the Linear issue identifier, summary, tests, and risks.
+
+Directory guides:
+
+- `R/AGENTS.md` — source, S4, roxygen, Bioconductor rules.
+- `tests/AGENTS.md` and `tests/testthat/AGENTS.md` — test strategy and conventions.
+- `vignettes/AGENTS.md` — user-facing tutorial/documentation rules.
+- `dev/AGENTS.md` — project knowledge and Symphony stewardship.
+- `data-raw/AGENTS.md` — generated data rules.
+- `.github/AGENTS.md` — GitHub automation rules.
+- `inst/AGENTS.md` — installed files and extdata rules.
+- `man/AGENTS.md` — generated Rd documentation; do not hand-edit.
+
 ## Core Architecture
 
 ### Data structure: `commaData` (S4 class)
