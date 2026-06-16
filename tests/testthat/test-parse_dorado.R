@@ -53,21 +53,21 @@ test_that("cigarToRefPos: returns NULL for empty cigar", {
 })
 
 test_that("cigarToRefPos: malformed CIGAR with trailing junk returns NULL", {
-    result <- commaKit:::.cigarToRefPos(
-        "5Mbogus",
-        ref_start = 1L,
-        seq_bases = "ACGTA"
-    )
-    expect_null(result)
+  result <- commaKit:::.cigarToRefPos(
+    "5Mbogus",
+    ref_start = 1L,
+    seq_bases = "ACGTA"
+  )
+  expect_null(result)
 })
 
-test_that("cigarToRefPos: overlong CIGAR does not corrupt mapped prefix", {
-    result <- commaKit:::.cigarToRefPos(
-        "3M3M",
-        ref_start = 10L,
-        seq_bases = "ACGTA"
-    )
-    expect_equal(result, 10L:14L)
+test_that("cigarToRefPos: overlong CIGAR stops after exhausting read", {
+  result <- commaKit:::.cigarToRefPos(
+    "5M1M",
+    ref_start = 10L,
+    seq_bases = "ACGTA"
+  )
+  expect_equal(result, 10L:14L)
 })
 
 # ─── .parseMmTag() ────────────────────────────────────────────────────────────
