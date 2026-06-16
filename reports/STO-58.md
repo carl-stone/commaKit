@@ -36,7 +36,7 @@ Added targeted parser edge-case tests and small implementation hardening for pro
 ## Branch / PR
 
 - Branch: `symphony/STO-58`
-- PR: pending at report creation; see final worker JSON / GitHub branch for PR URL.
+- PR: https://github.com/carl-stone/commaKit/pull/234
 
 ## Blockers
 
