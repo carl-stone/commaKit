@@ -2,7 +2,9 @@
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
-    paths: ['**.Rmd']
+    paths:
+      - '**.Rmd'
+      - '.github/workflows/render-rmarkdown.yaml'
 
 name: render-rmarkdown.yaml
 
@@ -34,6 +36,7 @@ jobs:
           extra-packages: local::., any::rmarkdown
 
       - name: Render Rmarkdown files and Commit Results
+        shell: bash
         run: |
           set -euo pipefail
 
