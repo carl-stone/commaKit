@@ -241,7 +241,7 @@ NULL
   # Parse CIGAR into (op, len) pairs
   matches <- gregexpr("([0-9]+)([MIDNSHP=X])", cigar_str, perl = TRUE)
   ops_raw <- regmatches(cigar_str, matches)[[1L]]
-  if (length(ops_raw) == 0L) {
+  if (length(ops_raw) == 0L || paste0(ops_raw, collapse = "") != cigar_str) {
     return(NULL)
   }
 

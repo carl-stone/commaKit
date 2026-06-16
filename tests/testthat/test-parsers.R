@@ -236,3 +236,57 @@ test_that(".parseModkit() parses the bundled example file without error", {
   expect_true(all(result$beta >= 0 & result$beta <= 1))
   expect_true(all(result$coverage > 0))
 })
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Production-like modkit edge cases
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that(".parseModkit() errors clearly on partial rows in mixed files", {
+  complete <- .modkit_row(start = 99L)
+  partial <- complete
+  partial$Nmod <- NA_integer_
+  rows <- rbind(complete, partial)
+  f <- .write_tmp_modkit(rows)
+
+  expect_error(
+    commaKit:::.parseModkit(f, "s1", min_coverage = 0L),
+    regexp = "missing required field.*Nmod"
+  )
+})
+
+test_that(".parseModkit() retains zero-coverage rows only when requested", {
+  f <- .write_tmp_modkit(.modkit_row(cov = 0L, mod_freq = 0, start = 99L))
+
+  default_result <- commaKit:::.parseModkit(f, "s1")
+  expect_equal(nrow(default_result), 0L)
+  expect_named(default_result, c(
+    "chrom", "position", "strand", "mod_type", "motif",
+    "beta", "coverage", "mod_counts", "canonical_counts",
+    "other_mod_counts"
+  ))
+
+  kept_result <- commaKit:::.parseModkit(f, "s1", min_coverage = 0L)
+  expect_equal(nrow(kept_result), 1L)
+  expect_equal(kept_result$coverage, 0L)
+  expect_equal(kept_result$beta, 0)
+  expect_equal(kept_result$mod_counts + kept_result$canonical_counts +
+    kept_result$other_mod_counts, 0L)
+})
+
+test_that(".parseModkit() preserves unexpected motif strings without schema changes", {
+  rows <- rbind(
+    .modkit_row(mod_code = "a,GATC,1", start = 99L),
+    .modkit_row(mod_code = "a,not-a-standard-motif,1", start = 199L),
+    .modkit_row(mod_code = "m,CCWGG,1", start = 299L)
+  )
+  f <- .write_tmp_modkit(rows)
+
+  result <- commaKit:::.parseModkit(f, "s1", min_coverage = 0L)
+  expect_named(result, c(
+    "chrom", "position", "strand", "mod_type", "motif",
+    "beta", "coverage", "mod_counts", "canonical_counts",
+    "other_mod_counts"
+  ))
+  expect_equal(nrow(result), 3L)
+  expect_true("not-a-standard-motif" %in% result$motif)
+})

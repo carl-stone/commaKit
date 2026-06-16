@@ -63,8 +63,10 @@ path for most Dorado-based workflows: call bases with Dorado, run
 
 Use `caller = "dorado"` only when you want commaKit to parse an aligned BAM file
 with MM/ML base modification tags directly. The BAM must contain modification
-tags and should be indexed. Direct BAM parsing does not provide motif context,
-so per-site `motif` values will be `NA`.
+tags and should be indexed. Direct BAM parsing skips reads with malformed CIGAR
+strings, missing or truncated MM/ML tags, or modification calls that cannot be
+mapped onto reference positions. Direct BAM parsing does not provide motif
+context, so per-site `motif` values will be `NA`.
 
 Use `caller = "megalodon"` for legacy Megalodon per-read modification BED
 files. Megalodon files do not encode the modification type in a way commaKit
@@ -111,6 +113,7 @@ Common symptoms and fixes:
 |---|---|---|
 | `expected at least 18` | The file is not modkit pileup bedMethyl output, or it was truncated. | Re-run `modkit pileup` and pass the BED output, not the BAM. |
 | Unknown `mod_code` warning | Column 4 contains codes outside the supported modkit map. | Confirm the file is a methylation pileup and decide whether the code should map to `6mA`, `5mC`, or `4mC`. |
+| Missing required fields | One or more rows are partial or malformed after parsing the first 18 bedMethyl columns. | Inspect the reported row, then regenerate or filter the pileup before import. |
 | No sites remain | Coverage or `mod_type` filtering removed every row. | Lower `min_coverage`, check `mod_type`, and inspect the input file for nonzero coverage. |
 | Duplicate methylation site rows | The file has repeated rows for the same chromosome, position, strand, modification type, and motif. | Aggregate or regenerate the per-sample pileup before importing. |
 
@@ -167,9 +170,11 @@ the sequence length to methylation sites. Use the whole `BSgenome` object or a
 named vector instead.
 
 Chromosome names must match the methylation files. If the BED file uses `chr1`
-but the genome vector is named `NC_000913`, rename one side before import. Extra
-chromosomes in the genome input are dropped with a message when they are not
-present in the methylation data.
+but the genome vector is named `NC_000913`, rename one side before import.
+commaKit stops with a clear error when methylation data contain chromosomes that
+are absent from `genome`, because it cannot attach valid `Seqinfo` for those
+sites. Extra chromosomes in the genome input are dropped with a message when
+they are not present in the methylation data.
 
 ```{r genome-name-checks, eval = FALSE}
 bed_chroms <- unique(read.table("ctrl_1.modkit.bed", nrows = 1000)[[1]])
