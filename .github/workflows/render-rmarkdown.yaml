@@ -40,6 +40,8 @@ jobs:
         run: |
           set -euo pipefail
 
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
           before="${{ github.event.before }}"
           after="${{ github.sha }}"
           default_branch="${{ github.event.repository.default_branch }}"
