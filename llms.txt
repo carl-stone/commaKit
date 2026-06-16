@@ -54,7 +54,7 @@ differential methylation testing, and publication-quality visualization.
 # Development version from GitHub:
 devtools::install_github("carl-stone/commaKit")
 
-# Bioconductor release forthcoming
+# Not yet on Bioconductor; install from GitHub for now.
 ```
 
 ## The `commaData` Object
@@ -388,12 +388,20 @@ Types** vignette
 ?diffMethyl   # Differential methylation testing
 ```
 
-Two vignettes are included:
+Four vignettes are included:
 
 - **Getting Started**
   ([`vignette("getting-started", package = "commaKit")`](https://carl-stone.github.io/commaKit/articles/getting-started.md))
   — end-to-end workflow: load -\> QC -\> annotate -\> differential
   methylation -\> visualize.
+- **Understanding commaData**
+  ([`vignette("understanding-commaData", package = "commaKit")`](https://carl-stone.github.io/commaKit/articles/understanding-commaData.md))
+  — the `RangedSummarizedExperiment` container, assays, site metadata,
+  and result layers.
+- **Import Troubleshooting**
+  ([`vignette("import-troubleshooting", package = "commaKit")`](https://carl-stone.github.io/commaKit/articles/import-troubleshooting.md))
+  — practical guidance for modkit, Dorado, Megalodon, genome, and
+  annotation inputs.
 - **Multiple Modification Types**
   ([`vignette("multiple-modification-types", package = "commaKit")`](https://carl-stone.github.io/commaKit/articles/multiple-modification-types.md))
   — joint 6mA and 5mC analysis in a single `commaData` object.
@@ -402,10 +410,9 @@ Two vignettes are included:
 
 | Version | Phase | Status |
 |----|----|----|
-| 0.2.0 | Schema v2: RangedSummarizedExperiment, Seqinfo, no-rownames alignment | Done |
-| 0.2.x | Test quality, code quality audits, rename validation | In progress |
-| 0.3.0 | Layered assays and assay provenance | Planned |
-| 0.x.y | Pre-Bioconductor hardening releases | Planned |
+| 0.2.0 | Schema v2, commaKit rename, result layers, assay provenance | Done |
+| 0.2.x | Test quality, parser hardening, docs synchronization | In progress |
+| 0.x.y | Real-data examples, performance benchmarks, Bioconductor hardening | Planned |
 | 0.99.0 | Bioconductor submission version | Future |
 | 1.0.0 | Stable public release after external confidence | Future |
 

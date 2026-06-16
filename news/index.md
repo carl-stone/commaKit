@@ -104,7 +104,11 @@
   documentation with ASCII equivalent.
 - Updated `.Rbuildignore` to exclude development files (`.claude/`,
   `.codex/`, `.letta/`, `.lteams/`, `AGENTS.md`, `PRD.md`, `VISION.md`,
-  `ROADMAP.md`, `SPECS.md`).
+  `ROADMAP.md`, `SPECS.md`) plus local agent/editor files (`.agents/`,
+  `.lintr`, `.vscode/`).
+- Removed unused `ComplexHeatmap` and `ggrepel` entries from `Suggests`.
+  Current plotting code uses `ggplot2`; optional multi-panel composition
+  uses `patchwork`.
 - Renamed test files to match `test-functionName.R` convention:
   `test-coverageAnalysis.R` → `test-coverageDepth.R` +
   `test-varianceByDepth.R`, `test-enrichment.R` →

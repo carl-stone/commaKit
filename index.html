@@ -92,7 +92,7 @@
 <code class="sourceCode R"><span><span class="co"># Development version from GitHub:</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"carl-stone/commaKit"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Bioconductor release forthcoming</span></span></code></pre></div>
+<span><span class="co"># Not yet on Bioconductor; install from GitHub for now.</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="the-commadata-object">The <code>commaData</code> Object<a class="anchor" aria-label="anchor" href="#the-commadata-object"></a>
@@ -312,10 +312,14 @@
 <code class="sourceCode R"><span><span class="op">?</span><span class="va">commaKit</span>     <span class="co"># Package overview and workflow</span></span>
 <span><span class="op">?</span><span class="va">commaData</span>    <span class="co"># Constructor and commaData class</span></span>
 <span><span class="op">?</span><span class="va">diffMethyl</span>   <span class="co"># Differential methylation testing</span></span></code></pre></div>
-<p>Two vignettes are included:</p>
+<p>Four vignettes are included:</p>
 <ul>
 <li>
 <strong>Getting Started</strong> (<code><a href="articles/getting-started.html">vignette("getting-started", package = "commaKit")</a></code>) — end-to-end workflow: load -&gt; QC -&gt; annotate -&gt; differential methylation -&gt; visualize.</li>
+<li>
+<strong>Understanding commaData</strong> (<code><a href="articles/understanding-commaData.html">vignette("understanding-commaData", package = "commaKit")</a></code>) — the <code>RangedSummarizedExperiment</code> container, assays, site metadata, and result layers.</li>
+<li>
+<strong>Import Troubleshooting</strong> (<code><a href="articles/import-troubleshooting.html">vignette("import-troubleshooting", package = "commaKit")</a></code>) — practical guidance for modkit, Dorado, Megalodon, genome, and annotation inputs.</li>
 <li>
 <strong>Multiple Modification Types</strong> (<code><a href="articles/multiple-modification-types.html">vignette("multiple-modification-types", package = "commaKit")</a></code>) — joint 6mA and 5mC analysis in a single <code>commaData</code> object.</li>
 </ul>
@@ -337,22 +341,17 @@
 <tbody>
 <tr>
 <td>0.2.0</td>
-<td>Schema v2: RangedSummarizedExperiment, Seqinfo, no-rownames alignment</td>
+<td>Schema v2, commaKit rename, result layers, assay provenance</td>
 <td>Done</td>
 </tr>
 <tr>
 <td>0.2.x</td>
-<td>Test quality, code quality audits, rename validation</td>
+<td>Test quality, parser hardening, docs synchronization</td>
 <td>In progress</td>
 </tr>
 <tr>
-<td>0.3.0</td>
-<td>Layered assays and assay provenance</td>
-<td>Planned</td>
-</tr>
-<tr>
 <td>0.x.y</td>
-<td>Pre-Bioconductor hardening releases</td>
+<td>Real-data examples, performance benchmarks, Bioconductor hardening</td>
 <td>Planned</td>
 </tr>
 <tr>
