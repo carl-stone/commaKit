@@ -32,8 +32,14 @@ jobs:
           Rscript -e 'cat("R ", as.character(getRversion()), "\n", sep = "")'
           Rscript -e 'cat("Bioconductor ", as.character(BiocManager::version()), "\n", sep = "")'
 
+      - name: Install deploy system tools
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends rsync
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          packages: any::sessioninfo
           extra-packages: any::pkgdown, local::.
           needs: website
 
