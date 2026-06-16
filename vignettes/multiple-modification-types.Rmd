@@ -12,12 +12,12 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-    collapse   = TRUE,
-    comment    = "#>",
-    fig.width  = 7,
-    fig.height = 5,
-    warning    = FALSE,
-    message    = FALSE
+  collapse   = TRUE,
+  comment    = "#>",
+  fig.width  = 7,
+  fig.height = 5,
+  warning    = FALSE,
+  message    = FALSE
 )
 ```
 
@@ -63,13 +63,17 @@ table(siteInfo(comma_example_data)$mod_type)
 filtering to compare distributions:
 
 ```{r summary-6ma}
-methylomeSummary(comma_example_data, mod_type = "6mA")[,
-    c("sample_name", "condition", "mean_beta", "median_beta", "n_covered")]
+methylomeSummary(comma_example_data, mod_type = "6mA")[
+  ,
+  c("sample_name", "condition", "mean_beta", "median_beta", "n_covered")
+]
 ```
 
 ```{r summary-5mc}
-methylomeSummary(comma_example_data, mod_type = "5mC")[,
-    c("sample_name", "condition", "mean_beta", "median_beta", "n_covered")]
+methylomeSummary(comma_example_data, mod_type = "5mC")[
+  ,
+  c("sample_name", "condition", "mean_beta", "median_beta", "n_covered")
+]
 ```
 
 # Distribution Comparison Across Modification Types
@@ -105,32 +109,36 @@ By default, `diffMethyl()` tests all modification types present in the object.
 Use `results(..., mod_type = "6mA")` to extract type-specific results:
 
 ```{r diffmethyl}
-dm_all <- diffMethyl(comma_example_data, formula = ~ condition)
+dm_all <- diffMethyl(comma_example_data, formula = ~condition)
 res_6ma <- results(dm_all, mod_type = "6mA")
 res_5mc <- results(dm_all, mod_type = "5mC")
 
-cat("6mA: significant sites (padj < 0.05, |Δβ| ≥ 0.2):",
-    sum(!is.na(res_6ma$dm_padj) & res_6ma$dm_padj < 0.05 &
-        abs(res_6ma$dm_delta_beta) >= 0.2, na.rm = TRUE), "\n")
-cat("5mC: significant sites (padj < 0.05, |Δβ| ≥ 0.2):",
-    sum(!is.na(res_5mc$dm_padj) & res_5mc$dm_padj < 0.05 &
-        abs(res_5mc$dm_delta_beta) >= 0.2, na.rm = TRUE), "\n")
+cat(
+  "6mA: significant sites (padj < 0.05, |Δβ| ≥ 0.2):",
+  sum(!is.na(res_6ma$dm_padj) & res_6ma$dm_padj < 0.05 &
+    abs(res_6ma$dm_delta_beta) >= 0.2, na.rm = TRUE), "\n"
+)
+cat(
+  "5mC: significant sites (padj < 0.05, |Δβ| ≥ 0.2):",
+  sum(!is.na(res_5mc$dm_padj) & res_5mc$dm_padj < 0.05 &
+    abs(res_5mc$dm_delta_beta) >= 0.2, na.rm = TRUE), "\n"
+)
 ```
 
 ## Volcano plots per modification type
 
 ```{r volcanos, fig.cap = "6mA differential methylation (top) and 5mC (bottom).", fig.height = 8}
 p_6ma <- plot_volcano(res_6ma) +
-    ggplot2::ggtitle("6mA differential methylation")
+  ggplot2::ggtitle("6mA differential methylation")
 p_5mc <- plot_volcano(res_5mc) +
-    ggplot2::ggtitle("5mC differential methylation")
+  ggplot2::ggtitle("5mC differential methylation")
 
 # Arrange side by side if patchwork is available
 if (requireNamespace("patchwork", quietly = TRUE)) {
-    patchwork::wrap_plots(p_6ma, p_5mc, ncol = 1L)
+  patchwork::wrap_plots(p_6ma, p_5mc, ncol = 1L)
 } else {
-    print(p_6ma)
-    print(p_5mc)
+  print(p_6ma)
+  print(p_5mc)
 }
 ```
 
@@ -164,8 +172,10 @@ When `mod_type = NULL`, `plot_genome_track()` displays sites from all
 modification types, using different colors to distinguish them:
 
 ```{r genome-track, fig.cap = "Genome track showing 6mA (red) and 5mC (blue) sites."}
-plot_genome_track(comma_example_data, chromosome = "chr_sim",
-                  start = 1L, end = 30000L, annotation = FALSE)
+plot_genome_track(comma_example_data,
+  chromosome = "chr_sim",
+  start = 1L, end = 30000L, annotation = FALSE
+)
 ```
 
 # Heatmaps per Modification Type

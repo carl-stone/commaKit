@@ -1,6 +1,6 @@
 # dev/AGENTS.md — project knowledge and Symphony stewardship
 
-This directory holds durable project knowledge, not transient worker scratch space.
+This directory holds durable project knowledge, not transient worker scratch space. `knowledge/` is an OKF-style knowledge bundle; start with `knowledge/index.md` before editing durable context.
 
 ## Source of truth after the Symphony migration
 
@@ -8,6 +8,7 @@ This directory holds durable project knowledge, not transient worker scratch spa
 - GitHub PRs are the code integration surface.
 - GitHub Issues may still document public bugs or external contributor work, but they are no longer the primary commaBot task queue.
 - Durable knowledge belongs in `dev/knowledge/` when it will help future contributors beyond one issue.
+- Every non-reserved `knowledge/*.md` concept document needs YAML frontmatter with at least `type`; see `knowledge/okf-guidelines.md`.
 
 ## Editing rules
 

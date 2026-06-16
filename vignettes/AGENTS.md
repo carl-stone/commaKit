@@ -1,6 +1,7 @@
 # vignettes/AGENTS.md — vignette rules
 
 Vignettes are user-facing teaching material and part of package quality.
+For current package contracts and naming, read `../dev/knowledge/architecture.md` before making broad tutorial changes.
 
 ## Voice and scope
 

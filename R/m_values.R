@@ -48,7 +48,7 @@
 #'
 #' # Compute M-values for all modification types
 #' m <- mValues(comma_example_data)
-#' dim(m)          # same as dim(methylation(comma_example_data))
+#' dim(m) # same as dim(methylation(comma_example_data))
 #' range(m, na.rm = TRUE)
 #'
 #' # Only 6mA sites
@@ -64,53 +64,52 @@
 #' @export
 mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
                     mod_context = NULL) {
+  ## --- Input validation ---------------------------------------------------
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+  if (!is.numeric(alpha) || length(alpha) != 1L || !is.finite(alpha) ||
+    alpha <= 0) {
+    stop("'alpha' must be a single positive finite number.")
+  }
 
-    ## --- Input validation ---------------------------------------------------
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
-    }
-    if (!is.numeric(alpha) || length(alpha) != 1L || !is.finite(alpha) ||
-            alpha <= 0) {
-        stop("'alpha' must be a single positive finite number.")
-    }
+  ## --- Optional site filters ----------------------------------------------
+  object <- .applySiteFilters(
+    object,
+    mod_type = mod_type,
+    motif = motif,
+    mod_context = mod_context,
+    caller = "mValues()"
+  )
 
-    ## --- Optional site filters ----------------------------------------------
-    object <- .applySiteFilters(
-        object,
-        mod_type = mod_type,
-        motif = motif,
-        mod_context = mod_context,
-        caller = "mValues()"
-    )
+  ## --- Compute M-values ---------------------------------------------------
+  beta_mat <- methylation(object) # sites × samples, values in [0, 1]
+  cov_mat <- siteCoverage(object) # sites × samples, non-negative integers
+  count_mats <- .resolveCountMatrices(
+    beta_mat,
+    cov_mat,
+    mod_counts_mat = .optionalAssay(object, "mod_counts"),
+    canonical_counts_mat = .optionalAssay(object, "canonical_counts"),
+    other_mod_counts_mat = .optionalAssay(object, "other_mod_counts")
+  )
 
-    ## --- Compute M-values ---------------------------------------------------
-    beta_mat <- methylation(object)   # sites × samples, values in [0, 1]
-    cov_mat  <- siteCoverage(object)      # sites × samples, non-negative integers
-    count_mats <- .resolveCountMatrices(
-        beta_mat,
-        cov_mat,
-        mod_counts_mat = .optionalAssay(object, "mod_counts"),
-        canonical_counts_mat = .optionalAssay(object, "canonical_counts"),
-        other_mod_counts_mat = .optionalAssay(object, "other_mod_counts")
-    )
+  ## Clamp to the physically possible range so malformed/manual objects cannot
+  ## produce negative unmethylated counts and NaN M-values.
+  m_reads <- count_mats$modified
+  m_reads <- pmax(0, pmin(m_reads, cov_mat))
+  u_reads <- pmax(0, count_mats$unmodified)
+  dim(m_reads) <- dim(beta_mat)
+  dim(u_reads) <- dim(beta_mat)
+  dimnames(m_reads) <- dimnames(beta_mat)
+  dimnames(u_reads) <- dimnames(beta_mat)
 
-    ## Clamp to the physically possible range so malformed/manual objects cannot
-    ## produce negative unmethylated counts and NaN M-values.
-    m_reads <- count_mats$modified
-    m_reads <- pmax(0, pmin(m_reads, cov_mat))
-    u_reads <- pmax(0, count_mats$unmodified)
-    dim(m_reads) <- dim(beta_mat)
-    dim(u_reads) <- dim(beta_mat)
-    dimnames(m_reads) <- dimnames(beta_mat)
-    dimnames(u_reads) <- dimnames(beta_mat)
+  ## Sites with coverage == 0 or filtered beta values return NA rather than a
+  ## pseudocount-only log ratio. Count assays may preserve raw observations
+  ## even when the beta layer has been filtered by min_coverage.
+  missing_value <- is.na(beta_mat) | is.na(cov_mat) | cov_mat == 0L
+  m_reads[missing_value] <- NA_real_
+  u_reads[missing_value] <- NA_real_
 
-    ## Sites with coverage == 0 or filtered beta values return NA rather than a
-    ## pseudocount-only log ratio. Count assays may preserve raw observations
-    ## even when the beta layer has been filtered by min_coverage.
-    missing_value <- is.na(beta_mat) | is.na(cov_mat) | cov_mat == 0L
-    m_reads[missing_value] <- NA_real_
-    u_reads[missing_value] <- NA_real_
-
-    ## M-value = log2((M + alpha) / (U + alpha))
-    log2((m_reads + alpha) / (u_reads + alpha))
+  ## M-value = log2((M + alpha) / (U + alpha))
+  log2((m_reads + alpha) / (u_reads + alpha))
 }

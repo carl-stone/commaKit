@@ -1,7 +1,22 @@
+---
+type: Issue Knowledge Base
+title: Known Issues
+description: Durable bugs, gotchas, edge cases, and resolved issue notes for commaKit.
+resource: dev/knowledge/known-issues.md
+tags: [bugs, gotchas, edge-cases, tests]
+timestamp: 2026-06-15T00:00:00Z
+status: current
+owner: Carl Stone
+---
+
 # Known Issues — Bugs, Gotchas, Edge Cases
 
 **Last updated:** 2026-05-30
 **Maintained by:** commaBot
+
+**Currentness note:** This file preserves useful historical gotchas. For live
+API shape and exported functions, prefer [Architecture](architecture.md) and
+the current source.
 
 ---
 
@@ -73,23 +88,18 @@ None confirmed at this time. All known issues are potential, documented behavior
 
 ---
 
-### G-005: `mod_type` parameter type varies by function
+### G-005: `mod_type` parameter type varied by function — RESOLVED/STALE
 
-**What:** Some functions accept a character vector, others accept only a single string.
+**What:** Older docs recorded that some functions accepted a character vector
+while others accepted only a single string.
 
-| Function | `mod_type` type |
-|----------|-----------------|
-| `diffMethyl()` | Character vector |
-| `filterSites()` | Character vector |
-| `plot_coverage()` | Single string |
-| `mValues()` | Single string |
-| `methylomeSummary()` | Single string |
+**Current state:** The main exported filtering surfaces now document
+`mod_type` as a character vector or `NULL`, routed through shared site-filter
+helpers. `parse_megalodon()` remains a parser-specific exception because legacy
+Megalodon input cannot infer the modification type.
 
-**Why:** Functions that split by type internally need to iterate over types. Functions that just filter don't.
-
-**User impact:** User passes `c("6mA", "5mC")` to `plot_coverage()`, gets cryptic error.
-
-**Mitigation:** Documented correctly in each function's `@param`. But still a UX friction point.
+**Action:** Do not copy this older inconsistency into new docs. Check the
+specific roxygen block before changing an API.
 
 ---
 

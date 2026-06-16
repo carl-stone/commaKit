@@ -50,157 +50,169 @@ NULL
 #'
 #' @export
 plot_metagene <- function(object,
-                          feature     = "gene",
-                          mod_type    = NULL,
-                          motif       = NULL,
+                          feature = "gene",
+                          mod_type = NULL,
+                          motif = NULL,
                           mod_context = NULL,
-                          n_bins      = 50L) {
+                          n_bins = 50L) {
+  ## --- Input validation ---------------------------------------------------
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+  if (!is.character(feature) || length(feature) != 1L) {
+    stop("'feature' must be a single character string (e.g., 'gene').")
+  }
+  n_bins <- as.integer(n_bins)
+  if (is.na(n_bins) || n_bins < 2L) {
+    stop("'n_bins' must be an integer >= 2.")
+  }
 
-    ## --- Input validation ---------------------------------------------------
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
-    }
-    if (!is.character(feature) || length(feature) != 1L) {
-        stop("'feature' must be a single character string (e.g., 'gene').")
-    }
-    n_bins <- as.integer(n_bins)
-    if (is.na(n_bins) || n_bins < 2L) {
-        stop("'n_bins' must be an integer >= 2.")
-    }
-
-    ## --- Validate annotation ------------------------------------------------
-    annot_gr <- annotation(object)
-    if (is.null(annot_gr) || length(annot_gr) == 0L) {
-        stop("annotation(object) is empty. ",
-             "Provide a commaData object with annotation features, or annotate first with loadAnnotation().")
-    }
-
-    ## Filter to requested feature type
-    if (!"feature_type" %in% colnames(S4Vectors::mcols(annot_gr))) {
-        stop("annotation(object) does not have a 'feature_type' metadata column. ",
-             "Use loadAnnotation() to build the annotation GRanges.")
-    }
-    feat_gr <- annot_gr[annot_gr$feature_type == feature]
-    if (length(feat_gr) == 0L) {
-        available_types <- unique(as.character(annot_gr$feature_type))
-        stop("No features of type '", feature, "' found in annotation(object). ",
-             "Available feature types: ", paste(available_types, collapse = ", "), ".")
-    }
-
-    ## --- Optional site filters ----------------------------------------------
-    object <- .applySiteFilters(
-        object,
-        mod_type = mod_type,
-        motif = motif,
-        mod_context = mod_context,
-        caller = "plot_metagene()"
+  ## --- Validate annotation ------------------------------------------------
+  annot_gr <- annotation(object)
+  if (is.null(annot_gr) || length(annot_gr) == 0L) {
+    stop(
+      "annotation(object) is empty. ",
+      "Provide a commaData object with annotation features, ",
+      "or annotate first with loadAnnotation()."
     )
+  }
 
-    ## --- Run metagene annotation -------------------------------------------
-    annotated <- annotateSites(object, features = feat_gr, keep = "metagene")
-    rd        <- as.data.frame(siteInfo(annotated))
-
-    ## frac_position is a NumericList (one list element per site)
-    pos_list <- rd$frac_position
-    site_lengths <- lengths(pos_list)
-
-    ## Keep only sites with at least one metagene position
-    has_overlap <- site_lengths > 0L
-    if (!any(has_overlap)) {
-        stop("No methylation sites overlap any '", feature, "' features. ",
-             "The metagene plot cannot be produced.")
-    }
-
-    ## Build expanded data.frame: one row per (site x feature) pair
-    ## site_idx is 1-based into the annotated object
-    site_idx     <- rep(which(has_overlap), times = site_lengths[has_overlap])
-    metagene_pos <- unlist(pos_list[has_overlap], use.names = FALSE)
-
-    ## --- Extract beta values for overlapping sites -------------------------
-    methyl_mat <- methylation(annotated)
-    sample_nms <- colnames(methyl_mat)
-    n_samples  <- length(sample_nms)
-    si         <- sampleInfo(annotated)
-
-    ## Build per-sample long data.frame
-    rows <- lapply(sample_nms, function(samp) {
-        betas <- methyl_mat[site_idx, samp]
-        data.frame(
-            sample_name  = samp,
-            metagene_pos = metagene_pos,
-            beta         = betas,
-            stringsAsFactors = FALSE
-        )
-    })
-    long_df <- do.call(rbind, rows)
-
-    ## Drop NAs
-    long_df <- long_df[!is.na(long_df$beta), , drop = FALSE]
-
-    if (nrow(long_df) == 0L) {
-        stop("All overlapping sites have NA beta values. Cannot produce metagene plot.")
-    }
-
-    ## --- Bin and summarize --------------------------------------------------
-    breaks    <- seq(0, 1, length.out = n_bins + 1L)
-    bin_idx   <- findInterval(long_df$metagene_pos, breaks, rightmost.closed = TRUE)
-    ## clamp edge cases to valid bin range
-    bin_idx   <- pmax(1L, pmin(bin_idx, n_bins))
-    bin_centers <- (breaks[-length(breaks)] + breaks[-1L]) / 2
-
-    long_df$bin_center <- bin_centers[bin_idx]
-
-    ## Compute mean beta per (sample, bin_center)
-    mean_vals <- tapply(
-        long_df$beta,
-        list(long_df$sample_name, long_df$bin_center),
-        mean, na.rm = TRUE
+  ## Filter to requested feature type
+  if (!"feature_type" %in% colnames(S4Vectors::mcols(annot_gr))) {
+    stop(
+      "annotation(object) does not have a 'feature_type' metadata column. ",
+      "Use loadAnnotation() to build the annotation GRanges."
     )
+  }
+  feat_gr <- annot_gr[annot_gr$feature_type == feature]
+  if (length(feat_gr) == 0L) {
+    available_types <- unique(as.character(annot_gr$feature_type))
+    stop(
+      "No features of type '", feature, "' found in annotation(object). ",
+      "Available feature types: ", paste(available_types, collapse = ", "), "."
+    )
+  }
 
-    summary_rows <- lapply(sample_nms, function(samp) {
-        bin_labels <- colnames(mean_vals)
-        vals <- mean_vals[samp, ]
-        data.frame(
-            sample_name = samp,
-            bin_center  = as.numeric(bin_labels),
-            mean_beta   = as.numeric(vals),
-            stringsAsFactors = FALSE
-        )
-    })
-    summary_df <- do.call(rbind, summary_rows)
-    summary_df <- summary_df[!is.na(summary_df$mean_beta), , drop = FALSE]
+  ## --- Optional site filters ----------------------------------------------
+  object <- .applySiteFilters(
+    object,
+    mod_type = mod_type,
+    motif = motif,
+    mod_context = mod_context,
+    caller = "plot_metagene()"
+  )
 
-    ## Ensure consistent sample ordering
-    summary_df$sample_name <- factor(summary_df$sample_name, levels = sample_nms)
+  ## --- Run metagene annotation -------------------------------------------
+  annotated <- annotateSites(object, features = feat_gr, keep = "metagene")
+  rd <- as.data.frame(siteInfo(annotated))
 
-    ## --- Build ggplot -------------------------------------------------------
-    p <- ggplot2::ggplot(
-        summary_df,
-        ggplot2::aes(
-            x     = .data[["bin_center"]],
-            y     = .data[["mean_beta"]],
-            color = .data[["sample_name"]]
-        )
+  ## frac_position is a NumericList (one list element per site)
+  pos_list <- rd$frac_position
+  site_lengths <- lengths(pos_list)
+
+  ## Keep only sites with at least one metagene position
+  has_overlap <- site_lengths > 0L
+  if (!any(has_overlap)) {
+    stop(
+      "No methylation sites overlap any '", feature, "' features. ",
+      "The metagene plot cannot be produced."
+    )
+  }
+
+  ## Build expanded data.frame: one row per (site x feature) pair
+  ## site_idx is 1-based into the annotated object
+  site_idx <- rep(which(has_overlap), times = site_lengths[has_overlap])
+  metagene_pos <- unlist(pos_list[has_overlap], use.names = FALSE)
+
+  ## --- Extract beta values for overlapping sites -------------------------
+  methyl_mat <- methylation(annotated)
+  sample_nms <- colnames(methyl_mat)
+  n_samples <- length(sample_nms)
+  si <- sampleInfo(annotated)
+
+  ## Build per-sample long data.frame
+  rows <- lapply(sample_nms, function(samp) {
+    betas <- methyl_mat[site_idx, samp]
+    data.frame(
+      sample_name = samp,
+      metagene_pos = metagene_pos,
+      beta = betas,
+      stringsAsFactors = FALSE
+    )
+  })
+  long_df <- do.call(rbind, rows)
+
+  ## Drop NAs
+  long_df <- long_df[!is.na(long_df$beta), , drop = FALSE]
+
+  if (nrow(long_df) == 0L) {
+    stop(
+      "All overlapping sites have NA beta values. ",
+      "Cannot produce metagene plot."
+    )
+  }
+
+  ## --- Bin and summarize --------------------------------------------------
+  breaks <- seq(0, 1, length.out = n_bins + 1L)
+  bin_idx <- findInterval(long_df$metagene_pos, breaks, rightmost.closed = TRUE)
+  ## clamp edge cases to valid bin range
+  bin_idx <- pmax(1L, pmin(bin_idx, n_bins))
+  bin_centers <- (breaks[-length(breaks)] + breaks[-1L]) / 2
+
+  long_df$bin_center <- bin_centers[bin_idx]
+
+  ## Compute mean beta per (sample, bin_center)
+  mean_vals <- tapply(
+    long_df$beta,
+    list(long_df$sample_name, long_df$bin_center),
+    mean,
+    na.rm = TRUE
+  )
+
+  summary_rows <- lapply(sample_nms, function(samp) {
+    bin_labels <- colnames(mean_vals)
+    vals <- mean_vals[samp, ]
+    data.frame(
+      sample_name = samp,
+      bin_center = as.numeric(bin_labels),
+      mean_beta = as.numeric(vals),
+      stringsAsFactors = FALSE
+    )
+  })
+  summary_df <- do.call(rbind, summary_rows)
+  summary_df <- summary_df[!is.na(summary_df$mean_beta), , drop = FALSE]
+
+  ## Ensure consistent sample ordering
+  summary_df$sample_name <- factor(summary_df$sample_name, levels = sample_nms)
+
+  ## --- Build ggplot -------------------------------------------------------
+  p <- ggplot2::ggplot(
+    summary_df,
+    ggplot2::aes(
+      x     = .data[["bin_center"]],
+      y     = .data[["mean_beta"]],
+      color = .data[["sample_name"]]
+    )
+  ) +
+    ggplot2::geom_line(linewidth = 0.8) +
+    ggplot2::geom_vline(
+      xintercept = c(0, 1),
+      linetype = "dashed", color = "grey50", linewidth = 0.5
     ) +
-        ggplot2::geom_line(linewidth = 0.8) +
-        ggplot2::geom_vline(
-            xintercept = c(0, 1),
-            linetype = "dashed", color = "grey50", linewidth = 0.5
-        ) +
-        ggplot2::scale_x_continuous(
-            breaks = c(0, 0.5, 1),
-            labels = c("TSS", "Middle", "TTS"),
-            name   = paste0("Relative position within '", feature, "'")
-        ) +
-        ggplot2::scale_y_continuous(
-            limits = c(0, 1),
-            name   = "Mean methylation"
-        ) +
-        ggplot2::labs(
-            title = paste0("Metagene: ", feature),
-            color = "Sample"
-        ) +
-        ggplot2::theme_bw()
+    ggplot2::scale_x_continuous(
+      breaks = c(0, 0.5, 1),
+      labels = c("TSS", "Middle", "TTS"),
+      name   = paste0("Relative position within '", feature, "'")
+    ) +
+    ggplot2::scale_y_continuous(
+      limits = c(0, 1),
+      name   = "Mean methylation"
+    ) +
+    ggplot2::labs(
+      title = paste0("Metagene: ", feature),
+      color = "Sample"
+    ) +
+    ggplot2::theme_bw()
 
-    p
+  p
 }

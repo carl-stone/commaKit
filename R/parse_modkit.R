@@ -4,9 +4,9 @@ NULL
 # ─── mod_code → mod_type mapping ─────────────────────────────────────────────
 
 .MODKIT_CODE_MAP <- c(
-    "a"     = "6mA",
-    "m"     = "5mC",
-    "21839" = "4mC"
+  "a"     = "6mA",
+  "m"     = "5mC",
+  "21839" = "4mC"
 )
 
 # modkit pileup bedMethyl column names (18 columns, tab-separated)
@@ -14,10 +14,10 @@ NULL
 # fraction_modified (col 11) is a percentage (0-100); divide by 100 for beta.
 # mod_code (col 4) uses compound format "code,motif,position" (e.g. "a,GATC,1").
 .MODKIT_COLS <- c(
-    "chrom", "start", "end", "mod_code", "score", "strand",
-    "thickStart", "thickEnd", "itemRgb",
-    "Nvalid_cov", "fraction_modified", "Nmod", "Ncanonical",
-    "Nother_mod", "Ndelete", "Nfail", "Ndiff", "Nnocall"
+  "chrom", "start", "end", "mod_code", "score", "strand",
+  "thickStart", "thickEnd", "itemRgb",
+  "Nvalid_cov", "fraction_modified", "Nmod", "Ncanonical",
+  "Nother_mod", "Ndelete", "Nfail", "Ndiff", "Nnocall"
 )
 
 #' Parse a modkit pileup BED file into a tidy per-site data frame
@@ -58,103 +58,106 @@ NULL
 #'   }
 #'
 #' @keywords internal
-.parseModkit <- function(file, sample_name, mod_type = NULL, min_coverage = 5L) {
-    # ── Validate inputs ─────────────────────────────────────────────────────
-    if (!is.character(file) || length(file) != 1) {
-        stop("file must be a single character string path")
-    }
-    if (!file.exists(file)) {
-        stop("modkit BED file not found: ", file)
-    }
-    min_coverage <- as.integer(min_coverage)
+.parseModkit <- function(file,
+                         sample_name,
+                         mod_type = NULL,
+                         min_coverage = 5L) {
+  # ── Validate inputs ─────────────────────────────────────────────────────
+  if (!is.character(file) || length(file) != 1) {
+    stop("file must be a single character string path")
+  }
+  if (!file.exists(file)) {
+    stop("modkit BED file not found: ", file)
+  }
+  min_coverage <- as.integer(min_coverage)
 
-    # ── Read file ───────────────────────────────────────────────────────────
-    raw <- tryCatch(
-        read.table(
-            file,
-            header          = FALSE,
-            sep             = "",
-            stringsAsFactors = FALSE,
-            comment.char    = "#",
-            fill            = TRUE
-        ),
-        error = function(e) {
-            if (grepl("no lines available in input", e$message, fixed = TRUE)) {
-                return(NULL)  # empty file
-            }
-            stop("Failed to read modkit BED file '", file, "': ", e$message)
-        }
+  # ── Read file ───────────────────────────────────────────────────────────
+  raw <- tryCatch(
+    read.table(
+      file,
+      header = FALSE,
+      sep = "",
+      stringsAsFactors = FALSE,
+      comment.char = "#",
+      fill = TRUE
+    ),
+    error = function(e) {
+      if (grepl("no lines available in input", e$message, fixed = TRUE)) {
+        return(NULL) # empty file
+      }
+      stop("Failed to read modkit BED file '", file, "': ", e$message)
+    }
+  )
+
+  if (is.null(raw) || nrow(raw) == 0L) {
+    message("Note: modkit BED file '", file, "' contains no data rows")
+    return(.emptyParseResult())
+  }
+
+  if (ncol(raw) < 18L) {
+    stop(
+      "modkit BED file '", file, "' has ", ncol(raw), " columns; ",
+      "expected at least 18 (modkit pileup bedMethyl format). ",
+      "Check that the file is a modkit pileup output."
     )
+  }
+  # Use only the first 18 columns
+  raw <- raw[, seq_len(18L), drop = FALSE]
+  colnames(raw) <- .MODKIT_COLS
 
-    if (is.null(raw) || nrow(raw) == 0L) {
-        message("Note: modkit BED file '", file, "' contains no data rows")
-        return(.emptyParseResult())
-    }
-
-    if (ncol(raw) < 18L) {
-        stop(
-            "modkit BED file '", file, "' has ", ncol(raw), " columns; ",
-            "expected at least 18 (modkit pileup bedMethyl format). ",
-            "Check that the file is a modkit pileup output."
-        )
-    }
-    # Use only the first 18 columns
-    raw <- raw[, seq_len(18L), drop = FALSE]
-    colnames(raw) <- .MODKIT_COLS
-
-    # ── Map mod_code → mod_type, extract motif ──────────────────────────────
-    # mod_code is compound "code,motif,position" (e.g. "a,GATC,1"); extract
-    # both the code (part 1) and the motif (part 2). Older modkit files may
-    # have just the code with no commas, in which case motif is NA.
-    raw$mod_code <- as.character(raw$mod_code)
-    parts        <- strsplit(raw$mod_code, ",", fixed = TRUE)
-    raw$mod_code <- vapply(parts, `[`, character(1L), 1L)
-    raw$motif    <- vapply(
-        parts,
-        function(x) if (length(x) >= 2L) x[[2L]] else NA_character_,
-        character(1L)
+  # ── Map mod_code → mod_type, extract motif ──────────────────────────────
+  # mod_code is compound "code,motif,position" (e.g. "a,GATC,1"); extract
+  # both the code (part 1) and the motif (part 2). Older modkit files may
+  # have just the code with no commas, in which case motif is NA.
+  raw$mod_code <- as.character(raw$mod_code)
+  parts <- strsplit(raw$mod_code, ",", fixed = TRUE)
+  raw$mod_code <- vapply(parts, `[`, character(1L), 1L)
+  raw$motif <- vapply(
+    parts,
+    function(x) if (length(x) >= 2L) x[[2L]] else NA_character_,
+    character(1L)
+  )
+  mapped <- .MODKIT_CODE_MAP[raw$mod_code]
+  unknown_codes <- unique(raw$mod_code[is.na(mapped)])
+  if (length(unknown_codes) > 0) {
+    warning(
+      "Unknown mod_code values in '", file, "' (skipped): ",
+      paste(unknown_codes, collapse = ", "),
+      ". Known codes: ", paste(names(.MODKIT_CODE_MAP), collapse = ", ")
     )
-    mapped        <- .MODKIT_CODE_MAP[raw$mod_code]
-    unknown_codes <- unique(raw$mod_code[is.na(mapped)])
-    if (length(unknown_codes) > 0) {
-        warning(
-            "Unknown mod_code values in '", file, "' (skipped): ",
-            paste(unknown_codes, collapse = ", "),
-            ". Known codes: ", paste(names(.MODKIT_CODE_MAP), collapse = ", ")
-        )
-    }
-    raw$mod_type_mapped <- mapped
+  }
+  raw$mod_type_mapped <- mapped
 
-    # Drop rows with unrecognized mod_code
-    raw <- raw[!is.na(raw$mod_type_mapped), , drop = FALSE]
+  # Drop rows with unrecognized mod_code
+  raw <- raw[!is.na(raw$mod_type_mapped), , drop = FALSE]
 
-    # ── Apply min_coverage filter ───────────────────────────────────────────
-    raw$Nvalid_cov <- as.integer(raw$Nvalid_cov)
-    raw <- raw[raw$Nvalid_cov >= min_coverage, , drop = FALSE]
+  # ── Apply min_coverage filter ───────────────────────────────────────────
+  raw$Nvalid_cov <- as.integer(raw$Nvalid_cov)
+  raw <- raw[raw$Nvalid_cov >= min_coverage, , drop = FALSE]
 
-    # ── Apply mod_type filter ───────────────────────────────────────────────
-    if (!is.null(mod_type)) {
-        raw <- raw[raw$mod_type_mapped %in% mod_type, , drop = FALSE]
-    }
+  # ── Apply mod_type filter ───────────────────────────────────────────────
+  if (!is.null(mod_type)) {
+    raw <- raw[raw$mod_type_mapped %in% mod_type, , drop = FALSE]
+  }
 
-    if (nrow(raw) == 0L) {
-        return(.emptyParseResult())
-    }
+  if (nrow(raw) == 0L) {
+    return(.emptyParseResult())
+  }
 
-    # ── Build result ────────────────────────────────────────────────────────
-    data.frame(
-        chrom    = as.character(raw$chrom),
-        position = as.integer(raw$start) + 1L,  # BED is 0-based → 1-based
-        strand   = as.character(raw$strand),
-        mod_type = raw$mod_type_mapped,
-        motif    = raw$motif,
-        beta     = as.numeric(raw$fraction_modified) / 100,  # percentage → fraction
-        coverage = raw$Nvalid_cov,
-        mod_counts = as.integer(raw$Nmod),
-        canonical_counts = as.integer(raw$Ncanonical),
-        other_mod_counts = as.integer(raw$Nother_mod),
-        stringsAsFactors = FALSE
-    )
+  # ── Build result ────────────────────────────────────────────────────────
+  data.frame(
+    chrom = as.character(raw$chrom),
+    position = as.integer(raw$start) + 1L, # BED is 0-based → 1-based
+    strand = as.character(raw$strand),
+    mod_type = raw$mod_type_mapped,
+    motif = raw$motif,
+    beta = as.numeric(raw$fraction_modified) / 100, # percentage → fraction
+    coverage = raw$Nvalid_cov,
+    mod_counts = as.integer(raw$Nmod),
+    canonical_counts = as.integer(raw$Ncanonical),
+    other_mod_counts = as.integer(raw$Nother_mod),
+    stringsAsFactors = FALSE
+  )
 }
 
 #' Empty parser result (zero-row data frame with shared parse schema)
@@ -164,19 +167,19 @@ NULL
 #'   \code{canonical_counts}, and \code{other_mod_counts}.
 #' @keywords internal
 .emptyParseResult <- function() {
-    data.frame(
-        chrom    = character(0),
-        position = integer(0),
-        strand   = character(0),
-        mod_type = character(0),
-        motif    = character(0),
-        beta     = numeric(0),
-        coverage = integer(0),
-        mod_counts = integer(0),
-        canonical_counts = integer(0),
-        other_mod_counts = integer(0),
-        stringsAsFactors = FALSE
-    )
+  data.frame(
+    chrom = character(0),
+    position = integer(0),
+    strand = character(0),
+    mod_type = character(0),
+    motif = character(0),
+    beta = numeric(0),
+    coverage = integer(0),
+    mod_counts = integer(0),
+    canonical_counts = integer(0),
+    other_mod_counts = integer(0),
+    stringsAsFactors = FALSE
+  )
 }
 
 

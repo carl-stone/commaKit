@@ -18,7 +18,7 @@ These are the reasons behind the work. They determine priority order.
 
 2. **Usability** — Claire should be able to use commaKit independently. She needs docs, clear error messages, method selection guidance, and a package that doesn't surprise her with silent failures.
 
-3. **Robustness** — commaKit should handle real data, not just the 588-site toy example. Edge cases, large genomes, weird callers, production-scale site counts.
+3. **Robustness** — commaKit should handle real data, not just a 588-site toy example. Edge cases, large genomes, weird callers, production-scale site counts.
 
 4. **Publishability** — Bioconductor-ready when the time comes. This is a low priority. We'd rather have a great, stable package installable from GitHub than a rushed Bioconductor submission.
 

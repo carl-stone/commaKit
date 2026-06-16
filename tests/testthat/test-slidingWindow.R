@@ -1,4 +1,3 @@
-
 # Create a tiny dataset for most tests to speed up execution. We can still use the full dataset for tests that require more complex structure or specific edge cases.
 make_tiny <- function() {
   gi <- c(chr_test = 20L)
@@ -11,20 +10,28 @@ make_tiny <- function() {
 
   # Two samples, two mod types so mod_type filtering has something to split
   methyl_mat <- matrix(
-    c(0.2, 0.8, 0.6,   # samp1
-      0.1, 0.6, 0.9),  # samp2
+    c(
+      0.2, 0.8, 0.6, # samp1
+      0.1, 0.6, 0.9
+    ), # samp2
     nrow = 3, ncol = 2,
     dimnames = list(NULL, c("samp1", "samp2"))
   )
-  cov_mat <- matrix(10L, nrow = 3, ncol = 2,
-                    dimnames = list(NULL, c("samp1", "samp2")))
+  cov_mat <- matrix(10L,
+    nrow = 3, ncol = 2,
+    dimnames = list(NULL, c("samp1", "samp2"))
+  )
 
   site_gr <- GenomicRanges::GRanges(
     seqnames = "chr_test",
-    ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
-    strand   = "+",
-    mod_type    = factor(c("6mA", "5mC", "6mA"), levels = c("4mC", "5mC", "6mA")),   # mixed types for filter test
-    motif       = c("GATC", "CCWGG", "GATC")
+    ranges = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
+    strand = "+",
+    # Mixed types for filter test.
+    mod_type = factor(
+      c("6mA", "5mC", "6mA"),
+      levels = c("4mC", "5mC", "6mA")
+    ),
+    motif = c("GATC", "CCWGG", "GATC")
   )
   GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
     seqnames = "chr_test",
@@ -49,74 +56,88 @@ W <- 8L
 
 
 test_that("slidingWindow: returns a data.frame", {
-    result <- slidingWindow(tiny_data, window = W)
-    expect_s3_class(result, "data.frame")
+  result <- slidingWindow(tiny_data, window = W)
+  expect_s3_class(result, "data.frame")
 })
 
 test_that("slidingWindow: output has required columns", {
-    result <- slidingWindow(tiny_data, window = W)
-    expect_true(all(c("chrom", "position", "sample_name", "window_median") %in% colnames(result)))
+  result <- slidingWindow(tiny_data, window = W)
+  expect_true(
+    all(c("chrom", "position", "sample_name", "window_median") %in%
+      colnames(result))
+  )
 })
 
 test_that("slidingWindow: stat='mean' produces window_mean column", {
-    result <- slidingWindow(tiny_data, window = W, stat = "mean")
-    expect_true("window_mean" %in% colnames(result))
-    expect_false("window_median" %in% colnames(result))
+  result <- slidingWindow(tiny_data, window = W, stat = "mean")
+  expect_true("window_mean" %in% colnames(result))
+  expect_false("window_median" %in% colnames(result))
 })
 
 test_that("slidingWindow: number of rows equals genome_size * n_samples", {
-    gi <- genomeSizes(tiny_data)
-    n_pos <- sum(gi)
-    n_samp <- ncol(tiny_data)
-    result <- slidingWindow(tiny_data, window = W)
-    expect_equal(nrow(result), n_pos * n_samp)
+  gi <- genomeSizes(tiny_data)
+  n_pos <- sum(gi)
+  n_samp <- ncol(tiny_data)
+  result <- slidingWindow(tiny_data, window = W)
+  expect_equal(nrow(result), n_pos * n_samp)
 })
 
 test_that("slidingWindow: positions span 1 to chromosome size", {
-    gi <- genomeSizes(tiny_data)
-    chr_size <- gi[1]
-    result <- slidingWindow(tiny_data, window = W)
-    chr_result <- result[result$chrom == names(gi)[1], ]
-    expect_equal(min(chr_result$position[chr_result$sample_name == chr_result$sample_name[1]]), 1L)
-    expect_equal(max(chr_result$position[chr_result$sample_name == chr_result$sample_name[1]]),
-                 as.integer(chr_size))
+  gi <- genomeSizes(tiny_data)
+  chr_size <- gi[1]
+  result <- slidingWindow(tiny_data, window = W)
+  chr_result <- result[result$chrom == names(gi)[1], ]
+  expect_equal(
+    min(chr_result$position[
+      chr_result$sample_name == chr_result$sample_name[1]
+    ]),
+    1L
+  )
+  expect_equal(
+    max(chr_result$position[
+      chr_result$sample_name == chr_result$sample_name[1]
+    ]),
+    as.integer(chr_size)
+  )
 })
 
 test_that("slidingWindow: all sample names present in output", {
-    result <- slidingWindow(tiny_data, window = W)
-    expect_setequal(unique(result$sample_name), sampleInfo(tiny_data)$sample_name)
+  result <- slidingWindow(tiny_data, window = W)
+  expect_setequal(unique(result$sample_name), sampleInfo(tiny_data)$sample_name)
 })
 
 test_that("slidingWindow: median and mean give different results", {
-    r_med  <- slidingWindow(tiny_data, window = 16, stat = "median")
-    r_mean <- slidingWindow(tiny_data, window = 16, stat = "mean")
-    # They can differ; compare non-NA values
-    v_med  <- r_med$window_median[!is.na(r_med$window_median)]
-    v_mean <- r_mean$window_mean[!is.na(r_mean$window_mean)]
-    expect_false(isTRUE(all.equal(v_med, v_mean, check.attributes = FALSE)))
+  r_med <- slidingWindow(tiny_data, window = 16, stat = "median")
+  r_mean <- slidingWindow(tiny_data, window = 16, stat = "mean")
+  # They can differ; compare non-NA values
+  v_med <- r_med$window_median[!is.na(r_med$window_median)]
+  v_mean <- r_mean$window_mean[!is.na(r_mean$window_mean)]
+  expect_false(isTRUE(all.equal(v_med, v_mean, check.attributes = FALSE)))
 })
 
 test_that("slidingWindow: mod_type filtering works", {
-    result_6mA <- slidingWindow(tiny_data, window = W, mod_type = "6mA")
-    result_5mC <- slidingWindow(tiny_data, window = W, mod_type = "5mC")
-    # Both still produce full-genome output (genome size × n_samples)
-    gi <- genomeSizes(tiny_data)
-    n_samp <- ncol(tiny_data)
-    expect_equal(nrow(result_6mA), sum(gi) * n_samp)
-    expect_equal(nrow(result_5mC), sum(gi) * n_samp)
-    # The smoothed values should differ because different sites are included
-    v6 <- result_6mA$window_median[!is.na(result_6mA$window_median)]
-    v5 <- result_5mC$window_median[!is.na(result_5mC$window_median)]
-    expect_false(isTRUE(all.equal(v6, v5, check.attributes = FALSE)))
+  result_6mA <- slidingWindow(tiny_data, window = W, mod_type = "6mA")
+  result_5mC <- slidingWindow(tiny_data, window = W, mod_type = "5mC")
+  # Both still produce full-genome output (genome size × n_samples)
+  gi <- genomeSizes(tiny_data)
+  n_samp <- ncol(tiny_data)
+  expect_equal(nrow(result_6mA), sum(gi) * n_samp)
+  expect_equal(nrow(result_5mC), sum(gi) * n_samp)
+  # The smoothed values should differ because different sites are included
+  v6 <- result_6mA$window_median[!is.na(result_6mA$window_median)]
+  v5 <- result_5mC$window_median[!is.na(result_5mC$window_median)]
+  expect_false(isTRUE(all.equal(v6, v5, check.attributes = FALSE)))
 })
 
 test_that("slidingWindow: values are in [0,1] range (ignoring NA)", {
-    result <- slidingWindow(tiny_data, window = W)
-    vals <- result$window_median[!is.na(result$window_median)]
-    expect_true(all(vals >= 0 & vals <= 1))
+  result <- slidingWindow(tiny_data, window = W)
+  vals <- result$window_median[!is.na(result$window_median)]
+  expect_true(all(vals >= 0 & vals <= 1))
 })
 
-test_that("slidingWindow: circular=FALSE returns correct row count with valid values", {
+test_that(
+  "slidingWindow: circular=FALSE returns correct row count with valid values",
+  {
     result <- slidingWindow(tiny_data, window = W, circular = FALSE)
     expect_s3_class(result, "data.frame")
     expect_true("window_median" %in% colnames(result))
@@ -128,86 +149,108 @@ test_that("slidingWindow: circular=FALSE returns correct row count with valid va
     valid_med <- result$window_median[!is.na(result$window_median)]
     expect_true(length(valid_med) > 0)
     expect_true(all(valid_med >= 0 & valid_med <= 1))
-})
+  }
+)
 
-test_that("slidingWindow: circular=TRUE and FALSE give different edge results", {
-    r_circ   <- slidingWindow(tiny_data, window = 16, circular = TRUE)
+test_that(
+  "slidingWindow: circular=TRUE and FALSE give different edge results",
+  {
+    r_circ <- slidingWindow(tiny_data, window = 16, circular = TRUE)
     r_linear <- slidingWindow(tiny_data, window = 16, circular = FALSE)
-    gi   <- genomeSizes(tiny_data)
-    chr  <- names(gi)[1]
+    gi <- genomeSizes(tiny_data)
+    chr <- names(gi)[1]
     samp <- sampleInfo(tiny_data)$sample_name[1]
     # Compare all positions for one sample on the chromosome.
     # With 300 sites across a 100kb genome and a 5000bp window, circular wrapping
     # at the chromosome boundary must produce at least one position with a different
     # smoothed value.
-    v_circ   <- r_circ$window_median[r_circ$chrom == chr & r_circ$sample_name == samp]
-    v_linear <- r_linear$window_median[r_linear$chrom == chr & r_linear$sample_name == samp]
+    v_circ <- r_circ$window_median[
+      r_circ$chrom == chr & r_circ$sample_name == samp
+    ]
+    v_linear <- r_linear$window_median[
+      r_linear$chrom == chr & r_linear$sample_name == samp
+    ]
     expect_false(isTRUE(all.equal(v_circ, v_linear)))
-})
+  }
+)
 
 test_that("slidingWindow: circular boundary values match manual calculation", {
-    beta <- matrix(
-        c(0.1, 0.9, 0.7),
-        nrow = 3L,
-        dimnames = list(NULL, "samp1")
-    )
-    obj <- .make_commaData_fixture(
-        beta = beta,
-        sample_info = data.frame(
-            sample_name = "samp1",
-            condition = "ctrl",
-            replicate = 1L,
-            stringsAsFactors = FALSE
-        ),
-        positions = c(1L, 9L, 10L),
-        chrom = "chr_wrap",
-        seqlength = 10L
-    )
-    rr <- rowRanges(obj)
-    si <- GenomeInfoDb::seqinfo(rr)
-    GenomeInfoDb::isCircular(si) <- TRUE
-    GenomeInfoDb::seqinfo(rr) <- si
-    rowRanges(obj) <- rr
+  beta <- matrix(
+    c(0.1, 0.9, 0.7),
+    nrow = 3L,
+    dimnames = list(NULL, "samp1")
+  )
+  obj <- .make_commaData_fixture(
+    beta = beta,
+    sample_info = data.frame(
+      sample_name = "samp1",
+      condition = "ctrl",
+      replicate = 1L,
+      stringsAsFactors = FALSE
+    ),
+    positions = c(1L, 9L, 10L),
+    chrom = "chr_wrap",
+    seqlength = 10L
+  )
+  rr <- rowRanges(obj)
+  si <- GenomeInfoDb::seqinfo(rr)
+  GenomeInfoDb::isCircular(si) <- TRUE
+  GenomeInfoDb::seqinfo(rr) <- si
+  rowRanges(obj) <- rr
 
-    circular_mean <- slidingWindow(obj, window = 3L, stat = "mean",
-                                   circular = TRUE)
-    linear_mean <- slidingWindow(obj, window = 3L, stat = "mean",
-                                 circular = FALSE)
-    circular_median <- slidingWindow(obj, window = 3L, circular = TRUE)
+  circular_mean <- slidingWindow(obj,
+    window = 3L, stat = "mean",
+    circular = TRUE
+  )
+  linear_mean <- slidingWindow(obj,
+    window = 3L, stat = "mean",
+    circular = FALSE
+  )
+  circular_median <- slidingWindow(obj, window = 3L, circular = TRUE)
 
-    circ_start <- circular_mean$window_mean[circular_mean$position == 1L]
-    circ_end <- circular_mean$window_mean[circular_mean$position == 10L]
-    linear_start <- linear_mean$window_mean[linear_mean$position == 1L]
-    linear_end <- linear_mean$window_mean[linear_mean$position == 10L]
-    median_end <- circular_median$window_median[
-        circular_median$position == 10L
-    ]
+  circ_start <- circular_mean$window_mean[circular_mean$position == 1L]
+  circ_end <- circular_mean$window_mean[circular_mean$position == 10L]
+  linear_start <- linear_mean$window_mean[linear_mean$position == 1L]
+  linear_end <- linear_mean$window_mean[linear_mean$position == 10L]
+  median_end <- circular_median$window_median[
+    circular_median$position == 10L
+  ]
 
-    expect_equal(circ_start, mean(c(0.7, 0.1)), tolerance = 1e-12)
-    expect_equal(circ_end, mean(c(0.9, 0.7, 0.1)), tolerance = 1e-12)
-    expect_equal(linear_start, 0.1, tolerance = 1e-12)
-    expect_equal(linear_end, mean(c(0.9, 0.7)), tolerance = 1e-12)
-    expect_equal(median_end, 0.7, tolerance = 1e-12)
+  expect_equal(circ_start, mean(c(0.7, 0.1)), tolerance = 1e-12)
+  expect_equal(circ_end, mean(c(0.9, 0.7, 0.1)), tolerance = 1e-12)
+  expect_equal(linear_start, 0.1, tolerance = 1e-12)
+  expect_equal(linear_end, mean(c(0.9, 0.7)), tolerance = 1e-12)
+  expect_equal(median_end, 0.7, tolerance = 1e-12)
 })
 
 test_that("slidingWindow: circular=NULL follows Seqinfo circularity", {
-    obj_linear <- tiny_data
-    r_default_linear <- slidingWindow(obj_linear, window = 16, circular = NULL)
-    r_explicit_linear <- slidingWindow(obj_linear, window = 16, circular = FALSE)
-    expect_equal(r_default_linear, r_explicit_linear)
+  obj_linear <- tiny_data
+  r_default_linear <- slidingWindow(obj_linear, window = 16, circular = NULL)
+  r_explicit_linear <- slidingWindow(obj_linear, window = 16, circular = FALSE)
+  expect_equal(r_default_linear, r_explicit_linear)
 
-    obj_circular <- tiny_data
-    rr <- rowRanges(obj_circular)
-    si <- GenomeInfoDb::seqinfo(rr)
-    GenomeInfoDb::isCircular(si) <- TRUE
-    GenomeInfoDb::seqinfo(rr) <- si
-    rowRanges(obj_circular) <- rr
-    r_default_circular <- slidingWindow(obj_circular, window = 16, circular = NULL)
-    r_explicit_circular <- slidingWindow(obj_circular, window = 16, circular = TRUE)
-    expect_equal(r_default_circular, r_explicit_circular)
+  obj_circular <- tiny_data
+  rr <- rowRanges(obj_circular)
+  si <- GenomeInfoDb::seqinfo(rr)
+  GenomeInfoDb::isCircular(si) <- TRUE
+  GenomeInfoDb::seqinfo(rr) <- si
+  rowRanges(obj_circular) <- rr
+  r_default_circular <- slidingWindow(
+    obj_circular,
+    window = 16,
+    circular = NULL
+  )
+  r_explicit_circular <- slidingWindow(
+    obj_circular,
+    window = 16,
+    circular = TRUE
+  )
+  expect_equal(r_default_circular, r_explicit_circular)
 })
 
-test_that("slidingWindow: circular=NULL treats missing Seqinfo circularity as circular", {
+test_that(
+  "slidingWindow: circular=NULL treats missing Seqinfo circularity as circular",
+  {
     obj <- tiny_data
     rr <- rowRanges(obj)
     si <- GenomeInfoDb::seqinfo(rr)
@@ -218,110 +261,123 @@ test_that("slidingWindow: circular=NULL treats missing Seqinfo circularity as ci
     r_default <- slidingWindow(obj, window = 16, circular = NULL)
     r_explicit <- slidingWindow(obj, window = 16, circular = TRUE)
     expect_equal(r_default, r_explicit)
-})
+  }
+)
 
 test_that("slidingWindow: example data is circular by default", {
-    data(comma_example_data)
-    expect_true(all(GenomeInfoDb::isCircular(GenomeInfoDb::seqinfo(comma_example_data))))
+  data(comma_example_data)
+  expect_true(
+    all(GenomeInfoDb::isCircular(GenomeInfoDb::seqinfo(comma_example_data)))
+  )
 
-    obj <- comma_example_data[, 1L]
-    r_default <- slidingWindow(obj, window = 100L, circular = NULL)
-    r_circular <- slidingWindow(obj, window = 100L, circular = TRUE)
-    expect_equal(r_default, r_circular)
+  obj <- comma_example_data[, 1L]
+  r_default <- slidingWindow(obj, window = 100L, circular = NULL)
+  r_circular <- slidingWindow(obj, window = 100L, circular = TRUE)
+  expect_equal(r_default, r_circular)
 })
 
 test_that("slidingWindow: circular must be TRUE, FALSE, or NULL", {
-    expect_error(
-        slidingWindow(tiny_data, window = W, circular = NA),
-        "TRUE, FALSE, or NULL"
-    )
-    expect_error(
-        slidingWindow(tiny_data, window = W, circular = c(TRUE, FALSE)),
-        "TRUE, FALSE, or NULL"
-    )
+  expect_error(
+    slidingWindow(tiny_data, window = W, circular = NA),
+    "TRUE, FALSE, or NULL"
+  )
+  expect_error(
+    slidingWindow(tiny_data, window = W, circular = c(TRUE, FALSE)),
+    "TRUE, FALSE, or NULL"
+  )
 })
 
 test_that("slidingWindow: error on non-commaData input", {
-    expect_error(slidingWindow(data.frame(x = 1), window = 100), "'object' must be a commaData")
+  expect_error(
+    slidingWindow(data.frame(x = 1), window = 100),
+    "'object' must be a commaData"
+  )
 })
 
 test_that("slidingWindow: error on missing window argument", {
-    expect_error(slidingWindow(tiny_data))
+  expect_error(slidingWindow(tiny_data))
 })
 
 test_that("slidingWindow: error when genome is NULL", {
-    data(comma_example_data)
-    rse_no_genome <- as(comma_example_data, "RangedSummarizedExperiment")
-    rr <- rowRanges(rse_no_genome)
-    # Drop all seqlengths to simulate missing genome info
-    GenomeInfoDb::seqlengths(rr) <- NA_integer_
-    rowRanges(rse_no_genome) <- rr
-    obj_no_genome <- new("commaData", rse_no_genome)
-    # Copy metadata from original
-    S4Vectors::metadata(obj_no_genome) <- S4Vectors::metadata(comma_example_data)
-    expect_error(slidingWindow(obj_no_genome, window = 1000L), "genomeSizes\\(object\\)")
+  data(comma_example_data)
+  rse_no_genome <- as(comma_example_data, "RangedSummarizedExperiment")
+  rr <- rowRanges(rse_no_genome)
+  # Drop all seqlengths to simulate missing genome info
+  GenomeInfoDb::seqlengths(rr) <- NA_integer_
+  rowRanges(rse_no_genome) <- rr
+  obj_no_genome <- new("commaData", rse_no_genome)
+  # Copy metadata from original
+  S4Vectors::metadata(obj_no_genome) <- S4Vectors::metadata(comma_example_data)
+  expect_error(
+    slidingWindow(obj_no_genome, window = 1000L),
+    "genomeSizes\\(object\\)"
+  )
 })
 
 test_that("slidingWindow: error when window exceeds chromosome size", {
-    gi <- genomeSizes(tiny_data)   # chr_sim = 20 bp
-    expect_error(
-        slidingWindow(tiny_data, window = 200000L),
-        "exceeds the smallest chromosome size"
-    )
+  gi <- genomeSizes(tiny_data) # chr_sim = 20 bp
+  expect_error(
+    slidingWindow(tiny_data, window = 200000L),
+    "exceeds the smallest chromosome size"
+  )
 })
 
 test_that("slidingWindow: error on invalid mod_type", {
-    expect_error(
-        slidingWindow(tiny_data, window = W, mod_type = "invalid_type"),
-        "not found in object"
-    )
+  expect_error(
+    slidingWindow(tiny_data, window = W, mod_type = "invalid_type"),
+    "not found in object"
+  )
 })
 
 test_that("slidingWindow: NaN values converted to NA", {
-    env <- new.env(parent = emptyenv())
-    data(comma_example_data, envir = env)
-    result <- slidingWindow(comma_example_data, window = 5000L)
-    expect_false(any(is.nan(result$window_median)))
+  env <- new.env(parent = emptyenv())
+  data(comma_example_data, envir = env)
+  result <- slidingWindow(comma_example_data, window = 5000L)
+  expect_false(any(is.nan(result$window_median)))
 })
 
 test_that("slidingWindow: known smoothed value for simple input", {
-    # Single chromosome, 3 sites at known positions, window=3
-    # We verify the smoothed value at a position adjacent to a site
-    gi <- c(chr_test = 20L)
-    # Create minimal commaData
-    site_gr <- GenomicRanges::GRanges(
-        seqnames = "chr_test",
-        ranges   = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
-        strand   = "+",
-        mod_type    = factor("6mA", levels = c("4mC", "5mC", "6mA")),
-        motif       = "GATC"
-    )
-    GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
-        seqnames = "chr_test",
-        seqlengths = 20L,
-        isCircular = FALSE
-    )
-    methyl_mat <- matrix(c(0.2, 0.8, 0.5), nrow = 3, ncol = 1,
-                         dimnames = list(NULL, "samp1"))
-    cov_mat    <- matrix(10L, nrow = 3, ncol = 1,
-                         dimnames = list(NULL, "samp1"))
-    cd <- S4Vectors::DataFrame(
-        sample_name = "samp1",
-        condition   = "ctrl",
-        replicate   = 1L
-    )
-    rse <- SummarizedExperiment::SummarizedExperiment(
-        assays     = list(methylation = methyl_mat, coverage = cov_mat),
-        rowRanges  = site_gr,
-        colData    = cd
-    )
-    obj <- new("commaData", rse)
+  # Single chromosome, 3 sites at known positions, window=3
+  # We verify the smoothed value at a position adjacent to a site
+  gi <- c(chr_test = 20L)
+  # Create minimal commaData
+  site_gr <- GenomicRanges::GRanges(
+    seqnames = "chr_test",
+    ranges = IRanges::IRanges(start = c(5L, 10L, 15L), width = 1L),
+    strand = "+",
+    mod_type = factor("6mA", levels = c("4mC", "5mC", "6mA")),
+    motif = "GATC"
+  )
+  GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
+    seqnames = "chr_test",
+    seqlengths = 20L,
+    isCircular = FALSE
+  )
+  methyl_mat <- matrix(c(0.2, 0.8, 0.5),
+    nrow = 3, ncol = 1,
+    dimnames = list(NULL, "samp1")
+  )
+  cov_mat <- matrix(10L,
+    nrow = 3, ncol = 1,
+    dimnames = list(NULL, "samp1")
+  )
+  cd <- S4Vectors::DataFrame(
+    sample_name = "samp1",
+    condition   = "ctrl",
+    replicate   = 1L
+  )
+  rse <- SummarizedExperiment::SummarizedExperiment(
+    assays     = list(methylation = methyl_mat, coverage = cov_mat),
+    rowRanges  = site_gr,
+    colData    = cd
+  )
+  obj <- new("commaData", rse)
 
-    # window=5 centered on position 10 covers positions 8:12.
-    # Only the site at position 10 (beta=0.8) falls in [8:12]; sites at 5 and 15
-    # are outside. So median({0.8}) == 0.8 exactly.
-    result  <- slidingWindow(obj, window = 5L, circular = FALSE)
-    val_p10 <- result$window_median[result$position == 10L]
-    expect_false(is.na(val_p10))
-    expect_equal(val_p10, 0.8, tolerance = 1e-9)
+  # window=5 centered on position 10 covers positions 8:12.
+  # Only the site at position 10 (beta=0.8) falls in [8:12]; sites at 5 and 15
+  # are outside. So median({0.8}) == 0.8 exactly.
+  result <- slidingWindow(obj, window = 5L, circular = FALSE)
+  val_p10 <- result$window_median[result$position == 10L]
+  expect_false(is.na(val_p10))
+  expect_equal(val_p10, 0.8, tolerance = 1e-9)
 })

@@ -82,176 +82,185 @@ NULL
                        ref_level = NULL, design_info = NULL,
                        mod_counts_mat = NULL, canonical_counts_mat = NULL,
                        other_mod_counts_mat = NULL) {
-    # ── Dependency check ──────────────────────────────────────────────────────
-    if (!requireNamespace("limma", quietly = TRUE)) {
-        stop(
-            "Package 'limma' is required for method = \"quasi_f\".\n",
-            "Install it with: BiocManager::install(\"limma\")\n",
-            "Alternatively, use method = \"methylkit\" if methylKit is available."
-        )
-    }
+  # ── Dependency check ──────────────────────────────────────────────────────
+  if (!requireNamespace("limma", quietly = TRUE)) {
+    stop(
+      "Package 'limma' is required for method = \"quasi_f\".\n",
+      "Install it with: BiocManager::install(\"limma\")\n",
+      "Alternatively, use method = \"methylkit\" if methylKit is available."
+    )
+  }
 
-    # ── Resolve two-level design and group statistics ─────────────────────────
-    if (is.null(design_info)) {
-        design_info <- .resolveDiffMethylDesign(coldata, formula, ref_level = ref_level)
-    }
-    primary_var <- design_info$primary_var
-    ref_level   <- design_info$ref_level
-    treat_level <- design_info$treat_level
-    cond_levels <- design_info$cond_levels
-    cond        <- design_info$cond
+  # ── Resolve two-level design and group statistics ─────────────────────────
+  if (is.null(design_info)) {
+    design_info <- .resolveDiffMethylDesign(
+      coldata,
+      formula,
+      ref_level = ref_level
+    )
+  }
+  primary_var <- design_info$primary_var
+  ref_level <- design_info$ref_level
+  treat_level <- design_info$treat_level
+  cond_levels <- design_info$cond_levels
+  cond <- design_info$cond
 
-    n_sites <- nrow(methyl_mat)
+  n_sites <- nrow(methyl_mat)
 
-    group_stats    <- .computeDiffMethylGroupStats(methyl_mat, design_info)
-    group_means    <- group_stats$group_means
-    delta_beta_vec <- group_stats$delta_beta
-    count_mats <- .resolveCountMatrices(
-        methyl_mat,
-        coverage_mat,
-        mod_counts_mat = mod_counts_mat,
-        canonical_counts_mat = canonical_counts_mat,
-        other_mod_counts_mat = other_mod_counts_mat
+  group_stats <- .computeDiffMethylGroupStats(methyl_mat, design_info)
+  group_means <- group_stats$group_means
+  delta_beta_vec <- group_stats$delta_beta
+  count_mats <- .resolveCountMatrices(
+    methyl_mat,
+    coverage_mat,
+    mod_counts_mat = mod_counts_mat,
+    canonical_counts_mat = canonical_counts_mat,
+    other_mod_counts_mat = other_mod_counts_mat
+  )
+
+  # ── Pass 1: per-site GLM — collect dispersion and unscaled t ─────────────
+  phi_vec <- rep(NA_real_, n_sites)
+  df_vec <- rep(NA_integer_, n_sites)
+  t_unscaled <- rep(NA_real_, n_sites)
+
+  for (i in seq_len(n_sites)) {
+    beta_i <- methyl_mat[i, ]
+    cov_i <- coverage_mat[i, ]
+
+    # Require at least 2 non-NA samples with positive coverage
+    ok <- !is.na(beta_i) & !is.na(cov_i) & cov_i > 0L
+    if (sum(ok) < 2L) next
+
+    # Require at least 2 distinct condition levels among non-NA samples
+    cond_ok <- cond[ok]
+    if (length(unique(cond_ok)) < 2L) next
+
+    n_mod <- count_mats$modified[i, ok]
+    n_unmod <- count_mats$unmodified[i, ok]
+
+    # Clamp to [0, coverage]
+    n_mod <- pmax(0L, pmin(n_mod, cov_i[ok]))
+    n_unmod <- pmax(0L, n_unmod)
+
+    df_glm <- data.frame(
+      n_mod = n_mod,
+      n_unmod = n_unmod,
+      stringsAsFactors = FALSE
+    )
+    # Set factor levels so GLM encodes contrasts against ref_level
+    df_glm[[primary_var]] <- factor(
+      cond_ok,
+      levels = c(ref_level, setdiff(unique(cond_ok), ref_level))
     )
 
-    # ── Pass 1: per-site GLM — collect dispersion and unscaled t ─────────────
-    phi_vec    <- rep(NA_real_, n_sites)
-    df_vec     <- rep(NA_integer_, n_sites)
-    t_unscaled <- rep(NA_real_, n_sites)
-
-    for (i in seq_len(n_sites)) {
-        beta_i <- methyl_mat[i, ]
-        cov_i  <- coverage_mat[i, ]
-
-        # Require at least 2 non-NA samples with positive coverage
-        ok <- !is.na(beta_i) & !is.na(cov_i) & cov_i > 0L
-        if (sum(ok) < 2L) next
-
-        # Require at least 2 distinct condition levels among non-NA samples
-        cond_ok <- cond[ok]
-        if (length(unique(cond_ok)) < 2L) next
-
-        n_mod   <- count_mats$modified[i, ok]
-        n_unmod <- count_mats$unmodified[i, ok]
-
-        # Clamp to [0, coverage]
-        n_mod   <- pmax(0L, pmin(n_mod, cov_i[ok]))
-        n_unmod <- pmax(0L, n_unmod)
-
-        df_glm <- data.frame(
-            n_mod   = n_mod,
-            n_unmod = n_unmod,
-            stringsAsFactors = FALSE
+    fit <- tryCatch(
+      glm(
+        cbind(n_mod, n_unmod) ~ .,
+        data   = df_glm,
+        family = quasibinomial()
+      ),
+      error = function(e) NULL,
+      warning = function(w) {
+        tryCatch(
+          suppressWarnings(glm(
+            cbind(n_mod, n_unmod) ~ .,
+            data   = df_glm,
+            family = quasibinomial()
+          )),
+          error = function(e2) NULL
         )
-        # Set factor levels so GLM encodes contrasts against ref_level
-        df_glm[[primary_var]] <- factor(
-            cond_ok,
-            levels = c(ref_level, setdiff(unique(cond_ok), ref_level))
-        )
+      }
+    )
 
-        fit <- tryCatch(
-            glm(
-                cbind(n_mod, n_unmod) ~ .,
-                data   = df_glm,
-                family = quasibinomial()
-            ),
-            error   = function(e) NULL,
-            warning = function(w) {
-                tryCatch(
-                    suppressWarnings(glm(
-                        cbind(n_mod, n_unmod) ~ .,
-                        data   = df_glm,
-                        family = quasibinomial()
-                    )),
-                    error = function(e2) NULL
-                )
-            }
-        )
+    if (is.null(fit) || fit$df.residual < 1L) next
 
-        if (is.null(fit) || fit$df.residual < 1L) next
+    # summary(fit) computes the Pearson dispersion estimate for quasibinomial;
+    # fit$dispersion is NULL for quasi families — must use summary(fit)$dispersion
+    sm <- tryCatch(summary(fit), error = function(e) NULL)
+    if (is.null(sm)) next
 
-        # summary(fit) computes the Pearson dispersion estimate for quasibinomial;
-        # fit$dispersion is NULL for quasi families — must use summary(fit)$dispersion
-        sm <- tryCatch(summary(fit), error = function(e) NULL)
-        if (is.null(sm)) next
-
-        phi_hat <- sm$dispersion
-        if (is.null(phi_hat) || length(phi_hat) != 1L ||
-                is.na(phi_hat) || phi_hat <= 0) next
-
-        cs <- sm$coefficients
-        if (is.null(cs)) next
-
-        row_nm       <- rownames(cs)
-        contrast_row <- grep(primary_var, row_nm, value = TRUE)
-        if (length(contrast_row) == 0L) next
-
-        cr <- contrast_row[[length(contrast_row)]]
-
-        # t_j is the Wald t-statistic from the GLM (uses phi_hat in SE)
-        # t_unscaled_j = t_j × sqrt(phi_hat) = beta_hat / unscaled_SE
-        # This is independent of phi_hat and is what we carry forward.
-        t_j <- cs[cr, "t value"]
-        if (is.na(t_j)) next
-
-        phi_vec[i]    <- phi_hat
-        df_vec[i]     <- fit$df.residual
-        t_unscaled[i] <- t_j * sqrt(phi_hat)
+    phi_hat <- sm$dispersion
+    if (is.null(phi_hat) || length(phi_hat) != 1L ||
+      is.na(phi_hat) || phi_hat <= 0) {
+      next
     }
 
-    # ── Pass 2: EB shrinkage on dispersions via limma::squeezeVar ────────────
-    had_data <- rowSums(!is.na(methyl_mat) & !is.na(coverage_mat) & coverage_mat > 0L) >= 2L
-    failed_with_data <- had_data & (is.na(phi_vec) | is.na(t_unscaled))
-    if (sum(had_data) > 0L && sum(failed_with_data) / sum(had_data) > 0.5) {
-        warning(
-            "quasi_f: GLM fitting failed for ", sum(failed_with_data),
-            " of ", sum(had_data), " sites with sufficient observed data. ",
-            "These sites retain p = NA.",
-            call. = FALSE
-        )
-    }
+    cs <- sm$coefficients
+    if (is.null(cs)) next
 
-    testable   <- !is.na(phi_vec) & !is.na(t_unscaled)
-    pvalue_vec <- rep(NA_real_, n_sites)
+    row_nm <- rownames(cs)
+    contrast_row <- grep(primary_var, row_nm, value = TRUE)
+    if (length(contrast_row) == 0L) next
 
-    if (sum(testable) < 2L) {
-        # Not enough sites to estimate the EB prior; return all NA
-        result <- data.frame(
-            pvalue     = pvalue_vec,
-            delta_beta = delta_beta_vec,
-            stringsAsFactors = FALSE
-        )
-        for (lv in cond_levels) {
-            result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
-        }
-        return(result)
-    }
+    cr <- contrast_row[[length(contrast_row)]]
 
-    squeezed <- limma::squeezeVar(phi_vec[testable], df_vec[testable])
-    phi_post <- squeezed$var.post    # posterior dispersions (same length as phi_vec[testable])
-    df_prior <- squeezed$df.prior    # scalar: estimated prior degrees of freedom
+    # t_j is the Wald t-statistic from the GLM (uses phi_hat in SE)
+    # t_unscaled_j = t_j × sqrt(phi_hat) = beta_hat / unscaled_SE
+    # This is independent of phi_hat and is what we carry forward.
+    t_j <- cs[cr, "t value"]
+    if (is.na(t_j)) next
 
-    # Guard against non-finite df_prior (degenerate case: all dispersions identical)
-    if (is.na(df_prior) || !is.finite(df_prior)) {
-        df_prior <- 0
-    }
+    phi_vec[i] <- phi_hat
+    df_vec[i] <- fit$df.residual
+    t_unscaled[i] <- t_j * sqrt(phi_hat)
+  }
 
-    # ── Pass 3: recompute t-stats and p-values with posterior dispersion ──────
-    t_post  <- t_unscaled[testable] / sqrt(phi_post)
-    df_post <- df_prior + df_vec[testable]
-    p_post  <- 2 * pt(-abs(t_post), df = df_post)
+  # ── Pass 2: EB shrinkage on dispersions via limma::squeezeVar ────────────
+  had_data <- rowSums(
+    !is.na(methyl_mat) & !is.na(coverage_mat) & coverage_mat > 0L
+  ) >= 2L
+  failed_with_data <- had_data & (is.na(phi_vec) | is.na(t_unscaled))
+  if (sum(had_data) > 0L && sum(failed_with_data) / sum(had_data) > 0.5) {
+    warning(
+      "quasi_f: GLM fitting failed for ", sum(failed_with_data),
+      " of ", sum(had_data), " sites with sufficient observed data. ",
+      "These sites retain p = NA.",
+      call. = FALSE
+    )
+  }
 
-    pvalue_vec[testable] <- p_post
+  testable <- !is.na(phi_vec) & !is.na(t_unscaled)
+  pvalue_vec <- rep(NA_real_, n_sites)
 
-    # ── Assemble result ───────────────────────────────────────────────────────
+  if (sum(testable) < 2L) {
+    # Not enough sites to estimate the EB prior; return all NA
     result <- data.frame(
-        pvalue     = pvalue_vec,
-        delta_beta = delta_beta_vec,
-        stringsAsFactors = FALSE
+      pvalue = pvalue_vec,
+      delta_beta = delta_beta_vec,
+      stringsAsFactors = FALSE
     )
     for (lv in cond_levels) {
-        result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
+      result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
     }
+    return(result)
+  }
 
-    result
+  squeezed <- limma::squeezeVar(phi_vec[testable], df_vec[testable])
+  # posterior dispersions, same length as phi_vec[testable]
+  phi_post <- squeezed$var.post
+  df_prior <- squeezed$df.prior # scalar: estimated prior degrees of freedom
+
+  # Guard against non-finite df_prior (degenerate case: all dispersions identical)
+  if (is.na(df_prior) || !is.finite(df_prior)) {
+    df_prior <- 0
+  }
+
+  # ── Pass 3: recompute t-stats and p-values with posterior dispersion ──────
+  t_post <- t_unscaled[testable] / sqrt(phi_post)
+  df_post <- df_prior + df_vec[testable]
+  p_post <- 2 * pt(-abs(t_post), df = df_post)
+
+  pvalue_vec[testable] <- p_post
+
+  # ── Assemble result ───────────────────────────────────────────────────────
+  result <- data.frame(
+    pvalue = pvalue_vec,
+    delta_beta = delta_beta_vec,
+    stringsAsFactors = FALSE
+  )
+  for (lv in cond_levels) {
+    result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
+  }
+
+  result
 }

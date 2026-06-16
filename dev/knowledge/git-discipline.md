@@ -1,3 +1,14 @@
+---
+type: Workflow
+title: Git Discipline
+description: Commit, staging, review, and validation expectations for commaKit work.
+resource: .git
+tags: [git, commits, staging, review, validation]
+timestamp: 2026-06-15T00:00:00Z
+status: current
+owner: Carl Stone
+---
+
 # Git Discipline for commaKit
 
 **Last updated:** 2026-05-14  

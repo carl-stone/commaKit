@@ -52,81 +52,88 @@ NULL
 #' @export
 coverageDepth <- function(object,
                           window,
-                          method         = c("mean", "median"),
+                          method = c("mean", "median"),
                           log2_transform = FALSE) {
-    # ── Input validation ──────────────────────────────────────────────────────
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
-    }
-    method <- match.arg(method)
-    if (missing(window) || !is.numeric(window) || length(window) != 1 || window < 1) {
-        stop("'window' must be a positive integer specifying window size in bp.")
-    }
-    window <- as.integer(window)
+  # ── Input validation ──────────────────────────────────────────────────────
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+  method <- match.arg(method)
+  if (missing(window) ||
+    !is.numeric(window) ||
+    length(window) != 1 ||
+    window < 1) {
+    stop("'window' must be a positive integer specifying window size in bp.")
+  }
+  window <- as.integer(window)
 
-    rd         <- as.data.frame(siteInfo(object))
-    cov_mat    <- siteCoverage(object)
-    sample_nms <- colnames(cov_mat)
-    agg_fn     <- if (method == "mean") mean else stats::median
+  rd <- as.data.frame(siteInfo(object))
+  cov_mat <- siteCoverage(object)
+  sample_nms <- colnames(cov_mat)
+  agg_fn <- if (method == "mean") mean else stats::median
 
-    # Determine chromosome sizes
-    genome_info <- genomeSizes(object)
-    chroms <- if (!is.null(genome_info)) names(genome_info) else unique(rd$chrom)
+  # Determine chromosome sizes
+  genome_info <- genomeSizes(object)
+  chroms <- if (!is.null(genome_info)) names(genome_info) else unique(rd$chrom)
 
-    result_list <- vector("list", length(chroms))
+  result_list <- vector("list", length(chroms))
 
-    for (ci in seq_along(chroms)) {
-        chr      <- chroms[ci]
-        chr_size <- if (!is.null(genome_info)) genome_info[[chr]] else max(rd$position[rd$chrom == chr])
-
-        # Define window breakpoints
-        win_starts <- seq(1L, as.integer(chr_size), by = window)
-        win_ends   <- pmin(win_starts + window - 1L, as.integer(chr_size))
-
-        chr_idx  <- which(rd$chrom == chr)
-        chr_pos  <- rd$position[chr_idx]
-        win_index <- if (length(chr_pos) > 0L) {
-            as.integer((chr_pos - 1L) %/% window) + 1L
-        } else {
-            integer(0)
-        }
-
-        sample_dfs <- vector("list", length(sample_nms))
-
-        for (si in seq_along(sample_nms)) {
-            samp     <- sample_nms[si]
-            chr_cov  <- as.numeric(cov_mat[chr_idx, samp])
-
-            depths <- rep(NA_real_, length(win_starts))
-            if (length(chr_cov) > 0L) {
-                valid_window <- win_index >= 1L & win_index <= length(win_starts)
-                depth_by_window <- vapply(
-                    split(chr_cov[valid_window], win_index[valid_window]),
-                    agg_fn,
-                    numeric(1),
-                    na.rm = TRUE
-                )
-                depths[as.integer(names(depth_by_window))] <- depth_by_window
-            }
-
-            df <- data.frame(
-                chrom        = chr,
-                window_start = win_starts,
-                window_end   = win_ends,
-                sample_name  = samp,
-                depth        = depths,
-                stringsAsFactors = FALSE
-            )
-            if (log2_transform) {
-                df$log2_depth <- log2(df$depth + 1)
-            }
-            sample_dfs[[si]] <- df
-        }
-
-        result_list[[ci]] <- do.call(rbind, sample_dfs)
+  for (ci in seq_along(chroms)) {
+    chr <- chroms[ci]
+    chr_size <- if (!is.null(genome_info)) {
+      genome_info[[chr]]
+    } else {
+      max(rd$position[rd$chrom == chr])
     }
 
-    do.call(rbind, result_list)
+    # Define window breakpoints
+    win_starts <- seq(1L, as.integer(chr_size), by = window)
+    win_ends <- pmin(win_starts + window - 1L, as.integer(chr_size))
+
+    chr_idx <- which(rd$chrom == chr)
+    chr_pos <- rd$position[chr_idx]
+    win_index <- if (length(chr_pos) > 0L) {
+      as.integer((chr_pos - 1L) %/% window) + 1L
+    } else {
+      integer(0)
+    }
+
+    sample_dfs <- vector("list", length(sample_nms))
+
+    for (si in seq_along(sample_nms)) {
+      samp <- sample_nms[si]
+      chr_cov <- as.numeric(cov_mat[chr_idx, samp])
+
+      depths <- rep(NA_real_, length(win_starts))
+      if (length(chr_cov) > 0L) {
+        valid_window <- win_index >= 1L & win_index <= length(win_starts)
+        depth_by_window <- vapply(
+          split(chr_cov[valid_window], win_index[valid_window]),
+          agg_fn,
+          numeric(1),
+          na.rm = TRUE
+        )
+        depths[as.integer(names(depth_by_window))] <- depth_by_window
+      }
+
+      df <- data.frame(
+        chrom = chr,
+        window_start = win_starts,
+        window_end = win_ends,
+        sample_name = samp,
+        depth = depths,
+        stringsAsFactors = FALSE
+      )
+      if (log2_transform) {
+        df$log2_depth <- log2(df$depth + 1)
+      }
+      sample_dfs[[si]] <- df
+    }
+
+    result_list[[ci]] <- do.call(rbind, sample_dfs)
+  }
+
+  do.call(rbind, result_list)
 }
 
 
@@ -170,52 +177,52 @@ coverageDepth <- function(object,
 #' @export
 varianceByDepth <- function(object,
                             coverage_bins = NULL,
-                            mod_type      = NULL,
-                            motif         = NULL) {
-    # ── Input validation ──────────────────────────────────────────────────────
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
+                            mod_type = NULL,
+                            motif = NULL) {
+  # ── Input validation ──────────────────────────────────────────────────────
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+
+  object <- .applySiteFilters(
+    object,
+    mod_type = mod_type,
+    motif = motif,
+    caller = "varianceByDepth()"
+  )
+
+  methyl_mat <- methylation(object)
+  cov_mat <- siteCoverage(object)
+  sample_nms <- colnames(methyl_mat)
+
+  result_list <- vector("list", length(sample_nms))
+
+  for (si in seq_along(sample_nms)) {
+    samp <- sample_nms[si]
+    betas <- methyl_mat[, samp]
+    covs <- as.integer(cov_mat[, samp])
+
+    # Restrict to specified coverage levels
+    levels <- if (!is.null(coverage_bins)) {
+      as.integer(coverage_bins)
+    } else {
+      sort(unique(covs[!is.na(covs)]))
     }
 
-    object <- .applySiteFilters(
-        object,
-        mod_type = mod_type,
-        motif = motif,
-        caller = "varianceByDepth()"
-    )
+    rows <- lapply(levels, function(lv) {
+      idx <- which(covs == lv & !is.na(betas))
+      n <- length(idx)
+      data.frame(
+        coverage = lv,
+        sample_name = samp,
+        variance = if (n >= 2) stats::var(betas[idx]) else NA_real_,
+        n_sites = n,
+        stringsAsFactors = FALSE
+      )
+    })
 
-    methyl_mat <- methylation(object)
-    cov_mat    <- siteCoverage(object)
-    sample_nms <- colnames(methyl_mat)
+    result_list[[si]] <- do.call(rbind, rows)
+  }
 
-    result_list <- vector("list", length(sample_nms))
-
-    for (si in seq_along(sample_nms)) {
-        samp    <- sample_nms[si]
-        betas   <- methyl_mat[, samp]
-        covs    <- as.integer(cov_mat[, samp])
-
-        # Restrict to specified coverage levels
-        levels <- if (!is.null(coverage_bins)) {
-            as.integer(coverage_bins)
-        } else {
-            sort(unique(covs[!is.na(covs)]))
-        }
-
-        rows <- lapply(levels, function(lv) {
-            idx <- which(covs == lv & !is.na(betas))
-            n   <- length(idx)
-            data.frame(
-                coverage    = lv,
-                sample_name = samp,
-                variance    = if (n >= 2) stats::var(betas[idx]) else NA_real_,
-                n_sites     = n,
-                stringsAsFactors = FALSE
-            )
-        })
-
-        result_list[[si]] <- do.call(rbind, rows)
-    }
-
-    do.call(rbind, result_list)
+  do.call(rbind, result_list)
 }

@@ -6,13 +6,13 @@ output: github_document
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-	fig.path = "man/figures/README-",
-	message = FALSE,
-	warning = FALSE,
-	collapse = TRUE,
-	comment = "#>",
-	out.width = "100%",
-	dpi = 300
+  fig.path = "man/figures/README-",
+  message = FALSE,
+  warning = FALSE,
+  collapse = TRUE,
+  comment = "#>",
+  out.width = "100%",
+  dpi = 300
 )
 ```
 
@@ -88,19 +88,19 @@ files <- c(
 )
 
 col_data <- data.frame(
-  sample_name = c("ctrl_1",    "ctrl_2",    "ctrl_3",    "treat_1",    "treat_2",   "treat_3"),
-  condition   = c("control",   "control",   "control",   "treatment",  "treatment", "treatment"),
-  replicate   = c(1L,          2L,          3L,          1L,           2L,          3L)
+  sample_name = c("ctrl_1", "ctrl_2", "ctrl_3", "treat_1", "treat_2", "treat_3"),
+  condition   = c("control", "control", "control", "treatment", "treatment", "treatment"),
+  replicate   = c(1L, 2L, 3L, 1L, 2L, 3L)
 )
 
 obj <- commaData(
   files        = files,
   colData      = col_data,
-  genome       = "path/to/genome.fa",   # FASTA, BSgenome, or named integer vector
-  annotation   = "path/to/genes.gff3",  # GFF3 or BED (optional)
-  motif        = "GATC",                # regex motif (optional)
+  genome       = "path/to/genome.fa", # FASTA, BSgenome, or named integer vector
+  annotation   = "path/to/genes.gff3", # GFF3 or BED (optional)
+  motif        = "GATC", # regex motif (optional)
   min_coverage = 5L,
-  caller       = "modkit"               # "modkit", "dorado", or "megalodon"
+  caller       = "modkit" # "modkit", "dorado", or "megalodon"
 )
 ```
 
@@ -121,8 +121,10 @@ comma_example_data
 
 ```{r qc-summary}
 ms <- methylomeSummary(comma_example_data)
-ms[, c("sample_name", "condition", "mean_beta", "median_beta",
-       "frac_methylated", "n_covered")]
+ms[, c(
+  "sample_name", "condition", "mean_beta", "median_beta",
+  "frac_methylated", "n_covered"
+)]
 ```
 
 `plot_coverage()` shows the sequencing depth distribution per sample:
@@ -150,7 +152,7 @@ plot_pca(comma_example_data, color_by = "condition")
 
 ```{r pca-data, eval = FALSE}
 pca_df <- plot_pca(comma_example_data, return_data = TRUE)
-attr(pca_df, "percentVar")  # variance explained by PC1, PC2
+attr(pca_df, "percentVar") # variance explained by PC1, PC2
 ```
 
 ### Step 2 — Annotate Sites
@@ -182,8 +184,10 @@ plot_metagene(comma_example_data, feature = "gene")
 methylation along a chromosomal region:
 
 ```{r plot-track, fig.alt="Genome track for the first 10 kb of chr_sim", fig.height=10, fig.width=5}
-plot_genome_track(comma_example_data, chromosome = "chr_sim",
-                  start = 1L, end = 10000L, mod_type = "6mA")
+plot_genome_track(comma_example_data,
+  chromosome = "chr_sim",
+  start = 1L, end = 10000L, mod_type = "6mA"
+)
 ```
 
 ### Step 4 — Differential Methylation
@@ -193,8 +197,10 @@ It is modeled on DESeq2's workflow: pass a `commaData` object and a design
 formula, get back the same object with per-site statistics in `rowData`:
 
 ```{r diff-methyl}
-cd_dm <- diffMethyl(comma_example_data, formula = ~ condition,
-                    mod_type = "6mA")
+cd_dm <- diffMethyl(comma_example_data,
+  formula = ~condition,
+  mod_type = "6mA"
+)
 ```
 
 Extract results as a tidy data frame and filter to significant sites:
@@ -206,8 +212,10 @@ cat("Total 6mA sites tested:", nrow(res), "\n")
 cat("Significant sites (padj < 0.05, |delta_beta| >= 0.2):", nrow(sig), "\n")
 
 # Top hits
-head(res[order(res$dm_padj),
-         c("chrom", "position", "dm_delta_beta", "dm_padj")])
+head(res[
+  order(res$dm_padj),
+  c("chrom", "position", "dm_delta_beta", "dm_padj")
+])
 ```
 
 `plot_volcano()` displays the differential methylation landscape — effect size
@@ -249,8 +257,10 @@ kegg_t2g <- buildKEGGTermGene("eco", file = "kegg_eco.rds")
 id_map <- buildKEGGGeneIDMap("eco", OrgDb = org.EcK12.eg.db::org.EcK12.eg.db)
 
 # Run KEGG enrichment with offline mapping
-enr_kegg <- enrichMethylation(cd_dm, kegg_term2gene = kegg_t2g$term2gene,
-                              kegg_term2name = kegg_t2g$term2name)
+enr_kegg <- enrichMethylation(cd_dm,
+  kegg_term2gene = kegg_t2g$term2gene,
+  kegg_term2name = kegg_t2g$term2name
+)
 ```
 
 ### Step 6 — TSS Profiles
@@ -291,9 +301,9 @@ For a complete joint 6mA + 5mC analysis, see the
 ## Documentation
 
 ```{r eval=FALSE, include=TRUE}
-?commaKit     # Package overview and workflow
-?commaData    # Constructor and commaData class
-?diffMethyl   # Differential methylation testing
+?commaKit # Package overview and workflow
+?commaData # Constructor and commaData class
+?diffMethyl # Differential methylation testing
 ```
 
 Two vignettes are included:

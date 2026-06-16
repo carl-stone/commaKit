@@ -1,0 +1,17 @@
+.git
+.Rproj.user
+.Rhistory
+.RData
+.DS_Store
+.venv
+.vscode
+renv/library
+renv/staging
+renv/python
+*.Rcheck
+*.BiocCheck
+*.tar.gz
+*.deb
+docs
+pkgdown
+_pkgdown

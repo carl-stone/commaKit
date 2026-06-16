@@ -1,7 +1,24 @@
+---
+type: Test Audit
+title: Test Quality Audit
+description: Historical test audit with classifications, strengths, and remaining improvement themes.
+resource: tests/testthat
+tags: [tests, audit, smoke-tests, plots, validation]
+timestamp: 2026-06-15T00:00:00Z
+status: historical-audit
+owner: Carl Stone
+---
+
 # Test Quality Audit
 
 **Last updated:** 2026-05-21 (full audit, issue #124)
 **Maintained by:** commaBot
+
+**Currentness note:** This is a historical audit snapshot. It remains useful for
+the themes and specific improvement ideas, but `tests/testthat/` now includes
+additional files for assay layers, result layers, site filters, DelayedArray,
+identity/project docs, vignettes, and `summarizeRegions()`. Use
+`rg --files tests/testthat | sort` for the live inventory.
 
 ## Audit Method
 

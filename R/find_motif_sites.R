@@ -48,66 +48,70 @@ NULL
 #'
 #' @export
 findMotifSites <- function(genome, motif, ...) {
-    if (!requireNamespace("Biostrings", quietly = TRUE)) {
-        stop(
-            "Package 'Biostrings' is required for findMotifSites(). ",
-            "Install it with: BiocManager::install('Biostrings')"
-        )
+  if (!requireNamespace("Biostrings", quietly = TRUE)) {
+    stop(
+      "Package 'Biostrings' is required for findMotifSites(). ",
+      "Install it with: BiocManager::install('Biostrings')"
+    )
+  }
+
+  if (missing(genome) || is.null(genome)) {
+    stop("genome must be provided (BSgenome object or path to FASTA file)")
+  }
+  if (!is.character(motif) || length(motif) != 1 || nchar(motif) == 0) {
+    stop("motif must be a non-empty character string (e.g., 'GATC')")
+  }
+
+  # ── Load genome sequences ───────────────────────────────────────────────
+  seqs <- .loadGenomeSequences(genome)
+
+  # ── Search each chromosome ──────────────────────────────────────────────
+  motif_dna <- Biostrings::DNAString(motif)
+  motif_rc <- Biostrings::reverseComplement(motif_dna)
+  is_palindrome <- as.character(motif_dna) == as.character(motif_rc)
+
+  all_ranges <- lapply(seq_along(seqs), function(i) {
+    chr_name <- names(seqs)[i]
+    seq_i <- seqs[[i]]
+
+    # Forward strand hits
+    fwd_hits <- Biostrings::matchPattern(motif_dna, seq_i, fixed = FALSE)
+    fwd_starts <- BiocGenerics::start(fwd_hits)
+    fwd_gr <- GenomicRanges::GRanges(
+      seqnames = rep(chr_name, length(fwd_starts)),
+      ranges = IRanges::IRanges(
+        start = fwd_starts,
+        end = BiocGenerics::end(fwd_hits)
+      ),
+      strand = rep("+", length(fwd_starts))
+    )
+
+    # Reverse strand hits (skip if palindrome to avoid duplicates at same pos)
+    if (!is_palindrome) {
+      rev_hits <- Biostrings::matchPattern(motif_rc, seq_i, fixed = FALSE)
+      rev_starts <- BiocGenerics::start(rev_hits)
+      rev_gr <- GenomicRanges::GRanges(
+        seqnames = rep(chr_name, length(rev_starts)),
+        ranges = IRanges::IRanges(
+          start = rev_starts,
+          end = BiocGenerics::end(rev_hits)
+        ),
+        strand = rep("-", length(rev_starts))
+      )
+      c(fwd_gr, rev_gr)
+    } else {
+      # Palindrome: assign both strands to the same positions
+      if (length(fwd_gr) > 0L) {
+        rev_gr <- fwd_gr
+        GenomicRanges::strand(rev_gr) <- "-"
+        c(fwd_gr, rev_gr)
+      } else {
+        fwd_gr
+      }
     }
+  })
 
-    if (missing(genome) || is.null(genome)) {
-        stop("genome must be provided (BSgenome object or path to FASTA file)")
-    }
-    if (!is.character(motif) || length(motif) != 1 || nchar(motif) == 0) {
-        stop("motif must be a non-empty character string (e.g., 'GATC')")
-    }
-
-    # ── Load genome sequences ───────────────────────────────────────────────
-    seqs <- .loadGenomeSequences(genome)
-
-    # ── Search each chromosome ──────────────────────────────────────────────
-    motif_dna    <- Biostrings::DNAString(motif)
-    motif_rc     <- Biostrings::reverseComplement(motif_dna)
-    is_palindrome <- as.character(motif_dna) == as.character(motif_rc)
-
-    all_ranges <- lapply(seq_along(seqs), function(i) {
-        chr_name <- names(seqs)[i]
-        seq_i    <- seqs[[i]]
-
-        # Forward strand hits
-        fwd_hits <- Biostrings::matchPattern(motif_dna, seq_i, fixed = FALSE)
-        fwd_starts <- BiocGenerics::start(fwd_hits)
-        fwd_gr   <- GenomicRanges::GRanges(
-            seqnames = rep(chr_name, length(fwd_starts)),
-            ranges   = IRanges::IRanges(start = fwd_starts,
-                                        end   = BiocGenerics::end(fwd_hits)),
-            strand   = rep("+", length(fwd_starts))
-        )
-
-        # Reverse strand hits (skip if palindrome to avoid duplicates at same pos)
-        if (!is_palindrome) {
-            rev_hits <- Biostrings::matchPattern(motif_rc, seq_i, fixed = FALSE)
-            rev_starts <- BiocGenerics::start(rev_hits)
-            rev_gr   <- GenomicRanges::GRanges(
-                seqnames = rep(chr_name, length(rev_starts)),
-                ranges   = IRanges::IRanges(start = rev_starts,
-                                            end   = BiocGenerics::end(rev_hits)),
-                strand   = rep("-", length(rev_starts))
-            )
-            c(fwd_gr, rev_gr)
-        } else {
-            # Palindrome: assign both strands to the same positions
-            if (length(fwd_gr) > 0L) {
-                rev_gr <- fwd_gr
-                GenomicRanges::strand(rev_gr) <- "-"
-                c(fwd_gr, rev_gr)
-            } else {
-                fwd_gr
-            }
-        }
-    })
-
-    suppressWarnings(result <- do.call(c, all_ranges))
-    GenomicRanges::mcols(result)$motif <- rep(motif, length(result))
-    GenomicRanges::sort(result)
+  suppressWarnings(result <- do.call(c, all_ranges))
+  GenomicRanges::mcols(result)$motif <- rep(motif, length(result))
+  GenomicRanges::sort(result)
 }

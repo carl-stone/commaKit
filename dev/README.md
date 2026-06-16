@@ -39,6 +39,30 @@ On macOS machines where the default framework R has moved ahead of CI,
 `dev/run-r-4.5.sh` is a convenience wrapper for running checks against a local
 R 4.5 framework.
 
+## VS Code Devcontainer
+
+The preferred low-drama VS Code setup is the repo devcontainer in
+`.devcontainer/`. It runs the package inside a Linux container based on the
+Bioconductor 3.22 image, which provides the matching R 4.5 runtime independent
+of the host machine's R framework.
+
+From VS Code, use **Dev Containers: Reopen in Container**. On first create, the
+container runs:
+
+```bash
+Rscript --vanilla .devcontainer/setup.R
+```
+
+That restores `renv.lock` and installs editor helper packages such as
+`languageserver`, `httpgd`, `lintr`, and `styler` into the container
+environment. After the container is ready, the normal development commands are:
+
+```bash
+Rscript -e "devtools::load_all()"
+Rscript -e "devtools::test()"
+Rscript -e "devtools::check(build_args = c('--no-build-vignettes'))"
+```
+
 ---
 
 ## Strategic & Context Documents

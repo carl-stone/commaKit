@@ -1,12 +1,14 @@
 # R/AGENTS.md — commaKit source code rules
 
-This directory contains package implementation files. Read the root `AGENTS.md` first, then follow these rules for any file under `R/`.
+This directory contains package implementation files. Read the root `AGENTS.md` first, then follow these rules for any file under `R/`. For current architecture details, read `../dev/knowledge/architecture.md`.
 
 ## Source architecture
 
 - `commaData_class.R`, `commaData_constructor.R`, and `accessors.R` define the core S4/RangedSummarizedExperiment contract.
+- `assay_layers.R` and `result_layers.R` define named assay/result layer registries and provenance.
 - Parser files (`parse_modkit.R`, `parse_dorado.R`, `parse_megalodon.R`) normalize external caller formats into the shared constructor path.
 - Analysis files (`diffMethyl.R`, `quasi_f.R`, `limma_wrapper.R`, `methylkit_wrapper.R`, `multiple_testing.R`, `results_methods.R`, `result_layers.R`) must preserve per-`mod_context` analysis and genome-wide multiple-testing semantics.
+- `coverage_analysis.R`, `m_values.R`, `methylome_summary.R`, `sliding_window.R`, and `summarizeRegions.R` provide QC/diagnostic/regional summaries.
 - Plot files must return ggplot/patchwork objects except `plot_heatmap()`, which returns ComplexHeatmap output.
 
 ## Editing rules
@@ -18,6 +20,7 @@ This directory contains package implementation files. Read the root `AGENTS.md` 
 5. Prefer base `vapply()`/`lapply()` and `purrr::list_rbind()` over superseded `map_dfr()`/`map_dbl()`.
 6. Avoid non-ASCII in R source, roxygen, and examples.
 7. Do not hand-edit generated `man/*.Rd`; run `Rscript -e "devtools::document()"` when roxygen changes.
+8. Use `siteCoverage(object)` in new code/docs; `coverage(commaData)` is deprecated compatibility.
 
 ## Roxygen expectations
 
