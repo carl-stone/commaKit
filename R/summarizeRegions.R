@@ -132,7 +132,7 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
   }
   rows <- vector("list", length(regions) * ncol(object))
   row_i <- 0L
-  for (region_i in seq_len(length(regions))) {
+  for (region_i in seq_along(regions)) {
     sites <- overlap_site[overlap_region == region_i]
     for (sample_i in seq_len(ncol(object))) {
       row_i <- row_i + 1L
@@ -163,7 +163,7 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
   if (length(regions) == 0L) {
     region_id <- character(0)
   } else if (is.null(region_id)) {
-    region_id <- paste0("region_", seq_len(length(regions)))
+    region_id <- paste0("region_", seq_along(regions))
   }
   missing_id <- is.na(region_id) | !nzchar(region_id)
   region_id[missing_id] <- paste0("region_", which(missing_id))
