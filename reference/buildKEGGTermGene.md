@@ -108,7 +108,7 @@ if (requireNamespace("KEGGREST", quietly = TRUE)) {
   #             kegg_term2gene = kegg$term2gene,
   #             kegg_term2name = kegg$term2name)
 }
-#> Loading KEGG data from cache: /tmp/Rtmp33u1Wm/eco_kegg.rds
-#> Loading KEGG data from cache: /tmp/Rtmp33u1Wm/eco_kegg.rds
+#> Loading KEGG data from cache: /tmp/RtmpqKE2J8/eco_kegg.rds
+#> Loading KEGG data from cache: /tmp/RtmpqKE2J8/eco_kegg.rds
 # }
 ```
