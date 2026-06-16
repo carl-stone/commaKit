@@ -5,7 +5,7 @@
 **Author:** Carl Stone, Vanderbilt University
 **Current version:** 0.2.0
 **Target version:** 0.99.0 for eventual Bioconductor submission
-**Date:** 2026-05-30 (updated from 2026-05-14)
+**Date:** 2026-06-16 (updated from 2026-05-14)
 
 ---
 
@@ -98,10 +98,11 @@ writeBED()           ->  Export to BED
 | `coverageDepth()` | Done | Windowed depth |
 | `varianceByDepth()` | Done | Binned variance |
 | `mValues()` | Done | M-value transformation |
-| `diffMethyl()` (beta-binomial/quasi_f) | Done | Default backend |
-| `diffMethyl()` (methylKit) | Done | Fisher's exact / logistic regression |
+| `diffMethyl()` (methylKit) | Done | Default backend for compatibility |
+| `diffMethyl()` (quasi_f) | Done | Package-native count-aware empirical-Bayes alternative |
 | `diffMethyl()` (limma) | Done | eBayes |
 | `results()` / `filterResults()` | Done | DESeq2-style extraction |
+| Named result layers | Done | Multiple `diffMethyl()` runs can be stored and retrieved |
 | `enrichMethylation()` (GO/KEGG ORA + GSEA) | Done | gene_role = target/regulator/both |
 | `buildKEGGTermGene()` | Done | Offline KEGG (2 API calls + RDS cache) |
 | `buildKEGGGeneIDMap()` | Done | Symbol <-> KEGG ID mapping |
@@ -118,17 +119,19 @@ writeBED()           ->  Export to BED
 | `plot_metagene()` | Done | Feature-normalized profile |
 | `plot_tss_profile()` | Done | Regulatory element coloring |
 | `plot_volcano()` | Done | DM volcano |
-| `plot_heatmap()` | Done | ComplexHeatmap backend |
+| `plot_heatmap()` | Done | ggplot2 heatmap; optional patchwork annotation strip |
 
 ### 4.4 Documentation & Testing
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Roxygen2 docs for all exports | Done | All 35 exports documented |
+| Roxygen2 docs for all exports | Done | 43 exports documented |
 | `?commaKit` package-level docs | Done | Bioconductor requirement |
 | Vignette: getting-started | Done | End-to-end workflow |
+| Vignette: understanding-commaData | Done | Container, assays, and result layers |
+| Vignette: import-troubleshooting | Done | Import, genome, and annotation troubleshooting |
 | Vignette: multiple-modification-types | Done | Joint 6mA + 5mC |
-| Test suite | Done | 1100+ tests, 0 failures |
+| Test suite | Done | 1500+ expectations in current local run |
 | NEWS.md | Done | Full version history |
 | README.Rmd | Done | Workflow showcase |
 | pkgdown site | Done | GitHub Pages deployment |
@@ -144,8 +147,9 @@ writeBED()           ->  Export to BED
 
 | Requirement | Status | Action needed |
 |-------------|--------|---------------|
-| `R CMD check --as-cran` zero errors/warnings | Pending | Run and fix any issues |
-| `BiocCheck::BiocCheck()` zero errors | Pending | Run and fix |
+| Complete R 4.5/Bioc 3.22 validation environment | Pending | Restore all lockfile packages, including `org.EcK12.eg.db`, and install `BiocCheck` |
+| `R CMD check --as-cran` zero errors/warnings | Pending | Run in the complete R 4.5 environment and fix any issues |
+| `BiocCheck::BiocCheck()` zero errors | Pending | Re-run `new-package = TRUE`; see #206 |
 | Bundled data < 5 MB | Pending | Check `data/` + `inst/extdata/` |
 | Zenodo DOI | Pending | Register before submission |
 | Version policy documented | Done | 0.99.0 reserved for Bioconductor submission |
@@ -154,10 +158,10 @@ writeBED()           ->  Export to BED
 
 ### 5.2 Test Coverage Gaps
 
-- Plot tests are mostly smoke tests — don't verify data mappings
-- No full-pipeline integration test
-- slidingWindow circular boundary values not verified
-- enrichMethylation not tested with real clusterProfiler
+- Remaining plot/fallback tests should verify data mappings and optional-dependency behavior.
+- `enrichMethylation()` has `clusterProfiler` coverage when installed, but still needs a real biological-ID workflow instead of only synthetic TERM2GENE mappings.
+- Parser robustness still needs real-world malformed/edge-case fixtures beyond the bundled synthetic data.
+- Performance and memory behavior at realistic bacterial-genome scale remain unmeasured.
 
 See `dev/knowledge/test-quality.md` for the full audit.
 
@@ -165,12 +169,13 @@ See `dev/knowledge/test-quality.md` for the full audit.
 
 | Issue | Action |
 |-------|--------|
-| No vignette for enrichment workflow | Add enrichment section or vignette |
-| No vignette for KEGG offline path | Add or extend existing vignette |
+| No benchmark-backed performance guidance | Add performance docs after measured benchmarks |
+| No real-world dataset vignette | Add or link an appropriately licensed real bacterial methylome dataset |
+| Enrichment docs rely on synthetic example IDs | Add real-ID enrichment example once real data/IDs are available |
 
 ### 5.4 Code Quality
 
-See issues #135-#163 (thermonuclear review findings) and `dev/knowledge/known-issues.md`.
+The original thermonuclear review findings (#135-#163) are resolved or moved into explicit readiness issues. See the open GitHub issues and `dev/knowledge/known-issues.md`.
 
 ---
 

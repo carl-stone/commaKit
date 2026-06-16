@@ -11,7 +11,7 @@ owner: Carl Stone
 
 # Known Issues — Bugs, Gotchas, Edge Cases
 
-**Last updated:** 2026-05-30
+**Last updated:** 2026-06-16
 **Maintained by:** commaBot
 
 **Currentness note:** This file preserves useful historical gotchas. For live
@@ -151,25 +151,25 @@ specific roxygen block before changing an API.
 
 ---
 
-### E-004: Circular chromosome wrap in `slidingWindow()`
+### E-004: Circular chromosome wrap in `slidingWindow()` — VERIFIED
 
 **What happens:** Positions near chromosome boundaries wrap around when `circular = TRUE`.
 
-**Tested:** Partially. Test verifies difference from `circular = FALSE` but doesn't verify exact values.
+**Tested:** Yes. Boundary behavior now has known-value tests for circular wrap-around.
 
-**Confidence:** Medium. Logic looks correct but unverified at boundary positions. See issue #122.
+**Confidence:** High for the tested bacterial-genome use cases.
 
 ---
 
 ## Missing Tests (Unknown if Bug)
 
-### M-001: Integration across full pipeline
+### M-001: Full-pipeline integration — COVERED
 
-**What:** No test runs `commaData() → annotateSites() → diffMethyl() → results() → filterResults() → enrichMethylation()`.
+**What:** Older audit notes recorded that no test ran `commaData() -> annotateSites() -> diffMethyl() -> results() -> filterResults() -> enrichMethylation()`.
 
-**Risk:** Breaking change in one function's output format could silently break downstream consumers.
+**Current state:** `tests/testthat/test-integration.R` now exercises the end-to-end workflow. Keep strengthening this file when result-layer or enrichment contracts change.
 
-**Confidence:** Unknown. Individual functions tested, but integration is not. See issue #128.
+**Confidence:** Medium. The pipeline shape is covered, but real biological data remain out of scope for the bundled synthetic fixture.
 
 ---
 

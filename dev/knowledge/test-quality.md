@@ -17,8 +17,15 @@ owner: Carl Stone
 **Currentness note:** This is a historical audit snapshot. It remains useful for
 the themes and specific improvement ideas, but `tests/testthat/` now includes
 additional files for assay layers, result layers, site filters, DelayedArray,
-identity/project docs, vignettes, and `summarizeRegions()`. Use
+identity/project docs, vignettes, `summarizeRegions()`, expanded plot
+contracts, full-pipeline integration, and circular-boundary coverage. Use
 `rg --files tests/testthat | sort` for the live inventory.
+
+Post-audit updates:
+- Full-pipeline integration coverage now exists in `test-integration.R`.
+- `slidingWindow()` circular behavior now has known-value boundary tests.
+- Several plot tests have been strengthened, but optional `patchwork` fallback
+  behavior remains an open testing/policy item.
 
 ## Audit Method
 
@@ -79,7 +86,7 @@ Verdicts: **keep** (genuinely useful), **remove** (uninformative/redundant), **s
 
 | File | Test name | Reason |
 |------|-----------|--------|
-| test-diffMethyl.R | method='quasi_f' returns commaData with correct columns | Redundant with tests 1-4 that already cover quasi_f (the default) |
+| test-diffMethyl.R | method='quasi_f' returns commaData with correct columns | Redundant with tests 1-4 that already cover quasi_f behavior |
 | test-diffMethyl.R | method='quasi_f' produces valid p-values in [0, 1] | Redundant with test 8 |
 | test-diffMethyl.R | quasi_f and limma delta_beta are highly correlated | Duplicate of test 27 (same correlation, swapped order) |
 | test-plot_coverage.R | per_sample = FALSE returns ggplot | Redundant with base test + unfaceted contract test |
@@ -269,26 +276,24 @@ All 24 keep. Strong coverage of .validateGenomeInfo, .circularIndex, and .makeSe
 
 ## What We Haven't Verified
 
-1. **Plot data mappings.** Most plot tests don't inspect `ggplot_build(p)$data[[1]]` to verify that the right columns map to the right aesthetics. A silent column drop or wrong mapping would pass all current tests.
+1. **Remaining plot and fallback behavior.** Many plot mappings now have data-level checks, but optional `patchwork` fallback paths and some plot-layer interactions still need explicit coverage.
 
-2. **slidingWindow circular correctness.** The test checks that `circular=TRUE` differs from `circular=FALSE`, but doesn't verify the actual smoothed values at chromosome boundaries. For a site at position 99500 on a 100kb chromosome with window=1000, is the smoothed value mathematically correct?
+2. **Real enrichment semantics.** `enrichMethylation()` is tested with `clusterProfiler` when installed and synthetic TERM2GENE mappings, but not yet with real biological identifiers and real GO/KEGG mappings aligned to a real example dataset.
 
-3. **Integration correctness.** Only 2 integration tests exist. No test runs the full pipeline: `commaData() -> annotateSites() -> diffMethyl() -> results() -> filterResults() -> enrichMethylation()`. A breaking change in one function's output format could silently break downstream consumers.
+3. **Parser edge cases.** Tests use `example_modkit.bed` and `comma_example_data`. We haven't fully verified that parsers handle real production data edge cases (malformed lines, unexpected chromosomes, missing fields).
 
-4. **Parser edge cases.** Tests use `example_modkit.bed` and `comma_example_data`. We haven't verified that parsers handle real production data edge cases (malformed lines, unexpected chromosomes, missing fields).
+4. **Small-sample behavior.** `diffMethyl()` with exactly 2 samples per condition has 1 residual df for quasi-F. Is this still valid? What happens with exactly 2 samples total? Not tested.
 
-5. **Small-sample behavior.** `diffMethyl()` with exactly 2 samples per condition has 1 residual df for quasi-F. Is this still valid? What happens with exactly 2 samples total? Not tested.
-
-6. **Performance limits.** How many sites can `diffMethyl()` handle? What's the memory footprint for 50K sites x 6 samples? Unknown.
+5. **Performance limits.** How many sites can `diffMethyl()` handle? What's the memory footprint for 50K sites x 6 samples? Unknown.
 
 ---
 
 ## How to Improve Confidence
 
-1. **Strengthen plot tests** (35 tests): Use `ggplot_build()` to verify data mappings, point counts, aesthetic mappings, and layer structure.
-2. **Remove redundant tests** (13 tests): Clean up duplicates that add no coverage.
-3. **Add integration test**: Full pipeline on `comma_example_data`, verify the 30 ground-truth diff sites are recovered end-to-end.
-4. **Add slidingWindow circular boundary test**: Known-value test at chromosome edges.
-5. **Strengthen enrichment smoke tests** (5 tests): Verify filtering actually changes gene sets.
+1. **Finish plot fallback coverage:** Decide whether missing `patchwork` should message, warn, or error; test that behavior directly.
+2. **Keep strengthening plot contracts:** Use `ggplot_build()` to verify data mappings, point counts, aesthetic mappings, and layer structure when touching plot files.
+3. **Add real-ID enrichment coverage:** Use real biological identifiers and real GO/KEGG mappings once an appropriate dataset exists.
+4. **Add real parser fixtures:** Cover malformed and edge-case caller outputs from production-like files.
+5. **Benchmark realistic scale:** Measure memory/runtime for constructor, `validObject()`, `diffMethyl()`, `siteInfo()`, and `slidingWindow()`.
 
 See GitHub Issues for prioritized work items.

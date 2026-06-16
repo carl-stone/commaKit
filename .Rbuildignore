@@ -3,7 +3,10 @@
 ^comma\.Rproj$
 ^commaKit\.Rproj$
 ^\.Rproj\.user$
+^\.agents$
 ^\.R-version$
+^\.lintr$
+^\.vscode$
 ^LICENSE\.md$
 ^README\.Rmd$
 ^\.github$
