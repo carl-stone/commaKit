@@ -21,21 +21,21 @@ caller and that the sample names are identical across `files` and
 library(commaKit)
 
 files <- c(
-    ctrl_1 = "ctrl_1.modkit.bed",
-    treat_1 = "treat_1.modkit.bed"
+  ctrl_1 = "ctrl_1.modkit.bed",
+  treat_1 = "treat_1.modkit.bed"
 )
 
 col_data <- data.frame(
-    sample_name = c("ctrl_1", "treat_1"),
-    condition = c("control", "treatment"),
-    replicate = c(1L, 1L)
+  sample_name = c("ctrl_1", "treat_1"),
+  condition = c("control", "treatment"),
+  replicate = c(1L, 1L)
 )
 
 obj <- commaData(
-    files = files,
-    colData = col_data,
-    genome = c(chr1 = 4641652L),
-    caller = "modkit"
+  files = files,
+  colData = col_data,
+  genome = c(chr1 = 4641652L),
+  caller = "modkit"
 )
 ```
 
@@ -58,18 +58,23 @@ commaKit can infer, so provide exactly one `mod_type` value.
 ``` r
 
 # Recommended path for Dorado runs after modkit pileup
-obj_modkit <- commaData(files, col_data, genome = c(chr1 = 4641652L),
-                        caller = "modkit")
+obj_modkit <- commaData(files, col_data,
+  genome = c(chr1 = 4641652L),
+  caller = "modkit"
+)
 
 # Direct Dorado BAM import
-obj_dorado <- commaData(bam_files, col_data, genome = c(chr1 = 4641652L),
-                        caller = "dorado")
+obj_dorado <- commaData(bam_files, col_data,
+  genome = c(chr1 = 4641652L),
+  caller = "dorado"
+)
 
 # Legacy Megalodon import requires a single explicit modification type
 obj_megalodon <- commaData(megalodon_files, col_data,
-                           genome = c(chr1 = 4641652L),
-                           caller = "megalodon",
-                           mod_type = "5mC")
+  genome = c(chr1 = 4641652L),
+  caller = "megalodon",
+  mod_type = "5mC"
+)
 ```
 
 ## Modkit BED Format Problems
@@ -180,9 +185,11 @@ package `rtracklayer`.
 ``` r
 
 if (requireNamespace("rtracklayer", quietly = TRUE)) {
-    genes <- loadAnnotation("genes.gff3", feature_types = "gene")
-    obj <- commaData(files, col_data, genome = c(chr1 = 4641652L),
-                     annotation = genes, caller = "modkit")
+  genes <- loadAnnotation("genes.gff3", feature_types = "gene")
+  obj <- commaData(files, col_data,
+    genome = c(chr1 = 4641652L),
+    annotation = genes, caller = "modkit"
+  )
 }
 ```
 
@@ -218,13 +225,13 @@ scanning:
 ``` r
 
 obj <- commaData(
-    files = files,
-    colData = col_data,
-    genome = c(chr1 = 4641652L),
-    annotation = NULL,
-    motif = NULL,
-    caller = "modkit",
-    min_coverage = 1L
+  files = files,
+  colData = col_data,
+  genome = c(chr1 = 4641652L),
+  annotation = NULL,
+  motif = NULL,
+  caller = "modkit",
+  min_coverage = 1L
 )
 ```
 
@@ -238,25 +245,27 @@ annotation.
 ``` r
 
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.5.2 (2025-10-31)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 24.04.3 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
 #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
 #> 
 #> locale:
-#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
-#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
-#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+#>  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+#>  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+#>  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+#>  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+#>  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+#> [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 #> 
-#> time zone: UTC
+#> time zone: Etc/UTC
 #> tzcode source: system (glibc)
 #> 
 #> attached base packages:
-#> [1] stats     graphics  grDevices datasets  utils     methods   base     
+#> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
 #> [1] BiocStyle_2.38.0
@@ -267,9 +276,9 @@ sessionInfo()
 #>  [7] cachem_1.1.0        knitr_1.51          htmltools_0.5.9    
 #> [10] rmarkdown_2.31      lifecycle_1.0.5     cli_3.6.6          
 #> [13] sass_0.4.10         pkgdown_2.2.0       textshaping_1.0.5  
-#> [16] jquerylib_0.1.4     renv_1.1.8          systemfonts_1.3.2  
-#> [19] compiler_4.5.3      tools_4.5.3         ragg_1.5.2         
-#> [22] bslib_0.11.0        evaluate_1.0.5      yaml_2.3.12        
-#> [25] otel_0.2.0          BiocManager_1.30.27 jsonlite_2.0.0     
-#> [28] htmlwidgets_1.6.4   rlang_1.2.0         fs_2.1.0
+#> [16] jquerylib_0.1.4     systemfonts_1.3.2   compiler_4.5.2     
+#> [19] tools_4.5.2         ragg_1.5.2          bslib_0.11.0       
+#> [22] evaluate_1.0.5      yaml_2.3.12         BiocManager_1.30.27
+#> [25] otel_0.2.0          jsonlite_2.0.0      rlang_1.2.0        
+#> [28] fs_2.1.0            htmlwidgets_1.6.4
 ```

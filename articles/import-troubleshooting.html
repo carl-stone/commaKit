@@ -89,21 +89,21 @@ and <code>colData</code>.</p>
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/carl-stone/commaKit" class="external-link">commaKit</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    ctrl_1 <span class="op">=</span> <span class="st">"ctrl_1.modkit.bed"</span>,</span>
-<span>    treat_1 <span class="op">=</span> <span class="st">"treat_1.modkit.bed"</span></span>
+<span>  ctrl_1 <span class="op">=</span> <span class="st">"ctrl_1.modkit.bed"</span>,</span>
+<span>  treat_1 <span class="op">=</span> <span class="st">"treat_1.modkit.bed"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">col_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>    sample_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ctrl_1"</span>, <span class="st">"treat_1"</span><span class="op">)</span>,</span>
-<span>    condition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"control"</span>, <span class="st">"treatment"</span><span class="op">)</span>,</span>
-<span>    replicate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">1L</span><span class="op">)</span></span>
+<span>  sample_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ctrl_1"</span>, <span class="st">"treat_1"</span><span class="op">)</span>,</span>
+<span>  condition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"control"</span>, <span class="st">"treatment"</span><span class="op">)</span>,</span>
+<span>  replicate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">1L</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span></span>
-<span>    files <span class="op">=</span> <span class="va">files</span>,</span>
-<span>    colData <span class="op">=</span> <span class="va">col_data</span>,</span>
-<span>    genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>    caller <span class="op">=</span> <span class="st">"modkit"</span></span>
+<span>  files <span class="op">=</span> <span class="va">files</span>,</span>
+<span>  colData <span class="op">=</span> <span class="va">col_data</span>,</span>
+<span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
+<span>  caller <span class="op">=</span> <span class="st">"modkit"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -124,18 +124,23 @@ type in a way commaKit can infer, so provide exactly one
 <code>mod_type</code> value.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Recommended path for Dorado runs after modkit pileup</span></span>
-<span><span class="va">obj_modkit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">files</span>, <span class="va">col_data</span>, genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>                        caller <span class="op">=</span> <span class="st">"modkit"</span><span class="op">)</span></span>
+<span><span class="va">obj_modkit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">files</span>, <span class="va">col_data</span>,</span>
+<span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
+<span>  caller <span class="op">=</span> <span class="st">"modkit"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Direct Dorado BAM import</span></span>
-<span><span class="va">obj_dorado</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">bam_files</span>, <span class="va">col_data</span>, genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>                        caller <span class="op">=</span> <span class="st">"dorado"</span><span class="op">)</span></span>
+<span><span class="va">obj_dorado</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">bam_files</span>, <span class="va">col_data</span>,</span>
+<span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
+<span>  caller <span class="op">=</span> <span class="st">"dorado"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Legacy Megalodon import requires a single explicit modification type</span></span>
 <span><span class="va">obj_megalodon</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">megalodon_files</span>, <span class="va">col_data</span>,</span>
-<span>                           genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>                           caller <span class="op">=</span> <span class="st">"megalodon"</span>,</span>
-<span>                           mod_type <span class="op">=</span> <span class="st">"5mC"</span><span class="op">)</span></span></code></pre></div>
+<span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
+<span>  caller <span class="op">=</span> <span class="st">"megalodon"</span>,</span>
+<span>  mod_type <span class="op">=</span> <span class="st">"5mC"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="modkit-bed-format-problems">Modkit BED Format Problems<a class="anchor" aria-label="anchor" href="#modkit-bed-format-problems"></a>
@@ -268,9 +273,11 @@ GFF, GFF3, or BED file path. Loading annotation files requires the
 Bioconductor package <code>rtracklayer</code>.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"rtracklayer"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="va">genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/loadAnnotation.html">loadAnnotation</a></span><span class="op">(</span><span class="st">"genes.gff3"</span>, feature_types <span class="op">=</span> <span class="st">"gene"</span><span class="op">)</span></span>
-<span>    <span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">files</span>, <span class="va">col_data</span>, genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>                     annotation <span class="op">=</span> <span class="va">genes</span>, caller <span class="op">=</span> <span class="st">"modkit"</span><span class="op">)</span></span>
+<span>  <span class="va">genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/loadAnnotation.html">loadAnnotation</a></span><span class="op">(</span><span class="st">"genes.gff3"</span>, feature_types <span class="op">=</span> <span class="st">"gene"</span><span class="op">)</span></span>
+<span>  <span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">files</span>, <span class="va">col_data</span>,</span>
+<span>    genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
+<span>    annotation <span class="op">=</span> <span class="va">genes</span>, caller <span class="op">=</span> <span class="st">"modkit"</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Common symptoms and fixes:</p>
 <table class="table">
@@ -334,13 +341,13 @@ facts:</p>
 scanning:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span></span>
-<span>    files <span class="op">=</span> <span class="va">files</span>,</span>
-<span>    colData <span class="op">=</span> <span class="va">col_data</span>,</span>
-<span>    genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>    annotation <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>    motif <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>    caller <span class="op">=</span> <span class="st">"modkit"</span>,</span>
-<span>    min_coverage <span class="op">=</span> <span class="fl">1L</span></span>
+<span>  files <span class="op">=</span> <span class="va">files</span>,</span>
+<span>  colData <span class="op">=</span> <span class="va">col_data</span>,</span>
+<span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
+<span>  annotation <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  motif <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  caller <span class="op">=</span> <span class="st">"modkit"</span>,</span>
+<span>  min_coverage <span class="op">=</span> <span class="fl">1L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>If this works, add filters, annotation, motif scanning, and higher
 <code>min_coverage</code> one at a time. That usually isolates whether
@@ -352,25 +359,27 @@ optional annotation.</p>
 </h2>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; R version 4.5.3 (2026-03-11)</span></span>
+<span><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
+<span><span class="co">#&gt; Running under: Ubuntu 24.04.3 LTS</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Matrix products: default</span></span>
 <span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
 <span><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; locale:</span></span>
-<span><span class="co">#&gt;  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       </span></span>
-<span><span class="co">#&gt;  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   </span></span>
-<span><span class="co">#&gt;  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          </span></span>
-<span><span class="co">#&gt; [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   </span></span>
+<span><span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span></span>
+<span><span class="co">#&gt;  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    </span></span>
+<span><span class="co">#&gt;  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   </span></span>
+<span><span class="co">#&gt;  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 </span></span>
+<span><span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span></span>
+<span><span class="co">#&gt; [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       </span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; time zone: UTC</span></span>
+<span><span class="co">#&gt; time zone: Etc/UTC</span></span>
 <span><span class="co">#&gt; tzcode source: system (glibc)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; attached base packages:</span></span>
-<span><span class="co">#&gt; [1] stats     graphics  grDevices datasets  utils     methods   base     </span></span>
+<span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
 <span><span class="co">#&gt; [1] BiocStyle_2.38.0</span></span>
@@ -381,11 +390,11 @@ optional annotation.</p>
 <span><span class="co">#&gt;  [7] cachem_1.1.0        knitr_1.51          htmltools_0.5.9    </span></span>
 <span><span class="co">#&gt; [10] rmarkdown_2.31      lifecycle_1.0.5     cli_3.6.6          </span></span>
 <span><span class="co">#&gt; [13] sass_0.4.10         pkgdown_2.2.0       textshaping_1.0.5  </span></span>
-<span><span class="co">#&gt; [16] jquerylib_0.1.4     renv_1.1.8          systemfonts_1.3.2  </span></span>
-<span><span class="co">#&gt; [19] compiler_4.5.3      tools_4.5.3         ragg_1.5.2         </span></span>
-<span><span class="co">#&gt; [22] bslib_0.11.0        evaluate_1.0.5      yaml_2.3.12        </span></span>
-<span><span class="co">#&gt; [25] otel_0.2.0          BiocManager_1.30.27 jsonlite_2.0.0     </span></span>
-<span><span class="co">#&gt; [28] htmlwidgets_1.6.4   rlang_1.2.0         fs_2.1.0</span></span></code></pre></div>
+<span><span class="co">#&gt; [16] jquerylib_0.1.4     systemfonts_1.3.2   compiler_4.5.2     </span></span>
+<span><span class="co">#&gt; [19] tools_4.5.2         ragg_1.5.2          bslib_0.11.0       </span></span>
+<span><span class="co">#&gt; [22] evaluate_1.0.5      yaml_2.3.12         BiocManager_1.30.27</span></span>
+<span><span class="co">#&gt; [25] otel_0.2.0          jsonlite_2.0.0      rlang_1.2.0        </span></span>
+<span><span class="co">#&gt; [28] fs_2.1.0            htmlwidgets_1.6.4</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

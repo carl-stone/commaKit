@@ -124,8 +124,10 @@ reconstructs a flat table from `rowRanges()` and its metadata columns.
 ``` r
 
 si <- siteInfo(comma_example_data)
-si[1:5, c("chrom", "position", "strand", "mod_type", "motif",
-          "mod_context", "site_key")]
+si[1:5, c(
+  "chrom", "position", "strand", "mod_type", "motif",
+  "mod_context", "site_key"
+)]
 #> DataFrame with 5 rows and 7 columns
 #>         chrom  position      strand mod_type       motif mod_context
 #>   <character> <integer> <character> <factor> <character> <character>
@@ -207,8 +209,8 @@ names(md)
 #> [5] "assay_defaults"   "assay_provenance"
 
 c(
-    annotation_features = length(annotation(comma_example_data)),
-    motif_sites = length(motifSites(comma_example_data))
+  annotation_features = length(annotation(comma_example_data)),
+  motif_sites = length(motifSites(comma_example_data))
 )
 #> annotation_features         motif_sites 
 #>                   5                   0
@@ -287,7 +289,7 @@ distinct modification-plus-context units separate.
 
 ``` r
 
-dm <- diffMethyl(annotated, formula = ~ condition, method = "quasi_f")
+dm <- diffMethyl(annotated, formula = ~condition, method = "quasi_f")
 dm_cols <- setdiff(colnames(siteInfo(dm)), colnames(siteInfo(annotated)))
 dm_cols
 #> [1] "dm_pvalue"              "dm_padj"                "dm_delta_beta"         
@@ -312,7 +314,7 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-14 01:58:09 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-16 16:42:38 ..           0.2.0
 ```
 
 [`results()`](https://carl-stone.github.io/commaKit/reference/results.md)
@@ -324,8 +326,10 @@ named runs, pass `result` or `result_name` to retrieve an older layer.
 
 res <- results(dm)
 res <- res[order(res$dm_padj), ]
-head(res[, c("chrom", "position", "strand", "mod_type", "motif",
-             "mod_context", "dm_padj", "dm_delta_beta")])
+head(res[, c(
+  "chrom", "position", "strand", "mod_type", "motif",
+  "mod_context", "dm_padj", "dm_delta_beta"
+)])
 #>       chrom position strand mod_type motif mod_context      dm_padj
 #> 64  chr_sim    16504      +      6mA  GATC    6mA_GATC 6.309184e-07
 #> 196 chr_sim    50176      -      6mA  GATC    6mA_GATC 6.309184e-07
@@ -351,25 +355,27 @@ the same genomic methylation-site substrate.
 ``` r
 
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.5.2 (2025-10-31)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 24.04.3 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
 #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
 #> 
 #> locale:
-#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
-#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
-#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+#>  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+#>  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+#>  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+#>  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+#>  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+#> [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 #> 
-#> time zone: UTC
+#> time zone: Etc/UTC
 #> tzcode source: system (glibc)
 #> 
 #> attached base packages:
-#> [1] stats     graphics  grDevices datasets  utils     methods   base     
+#> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
 #> [1] commaKit_0.2.0   BiocStyle_2.38.0
@@ -378,28 +384,28 @@ sessionInfo()
 #>  [1] SummarizedExperiment_1.40.0 gtable_0.3.6               
 #>  [3] xfun_0.58                   bslib_0.11.0               
 #>  [5] ggplot2_4.0.3               htmlwidgets_1.6.4          
-#>  [7] Biobase_2.70.0              lattice_0.22-9             
-#>  [9] vctrs_0.7.3                 tools_4.5.3                
+#>  [7] Biobase_2.70.0              lattice_0.22-7             
+#>  [9] vctrs_0.7.3                 tools_4.5.2                
 #> [11] bitops_1.0-9                generics_0.1.4             
-#> [13] stats4_4.5.3                parallel_4.5.3             
+#> [13] stats4_4.5.2                parallel_4.5.2             
 #> [15] tibble_3.3.1                pkgconfig_2.0.3            
 #> [17] Matrix_1.7-4                RColorBrewer_1.1-3         
 #> [19] S7_0.2.2                    desc_1.4.3                 
 #> [21] S4Vectors_0.48.1            lifecycle_1.0.5            
-#> [23] compiler_4.5.3              farver_2.1.2               
+#> [23] compiler_4.5.2              farver_2.1.2               
 #> [25] Rsamtools_2.26.0            textshaping_1.0.5          
 #> [27] Biostrings_2.78.0           statmod_1.5.2              
 #> [29] Seqinfo_1.0.0               codetools_0.2-20           
 #> [31] GenomeInfoDb_1.46.2         htmltools_0.5.9            
 #> [33] sass_0.4.10                 yaml_2.3.12                
-#> [35] pillar_1.11.1               pkgdown_2.2.0              
+#> [35] pkgdown_2.2.0               pillar_1.11.1              
 #> [37] crayon_1.5.3                jquerylib_0.1.4            
 #> [39] BiocParallel_1.44.0         limma_3.66.0               
 #> [41] cachem_1.1.0                DelayedArray_0.36.1        
 #> [43] abind_1.4-8                 tidyselect_1.2.1           
 #> [45] digest_0.6.39               dplyr_1.2.1                
 #> [47] bookdown_0.46               fastmap_1.2.0              
-#> [49] grid_4.5.3                  cli_3.6.6                  
+#> [49] grid_4.5.2                  cli_3.6.6                  
 #> [51] SparseArray_1.10.10         magrittr_2.0.5             
 #> [53] S4Arrays_1.10.1             UCSC.utils_1.6.1           
 #> [55] scales_1.4.0                rmarkdown_2.31             
@@ -409,8 +415,8 @@ sessionInfo()
 #> [63] evaluate_1.0.5              knitr_1.51                 
 #> [65] GenomicRanges_1.62.1        IRanges_2.44.0             
 #> [67] rlang_1.2.0                 glue_1.8.1                 
-#> [69] BiocManager_1.30.27         renv_1.1.8                 
-#> [71] BiocGenerics_0.56.0         jsonlite_2.0.0             
-#> [73] R6_2.6.1                    MatrixGenerics_1.22.0      
-#> [75] systemfonts_1.3.2           fs_2.1.0
+#> [69] BiocManager_1.30.27         BiocGenerics_0.56.0        
+#> [71] jsonlite_2.0.0              R6_2.6.1                   
+#> [73] MatrixGenerics_1.22.0       systemfonts_1.3.2          
+#> [75] fs_2.1.0
 ```

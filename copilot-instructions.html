@@ -41,104 +41,16 @@
 
 <div id="copilot-instructions-for-commakit" class="section level1">
 
-<div class="section level2">
-<h2 id="what-this-repository-is">What This Repository Is<a class="anchor" aria-label="anchor" href="#what-this-repository-is"></a></h2>
-<p><strong>commaKit</strong> (Comparative Microbial Methylomics Analysis Kit) is an R/Bioconductor package for bacterial DNA methylation analysis from Oxford Nanopore sequencing data. It supports multiple modification types (6mA, 5mC, 4mC), accepts input from modkit/Dorado/Megalodon callers, and provides differential methylation testing, annotation, enrichment analysis, and visualization.</p>
-<ul><li>
-<strong>Language:</strong> R (&gt;= 4.3.0)</li>
-<li>
-<strong>CI:</strong> R 4.5 on Ubuntu (pinned — S4Vectors C API breaks in R 4.6.0)</li>
-<li>
-<strong>Package system:</strong> Bioconductor conventions (not CRAN)</li>
-<li>
-<strong>R package namespace:</strong> <code>commaKit</code>
-</li>
-<li>
-<strong>Version:</strong> 0.2.0</li>
-<li>
-<strong>License:</strong> MIT</li>
-</ul></div>
-<div class="section level2">
-<h2 id="build-and-validation-commands">Build and Validation Commands<a class="anchor" aria-label="anchor" href="#build-and-validation-commands"></a></h2>
-<p>Always run these from the package root directory.</p>
-<p><strong>Regenerate documentation</strong> (always do this after editing roxygen comments in <code>R/*.R</code>):</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"pkgload::load_all(); roxygen2::roxygenise()"</span></span></code></pre></div>
-<p><strong>Run tests</strong> (two options — <code>devtools</code> may not be available in all environments):</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Preferred</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"devtools::test()"</span></span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># Fallback if devtools is unavailable</span></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"pkgload::load_all(); testthat::test_dir('tests/testthat')"</span></span></code></pre></div>
-<p><strong>Full R CMD check</strong> (CI runs this — must pass with 0 errors, 0 warnings, 0 notes):</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"devtools::check()"</span></span></code></pre></div>
-<p><strong>R CMD check without vignettes</strong> (if pandoc unavailable):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"devtools::check(build_args = c('--no-build-vignettes'))"</span></span></code></pre></div>
-<p><strong>Install locally:</strong></p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"devtools::install()"</span></span></code></pre></div>
-<p><strong>Important:</strong> <code>renv</code> is active. If <code>devtools</code> is not installed, use the <code>pkgload</code>/<code>testthat</code> fallback above. Do not install packages outside <code>renv</code>.</p>
-</div>
-<div class="section level2">
-<h2 id="ci-pipeline">CI Pipeline<a class="anchor" aria-label="anchor" href="#ci-pipeline"></a></h2>
-<p>Two GitHub Actions workflows run on every push and PR:</p>
-<ol style="list-style-type: decimal"><li>
-<strong>R-CMD-check.yaml</strong> — <code>R CMD check --no-manual --as-cran</code> on R 4.5 / Ubuntu. This runs with <code>--run-donttest</code>, so <code>\donttest{}</code> examples ARE executed. Use <code>\dontrun{}</code> for examples that need external files.</li>
-<li>
-<strong>pkgdown.yaml</strong> — builds the pkgdown site. Deploys to gh-pages on main pushes only.</li>
-</ol><p>A PR must have both checks passing before merge.</p>
-</div>
-<div class="section level2">
-<h2 id="project-layout">Project Layout<a class="anchor" aria-label="anchor" href="#project-layout"></a></h2>
-<pre><code><span><span class="va">R</span><span class="op">/</span>                          <span class="co"># Source code (30 .R files)</span></span>
-<span>  <span class="va">commaData_class.R</span>         <span class="co"># S4 class definition (extends RangedSummarizedExperiment)</span></span>
-<span>  <span class="va">commaData_constructor.R</span>   <span class="co"># Constructor (commaData())</span></span>
-<span>  <span class="va">accessors.R</span>               <span class="co"># Accessor methods (methylation, coverage, etc.)</span></span>
-<span>  <span class="va">diffMethyl.R</span>              <span class="co"># Differential methylation (3 backends)</span></span>
-<span>  <span class="va">annotateSites.R</span>           <span class="co"># Site-to-feature annotation</span></span>
-<span>  <span class="va">enrichment.R</span>              <span class="co"># GO/KEGG ORA + GSEA</span></span>
-<span>  <span class="va">results_methods.R</span>         <span class="co"># results() and filterResults()</span></span>
-<span>  <span class="va">plot_</span><span class="op">*</span><span class="va">.R</span>                  <span class="co"># 8 visualization functions</span></span>
-<span>  <span class="va">parse_modkit.R</span>            <span class="co"># modkit BED parser (primary)</span></span>
-<span>  <span class="va">parse_dorado.R</span>            <span class="co"># Dorado BAM parser</span></span>
-<span>  <span class="va">parse_megalodon.R</span>         <span class="co"># Megalodon parser (legacy)</span></span>
-<span><span class="va">man</span><span class="op">/</span>                        <span class="co"># Generated Rd docs (do not edit directly)</span></span>
-<span><span class="va">tests</span><span class="op">/</span><span class="va">testthat</span><span class="op">/</span>             <span class="co"># testthat tests (test-&lt;function&gt;.R naming)</span></span>
-<span><span class="va">tests</span><span class="op">/</span><span class="va">testthat.R</span>            <span class="co"># test runner</span></span>
-<span><span class="va">data</span><span class="op">/</span>                       <span class="co"># comma_example_data.rda (bundled dataset)</span></span>
-<span><span class="va">data</span><span class="op">-</span><span class="va">raw</span><span class="op">/</span>                   <span class="co"># Script to regenerate example data</span></span>
-<span><span class="va">vignettes</span><span class="op">/</span>                  <span class="co"># getting-started.Rmd, multiple-modification-types.Rmd</span></span>
-<span><span class="va">dev</span><span class="op">/</span>                        <span class="co"># Project management (not in package — .Rbuildignore)</span></span>
-<span>  <span class="va">knowledge</span><span class="op">/</span>                <span class="co"># Durable findings (known-issues.md, test-quality.md, etc.)</span></span>
-<span>  <span class="va">archive</span><span class="op">/</span>                  <span class="co"># Historical documents (do not update)</span></span>
-<span><span class="va">DESCRIPTION</span>                 <span class="co"># Package metadata</span></span>
-<span><span class="va">NAMESPACE</span>                   <span class="co"># Generated (do not edit directly)</span></span>
-<span><span class="va">.Rbuildignore</span>               <span class="co"># Excludes dev/, .github/, renv/, etc.</span></span>
-<span><span class="va">renv</span><span class="op">/</span>                       <span class="co"># Locked dependency management</span></span>
-<span><span class="va">AGENTS.md</span>                   <span class="co"># AI coding tool context (see also CLAUDE.md)</span></span></code></pre>
-</div>
-<div class="section level2">
-<h2 id="critical-conventions">Critical Conventions<a class="anchor" aria-label="anchor" href="#critical-conventions"></a></h2>
-<p><strong>Naming:</strong> - S4 class: camelCase lowercase-first (<code>commaData</code>) - Analysis functions: verbNoun camelCase (<code>annotateSites</code>, <code>diffMethyl</code>) - Plot functions: <code>plot_noun()</code> snake_case (<code>plot_volcano</code>, <code>plot_metagene</code>) - Internal functions: <code>.</code> prefix (<code>.parseBetaValues</code>) - Arguments: snake_case (<code>mod_type</code>, <code>min_coverage</code>) - Test files: <code>test-functionName.R</code></p>
-<p><strong>Hard rules:</strong> - Every exported function takes <code>commaData</code> as primary input - Use <code><a href="https://rdrr.io/pkg/IRanges/man/findOverlaps-methods.html" class="external-link">GenomicRanges::findOverlaps()</a></code> for interval overlap — never nested for-loops - All <code>plot_*()</code> return ggplot/patchwork objects (except <code><a href="reference/plot_heatmap.html">plot_heatmap()</a></code> -&gt; ComplexHeatmap) - Genome size from <code>seqlengths(object)</code> (Seqinfo), never hardcoded - Document every exported function with roxygen2: <code>@param</code>, <code>@return</code>, <code>@examples</code> - Import <code>dplyr</code> and <code>tidyr</code> individually — never import <code>tidyverse</code> (Bioconductor requirement) - Do not use <code><a href="https://purrr.tidyverse.org/reference/map_dfr.html" class="external-link">purrr::map_dfr()</a></code> (superseded) — use <code>map(...) |&gt; list_rbind()</code> - Do not use <code><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">purrr::map_dbl()</a></code> (superseded) — use <code><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply()</a></code></p>
-<p><strong>Known gotchas:</strong> - <code>\donttest{}</code> examples run in CI — use <code>\dontrun{}</code> for examples needing external files - <code>diag(x)</code> with scalar x creates an x*x identity matrix — use <code>diag(x, nrow=1)</code> - <code><a href="https://rdrr.io/pkg/S4Vectors/man/Vector-class.html" class="external-link">S4Vectors::rename()</a></code> masks <code><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">dplyr::rename()</a></code> — always use <code><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">dplyr::rename()</a></code> explicitly - <code><a href="https://rdrr.io/pkg/matrixStats/man/rowCounts.html" class="external-link">matrixStats::count()</a></code> masks <code><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">dplyr::count()</a></code> — always use <code><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">dplyr::count()</a></code> explicitly - <code><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">purrr::map()</a></code> / <code><a href="https://mclust-org.github.io/mclust/reference/map.html" class="external-link">mclust::map()</a></code> collision — use <code><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply()</a></code> + <code><a href="https://purrr.tidyverse.org/reference/list_c.html" class="external-link">purrr::list_rbind()</a></code> - methylKit crashes on zero-variance sites — commaKit wraps this, assigns p=1 - <code>org.EcK12.eg.db</code> requires <code>::</code> syntax in examples - Non-ASCII characters (e.g., x) cause R CMD check notes</p>
-<p><strong>Core design decisions:</strong> - <code><a href="reference/diffMethyl.html">diffMethyl()</a></code> loops by <code>mod_context</code>, not <code>mod_type</code> — prevents spurious pooling - Effect sizes always on beta scale (0-1), not M-value scale - Multiple testing correction is genome-wide across all mod_contexts - <code><a href="reference/annotateSites.html">annotateSites()</a></code> uses list-columns (CharacterList/IntegerList/NumericList) — do not revert to single-match - <code>commaData</code> extends <code>RangedSummarizedExperiment</code> — genomic positions in <code>rowRanges()</code> (GRanges) - <code>mod_context</code> derived on demand from <code>mod_type</code> + <code>motif</code>, not stored as a column - Alignment by genomic position (findOverlaps), not string keys or row names</p>
-</div>
-<div class="section level2">
-<h2 id="test-data">Test Data<a class="anchor" aria-label="anchor" href="#test-data"></a></h2>
-<p><code>comma_example_data</code> is a synthetic dataset: 588 sites (393 x 6mA GATC, 195 x 5mC CCWGG), 6 samples (3 control + 3 treatment), genome chr_sim (100 kb). 30 of the 393 6mA sites are ground-truth differentially methylated. Created by <code>data-raw/create_example_data.R</code> with <code>set.seed(1312)</code>.</p>
-</div>
-<div class="section level2">
-<h2 id="before-submitting-changes">Before Submitting Changes<a class="anchor" aria-label="anchor" href="#before-submitting-changes"></a></h2>
-<ol style="list-style-type: decimal"><li>Run <code>roxygen2::roxygenise()</code> after any roxygen comment changes</li>
-<li>Run the full test suite and verify 0 failures</li>
-<li>Run <code>R CMD check</code> if possible</li>
-<li>Check that <code>\donttest{}</code> examples don’t reference external files</li>
-<li>Verify no non-ASCII characters in R source or docs</li>
-<li>Ensure <code>NAMESPACE</code> and <code>man/</code> are regenerated (they are auto-generated — never edit directly)</li>
-</ol></div>
+<p>Use the shared agent directives for this repository.</p>
+<ol style="list-style-type: decimal"><li>Read the repository root <code>AGENTS.md</code>.</li>
+<li>Read the nearest <code>AGENTS.md</code> for any directory you edit.</li>
+<li>Use <code>dev/knowledge/index.md</code> for durable project knowledge.</li>
+<li>Use <code>dev/knowledge/architecture.md</code> for package architecture and API contracts.</li>
+<li>Use <code>dev/knowledge/project-status.md</code> for current package/test inventory.</li>
+</ol><p>Do not duplicate package facts here. If a durable fact changes, update the shared <code>AGENTS.md</code> hierarchy or the relevant <code>dev/knowledge/</code> card.</p>
 </div>
 
-  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
-    </nav></aside></div>
+  </main></div>
 
 
     <footer><div class="pkgdown-footer-left">

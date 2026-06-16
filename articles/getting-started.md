@@ -191,7 +191,7 @@ each PC is stored in `attr(result, "percentVar")`.
 ``` r
 
 pca_df <- plot_pca(comma_example_data, return_data = TRUE)
-attr(pca_df, "percentVar")  # variance explained by PC1 and PC2
+attr(pca_df, "percentVar") # variance explained by PC1 and PC2
 #>  PC1  PC2 
 #> 36.3 17.4
 ```
@@ -262,8 +262,10 @@ region:
 
 ``` r
 
-plot_genome_track(comma_example_data, chromosome = "chr_sim",
-                  start = 1L, end = 50000L, mod_type = "6mA")
+plot_genome_track(comma_example_data,
+  chromosome = "chr_sim",
+  start = 1L, end = 50000L, mod_type = "6mA"
+)
 ```
 
 ![Genome track for the first 50 kb of
@@ -285,8 +287,10 @@ call. The result is the same object with statistical results in
 
 ``` r
 
-cd_dm <- diffMethyl(comma_example_data, formula = ~ condition,
-                    mod_type = "6mA")
+cd_dm <- diffMethyl(comma_example_data,
+  formula = ~condition,
+  mod_type = "6mA"
+)
 cd_dm
 #> class: commaData
 #> sites: 588 | samples: 6
@@ -339,11 +343,13 @@ resultLayers(cd_dm)
 #> 1             6mA                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-14 01:57:36 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-16 16:42:03 ..           0.2.0
 res <- results(cd_dm)
 # Top sites by adjusted p-value
-head(res[order(res$dm_padj),
-         c("chrom", "position", "mod_type", "dm_delta_beta", "dm_padj")])
+head(res[
+  order(res$dm_padj),
+  c("chrom", "position", "mod_type", "dm_delta_beta", "dm_padj")
+])
 #>       chrom position mod_type dm_delta_beta      dm_padj
 #> 196 chr_sim    50176      6mA    -0.7336497 1.849154e-75
 #> 287 chr_sim    70003      6mA    -0.7050844 3.896483e-68
@@ -447,13 +453,15 @@ kegg_t2g <- buildKEGGTermGene("eco", file = "kegg_eco.rds")
 
 # Build gene ID map: symbol <-> KEGG ID (1 API call)
 id_map <- buildKEGGGeneIDMap("eco",
-    OrgDb = org.EcK12.eg.db::org.EcK12.eg.db)
+  OrgDb = org.EcK12.eg.db::org.EcK12.eg.db
+)
 
 # Run KEGG enrichment with offline mapping
 enr_kegg <- enrichMethylation(cd_dm,
-    kegg_term2gene = kegg_t2g$term2gene,
-    kegg_term2name = kegg_t2g$term2name,
-    gene_role = "target")
+  kegg_term2gene = kegg_t2g$term2gene,
+  kegg_term2name = kegg_t2g$term2name,
+  gene_role = "target"
+)
 enr_kegg$kegg
 ```
 
@@ -464,8 +472,10 @@ using a hard threshold, use GSEA:
 
 ``` r
 
-enr_gsea <- enrichMethylation(cd_dm, method = "gsea",
-    ont = "BP", gene_role = "target")
+enr_gsea <- enrichMethylation(cd_dm,
+  method = "gsea",
+  ont = "BP", gene_role = "target"
+)
 ```
 
 ## Session Information
@@ -473,25 +483,27 @@ enr_gsea <- enrichMethylation(cd_dm, method = "gsea",
 ``` r
 
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.5.2 (2025-10-31)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 24.04.3 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
 #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
 #> 
 #> locale:
-#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
-#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
-#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+#>  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+#>  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+#>  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+#>  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+#>  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+#> [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 #> 
-#> time zone: UTC
+#> time zone: Etc/UTC
 #> tzcode source: system (glibc)
 #> 
 #> attached base packages:
-#> [1] stats     graphics  grDevices datasets  utils     methods   base     
+#> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
 #> [1] commaKit_0.2.0   BiocStyle_2.38.0
@@ -499,7 +511,7 @@ sessionInfo()
 #> loaded via a namespace (and not attached):
 #>   [1] bitops_1.0-9                rlang_1.2.0                
 #>   [3] magrittr_2.0.5              otel_0.2.0                 
-#>   [5] matrixStats_1.5.0           compiler_4.5.3             
+#>   [5] matrixStats_1.5.0           compiler_4.5.2             
 #>   [7] mgcv_1.9-4                  systemfonts_1.3.2          
 #>   [9] vctrs_0.7.3                 reshape2_1.4.5             
 #>  [11] stringr_1.6.0               pkgconfig_2.0.3            
@@ -510,7 +522,7 @@ sessionInfo()
 #>  [21] xfun_0.58                   cachem_1.1.0               
 #>  [23] cigarillo_1.0.0             GenomeInfoDb_1.46.2        
 #>  [25] jsonlite_2.0.0              DelayedArray_0.36.1        
-#>  [27] BiocParallel_1.44.0         parallel_4.5.3             
+#>  [27] BiocParallel_1.44.0         parallel_4.5.2             
 #>  [29] R6_2.6.1                    bslib_0.11.0               
 #>  [31] stringi_1.8.7               RColorBrewer_1.1-3         
 #>  [33] limma_3.66.0                rtracklayer_1.70.1         
@@ -520,37 +532,37 @@ sessionInfo()
 #>  [41] SummarizedExperiment_1.40.0 knitr_1.51                 
 #>  [43] zoo_1.8-15                  R.utils_2.13.0             
 #>  [45] IRanges_2.44.0              Matrix_1.7-4               
-#>  [47] splines_4.5.3               tidyselect_1.2.1           
+#>  [47] splines_4.5.2               tidyselect_1.2.1           
 #>  [49] qvalue_2.42.0               abind_1.4-8                
 #>  [51] yaml_2.3.12                 codetools_0.2-20           
-#>  [53] curl_7.1.0                  lattice_0.22-9             
+#>  [53] curl_7.1.0                  lattice_0.22-7             
 #>  [55] tibble_3.3.1                plyr_1.8.9                 
 #>  [57] Biobase_2.70.0              withr_3.0.2                
 #>  [59] S7_0.2.2                    coda_0.19-4.1              
 #>  [61] evaluate_1.0.5              desc_1.4.3                 
 #>  [63] mclust_6.1.2                Biostrings_2.78.0          
 #>  [65] pillar_1.11.1               BiocManager_1.30.27        
-#>  [67] MatrixGenerics_1.22.0       renv_1.1.8                 
-#>  [69] stats4_4.5.3                generics_0.1.4             
-#>  [71] RCurl_1.98-1.19             emdbook_1.3.14             
-#>  [73] S4Vectors_0.48.1            ggplot2_4.0.3              
-#>  [75] scales_1.4.0                gtools_3.9.5               
-#>  [77] glue_1.8.1                  tools_4.5.3                
-#>  [79] BiocIO_1.20.0               data.table_1.18.4          
-#>  [81] GenomicAlignments_1.46.0    fs_2.1.0                   
-#>  [83] mvtnorm_1.4-1               XML_3.99-0.23              
-#>  [85] grid_4.5.3                  bbmle_1.0.25.1             
-#>  [87] bdsmatrix_1.3-7             nlme_3.1-168               
-#>  [89] patchwork_1.3.2             restfulr_0.0.17            
-#>  [91] cli_3.6.6                   textshaping_1.0.5          
-#>  [93] fastseg_1.56.0              S4Arrays_1.10.1            
-#>  [95] methylKit_1.36.0            dplyr_1.2.1                
-#>  [97] gtable_0.3.6                R.methodsS3_1.8.2          
-#>  [99] sass_0.4.10                 digest_0.6.39              
-#> [101] BiocGenerics_0.56.0         SparseArray_1.10.10        
-#> [103] rjson_0.2.23                htmlwidgets_1.6.4          
-#> [105] farver_2.1.2                htmltools_0.5.9            
-#> [107] pkgdown_2.2.0               R.oo_1.27.1                
-#> [109] lifecycle_1.0.5             httr_1.4.8                 
-#> [111] statmod_1.5.2               MASS_7.3-65
+#>  [67] MatrixGenerics_1.22.0       stats4_4.5.2               
+#>  [69] generics_0.1.4              RCurl_1.98-1.19            
+#>  [71] emdbook_1.3.14              S4Vectors_0.48.1           
+#>  [73] ggplot2_4.0.3               scales_1.4.0               
+#>  [75] gtools_3.9.5                glue_1.8.1                 
+#>  [77] tools_4.5.2                 BiocIO_1.20.0              
+#>  [79] data.table_1.18.4           GenomicAlignments_1.46.0   
+#>  [81] fs_2.1.0                    mvtnorm_1.4-1              
+#>  [83] XML_3.99-0.23               grid_4.5.2                 
+#>  [85] bbmle_1.0.25.1              bdsmatrix_1.3-7            
+#>  [87] nlme_3.1-168                patchwork_1.3.2            
+#>  [89] restfulr_0.0.17             cli_3.6.6                  
+#>  [91] textshaping_1.0.5           fastseg_1.56.0             
+#>  [93] S4Arrays_1.10.1             methylKit_1.36.0           
+#>  [95] dplyr_1.2.1                 gtable_0.3.6               
+#>  [97] R.methodsS3_1.8.2           sass_0.4.10                
+#>  [99] digest_0.6.39               BiocGenerics_0.56.0        
+#> [101] SparseArray_1.10.10         rjson_0.2.23               
+#> [103] htmlwidgets_1.6.4           farver_2.1.2               
+#> [105] htmltools_0.5.9             pkgdown_2.2.0              
+#> [107] R.oo_1.27.1                 lifecycle_1.0.5            
+#> [109] httr_1.4.8                  statmod_1.5.2              
+#> [111] MASS_7.3-65
 ```
