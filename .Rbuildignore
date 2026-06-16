@@ -7,6 +7,8 @@
 ^LICENSE\.md$
 ^README\.Rmd$
 ^\.github$
+^\.devcontainer$
+^\.dockerignore$
 ^data-raw$
 ^CLAUDE\.md$
 ^\.claude$

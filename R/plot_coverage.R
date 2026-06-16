@@ -44,117 +44,118 @@ NULL
 #'
 #' @export
 plot_coverage <- function(object,
-                          mod_type    = NULL,
-                          motif       = NULL,
+                          mod_type = NULL,
+                          motif = NULL,
                           mod_context = NULL,
-                          per_sample  = TRUE) {
+                          per_sample = TRUE) {
+  ## --- Input validation ---------------------------------------------------
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+  if (!is.logical(per_sample) ||
+        length(per_sample) != 1L ||
+        is.na(per_sample)) {
+    stop("'per_sample' must be TRUE or FALSE.")
+  }
 
-    ## --- Input validation ---------------------------------------------------
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
-    }
-    if (!is.logical(per_sample) || length(per_sample) != 1L || is.na(per_sample)) {
-        stop("'per_sample' must be TRUE or FALSE.")
-    }
+  ## --- Optional site filters ----------------------------------------------
+  object <- .applySiteFilters(
+    object,
+    mod_type = mod_type,
+    motif = motif,
+    mod_context = mod_context,
+    caller = "plot_coverage()"
+  )
 
-    ## --- Optional site filters ----------------------------------------------
-    object <- .applySiteFilters(
-        object,
-        mod_type = mod_type,
-        motif = motif,
-        mod_context = mod_context,
-        caller = "plot_coverage()"
-    )
+  ## --- Extract data -------------------------------------------------------
+  cov_mat <- siteCoverage(object)
+  si <- sampleInfo(object)
+  sample_nms <- colnames(cov_mat)
+  n_sites <- nrow(cov_mat)
+  n_samples <- length(sample_nms)
 
-    ## --- Extract data -------------------------------------------------------
-    cov_mat    <- siteCoverage(object)
-    si         <- sampleInfo(object)
-    sample_nms <- colnames(cov_mat)
-    n_sites    <- nrow(cov_mat)
-    n_samples  <- length(sample_nms)
+  ## Reshape to long data.frame
+  df <- data.frame(
+    depth = as.vector(cov_mat),
+    sample_name = rep(sample_nms, each = n_sites),
+    stringsAsFactors = FALSE
+  )
 
-    ## Reshape to long data.frame
-    df <- data.frame(
-        depth       = as.vector(cov_mat),
-        sample_name = rep(sample_nms, each = n_sites),
-        stringsAsFactors = FALSE
-    )
+  ## Drop NA coverage values
+  df <- df[!is.na(df$depth), , drop = FALSE]
 
-    ## Drop NA coverage values
-    df <- df[!is.na(df$depth), , drop = FALSE]
+  if (nrow(df) == 0L) {
+    stop("No non-NA coverage values found after filtering.")
+  }
 
-    if (nrow(df) == 0L) {
-        stop("No non-NA coverage values found after filtering.")
-    }
+  ## Join optional condition from sampleInfo when present. condition is not a
+  ## commaData invariant; QC plots must still work for import/QC-only objects.
+  si_cols <- intersect(c("sample_name", "condition"), colnames(si))
+  si_sub <- si[, si_cols, drop = FALSE]
+  df <- merge(df, si_sub, by = "sample_name", all.x = TRUE)
 
-    ## Join optional condition from sampleInfo when present. condition is not a
-    ## commaData invariant; QC plots must still work for import/QC-only objects.
-    si_cols <- intersect(c("sample_name", "condition"), colnames(si))
-    si_sub <- si[, si_cols, drop = FALSE]
-    df <- merge(df, si_sub, by = "sample_name", all.x = TRUE)
+  ## Compute median coverage per sample for vlines
+  med_per_samp <- tapply(df$depth, df$sample_name, stats::median)
+  med_df <- data.frame(
+    sample_name = names(med_per_samp),
+    median_depth = as.numeric(med_per_samp),
+    stringsAsFactors = FALSE
+  )
 
-    ## Compute median coverage per sample for vlines
-    med_per_samp <- tapply(df$depth, df$sample_name, stats::median)
-    med_df <- data.frame(
-        sample_name = names(med_per_samp),
-        median_depth = as.numeric(med_per_samp),
-        stringsAsFactors = FALSE
-    )
+  ## --- Build ggplot -------------------------------------------------------
+  if (per_sample) {
+    p <- ggplot2::ggplot(
+      df,
+      ggplot2::aes(x = .data[["depth"]], fill = .data[["sample_name"]])
+    ) +
+      ggplot2::geom_histogram(alpha = 0.8, bins = 30, color = "white") +
+      ggplot2::geom_vline(
+        data = med_df,
+        ggplot2::aes(xintercept = .data[["median_depth"]]),
+        linetype = "dashed", color = "grey30", linewidth = 0.6
+      ) +
+      ggplot2::facet_wrap("sample_name") +
+      ggplot2::labs(fill = "Sample")
+  } else {
+    overall_median <- stats::median(df$depth)
+    p <- ggplot2::ggplot(
+      df,
+      ggplot2::aes(
+        x     = .data[["depth"]],
+        fill  = .data[["sample_name"]],
+        color = .data[["sample_name"]]
+      )
+    ) +
+      ggplot2::geom_histogram(
+        alpha = 0.4, bins = 30, position = "identity"
+      ) +
+      ggplot2::geom_vline(
+        xintercept = overall_median,
+        linetype = "dashed", color = "grey30", linewidth = 0.6
+      ) +
+      ggplot2::labs(fill = "Sample", color = "Sample")
+  }
 
-    ## --- Build ggplot -------------------------------------------------------
-    if (per_sample) {
-        p <- ggplot2::ggplot(
-            df,
-            ggplot2::aes(x = .data[["depth"]], fill = .data[["sample_name"]])
-        ) +
-            ggplot2::geom_histogram(alpha = 0.8, bins = 30, color = "white") +
-            ggplot2::geom_vline(
-                data = med_df,
-                ggplot2::aes(xintercept = .data[["median_depth"]]),
-                linetype = "dashed", color = "grey30", linewidth = 0.6
-            ) +
-            ggplot2::facet_wrap("sample_name") +
-            ggplot2::labs(fill = "Sample")
-    } else {
-        overall_median <- stats::median(df$depth)
-        p <- ggplot2::ggplot(
-            df,
-            ggplot2::aes(
-                x     = .data[["depth"]],
-                fill  = .data[["sample_name"]],
-                color = .data[["sample_name"]]
-            )
-        ) +
-            ggplot2::geom_histogram(
-                alpha = 0.4, bins = 30, position = "identity"
-            ) +
-            ggplot2::geom_vline(
-                xintercept = overall_median,
-                linetype = "dashed", color = "grey30", linewidth = 0.6
-            ) +
-            ggplot2::labs(fill = "Sample", color = "Sample")
-    }
+  p <- p +
+    ggplot2::scale_x_log10(
+      labels = scales_comma_label()
+    ) +
+    ggplot2::labs(
+      x     = expression("Coverage depth (reads, " * log[10] * " scale)"),
+      y     = "Number of sites",
+      title = "Coverage Depth Distribution"
+    ) +
+    ggplot2::theme_bw()
 
-    p <- p +
-        ggplot2::scale_x_log10(
-            labels = scales_comma_label()
-        ) +
-        ggplot2::labs(
-            x     = expression("Coverage depth (reads, " * log[10] * " scale)"),
-            y     = "Number of sites",
-            title = "Coverage Depth Distribution"
-        ) +
-        ggplot2::theme_bw()
-
-    p
+  p
 }
 
 ## Internal helper: format axis labels with commas if scales is available,
 ## otherwise fall back to default.
 scales_comma_label <- function() {
-    if (requireNamespace("scales", quietly = TRUE)) {
-        scales::comma
-    } else {
-        ggplot2::waiver()
-    }
+  if (requireNamespace("scales", quietly = TRUE)) {
+    scales::comma
+  } else {
+    ggplot2::waiver()
+  }
 }

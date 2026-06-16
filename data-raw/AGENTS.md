@@ -1,6 +1,6 @@
 # data-raw/AGENTS.md — generated data rules
 
-`data-raw/` contains scripts that create package data.
+`data-raw/` contains scripts that create package data. Current durable example-data facts are summarized in `../dev/knowledge/project-status.md`.
 
 ## Rules
 

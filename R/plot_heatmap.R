@@ -2,53 +2,55 @@
 NULL
 
 .formatBadRowNames <- function(row_names) {
-    row_names <- unique(as.character(row_names))
-    row_names <- row_names[seq_len(min(5L, length(row_names)))]
-    paste(row_names, collapse = ", ")
+  row_names <- unique(as.character(row_names))
+  row_names <- row_names[seq_len(min(5L, length(row_names)))]
+  paste(row_names, collapse = ", ")
 }
 
-.validateHeatmapResultRowIndices <- function(row_names, n_selected, n_object_rows) {
-    contract_msg <- paste0(
-        "Selected 'results' row names must be non-missing integer row ",
-        "indices within the rows of 'object'. This is the row-name contract ",
-        "preserved by results(); do not reset row names or replace them with ",
-        "site keys before calling plot_heatmap()."
+.validateHeatmapResultRowIndices <- function(row_names,
+                                             n_selected,
+                                             n_object_rows) {
+  contract_msg <- paste0(
+    "Selected 'results' row names must be non-missing integer row ",
+    "indices within the rows of 'object'. This is the row-name contract ",
+    "preserved by results(); do not reset row names or replace them with ",
+    "site keys before calling plot_heatmap()."
+  )
+
+  if (is.null(row_names) || length(row_names) != n_selected ||
+        anyNA(row_names) || any(!nzchar(row_names))) {
+    stop(contract_msg, call. = FALSE)
+  }
+
+  integer_like <- grepl("^[0-9]+$", row_names)
+  if (!all(integer_like)) {
+    stop(
+      contract_msg,
+      " Non-integer row name(s): ",
+      .formatBadRowNames(row_names[!integer_like]),
+      ".",
+      call. = FALSE
     )
+  }
 
-    if (is.null(row_names) || length(row_names) != n_selected ||
-            anyNA(row_names) || any(!nzchar(row_names))) {
-        stop(contract_msg, call. = FALSE)
-    }
+  row_idx <- as.numeric(row_names)
+  out_of_range <- !is.finite(row_idx) |
+    row_idx < 1L |
+    row_idx > n_object_rows
 
-    integer_like <- grepl("^[0-9]+$", row_names)
-    if (!all(integer_like)) {
-        stop(
-            contract_msg,
-            " Non-integer row name(s): ",
-            .formatBadRowNames(row_names[!integer_like]),
-            ".",
-            call. = FALSE
-        )
-    }
+  if (any(out_of_range)) {
+    stop(
+      contract_msg,
+      " Out-of-range row name(s): ",
+      .formatBadRowNames(row_names[out_of_range]),
+      ". Valid range: 1 to ",
+      n_object_rows,
+      ".",
+      call. = FALSE
+    )
+  }
 
-    row_idx <- as.numeric(row_names)
-    out_of_range <- !is.finite(row_idx) |
-        row_idx < 1L |
-        row_idx > n_object_rows
-
-    if (any(out_of_range)) {
-        stop(
-            contract_msg,
-            " Out-of-range row name(s): ",
-            .formatBadRowNames(row_names[out_of_range]),
-            ". Valid range: 1 to ",
-            n_object_rows,
-            ".",
-            call. = FALSE
-        )
-    }
-
-    as.integer(row_idx)
+  as.integer(row_idx)
 }
 
 #' Heatmap of top differentially methylated sites
@@ -89,8 +91,8 @@ NULL
 #'
 #' @examples
 #' data(comma_example_data)
-#' cd_dm <- diffMethyl(comma_example_data, ~ condition)
-#' res   <- results(cd_dm)
+#' cd_dm <- diffMethyl(comma_example_data, ~condition)
+#' res <- results(cd_dm)
 #' plot_heatmap(res, cd_dm)
 #'
 #' # Show only top 20 sites
@@ -102,157 +104,169 @@ NULL
 #' @export
 plot_heatmap <- function(results,
                          object,
-                         n_sites        = 50L,
+                         n_sites = 50L,
                          annotation_cols = NULL) {
-
-    ## --- Input validation ---------------------------------------------------
-    if (!is.data.frame(results)) {
-        stop("'results' must be a data.frame returned by results().")
-    }
-    required_cols <- c("chrom", "position", "strand", "mod_type",
-                       "dm_padj", "dm_delta_beta")
-    missing_cols <- setdiff(required_cols, colnames(results))
-    if (length(missing_cols) > 0L) {
-        stop("'results' is missing required column(s): ",
-             paste(missing_cols, collapse = ", "), ". ",
-             "Ensure 'results' was produced by results() after diffMethyl().")
-    }
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
-    }
-    n_sites <- as.integer(n_sites)
-    if (is.na(n_sites) || n_sites < 1L) {
-        stop("'n_sites' must be a positive integer.")
-    }
-
-    ## --- Select top n_sites by padj -----------------------------------------
-    res_nonNA <- results[!is.na(results$dm_padj), , drop = FALSE]
-    if (nrow(res_nonNA) == 0L) {
-        stop("No rows with non-NA 'dm_padj' in 'results'. ",
-             "Run diffMethyl() first.")
-    }
-    res_sorted <- res_nonNA[order(res_nonNA$dm_padj), , drop = FALSE]
-    n_use <- min(n_sites, nrow(res_sorted))
-    top_res <- res_sorted[seq_len(n_use), , drop = FALSE]
-
-    ## --- Match to object rows (by index, not string keys) -------------------
-    ## results() returns a DataFrame aligned to rowRanges(object). The rownames
-    ## of the results DataFrame carry the original row indices into the object,
-    ## even after subsetting and sorting. Use those to index into the assay.
-    row_idx <- .validateHeatmapResultRowIndices(
-        rownames(top_res),
-        nrow(top_res),
-        nrow(object)
+  ## --- Input validation ---------------------------------------------------
+  if (!is.data.frame(results)) {
+    stop("'results' must be a data.frame returned by results().")
+  }
+  required_cols <- c(
+    "chrom", "position", "strand", "mod_type",
+    "dm_padj", "dm_delta_beta"
+  )
+  missing_cols <- setdiff(required_cols, colnames(results))
+  if (length(missing_cols) > 0L) {
+    stop(
+      "'results' is missing required column(s): ",
+      paste(missing_cols, collapse = ", "), ". ",
+      "Ensure 'results' was produced by results() after diffMethyl()."
     )
+  }
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+  n_sites <- as.integer(n_sites)
+  if (is.na(n_sites) || n_sites < 1L) {
+    stop("'n_sites' must be a positive integer.")
+  }
 
-    ## --- Extract methylation submatrix -------------------------------------
-    methyl_mat <- methylation(object)[row_idx, , drop = FALSE]
-    sample_nms <- colnames(methyl_mat)
-
-    ## Order sites by dm_delta_beta for a meaningful visual grouping
-    delta_order <- order(top_res$dm_delta_beta)
-    methyl_mat  <- methyl_mat[delta_order, , drop = FALSE]
-    top_res     <- top_res[delta_order, , drop = FALSE]
-
-    ## Build display labels for y-axis (computed on demand, not from rownames)
-    site_keys <- paste(top_res$chrom, top_res$position,
-                       top_res$strand, top_res$mod_type,
-                       top_res$motif, sep = ":")
-    n_final <- length(site_keys)
-
-    ## --- Reshape to long data.frame ----------------------------------------
-    df <- data.frame(
-        site_key    = rep(site_keys, times = length(sample_nms)),
-        sample_name = rep(sample_nms, each  = n_final),
-        beta        = as.vector(methyl_mat),
-        stringsAsFactors = FALSE
+  ## --- Select top n_sites by padj -----------------------------------------
+  res_nonNA <- results[!is.na(results$dm_padj), , drop = FALSE]
+  if (nrow(res_nonNA) == 0L) {
+    stop(
+      "No rows with non-NA 'dm_padj' in 'results'. ",
+      "Run diffMethyl() first."
     )
-    df$site_key <- factor(df$site_key, levels = site_keys)
+  }
+  res_sorted <- res_nonNA[order(res_nonNA$dm_padj), , drop = FALSE]
+  n_use <- min(n_sites, nrow(res_sorted))
+  top_res <- res_sorted[seq_len(n_use), , drop = FALSE]
 
-    ## --- Sample annotation strip -------------------------------------------
-    si <- sampleInfo(object)
+  ## --- Match to object rows (by index, not string keys) -------------------
+  ## results() returns a DataFrame aligned to rowRanges(object). The rownames
+  ## of the results DataFrame carry the original row indices into the object,
+  ## even after subsetting and sorting. Use those to index into the assay.
+  row_idx <- .validateHeatmapResultRowIndices(
+    rownames(top_res),
+    nrow(top_res),
+    nrow(object)
+  )
 
-    if (is.null(annotation_cols)) {
-        annotation_cols <- "condition"
-    }
-    annotation_cols <- intersect(annotation_cols, colnames(si))
+  ## --- Extract methylation submatrix -------------------------------------
+  methyl_mat <- methylation(object)[row_idx, , drop = FALSE]
+  sample_nms <- colnames(methyl_mat)
 
-    ## --- Build ggplot -------------------------------------------------------
-    p <- ggplot2::ggplot(
-        df,
-        ggplot2::aes(
-            x    = .data[["sample_name"]],
-            y    = .data[["site_key"]],
-            fill = .data[["beta"]]
-        )
+  ## Order sites by dm_delta_beta for a meaningful visual grouping
+  delta_order <- order(top_res$dm_delta_beta)
+  methyl_mat <- methyl_mat[delta_order, , drop = FALSE]
+  top_res <- top_res[delta_order, , drop = FALSE]
+
+  ## Build display labels for y-axis (computed on demand, not from rownames)
+  site_keys <- paste(top_res$chrom, top_res$position,
+    top_res$strand, top_res$mod_type,
+    top_res$motif,
+    sep = ":"
+  )
+  n_final <- length(site_keys)
+
+  ## --- Reshape to long data.frame ----------------------------------------
+  df <- data.frame(
+    site_key = rep(site_keys, times = length(sample_nms)),
+    sample_name = rep(sample_nms, each = n_final),
+    beta = as.vector(methyl_mat),
+    stringsAsFactors = FALSE
+  )
+  df$site_key <- factor(df$site_key, levels = site_keys)
+
+  ## --- Sample annotation strip -------------------------------------------
+  si <- sampleInfo(object)
+
+  if (is.null(annotation_cols)) {
+    annotation_cols <- "condition"
+  }
+  annotation_cols <- intersect(annotation_cols, colnames(si))
+
+  ## --- Build ggplot -------------------------------------------------------
+  p <- ggplot2::ggplot(
+    df,
+    ggplot2::aes(
+      x    = .data[["sample_name"]],
+      y    = .data[["site_key"]],
+      fill = .data[["beta"]]
+    )
+  ) +
+    ggplot2::geom_tile(color = "white", linewidth = 0.1) +
+    ggplot2::scale_fill_gradient2(
+      low      = "#4575b4",
+      mid      = "white",
+      high     = "#d73027",
+      midpoint = 0.5,
+      limits   = c(0, 1),
+      na.value = "grey85",
+      name     = "Methylation"
     ) +
-        ggplot2::geom_tile(color = "white", linewidth = 0.1) +
-        ggplot2::scale_fill_gradient2(
-            low      = "#4575b4",
-            mid      = "white",
-            high     = "#d73027",
-            midpoint = 0.5,
-            limits   = c(0, 1),
-            na.value = "grey85",
-            name     = "Methylation"
-        ) +
-        ggplot2::scale_y_discrete(limits = site_keys) +
-        ggplot2::scale_x_discrete(limits = sample_nms) +
-        ggplot2::labs(
-            x     = NULL,
-            y     = paste0("Top ", n_final, " differential sites\n(ordered by delta methylation)"),
-            title = "Differential Methylation Heatmap"
-        ) +
-        ggplot2::theme_minimal() +
-        ggplot2::theme(
-            axis.text.y  = ggplot2::element_blank(),
-            axis.ticks.y = ggplot2::element_blank(),
-            panel.grid   = ggplot2::element_blank(),
-            axis.text.x  = ggplot2::element_text(angle = 45, hjust = 1)
-        )
+    ggplot2::scale_y_discrete(limits = site_keys) +
+    ggplot2::scale_x_discrete(limits = sample_nms) +
+    ggplot2::labs(
+      x     = NULL,
+      y     = paste0(
+        "Top ", n_final, " differential sites\n",
+        "(ordered by delta methylation)"
+      ),
+      title = "Differential Methylation Heatmap"
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      axis.text.y  = ggplot2::element_blank(),
+      axis.ticks.y = ggplot2::element_blank(),
+      panel.grid   = ggplot2::element_blank(),
+      axis.text.x  = ggplot2::element_text(angle = 45, hjust = 1)
+    )
 
-    ## If annotation_cols provided, append an annotation strip below
-    if (length(annotation_cols) > 0L) {
-        ## Build long annotation data.frame
-        annot_rows <- lapply(annotation_cols, function(col) {
-            data.frame(
-                sample_name   = si$sample_name,
-                annot_value   = as.character(si[[col]]),
-                annot_var     = col,
-                stringsAsFactors = FALSE
-            )
-        })
-        annot_df <- do.call(rbind, annot_rows)
-        annot_df$sample_name <- factor(annot_df$sample_name, levels = sample_nms)
+  ## If annotation_cols provided, append an annotation strip below
+  if (length(annotation_cols) > 0L) {
+    ## Build long annotation data.frame
+    annot_rows <- lapply(annotation_cols, function(col) {
+      data.frame(
+        sample_name = si$sample_name,
+        annot_value = as.character(si[[col]]),
+        annot_var = col,
+        stringsAsFactors = FALSE
+      )
+    })
+    annot_df <- do.call(rbind, annot_rows)
+    annot_df$sample_name <- factor(annot_df$sample_name, levels = sample_nms)
 
-        p_annot <- ggplot2::ggplot(
-            annot_df,
-            ggplot2::aes(
-                x    = .data[["sample_name"]],
-                y    = .data[["annot_var"]],
-                fill = .data[["annot_value"]]
-            )
-        ) +
-            ggplot2::geom_tile(color = "white", linewidth = 0.3) +
-            ggplot2::scale_x_discrete(limits = sample_nms) +
-            ggplot2::labs(x = NULL, y = NULL, fill = "Sample\nannotation") +
-            ggplot2::theme_minimal() +
-            ggplot2::theme(
-                axis.text.x  = ggplot2::element_text(angle = 45, hjust = 1),
-                panel.grid   = ggplot2::element_blank()
-            )
+    p_annot <- ggplot2::ggplot(
+      annot_df,
+      ggplot2::aes(
+        x    = .data[["sample_name"]],
+        y    = .data[["annot_var"]],
+        fill = .data[["annot_value"]]
+      )
+    ) +
+      ggplot2::geom_tile(color = "white", linewidth = 0.3) +
+      ggplot2::scale_x_discrete(limits = sample_nms) +
+      ggplot2::labs(x = NULL, y = NULL, fill = "Sample\nannotation") +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        axis.text.x  = ggplot2::element_text(angle = 45, hjust = 1),
+        panel.grid   = ggplot2::element_blank()
+      )
 
-        if (requireNamespace("patchwork", quietly = TRUE)) {
-            p <- patchwork::wrap_plots(
-                p_annot, p,
-                ncol    = 1L,
-                heights = c(length(annotation_cols), 10)
-            )
-        } else {
-            message("Install the 'patchwork' package to display sample annotation strips. ",
-                    "Returning heatmap without annotation strip.")
-        }
+    if (requireNamespace("patchwork", quietly = TRUE)) {
+      p <- patchwork::wrap_plots(
+        p_annot, p,
+        ncol = 1L,
+        heights = c(length(annotation_cols), 10)
+      )
+    } else {
+      message(
+        "Install the 'patchwork' package to display sample annotation strips. ",
+        "Returning heatmap without annotation strip."
+      )
     }
+  }
 
-    p
+  p
 }

@@ -76,132 +76,134 @@ NULL
 #' @export
 slidingWindow <- function(object,
                           window,
-                          stat        = c("median", "mean"),
-                          mod_type    = NULL,
-                          motif       = NULL,
+                          stat = c("median", "mean"),
+                          mod_type = NULL,
+                          motif = NULL,
                           mod_context = NULL,
-                          circular    = NULL) {
-    # ── Input validation ──────────────────────────────────────────────────────
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
-    }
-    stat <- match.arg(stat)
+                          circular = NULL) {
+  # ── Input validation ──────────────────────────────────────────────────────
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+  stat <- match.arg(stat)
 
-    if (missing(window) || !is.numeric(window) || length(window) != 1 ||
-        window < 1) {
-        stop("'window' must be a positive integer specifying window size in bp.")
-    }
-    window <- as.integer(window)
-    if (!is.null(circular) &&
-            (!is.logical(circular) || length(circular) != 1L || is.na(circular))) {
-        stop("'circular' must be TRUE, FALSE, or NULL.")
-    }
+  if (missing(window) || !is.numeric(window) || length(window) != 1 ||
+    window < 1) {
+    stop("'window' must be a positive integer specifying window size in bp.")
+  }
+  window <- as.integer(window)
+  if (!is.null(circular) &&
+    (!is.logical(circular) || length(circular) != 1L || is.na(circular))) {
+    stop("'circular' must be TRUE, FALSE, or NULL.")
+  }
 
-    genome_info <- genomeSizes(object)
-    if (is.null(genome_info) || length(genome_info) == 0) {
-        stop(
-            "genomeSizes(object) is NULL or empty. ",
-            "Provide genome size information when constructing the commaData object."
-        )
-    }
-
-    circular_by_chr <- if (is.null(circular)) {
-        seq_circular <- GenomeInfoDb::isCircular(GenomeInfoDb::seqinfo(object))
-        seq_circular <- seq_circular[names(genome_info)]
-        seq_circular[is.na(seq_circular)] <- TRUE
-        seq_circular
-    } else {
-        stats::setNames(rep(circular, length(genome_info)), names(genome_info))
-    }
-
-    min_chr <- min(genome_info)
-    if (window > min_chr) {
-        stop(
-            "'window' (", window, " bp) exceeds the smallest chromosome size (",
-            min_chr, " bp). Reduce window size."
-        )
-    }
-
-    # ── Filter by mod_type, motif, and/or mod_context if requested ───────────
-    object <- .applySiteFilters(
-        object,
-        mod_type = mod_type,
-        motif = motif,
-        mod_context = mod_context,
-        caller = "slidingWindow()"
+  genome_info <- genomeSizes(object)
+  if (is.null(genome_info) || length(genome_info) == 0) {
+    stop(
+      "genomeSizes(object) is NULL or empty. ",
+      "Provide genome size information when constructing the commaData object."
     )
+  }
 
-    rd          <- as.data.frame(siteInfo(object))
-    methyl_mat  <- methylation(object)
-    sample_nms  <- colnames(methyl_mat)
-    stat_colnm  <- paste0("window_", stat)
-    stat_fn     <- if (stat == "median") stats::median else base::mean
+  circular_by_chr <- if (is.null(circular)) {
+    seq_circular <- GenomeInfoDb::isCircular(GenomeInfoDb::seqinfo(object))
+    seq_circular <- seq_circular[names(genome_info)]
+    seq_circular[is.na(seq_circular)] <- TRUE
+    seq_circular
+  } else {
+    stats::setNames(rep(circular, length(genome_info)), names(genome_info))
+  }
 
-    result_list <- vector("list", length(genome_info))
+  min_chr <- min(genome_info)
+  if (window > min_chr) {
+    stop(
+      "'window' (", window, " bp) exceeds the smallest chromosome size (",
+      min_chr, " bp). Reduce window size."
+    )
+  }
 
-    for (ci in seq_along(genome_info)) {
-        chr      <- names(genome_info)[ci]
-        chr_size <- genome_info[ci]
-        chr_circular <- isTRUE(circular_by_chr[[chr]])
+  # ── Filter by mod_type, motif, and/or mod_context if requested ───────────
+  object <- .applySiteFilters(
+    object,
+    mod_type = mod_type,
+    motif = motif,
+    mod_context = mod_context,
+    caller = "slidingWindow()"
+  )
 
-        # Sites on this chromosome
-        chr_idx  <- which(rd$chrom == chr)
+  rd <- as.data.frame(siteInfo(object))
+  methyl_mat <- methylation(object)
+  sample_nms <- colnames(methyl_mat)
+  stat_colnm <- paste0("window_", stat)
+  stat_fn <- if (stat == "median") stats::median else base::mean
 
-        # Per-sample smoothing
-        sample_dfs <- vector("list", length(sample_nms))
+  result_list <- vector("list", length(genome_info))
 
-        for (si in seq_along(sample_nms)) {
-            samp <- sample_nms[si]
+  for (ci in seq_along(genome_info)) {
+    chr <- names(genome_info)[ci]
+    chr_size <- genome_info[ci]
+    chr_circular <- isTRUE(circular_by_chr[[chr]])
 
-            # Build full-length beta vector (1 to chr_size), NA where no site
-            beta_vec <- rep(NA_real_, chr_size)
-            if (length(chr_idx) > 0) {
-                positions <- rd$position[chr_idx]
-                # Clip positions to valid range
-                valid     <- positions >= 1L & positions <= chr_size
-                beta_vec[positions[valid]] <- methyl_mat[chr_idx[valid], samp]
-            }
+    # Sites on this chromosome
+    chr_idx <- which(rd$chrom == chr)
 
-            # Circular padding: prepend tail and append head
-            if (chr_circular) {
-                half    <- as.integer(floor(window / 2))
-                padded  <- c(beta_vec[(chr_size - half + 1L):chr_size],
-                              beta_vec,
-                              beta_vec[1L:half])
-                smoothed_padded <- zoo::rollapply(
-                    padded,
-                    width   = window,
-                    FUN     = function(x) stat_fn(x, na.rm = TRUE),
-                    partial = TRUE,
-                    align   = "center",
-                    fill    = NA_real_
-                )
-                smoothed <- smoothed_padded[(half + 1L):(half + chr_size)]
-            } else {
-                smoothed <- zoo::rollapply(
-                    beta_vec,
-                    width   = window,
-                    FUN     = function(x) stat_fn(x, na.rm = TRUE),
-                    partial = TRUE,
-                    align   = "center",
-                    fill    = NA_real_
-                )
-            }
+    # Per-sample smoothing
+    sample_dfs <- vector("list", length(sample_nms))
 
-            # NaN → NA (produced when all values in window are NA and na.rm=TRUE)
-            smoothed[is.nan(smoothed)] <- NA_real_
+    for (si in seq_along(sample_nms)) {
+      samp <- sample_nms[si]
 
-            sample_dfs[[si]] <- data.frame(
-                chrom       = chr,
-                position    = seq_len(chr_size),
-                sample_name = samp,
-                stringsAsFactors = FALSE
-            )
-            sample_dfs[[si]][[stat_colnm]] <- as.numeric(smoothed)
-        }
+      # Build full-length beta vector (1 to chr_size), NA where no site
+      beta_vec <- rep(NA_real_, chr_size)
+      if (length(chr_idx) > 0) {
+        positions <- rd$position[chr_idx]
+        # Clip positions to valid range
+        valid <- positions >= 1L & positions <= chr_size
+        beta_vec[positions[valid]] <- methyl_mat[chr_idx[valid], samp]
+      }
 
-        result_list[[ci]] <- do.call(rbind, sample_dfs)
+      # Circular padding: prepend tail and append head
+      if (chr_circular) {
+        half <- as.integer(floor(window / 2))
+        padded <- c(
+          beta_vec[(chr_size - half + 1L):chr_size],
+          beta_vec,
+          beta_vec[1L:half]
+        )
+        smoothed_padded <- zoo::rollapply(
+          padded,
+          width   = window,
+          FUN     = function(x) stat_fn(x, na.rm = TRUE),
+          partial = TRUE,
+          align   = "center",
+          fill    = NA_real_
+        )
+        smoothed <- smoothed_padded[(half + 1L):(half + chr_size)]
+      } else {
+        smoothed <- zoo::rollapply(
+          beta_vec,
+          width   = window,
+          FUN     = function(x) stat_fn(x, na.rm = TRUE),
+          partial = TRUE,
+          align   = "center",
+          fill    = NA_real_
+        )
+      }
+
+      # NaN → NA (produced when all values in window are NA and na.rm=TRUE)
+      smoothed[is.nan(smoothed)] <- NA_real_
+
+      sample_dfs[[si]] <- data.frame(
+        chrom = chr,
+        position = seq_len(chr_size),
+        sample_name = samp,
+        stringsAsFactors = FALSE
+      )
+      sample_dfs[[si]][[stat_colnm]] <- as.numeric(smoothed)
     }
 
-    do.call(rbind, result_list)
+    result_list[[ci]] <- do.call(rbind, sample_dfs)
+  }
+
+  do.call(rbind, result_list)
 }

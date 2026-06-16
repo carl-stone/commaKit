@@ -1,6 +1,7 @@
 # inst/AGENTS.md — installed files rules
 
 Files in `inst/` are installed with the package.
+For package-level contracts that installed examples should demonstrate, see `../dev/knowledge/architecture.md`.
 
 ## Rules
 

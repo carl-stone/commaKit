@@ -1,3 +1,14 @@
+---
+type: Workflow
+title: Branches, Pull Requests, and Releases
+description: Branch, PR, version, release, and tag policy for commaKit.
+resource: .git
+tags: [git, branches, pull-requests, releases, versioning]
+timestamp: 2026-06-15T00:00:00Z
+status: current
+owner: Carl Stone
+---
+
 # Branches, Pull Requests, and Releases for commaKit
 
 **Last updated:** 2026-05-14  

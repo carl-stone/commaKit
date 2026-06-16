@@ -52,125 +52,138 @@ NULL
 writeBED <- function(object,
                      file,
                      sample,
-                     mod_type          = NULL,
-                     rgb_scale         = TRUE,
-                     track_name        = sample,
+                     mod_type = NULL,
+                     rgb_scale = TRUE,
+                     track_name = sample,
                      track_description = "methylation beta values") {
-    # ── Input validation ──────────────────────────────────────────────────────
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
-    }
-    if (missing(file) || !is.character(file) || length(file) != 1) {
-        stop("'file' must be a single character string specifying the output path.")
-    }
-    if (missing(sample) || !is.character(sample) || length(sample) != 1) {
-        stop("'sample' must be a single character string matching a sample in the object.")
-    }
-
-    available_samples <- colnames(methylation(object))
-    if (!sample %in% available_samples) {
-        stop(
-            "'sample' = '", sample, "' not found in object. ",
-            "Available samples: ", paste(available_samples, collapse = ", ")
-        )
-    }
-
-    # ── Filter by mod_type ────────────────────────────────────────────────────
-    object <- .applySiteFilters(
-        object,
-        mod_type = mod_type,
-        caller = "writeBED()"
+  # ── Input validation ──────────────────────────────────────────────────────
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+  if (missing(file) || !is.character(file) || length(file) != 1) {
+    stop("'file' must be a single character string specifying the output path.")
+  }
+  if (missing(sample) || !is.character(sample) || length(sample) != 1) {
+    stop(
+      "'sample' must be a single character string matching a sample ",
+      "in the object."
     )
+  }
 
-    # ── Extract data ──────────────────────────────────────────────────────────
-    rd    <- as.data.frame(siteInfo(object))
-    betas <- methylation(object)[, sample]
-
-    # Exclude NA sites (below coverage threshold)
-    keep  <- !is.na(betas)
-    rd    <- rd[keep, , drop = FALSE]
-    betas <- betas[keep]
-
-    if (nrow(rd) == 0) {
-        warning("No sites with non-NA methylation for sample '", sample, "'. ",
-                "Writing empty BED file.")
-        track_line <- paste0('track name="', track_name, '" description="',
-                             track_description, '" itemRgb="On"')
-        .writeBEDAtomic(file = file, track_line = track_line)
-        return(invisible(file))
-    }
-
-    # ── Build BED rows ────────────────────────────────────────────────────────
-    # BED is 0-based; our positions are 1-based
-    score <- as.integer(round(betas * 1000))
-
-    if (rgb_scale) {
-        rgb <- rep("250,0,0", length(score))
-        rgb[score <= 800] <- "222,0,28"
-        rgb[score <= 600] <- "167,0,85"
-        rgb[score <= 400] <- "83,0,172"
-        rgb[score <= 200] <- "0,0,255"
-    } else {
-        rgb <- rep("0,0,0", length(score))
-    }
-
-    bed_df <- data.frame(
-        chrom       = rd$chrom,
-        chromStart  = rd$position - 1L,     # 0-based
-        chromEnd    = rd$position,           # half-open
-        name        = rd$position,
-        score       = score,
-        strand      = rd$strand,
-        thickStart  = rd$position - 1L,
-        thickEnd    = rd$position,
-        itemRGB     = rgb,
-        stringsAsFactors = FALSE
+  available_samples <- colnames(methylation(object))
+  if (!sample %in% available_samples) {
+    stop(
+      "'sample' = '", sample, "' not found in object. ",
+      "Available samples: ", paste(available_samples, collapse = ", ")
     )
+  }
 
-    # ── Write output ──────────────────────────────────────────────────────────
-    track_line <- paste0('track name="', track_name, '" description="',
-                         track_description, '" itemRgb="On"')
-    .writeBEDAtomic(file = file, track_line = track_line, bed_df = bed_df)
+  # ── Filter by mod_type ────────────────────────────────────────────────────
+  object <- .applySiteFilters(
+    object,
+    mod_type = mod_type,
+    caller = "writeBED()"
+  )
 
-    invisible(file)
+  # ── Extract data ──────────────────────────────────────────────────────────
+  rd <- as.data.frame(siteInfo(object))
+  betas <- methylation(object)[, sample]
+
+  # Exclude NA sites (below coverage threshold)
+  keep <- !is.na(betas)
+  rd <- rd[keep, , drop = FALSE]
+  betas <- betas[keep]
+
+  if (nrow(rd) == 0) {
+    warning(
+      "No sites with non-NA methylation for sample '", sample, "'. ",
+      "Writing empty BED file."
+    )
+    track_line <- paste0(
+      'track name="', track_name, '" description="',
+      track_description, '" itemRgb="On"'
+    )
+    .writeBEDAtomic(file = file, track_line = track_line)
+    return(invisible(file))
+  }
+
+  # ── Build BED rows ────────────────────────────────────────────────────────
+  # BED is 0-based; our positions are 1-based
+  score <- as.integer(round(betas * 1000))
+
+  if (rgb_scale) {
+    rgb <- rep("250,0,0", length(score))
+    rgb[score <= 800] <- "222,0,28"
+    rgb[score <= 600] <- "167,0,85"
+    rgb[score <= 400] <- "83,0,172"
+    rgb[score <= 200] <- "0,0,255"
+  } else {
+    rgb <- rep("0,0,0", length(score))
+  }
+
+  bed_df <- data.frame(
+    chrom = rd$chrom,
+    chromStart = rd$position - 1L, # 0-based
+    chromEnd = rd$position, # half-open
+    name = rd$position,
+    score = score,
+    strand = rd$strand,
+    thickStart = rd$position - 1L,
+    thickEnd = rd$position,
+    itemRGB = rgb,
+    stringsAsFactors = FALSE
+  )
+
+  # ── Write output ──────────────────────────────────────────────────────────
+  track_line <- paste0(
+    'track name="', track_name, '" description="',
+    track_description, '" itemRgb="On"'
+  )
+  .writeBEDAtomic(file = file, track_line = track_line, bed_df = bed_df)
+
+  invisible(file)
 }
 
 .writeBEDAtomic <- function(file, track_line, bed_df = NULL) {
-    output_dir <- dirname(file)
-    if (!dir.exists(output_dir)) {
-        stop("Output directory does not exist: ", output_dir, call. = FALSE)
-    }
+  output_dir <- dirname(file)
+  if (!dir.exists(output_dir)) {
+    stop("Output directory does not exist: ", output_dir, call. = FALSE)
+  }
 
-    tmp <- tempfile(
-        pattern = paste0(basename(file), ".tmp-"),
-        tmpdir = output_dir
+  tmp <- tempfile(
+    pattern = paste0(basename(file), ".tmp-"),
+    tmpdir = output_dir
+  )
+  cleanup_tmp <- TRUE
+  on.exit(
+    {
+      if (cleanup_tmp) {
+        unlink(tmp)
+      }
+    },
+    add = TRUE
+  )
+
+  writeLines(track_line, con = tmp, useBytes = TRUE)
+
+  if (!is.null(bed_df) && nrow(bed_df) > 0L) {
+    utils::write.table(
+      bed_df,
+      file      = tmp,
+      sep       = "\t",
+      row.names = FALSE,
+      col.names = FALSE,
+      quote     = FALSE,
+      append    = TRUE
     )
-    cleanup_tmp <- TRUE
-    on.exit({
-        if (cleanup_tmp) {
-            unlink(tmp)
-        }
-    }, add = TRUE)
+  }
 
-    writeLines(track_line, con = tmp, useBytes = TRUE)
+  if (!file.rename(tmp, file)) {
+    stop("Failed to move temporary BED file into place: ", file,
+      call. = FALSE
+    )
+  }
 
-    if (!is.null(bed_df) && nrow(bed_df) > 0L) {
-        utils::write.table(
-            bed_df,
-            file      = tmp,
-            sep       = "\t",
-            row.names = FALSE,
-            col.names = FALSE,
-            quote     = FALSE,
-            append    = TRUE
-        )
-    }
-
-    if (!file.rename(tmp, file)) {
-        stop("Failed to move temporary BED file into place: ", file,
-             call. = FALSE)
-    }
-
-    cleanup_tmp <- FALSE
-    invisible(file)
+  cleanup_tmp <- FALSE
+  invisible(file)
 }

@@ -1,12 +1,12 @@
 # tests/AGENTS.md — commaKit test rules
 
-This directory contains package tests. Read root `AGENTS.md` first. For files under `tests/testthat/`, also read `tests/testthat/AGENTS.md`.
+This directory contains package tests. Read root `AGENTS.md` first. For files under `tests/testthat/`, also read `testthat/AGENTS.md`. Historical audit context lives in `../dev/knowledge/test-quality.md`.
 
 ## Test philosophy
 
 - Prefer behavior-contract tests over snapshot tests.
 - Test both positive paths and biologically plausible edge cases: multiple modification types, missing coverage, empty results, zero variance, circular boundaries, and annotation list-columns.
-- Keep fixtures deterministic and small. Reuse helper fixtures before creating new ad hoc data.
+- Keep fixtures deterministic and small. Reuse `tests/testthat/helper-commaData-fixtures.R` before creating new ad hoc data.
 - Strengthen weak smoke tests when touching nearby code.
 
 ## Commands
