@@ -9,7 +9,7 @@
 ## Expectations
 
 - Check object classes and important values, not just that code runs.
-- For S4 objects, assert assays, `rowRanges()`, `sampleInfo()`, `siteInfo()`, `modTypes()`, and `modContexts()` as relevant.
+- For S4 objects, assert assays, `rowRanges()`, `sampleInfo()`, `siteInfo()`, `modTypes()`, `modContexts()`, `assayLayers()`, and `resultLayers()` as relevant.
 - For differential methylation, verify per-`mod_context` grouping, beta-scale effect sizes, adjusted p-values, and clear behavior on insufficient data.
 - For plots, assert returned class, required aesthetics/data, and filtering behavior. Avoid fragile visual snapshots.
 - For warnings/errors, match stable message fragments.

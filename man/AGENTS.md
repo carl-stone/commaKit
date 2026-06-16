@@ -1,6 +1,7 @@
 # man/AGENTS.md — generated documentation
 
 Do not hand-edit `.Rd` files here. They are generated from roxygen comments in `R/`.
+For current documentation source-of-truth rules, see root `../AGENTS.md` and `../R/AGENTS.md`.
 
 If documentation needs to change:
 

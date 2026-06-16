@@ -78,62 +78,62 @@ NULL
 #' @export
 methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
                              mod_context = NULL) {
-    # ── Input validation ──────────────────────────────────────────────────────
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
+  # ── Input validation ──────────────────────────────────────────────────────
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+
+  # ── Filter by mod_type ────────────────────────────────────────────────────
+  mt_label <- if (is.null(mod_type)) "all" else paste(mod_type, collapse = ",")
+
+  object <- .applySiteFilters(
+    object,
+    mod_type = mod_type,
+    motif = motif,
+    mod_context = mod_context,
+    caller = "methylomeSummary()"
+  )
+
+  methyl_mat <- methylation(object)
+  cov_mat <- siteCoverage(object)
+  si <- sampleInfo(object)
+  sample_nms <- colnames(methyl_mat)
+  n_sites <- nrow(methyl_mat)
+  obj_caller <- caller(object)
+  obj_min_cov <- minCoverage(object)
+
+  # ── Per-sample statistics ─────────────────────────────────────────────────
+  rows <- lapply(sample_nms, function(samp) {
+    betas <- methyl_mat[, samp]
+    covs <- cov_mat[, samp]
+    condition_value <- if ("condition" %in% colnames(si)) {
+      si$condition[si$sample_name == samp]
+    } else {
+      NA_character_
     }
 
-    # ── Filter by mod_type ────────────────────────────────────────────────────
-    mt_label <- if (is.null(mod_type)) "all" else paste(mod_type, collapse = ",")
+    covered <- !is.na(betas)
+    n_covered <- sum(covered)
+    b_cov <- betas[covered]
+    c_all <- as.numeric(covs)
 
-    object <- .applySiteFilters(
-        object,
-        mod_type = mod_type,
-        motif = motif,
-        mod_context = mod_context,
-        caller = "methylomeSummary()"
+    data.frame(
+      sample_name      = samp,
+      condition        = condition_value,
+      mod_type         = mt_label,
+      n_sites          = n_sites,
+      n_covered        = n_covered,
+      mean_beta        = if (n_covered > 0) mean(b_cov) else NA_real_,
+      median_beta      = if (n_covered > 0) stats::median(b_cov) else NA_real_,
+      sd_beta          = if (n_covered > 1) stats::sd(b_cov) else NA_real_,
+      frac_methylated  = if (n_covered > 0) mean(b_cov > 0.5) else NA_real_,
+      mean_coverage    = mean(c_all, na.rm = TRUE),
+      median_coverage  = stats::median(c_all, na.rm = TRUE),
+      caller           = obj_caller,
+      min_coverage     = obj_min_cov,
+      stringsAsFactors = FALSE
     )
+  })
 
-    methyl_mat <- methylation(object)
-    cov_mat    <- siteCoverage(object)
-    si         <- sampleInfo(object)
-    sample_nms <- colnames(methyl_mat)
-    n_sites    <- nrow(methyl_mat)
-    obj_caller <- caller(object)
-    obj_min_cov <- minCoverage(object)
-
-    # ── Per-sample statistics ─────────────────────────────────────────────────
-    rows <- lapply(sample_nms, function(samp) {
-        betas <- methyl_mat[, samp]
-        covs  <- cov_mat[, samp]
-        condition_value <- if ("condition" %in% colnames(si)) {
-            si$condition[si$sample_name == samp]
-        } else {
-            NA_character_
-        }
-
-        covered   <- !is.na(betas)
-        n_covered <- sum(covered)
-        b_cov     <- betas[covered]
-        c_all     <- as.numeric(covs)
-
-        data.frame(
-            sample_name      = samp,
-            condition        = condition_value,
-            mod_type         = mt_label,
-            n_sites          = n_sites,
-            n_covered        = n_covered,
-            mean_beta        = if (n_covered > 0) mean(b_cov)    else NA_real_,
-            median_beta      = if (n_covered > 0) stats::median(b_cov) else NA_real_,
-            sd_beta          = if (n_covered > 1) stats::sd(b_cov)     else NA_real_,
-            frac_methylated  = if (n_covered > 0) mean(b_cov > 0.5)    else NA_real_,
-            mean_coverage    = mean(c_all, na.rm = TRUE),
-            median_coverage  = stats::median(c_all, na.rm = TRUE),
-            caller           = obj_caller,
-            min_coverage     = obj_min_cov,
-            stringsAsFactors = FALSE
-        )
-    })
-
-    do.call(rbind, rows)
+  do.call(rbind, rows)
 }

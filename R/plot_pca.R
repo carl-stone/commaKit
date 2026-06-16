@@ -69,160 +69,178 @@ NULL
 #'
 #' # Return data for custom plotting
 #' d <- plot_pca(comma_example_data, return_data = TRUE)
-#' attr(d, "percentVar")  # variance explained by PC1, PC2
+#' attr(d, "percentVar") # variance explained by PC1, PC2
 #'
 #' @seealso \code{\link{methylomeSummary}}, \code{\link{plot_methylation_distribution}}
 #'
 #' @export
 plot_pca <- function(object,
-                     mod_type    = NULL,
-                     motif       = NULL,
+                     mod_type = NULL,
+                     motif = NULL,
                      mod_context = NULL,
-                     color_by    = "condition",
-                     shape_by    = NULL,
+                     color_by = "condition",
+                     shape_by = NULL,
                      return_data = FALSE) {
+  ## --- Input validation ---------------------------------------------------
+  color_by_default <- missing(color_by)
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
 
-    ## --- Input validation ---------------------------------------------------
-    color_by_default <- missing(color_by)
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
-    }
+  ## --- Optional site filters ----------------------------------------------
+  object <- .applySiteFilters(
+    object,
+    mod_type = mod_type,
+    motif = motif,
+    mod_context = mod_context,
+    caller = "plot_pca()"
+  )
 
-    ## --- Optional site filters ----------------------------------------------
-    object <- .applySiteFilters(
-        object,
-        mod_type = mod_type,
-        motif = motif,
-        mod_context = mod_context,
-        caller = "plot_pca()"
-    )
-
-    ## --- Validate color_by / shape_by ---------------------------------------
-    si <- sampleInfo(object)
-    si_cols <- colnames(si)
-    if (color_by_default && identical(color_by, "condition") &&
-            !"condition" %in% si_cols) {
-        color_by <- "sample_name"
-    }
-    if (!is.character(color_by) || length(color_by) != 1L ||
+  ## --- Validate color_by / shape_by ---------------------------------------
+  si <- sampleInfo(object)
+  si_cols <- colnames(si)
+  if (color_by_default && identical(color_by, "condition") &&
+        !"condition" %in% si_cols) {
+    color_by <- "sample_name"
+  }
+  if (!is.character(color_by) || length(color_by) != 1L ||
         is.na(color_by) || !nzchar(color_by)) {
-        stop("'color_by' must be a single non-empty character string naming ",
-             "a column in sampleInfo(object).")
+    stop(
+      "'color_by' must be a single non-empty character string naming ",
+      "a column in sampleInfo(object)."
+    )
+  }
+  if (!color_by %in% si_cols) {
+    stop(
+      "'color_by' column '", color_by, "' not found in sampleInfo(object). ",
+      "Available columns: ", paste(si_cols, collapse = ", "), "."
+    )
+  }
+  if (!is.null(shape_by)) {
+    if (!is.character(shape_by) || length(shape_by) != 1L ||
+          is.na(shape_by) || !nzchar(shape_by)) {
+      stop(
+        "'shape_by' must be NULL or a single non-empty character ",
+        "string naming a column in sampleInfo(object)."
+      )
     }
-    if (!color_by %in% si_cols) {
-        stop("'color_by' column '", color_by, "' not found in sampleInfo(object). ",
-             "Available columns: ", paste(si_cols, collapse = ", "), ".")
+    if (!shape_by %in% si_cols) {
+      stop(
+        "'shape_by' column '", shape_by, "' not found in sampleInfo(object). ",
+        "Available columns: ", paste(si_cols, collapse = ", "), "."
+      )
     }
-    if (!is.null(shape_by)) {
-        if (!is.character(shape_by) || length(shape_by) != 1L ||
-            is.na(shape_by) || !nzchar(shape_by)) {
-            stop("'shape_by' must be NULL or a single non-empty character ",
-                 "string naming a column in sampleInfo(object).")
-        }
-        if (!shape_by %in% si_cols) {
-            stop("'shape_by' column '", shape_by, "' not found in sampleInfo(object). ",
-                 "Available columns: ", paste(si_cols, collapse = ", "), ".")
-        }
-    }
+  }
 
-    ## --- Build complete-case matrix (M-value transformed) -------------------
-    methyl_mat <- mValues(object)     # variance-stabilized M-values
-    n_samples  <- ncol(methyl_mat)
+  ## --- Build complete-case matrix (M-value transformed) -------------------
+  methyl_mat <- mValues(object) # variance-stabilized M-values
+  n_samples <- ncol(methyl_mat)
 
-    if (n_samples < 2L) {
-        stop("PCA requires at least 2 samples; object has ", n_samples, ".")
-    }
-    if (n_samples < 3L) {
-        warning("Fewer than 3 samples available; PCA results may not be meaningful.")
-    }
+  if (n_samples < 2L) {
+    stop("PCA requires at least 2 samples; object has ", n_samples, ".")
+  }
+  if (n_samples < 3L) {
+    warning(
+      "Fewer than 3 samples available; ",
+      "PCA results may not be meaningful."
+    )
+  }
 
-    ## Keep only sites with no NA M-values across all samples
-    complete_sites <- which(rowSums(is.na(methyl_mat)) == 0L)
-    if (length(complete_sites) < 2L) {
-        stop("Fewer than 2 sites have non-NA M-values across all samples. ",
-             "Cannot compute PCA. Try reducing 'min_coverage' in commaData() or ",
-             "using a larger dataset.")
-    }
+  ## Keep only sites with no NA M-values across all samples
+  complete_sites <- which(rowSums(is.na(methyl_mat)) == 0L)
+  if (length(complete_sites) < 2L) {
+    stop(
+      "Fewer than 2 sites have non-NA M-values across all samples. ",
+      "Cannot compute PCA. Try reducing 'min_coverage' in commaData() or ",
+      "using a larger dataset."
+    )
+  }
 
-    mat <- t(methyl_mat[complete_sites, , drop = FALSE])  # samples x sites
+  mat <- t(methyl_mat[complete_sites, , drop = FALSE]) # samples x sites
 
-    ## --- Compute PCA --------------------------------------------------------
-    pca     <- stats::prcomp(mat, center = TRUE, scale. = FALSE)
-    pct_var <- round(summary(pca)$importance[2L, seq_len(min(2L, ncol(pca$x)))] * 100,
-                     digits = 1L)
+  ## --- Compute PCA --------------------------------------------------------
+  pca <- stats::prcomp(mat, center = TRUE, scale. = FALSE)
+  pct_var <- round(
+    summary(pca)$importance[2L, seq_len(min(2L, ncol(pca$x)))] * 100,
+    digits = 1L
+  )
 
-    ## Build scores data.frame – use only however many PCs are available (≤ 2)
-    n_pcs     <- min(2L, ncol(pca$x))
-    scores_df <- as.data.frame(pca$x[, seq_len(n_pcs), drop = FALSE])
-    colnames(scores_df)[seq_len(n_pcs)] <- c("PC1", "PC2")[seq_len(n_pcs)]
-    ## Add a dummy PC2 column of zeros when only 1 PC was computed so that the
-    ## ggplot2 aes mapping to "PC2" does not fail.
-    if (n_pcs < 2L) {
-        scores_df[["PC2"]] <- 0
-    }
-    scores_df$sample_name <- rownames(scores_df)
+  ## Build scores data.frame – use only however many PCs are available (≤ 2)
+  n_pcs <- min(2L, ncol(pca$x))
+  scores_df <- as.data.frame(pca$x[, seq_len(n_pcs), drop = FALSE])
+  colnames(scores_df)[seq_len(n_pcs)] <- c("PC1", "PC2")[seq_len(n_pcs)]
+  ## Add a dummy PC2 column of zeros when only 1 PC was computed so that the
+  ## ggplot2 aes mapping to "PC2" does not fail.
+  if (n_pcs < 2L) {
+    scores_df[["PC2"]] <- 0
+  }
+  scores_df$sample_name <- rownames(scores_df)
 
-    ## Join sampleInfo columns
-    scores_df <- merge(scores_df, si, by = "sample_name", all.x = TRUE)
+  ## Join sampleInfo columns
+  scores_df <- merge(scores_df, si, by = "sample_name", all.x = TRUE)
 
-    ## --- Early return for custom plotting -----------------------------------
-    if (return_data) {
-        attr(scores_df, "percentVar") <- pct_var
-        return(scores_df)
-    }
+  ## --- Early return for custom plotting -----------------------------------
+  if (return_data) {
+    attr(scores_df, "percentVar") <- pct_var
+    return(scores_df)
+  }
 
-    ## --- Build ggplot -------------------------------------------------------
-    x_label <- if (length(pct_var) >= 1L) {
-        paste0("PC1 (", pct_var[1L], "% variance)")
-    } else "PC1"
-    y_label <- if (length(pct_var) >= 2L) {
-        paste0("PC2 (", pct_var[2L], "% variance)")
-    } else "PC2"
+  ## --- Build ggplot -------------------------------------------------------
+  x_label <- if (length(pct_var) >= 1L) {
+    paste0("PC1 (", pct_var[1L], "% variance)")
+  } else {
+    "PC1"
+  }
+  y_label <- if (length(pct_var) >= 2L) {
+    paste0("PC2 (", pct_var[2L], "% variance)")
+  } else {
+    "PC2"
+  }
 
-    ## Build aes dynamically to support optional shape_by. ggplot2 shape scales
-    ## are discrete, so coerce numeric/integer grouping columns (for example
-    ## replicate numbers) to factors in the plotting data without changing
-    ## return_data output.
-    if (!is.null(shape_by)) {
-        plot_df <- scores_df
-        plot_df[[shape_by]] <- as.factor(plot_df[[shape_by]])
-        p <- ggplot2::ggplot(
-            plot_df,
-            ggplot2::aes(
-                x     = .data[["PC1"]],
-                y     = .data[["PC2"]],
-                color = .data[[color_by]],
-                shape = .data[[shape_by]],
-                label = .data[["sample_name"]]
-            )
-        ) +
-            ggplot2::geom_point(size = 3.5) +
-            ggplot2::scale_shape_discrete(name = shape_by)
-    } else {
-        p <- ggplot2::ggplot(
-            scores_df,
-            ggplot2::aes(
-                x     = .data[["PC1"]],
-                y     = .data[["PC2"]],
-                color = .data[[color_by]],
-                label = .data[["sample_name"]]
-            )
-        ) +
-            ggplot2::geom_point(size = 3.5)
-    }
+  ## Build aes dynamically to support optional shape_by. ggplot2 shape scales
+  ## are discrete, so coerce numeric/integer grouping columns (for example
+  ## replicate numbers) to factors in the plotting data without changing
+  ## return_data output.
+  if (!is.null(shape_by)) {
+    plot_df <- scores_df
+    plot_df[[shape_by]] <- as.factor(plot_df[[shape_by]])
+    p <- ggplot2::ggplot(
+      plot_df,
+      ggplot2::aes(
+        x     = .data[["PC1"]],
+        y     = .data[["PC2"]],
+        color = .data[[color_by]],
+        shape = .data[[shape_by]],
+        label = .data[["sample_name"]]
+      )
+    ) +
+      ggplot2::geom_point(size = 3.5) +
+      ggplot2::scale_shape_discrete(name = shape_by)
+  } else {
+    p <- ggplot2::ggplot(
+      scores_df,
+      ggplot2::aes(
+        x     = .data[["PC1"]],
+        y     = .data[["PC2"]],
+        color = .data[[color_by]],
+        label = .data[["sample_name"]]
+      )
+    ) +
+      ggplot2::geom_point(size = 3.5)
+  }
 
-    p <- p +
-        ggplot2::geom_text(
-            vjust = -0.9, size = 3,
-            show.legend = FALSE
-        ) +
-        ggplot2::labs(
-            x     = x_label,
-            y     = y_label,
-            title = "PCA of Methylation Profiles",
-            color = color_by
-        ) +
-        ggplot2::theme_bw()
+  p <- p +
+    ggplot2::geom_text(
+      vjust = -0.9, size = 3,
+      show.legend = FALSE
+    ) +
+    ggplot2::labs(
+      x     = x_label,
+      y     = y_label,
+      title = "PCA of Methylation Profiles",
+      color = color_by
+    ) +
+    ggplot2::theme_bw()
 
-    p
+  p
 }

@@ -21,5 +21,5 @@ NULL
 #'
 #' @keywords internal
 .applyMultipleTesting <- function(pvalues, method = "BH") {
-    stats::p.adjust(pvalues, method = method)
+  stats::p.adjust(pvalues, method = method)
 }

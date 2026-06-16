@@ -35,7 +35,7 @@ setGeneric("methylation", function(object) standardGeneric("methylation"))
 
 #' @rdname methylation
 setMethod("methylation", "commaData", function(object) {
-    assay(object, "methylation")
+  assay(object, "methylation")
 })
 
 # ─── siteCoverage() ─────────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ setGeneric("siteCoverage", function(object) standardGeneric("siteCoverage"))
 
 #' @rdname siteCoverage
 setMethod("siteCoverage", "commaData", function(object) {
-    assay(object, "coverage")
+  assay(object, "coverage")
 })
 
 # ─── modCounts() ─────────────────────────────────────────────────────────────
@@ -94,13 +94,13 @@ setGeneric("modCounts", function(object) standardGeneric("modCounts"))
 
 #' @rdname modCounts
 setMethod("modCounts", "commaData", function(object) {
-    if (!"mod_counts" %in% assayNames(object)) {
-        stop(
-            "assay 'mod_counts' not found. This object may have been created ",
-            "before raw count assays were added."
-        )
-    }
-    assay(object, "mod_counts")
+  if (!"mod_counts" %in% assayNames(object)) {
+    stop(
+      "assay 'mod_counts' not found. This object may have been created ",
+      "before raw count assays were added."
+    )
+  }
+  assay(object, "mod_counts")
 })
 
 # ─── canonicalCounts() ───────────────────────────────────────────────────────
@@ -126,17 +126,20 @@ setMethod("modCounts", "commaData", function(object) {
 #' dim(canonical)
 #'
 #' @export
-setGeneric("canonicalCounts", function(object) standardGeneric("canonicalCounts"))
+setGeneric(
+  "canonicalCounts",
+  function(object) standardGeneric("canonicalCounts")
+)
 
 #' @rdname canonicalCounts
 setMethod("canonicalCounts", "commaData", function(object) {
-    if (!"canonical_counts" %in% assayNames(object)) {
-        stop(
-            "assay 'canonical_counts' not found. This object may have been ",
-            "created before raw count assays were added."
-        )
-    }
-    assay(object, "canonical_counts")
+  if (!"canonical_counts" %in% assayNames(object)) {
+    stop(
+      "assay 'canonical_counts' not found. This object may have been ",
+      "created before raw count assays were added."
+    )
+  }
+  assay(object, "canonical_counts")
 })
 
 # ─── otherModCounts() ────────────────────────────────────────────────────────
@@ -163,13 +166,13 @@ setGeneric("otherModCounts", function(object) standardGeneric("otherModCounts"))
 
 #' @rdname otherModCounts
 setMethod("otherModCounts", "commaData", function(object) {
-    if (!"other_mod_counts" %in% assayNames(object)) {
-        stop(
-            "assay 'other_mod_counts' not found. This object may have been ",
-            "created before non-target modified count assays were added."
-        )
-    }
-    assay(object, "other_mod_counts")
+  if (!"other_mod_counts" %in% assayNames(object)) {
+    stop(
+      "assay 'other_mod_counts' not found. This object may have been ",
+      "created before non-target modified count assays were added."
+    )
+  }
+  assay(object, "other_mod_counts")
 })
 
 # ─── assayProvenance() ───────────────────────────────────────────────────────
@@ -194,12 +197,15 @@ setMethod("otherModCounts", "commaData", function(object) {
 #' assayProvenance(comma_example_data)
 #'
 #' @export
-setGeneric("assayProvenance", function(object) standardGeneric("assayProvenance"))
+setGeneric(
+  "assayProvenance",
+  function(object) standardGeneric("assayProvenance")
+)
 
 #' @rdname assayProvenance
 setMethod("assayProvenance", "commaData", function(object) {
-    provenance <- S4Vectors::metadata(object)$assay_provenance
-    if (is.null(provenance)) list() else provenance
+  provenance <- S4Vectors::metadata(object)$assay_provenance
+  if (is.null(provenance)) list() else provenance
 })
 
 # ─── coverage() compatibility wrapper ────────────────────────────────────────
@@ -219,20 +225,26 @@ setMethod("assayProvenance", "commaData", function(object) {
 #'   columns corresponding to samples.
 #'
 #' @export
-setMethod("coverage", "commaData", function(x, shift = 0L, width = NULL, weight = 1L, ...) {
+setMethod(
+  "coverage",
+  "commaData",
+  function(x, shift = 0L, width = NULL, weight = 1L, ...) {
     dots <- list(...)
-    if (!identical(shift, 0L) || !is.null(width) || !identical(weight, 1L) ||
-            length(dots) > 0L) {
-        stop(
-            "coverage() for commaData objects is deprecated and does not ",
-            "support IRanges::coverage arguments such as 'shift', 'width', ",
-            "or 'weight'. Use siteCoverage(object) to retrieve the coverage ",
-            "assay matrix."
-        )
+    if (!identical(shift, 0L) ||
+      !is.null(width) ||
+      !identical(weight, 1L) ||
+      length(dots) > 0L) {
+      stop(
+        "coverage() for commaData objects is deprecated and does not ",
+        "support IRanges::coverage arguments such as 'shift', 'width', ",
+        "or 'weight'. Use siteCoverage(object) to retrieve the coverage ",
+        "assay matrix."
+      )
     }
     .Deprecated("siteCoverage")
     siteCoverage(x)
-})
+  }
+)
 
 # ─── sampleInfo() ────────────────────────────────────────────────────────────
 
@@ -259,7 +271,7 @@ setGeneric("sampleInfo", function(object) standardGeneric("sampleInfo"))
 
 #' @rdname sampleInfo
 setMethod("sampleInfo", "commaData", function(object) {
-    as.data.frame(colData(object))
+  as.data.frame(colData(object))
 })
 
 # ─── siteInfo() ──────────────────────────────────────────────────────────────
@@ -298,26 +310,28 @@ setGeneric("siteInfo", function(object) standardGeneric("siteInfo"))
 
 #' @rdname siteInfo
 setMethod("siteInfo", "commaData", function(object) {
-    rr <- rowRanges(object)
-    mc <- GenomicRanges::mcols(rr)
-    df <- S4Vectors::DataFrame(
-        chrom       = as.character(GenomeInfoDb::seqnames(rr)),
-        position    = BiocGenerics::start(rr),
-        strand      = as.character(BiocGenerics::strand(rr)),
-        mc,
-        row.names   = NULL
+  rr <- rowRanges(object)
+  mc <- GenomicRanges::mcols(rr)
+  df <- S4Vectors::DataFrame(
+    chrom       = as.character(GenomeInfoDb::seqnames(rr)),
+    position    = BiocGenerics::start(rr),
+    strand      = as.character(BiocGenerics::strand(rr)),
+    mc,
+    row.names   = NULL
+  )
+  # Add computed mod_context column if not already present
+  if (!"mod_context" %in% colnames(df) &&
+    "mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
+    df$mod_context <- .computeModContext(mc$mod_type, mc$motif)
+  }
+  # Add computed site_key column for human readability (not used for matching).
+  if ("mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
+    df$site_key <- paste(df$chrom, df$position, df$strand,
+      as.character(df$mod_type), df$motif,
+      sep = ":"
     )
-    # Add computed mod_context column if not already present
-    if (!"mod_context" %in% colnames(df) &&
-        "mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
-        df$mod_context <- .computeModContext(mc$mod_type, mc$motif)
-    }
-    # Add computed site_key column for human readability (not used for matching).
-    if ("mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
-        df$site_key <- paste(df$chrom, df$position, df$strand,
-                             as.character(df$mod_type), df$motif, sep = ":")
-    }
-    df
+  }
+  df
 })
 
 # ─── modTypes() ──────────────────────────────────────────────────────────────
@@ -341,7 +355,7 @@ setGeneric("modTypes", function(object) standardGeneric("modTypes"))
 
 #' @rdname modTypes
 setMethod("modTypes", "commaData", function(object) {
-    sort(unique(as.character(rowData(object)$mod_type)))
+  sort(unique(as.character(rowData(object)$mod_type)))
 })
 
 # ─── motifs() ────────────────────────────────────────────────────────────────
@@ -368,8 +382,8 @@ setGeneric("motifs", function(object) standardGeneric("motifs"))
 
 #' @rdname motifs
 setMethod("motifs", "commaData", function(object) {
-    all_m <- rowData(object)$motif
-    sort(unique(all_m[!is.na(all_m)]))
+  all_m <- rowData(object)$motif
+  sort(unique(all_m[!is.na(all_m)]))
 })
 
 # ─── modContexts() ───────────────────────────────────────────────────────────
@@ -407,8 +421,8 @@ setGeneric("modContexts", function(object) standardGeneric("modContexts"))
 
 #' @rdname modContexts
 setMethod("modContexts", "commaData", function(object) {
-    mc <- GenomicRanges::mcols(rowRanges(object))
-    sort(unique(.computeModContext(mc$mod_type, mc$motif)))
+  mc <- GenomicRanges::mcols(rowRanges(object))
+  sort(unique(.computeModContext(mc$mod_type, mc$motif)))
 })
 
 # ─── genomeSizes() / genome() compatibility ─────────────────────────────────
@@ -437,8 +451,8 @@ setGeneric("genomeSizes", function(object) standardGeneric("genomeSizes"))
 
 #' @rdname genomeSizes
 setMethod("genomeSizes", "commaData", function(object) {
-    sl <- GenomeInfoDb::seqlengths(object)
-    if (length(sl) == 0 || all(is.na(sl))) NULL else sl
+  sl <- GenomeInfoDb::seqlengths(object)
+  if (length(sl) == 0 || all(is.na(sl))) NULL else sl
 })
 
 #' GenomeInfoDb genome accessor compatibility method for commaData
@@ -459,7 +473,7 @@ setMethod("genomeSizes", "commaData", function(object) {
 #'
 #' @export
 setMethod("genome", "commaData", function(x) {
-    genomeSizes(x)
+  genomeSizes(x)
 })
 
 # ─── annotation() ────────────────────────────────────────────────────────────
@@ -481,8 +495,8 @@ setMethod("genome", "commaData", function(x) {
 #'
 #' @export
 setMethod("annotation", "commaData", function(object) {
-    md <- S4Vectors::metadata(object)
-    if (is.null(md$annotation)) GenomicRanges::GRanges() else md$annotation
+  md <- S4Vectors::metadata(object)
+  if (is.null(md$annotation)) GenomicRanges::GRanges() else md$annotation
 })
 
 # ─── motifSites() ────────────────────────────────────────────────────────────
@@ -507,8 +521,8 @@ setGeneric("motifSites", function(object) standardGeneric("motifSites"))
 
 #' @rdname motifSites
 setMethod("motifSites", "commaData", function(object) {
-    md <- S4Vectors::metadata(object)
-    if (is.null(md$motifSites)) GenomicRanges::GRanges() else md$motifSites
+  md <- S4Vectors::metadata(object)
+  if (is.null(md$motifSites)) GenomicRanges::GRanges() else md$motifSites
 })
 
 # ─── [ subsetting ────────────────────────────────────────────────────────────
@@ -536,26 +550,26 @@ setMethod("motifSites", "commaData", function(object) {
 #'
 #' @export
 setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
-    marker <- ".commaKit_internal_row_index"
-    rr <- rowRanges(x)
-    while (marker %in% colnames(GenomicRanges::mcols(rr))) {
-        marker <- paste0(marker, "_")
-    }
-    GenomicRanges::mcols(rr)[[marker]] <- seq_len(nrow(x))
-    rowRanges(x) <- rr
+  marker <- ".commaKit_internal_row_index"
+  rr <- rowRanges(x)
+  while (marker %in% colnames(GenomicRanges::mcols(rr))) {
+    marker <- paste0(marker, "_")
+  }
+  GenomicRanges::mcols(rr)[[marker]] <- seq_len(nrow(x))
+  rowRanges(x) <- rr
 
-    # Delegate to SummarizedExperiment's [ method, then re-wrap
-    se_sub <- callNextMethod()
+  # Delegate to SummarizedExperiment's [ method, then re-wrap
+  se_sub <- callNextMethod()
 
-    rr_sub <- rowRanges(se_sub)
-    row_index <- GenomicRanges::mcols(rr_sub)[[marker]]
-    GenomicRanges::mcols(rr_sub)[[marker]] <- NULL
-    rowRanges(se_sub) <- rr_sub
+  rr_sub <- rowRanges(se_sub)
+  row_index <- GenomicRanges::mcols(rr_sub)[[marker]]
+  GenomicRanges::mcols(rr_sub)[[marker]] <- NULL
+  rowRanges(se_sub) <- rr_sub
 
-    md <- S4Vectors::metadata(se_sub)
-    S4Vectors::metadata(se_sub) <- .subsetDiffMethylResultLayers(md, row_index)
+  md <- S4Vectors::metadata(se_sub)
+  S4Vectors::metadata(se_sub) <- .subsetDiffMethylResultLayers(md, row_index)
 
-    new("commaData", se_sub)
+  new("commaData", se_sub)
 })
 
 # ─── filterSites() ───────────────────────────────────────────────────────────
@@ -607,41 +621,46 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
 #' @export
 filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
                         motif = NULL, mod_context = NULL, ...) {
-    if (!is(x, "commaData")) {
-        stop("'x' must be a commaData object.")
-    }
+  if (!is(x, "commaData")) {
+    stop("'x' must be a commaData object.")
+  }
 
-    rr <- rowRanges(x)
-    mc <- GenomicRanges::mcols(rr)
-    cd <- colData(x)
+  rr <- rowRanges(x)
+  mc <- GenomicRanges::mcols(rr)
+  cd <- colData(x)
 
-    # Site filter
-    site_keep <- rep(TRUE, nrow(x))
-    if (!is.null(mod_type)) {
-        site_keep <- site_keep & (mc$mod_type %in% mod_type)
-    }
-    if (!is.null(chrom)) {
-        site_keep <- site_keep & (as.character(GenomeInfoDb::seqnames(rr)) %in% chrom)
-    }
-    if (!is.null(motif)) {
-        site_keep <- site_keep & (!is.na(mc$motif)) & (mc$motif %in% motif)
-    }
-    if (!is.null(mod_context)) {
-        # Compute mod_context on demand for filtering
-        computed_ctx <- .computeModContext(mc$mod_type, mc$motif)
-        site_keep <- site_keep & (computed_ctx %in% mod_context)
-    }
+  # Site filter
+  site_keep <- rep(TRUE, nrow(x))
+  if (!is.null(mod_type)) {
+    site_keep <- site_keep & (mc$mod_type %in% mod_type)
+  }
+  if (!is.null(chrom)) {
+    site_keep <- site_keep & (
+      as.character(GenomeInfoDb::seqnames(rr)) %in% chrom
+    )
+  }
+  if (!is.null(motif)) {
+    site_keep <- site_keep & (!is.na(mc$motif)) & (mc$motif %in% motif)
+  }
+  if (!is.null(mod_context)) {
+    # Compute mod_context on demand for filtering
+    computed_ctx <- .computeModContext(mc$mod_type, mc$motif)
+    site_keep <- site_keep & (computed_ctx %in% mod_context)
+  }
 
-    # Sample filter
-    samp_keep <- rep(TRUE, ncol(x))
-    if (!is.null(condition)) {
-        if (!"condition" %in% colnames(cd)) {
-            stop("Cannot filter by 'condition': sampleInfo(object) has no condition column.")
-        }
-        samp_keep <- samp_keep & (cd$condition %in% condition)
+  # Sample filter
+  samp_keep <- rep(TRUE, ncol(x))
+  if (!is.null(condition)) {
+    if (!"condition" %in% colnames(cd)) {
+      stop(
+        "Cannot filter by 'condition': sampleInfo(object) has no condition ",
+        "column."
+      )
     }
+    samp_keep <- samp_keep & (cd$condition %in% condition)
+  }
 
-    x[site_keep, samp_keep]
+  x[site_keep, samp_keep]
 }
 
 #' Deprecated subset method for commaData objects
@@ -656,18 +675,20 @@ filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
 #' @export
 subset.commaData <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
                              motif = NULL, mod_context = NULL, ...) {
-    warning(
-        "subset.commaData() is deprecated; use filterSites() instead.",
-        call. = FALSE
-    )
-    filterSites(x, mod_type = mod_type, condition = condition, chrom = chrom,
-                motif = motif, mod_context = mod_context, ...)
+  warning(
+    "subset.commaData() is deprecated; use filterSites() instead.",
+    call. = FALSE
+  )
+  filterSites(x,
+    mod_type = mod_type, condition = condition, chrom = chrom,
+    motif = motif, mod_context = mod_context, ...
+  )
 }
 
 # SummarizedExperiment/S4Vectors promote subset() to an S4 generic when
 # attached, so register the same compatibility path for S4 dispatch.
 setMethod("subset", "commaData", function(x, ...) {
-    subset.commaData(x, ...)
+  subset.commaData(x, ...)
 })
 
 # ─── caller() ────────────────────────────────────────────────────────────────
@@ -692,8 +713,8 @@ setGeneric("caller", function(object) standardGeneric("caller"))
 
 #' @rdname caller
 setMethod("caller", "commaData", function(object) {
-    md <- S4Vectors::metadata(object)
-    if (is.null(md$caller)) NA_character_ else md$caller
+  md <- S4Vectors::metadata(object)
+  if (is.null(md$caller)) NA_character_ else md$caller
 })
 
 # ─── minCoverage() ───────────────────────────────────────────────────────────
@@ -719,8 +740,8 @@ setGeneric("minCoverage", function(object) standardGeneric("minCoverage"))
 
 #' @rdname minCoverage
 setMethod("minCoverage", "commaData", function(object) {
-    md <- S4Vectors::metadata(object)
-    if (is.null(md$min_coverage)) NA_integer_ else md$min_coverage
+  md <- S4Vectors::metadata(object)
+  if (is.null(md$min_coverage)) NA_integer_ else md$min_coverage
 })
 
 # ─── .computeModContext() ──────────────────────────────────────────────────
@@ -729,9 +750,9 @@ setMethod("minCoverage", "commaData", function(object) {
 # Returns "mod_type_motif" when motif is known, or just "mod_type" when
 # motif is NA (e.g., Dorado/Megalodon callers).
 .computeModContext <- function(mod_type, motif) {
-    # Convert factor to character (paste/ifelse on factor return integer codes)
-    mod_type <- as.character(mod_type)
-    ifelse(is.na(motif), mod_type, paste(mod_type, motif, sep = "_"))
+  # Convert factor to character (paste/ifelse on factor return integer codes)
+  mod_type <- as.character(mod_type)
+  ifelse(is.na(motif), mod_type, paste(mod_type, motif, sep = "_"))
 }
 
 # ─── .validateModType() ───────────────────────────────────────────────────
@@ -741,44 +762,51 @@ setMethod("minCoverage", "commaData", function(object) {
 # Stops with an informative error listing the invalid values and available
 # types. Returns invisibly if all values are valid.
 .validateModType <- function(mod_type, object) {
-    available <- modTypes(object)
-    bad <- setdiff(mod_type, available)
-    if (length(bad) > 0L) {
-        stop("'mod_type' value(s) not found in object: ",
-             paste(bad, collapse = ", "),
-             ". Available types: ", paste(available, collapse = ", "), ".")
-    }
-    invisible(NULL)
+  available <- modTypes(object)
+  bad <- setdiff(mod_type, available)
+  if (length(bad) > 0L) {
+    stop(
+      "'mod_type' value(s) not found in object: ",
+      paste(bad, collapse = ", "),
+      ". Available types: ", paste(available, collapse = ", "), "."
+    )
+  }
+  invisible(NULL)
 }
 
 # Centralized validator for site-level filters used by exported helpers.
-.validateSiteFilterValues <- function(arg, values, available, object_label = "object") {
-    bad <- setdiff(values, available)
-    if (length(bad) > 0L) {
-        available_label <- if (length(available) > 0L) {
-            paste(available, collapse = ", ")
-        } else {
-            "<none>"
-        }
-        stop(
-            "'", arg, "' value(s) not found in ", object_label, ": ",
-            paste(bad, collapse = ", "),
-            ". Available: ", available_label, "."
-        )
+.validateSiteFilterValues <- function(
+  arg,
+  values,
+  available,
+  object_label = "object"
+) {
+  bad <- setdiff(values, available)
+  if (length(bad) > 0L) {
+    available_label <- if (length(available) > 0L) {
+      paste(available, collapse = ", ")
+    } else {
+      "<none>"
     }
-    invisible(NULL)
+    stop(
+      "'", arg, "' value(s) not found in ", object_label, ": ",
+      paste(bad, collapse = ", "),
+      ". Available: ", available_label, "."
+    )
+  }
+  invisible(NULL)
 }
 
 .siteFilterLabel <- function(arg, values) {
-    paste0(arg, " = '", paste(values, collapse = "', '"), "'")
+  paste0(arg, " = '", paste(values, collapse = "', '"), "'")
 }
 
 .stopEmptySiteFilter <- function(filters, caller = NULL) {
-    where <- if (is.null(caller)) "" else paste0(" in ", caller)
-    stop(
-        "No sites remain after applying site filters", where, ": ",
-        paste(filters, collapse = "; "), "."
-    )
+  where <- if (is.null(caller)) "" else paste0(" in ", caller)
+  stop(
+    "No sites remain after applying site filters", where, ": ",
+    paste(filters, collapse = "; "), "."
+  )
 }
 
 # Apply mod_type, motif, and mod_context filters with consistent validation and
@@ -787,39 +815,39 @@ setMethod("minCoverage", "commaData", function(object) {
 .applySiteFilters <- function(object, mod_type = NULL, motif = NULL,
                               mod_context = NULL, stop_on_empty = TRUE,
                               caller = NULL) {
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
-    }
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
 
-    filters <- character(0)
-    if (!is.null(mod_type)) {
-        .validateModType(mod_type, object)
-        object <- filterSites(object, mod_type = mod_type)
-        filters <- c(filters, .siteFilterLabel("mod_type", mod_type))
-        if (stop_on_empty && nrow(object) == 0L) {
-            .stopEmptySiteFilter(filters, caller = caller)
-        }
+  filters <- character(0)
+  if (!is.null(mod_type)) {
+    .validateModType(mod_type, object)
+    object <- filterSites(object, mod_type = mod_type)
+    filters <- c(filters, .siteFilterLabel("mod_type", mod_type))
+    if (stop_on_empty && nrow(object) == 0L) {
+      .stopEmptySiteFilter(filters, caller = caller)
     }
+  }
 
-    if (!is.null(motif)) {
-        .validateSiteFilterValues("motif", motif, motifs(object))
-        object <- filterSites(object, motif = motif)
-        filters <- c(filters, .siteFilterLabel("motif", motif))
-        if (stop_on_empty && nrow(object) == 0L) {
-            .stopEmptySiteFilter(filters, caller = caller)
-        }
+  if (!is.null(motif)) {
+    .validateSiteFilterValues("motif", motif, motifs(object))
+    object <- filterSites(object, motif = motif)
+    filters <- c(filters, .siteFilterLabel("motif", motif))
+    if (stop_on_empty && nrow(object) == 0L) {
+      .stopEmptySiteFilter(filters, caller = caller)
     }
+  }
 
-    if (!is.null(mod_context)) {
-        .validateSiteFilterValues("mod_context", mod_context, modContexts(object))
-        object <- filterSites(object, mod_context = mod_context)
-        filters <- c(filters, .siteFilterLabel("mod_context", mod_context))
-        if (stop_on_empty && nrow(object) == 0L) {
-            .stopEmptySiteFilter(filters, caller = caller)
-        }
+  if (!is.null(mod_context)) {
+    .validateSiteFilterValues("mod_context", mod_context, modContexts(object))
+    object <- filterSites(object, mod_context = mod_context)
+    filters <- c(filters, .siteFilterLabel("mod_context", mod_context))
+    if (stop_on_empty && nrow(object) == 0L) {
+      .stopEmptySiteFilter(filters, caller = caller)
     }
+  }
 
-    object
+  object
 }
 
 # ─── .checkModTypeValues() ────────────────────────────────────────────────
@@ -829,28 +857,28 @@ setMethod("minCoverage", "commaData", function(object) {
 # commaData validity method and by .validateModType(). This is the single
 # source of truth for what constitutes a valid mod_type value.
 .checkModTypeValues <- function(values, levels = NULL) {
-    errors <- character(0)
-    # Check factor levels if provided
-    if (!is.null(levels)) {
-        bad_levels <- setdiff(levels, .VALID_MOD_TYPES)
-        if (length(bad_levels) > 0L) {
-            errors <- c(errors, paste0(
-                "rowRanges mcols$mod_type has invalid factor levels: ",
-                paste(bad_levels, collapse = ", "),
-                ". Allowed levels: ",
-                paste(.VALID_MOD_TYPES, collapse = ", ")
-            ))
-        }
+  errors <- character(0)
+  # Check factor levels if provided
+  if (!is.null(levels)) {
+    bad_levels <- setdiff(levels, .VALID_MOD_TYPES)
+    if (length(bad_levels) > 0L) {
+      errors <- c(errors, paste0(
+        "rowRanges mcols$mod_type has invalid factor levels: ",
+        paste(bad_levels, collapse = ", "),
+        ". Allowed levels: ",
+        paste(.VALID_MOD_TYPES, collapse = ", ")
+      ))
     }
-    # Check actual values
-    bad_vals <- setdiff(values, .VALID_MOD_TYPES)
-    if (length(bad_vals) > 0L) {
-        errors <- c(errors, paste0(
-            "rowRanges mcols$mod_type contains unrecognized values: ",
-            paste(bad_vals, collapse = ", "),
-            ". Allowed values: ",
-            paste(.VALID_MOD_TYPES, collapse = ", ")
-        ))
-    }
-    errors
+  }
+  # Check actual values
+  bad_vals <- setdiff(values, .VALID_MOD_TYPES)
+  if (length(bad_vals) > 0L) {
+    errors <- c(errors, paste0(
+      "rowRanges mcols$mod_type contains unrecognized values: ",
+      paste(bad_vals, collapse = ", "),
+      ". Allowed values: ",
+      paste(.VALID_MOD_TYPES, collapse = ", ")
+    ))
+  }
+  errors
 }

@@ -39,97 +39,105 @@ NULL
 #'   aggregates probabilities rather than observed calls.
 #'
 #' @keywords internal
-.parseMegalodon <- function(file, sample_name, mod_type = NULL, min_coverage = 5L) {
-    if (!is.character(file) || length(file) != 1) {
-        stop("file must be a single character string path")
-    }
-    if (!file.exists(file)) {
-        stop("Megalodon file not found: ", file)
-    }
-    min_coverage <- as.integer(min_coverage)
+.parseMegalodon <- function(file,
+                            sample_name,
+                            mod_type = NULL,
+                            min_coverage = 5L) {
+  if (!is.character(file) || length(file) != 1) {
+    stop("file must be a single character string path")
+  }
+  if (!file.exists(file)) {
+    stop("Megalodon file not found: ", file)
+  }
+  min_coverage <- as.integer(min_coverage)
 
-    if (is.null(mod_type) || !is.character(mod_type) || length(mod_type) != 1L ||
-            is.na(mod_type)) {
-        stop(
-            "'mod_type' must be explicitly supplied as a single modification ",
-            "type for Megalodon files. Megalodon output does not encode the ",
-            "modification type in the file."
-        )
-    }
-    mod_type_errors <- .checkModTypeValues(mod_type)
-    if (length(mod_type_errors) > 0L) {
-        stop(paste(mod_type_errors, collapse = "\n"))
-    }
-
-    # ── Read file ───────────────────────────────────────────────────────────
-    raw <- tryCatch(
-        read.table(
-            file,
-            header           = FALSE,
-            sep              = "\t",
-            stringsAsFactors = FALSE,
-            comment.char     = "#",
-            fill             = TRUE
-        ),
-        error = function(e) stop("Failed to read Megalodon file '", file, "': ", e$message)
+  if (is.null(mod_type) || !is.character(mod_type) || length(mod_type) != 1L ||
+    is.na(mod_type)) {
+    stop(
+      "'mod_type' must be explicitly supplied as a single modification ",
+      "type for Megalodon files. Megalodon output does not encode the ",
+      "modification type in the file."
     )
+  }
+  mod_type_errors <- .checkModTypeValues(mod_type)
+  if (length(mod_type_errors) > 0L) {
+    stop(paste(mod_type_errors, collapse = "\n"))
+  }
 
-    if (nrow(raw) == 0L) {
-        return(.emptyParseResult())
+  # ── Read file ───────────────────────────────────────────────────────────
+  raw <- tryCatch(
+    read.table(
+      file,
+      header           = FALSE,
+      sep              = "\t",
+      stringsAsFactors = FALSE,
+      comment.char     = "#",
+      fill             = TRUE
+    ),
+    error = function(e) {
+      stop("Failed to read Megalodon file '", file, "': ", e$message)
     }
+  )
 
-    if (ncol(raw) < 7L) {
-        stop(
-            "Megalodon file '", file, "' has ", ncol(raw), " columns; ",
-            "expected at least 7 (chrom, start, end, read_id, score, strand, mod_prob)."
-        )
-    }
+  if (nrow(raw) == 0L) {
+    return(.emptyParseResult())
+  }
 
-    # Standard Megalodon per-read BED columns (minimum 7)
-    # Col 1=chrom, 2=start, 3=end, 4=read_id, 5=score, 6=strand, last=mod_prob
-    chrom    <- as.character(raw[[1]])
-    start    <- as.integer(raw[[2]])
-    strand   <- as.character(raw[[6]])
-    mod_prob <- as.numeric(raw[[ncol(raw)]])
-
-    # ── Aggregate per-read → per-site ───────────────────────────────────────
-    # Group by genomic position (chrom, position, strand) and compute
-    # per-site beta (mean of mod_prob) and coverage (count of reads).
-    position <- start + 1L
-
-    site_df <- data.frame(
-        chrom    = chrom,
-        position = position,
-        strand   = strand,
-        mod_prob = mod_prob,
-        stringsAsFactors = FALSE
+  if (ncol(raw) < 7L) {
+    stop(
+      "Megalodon file '", file, "' has ", ncol(raw), " columns; ",
+      "expected at least 7 (chrom, start, end, read_id, score, ",
+      "strand, mod_prob)."
     )
+  }
 
-    # Use aggregate() for base-R dedup — no string keys needed
-    agg_beta <- stats::aggregate(mod_prob ~ chrom + position + strand,
-                           data = site_df,
-                           FUN = mean, na.rm = TRUE)
-    agg_cov  <- stats::aggregate(mod_prob ~ chrom + position + strand,
-                           data = site_df,
-                           FUN = length)
+  # Standard Megalodon per-read BED columns (minimum 7)
+  # Col 1=chrom, 2=start, 3=end, 4=read_id, 5=score, 6=strand, last=mod_prob
+  chrom <- as.character(raw[[1]])
+  start <- as.integer(raw[[2]])
+  strand <- as.character(raw[[6]])
+  mod_prob <- as.numeric(raw[[ncol(raw)]])
 
-    # Merge the two aggregates (same grouping columns, same row order)
-    result <- data.frame(
-        chrom    = agg_beta$chrom,
-        position = agg_beta$position,
-        strand   = agg_beta$strand,
-        mod_type = mod_type,
-        motif    = NA_character_,
-        beta     = agg_beta$mod_prob,
-        coverage = agg_cov$mod_prob,
-        mod_counts = NA_integer_,
-        canonical_counts = NA_integer_,
-        other_mod_counts = NA_integer_,
-        stringsAsFactors = FALSE
-    )
+  # ── Aggregate per-read → per-site ───────────────────────────────────────
+  # Group by genomic position (chrom, position, strand) and compute
+  # per-site beta (mean of mod_prob) and coverage (count of reads).
+  position <- start + 1L
 
-    # ── Apply min_coverage filter ───────────────────────────────────────────
-    result <- result[result$coverage >= min_coverage, , drop = FALSE]
-    rownames(result) <- NULL
-    result
+  site_df <- data.frame(
+    chrom = chrom,
+    position = position,
+    strand = strand,
+    mod_prob = mod_prob,
+    stringsAsFactors = FALSE
+  )
+
+  # Use aggregate() for base-R dedup — no string keys needed
+  agg_beta <- stats::aggregate(mod_prob ~ chrom + position + strand,
+    data = site_df,
+    FUN = mean, na.rm = TRUE
+  )
+  agg_cov <- stats::aggregate(mod_prob ~ chrom + position + strand,
+    data = site_df,
+    FUN = length
+  )
+
+  # Merge the two aggregates (same grouping columns, same row order)
+  result <- data.frame(
+    chrom = agg_beta$chrom,
+    position = agg_beta$position,
+    strand = agg_beta$strand,
+    mod_type = mod_type,
+    motif = NA_character_,
+    beta = agg_beta$mod_prob,
+    coverage = agg_cov$mod_prob,
+    mod_counts = NA_integer_,
+    canonical_counts = NA_integer_,
+    other_mod_counts = NA_integer_,
+    stringsAsFactors = FALSE
+  )
+
+  # ── Apply min_coverage filter ───────────────────────────────────────────
+  result <- result[result$coverage >= min_coverage, , drop = FALSE]
+  rownames(result) <- NULL
+  result
 }

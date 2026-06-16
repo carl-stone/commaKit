@@ -58,65 +58,71 @@ NULL
 #'
 #' @export
 loadAnnotation <- function(file, feature_types = NULL, ...) {
-    if (!requireNamespace("rtracklayer", quietly = TRUE)) {
-        stop(
-            "Package 'rtracklayer' is required for loadAnnotation(). ",
-            "Install it with: BiocManager::install('rtracklayer')"
-        )
-    }
-
-    if (!is.character(file) || length(file) != 1) {
-        stop("file must be a single character string path")
-    }
-    if (!file.exists(file)) {
-        stop("Annotation file not found: ", file)
-    }
-
-    # ── Detect format from extension ────────────────────────────────────────
-    ext <- .annotationFileExt(file)
-
-    gr <- tryCatch(
-        rtracklayer::import(file, ...),
-        error = function(e) stop("Failed to read annotation file '", file, "': ", e$message)
+  if (!requireNamespace("rtracklayer", quietly = TRUE)) {
+    stop(
+      "Package 'rtracklayer' is required for loadAnnotation(). ",
+      "Install it with: BiocManager::install('rtracklayer')"
     )
+  }
 
+  if (!is.character(file) || length(file) != 1) {
+    stop("file must be a single character string path")
+  }
+  if (!file.exists(file)) {
+    stop("Annotation file not found: ", file)
+  }
+
+  # ── Detect format from extension ────────────────────────────────────────
+  ext <- .annotationFileExt(file)
+
+  gr <- tryCatch(
+    rtracklayer::import(file, ...),
+    error = function(e) {
+      stop("Failed to read annotation file '", file, "': ", e$message)
+    }
+  )
+
+  if (length(gr) == 0L) {
+    message("Note: annotation file '", file, "' contains no features")
+    return(gr)
+  }
+
+  # ── Standardize mcols ───────────────────────────────────────────────────
+  gr <- .standardizeAnnotationMcols(gr, ext)
+
+  # ── Filter by feature_types ─────────────────────────────────────────────
+  if (!is.null(feature_types)) {
+    keep <- GenomicRanges::mcols(gr)$feature_type %in% feature_types
+    gr <- gr[keep]
     if (length(gr) == 0L) {
-        message("Note: annotation file '", file, "' contains no features")
-        return(gr)
+      warning(
+        "No features of the requested type(s) found in '", file, "': ",
+        paste(feature_types, collapse = ", ")
+      )
     }
+  }
 
-    # ── Standardize mcols ───────────────────────────────────────────────────
-    gr <- .standardizeAnnotationMcols(gr, ext)
-
-    # ── Filter by feature_types ─────────────────────────────────────────────
-    if (!is.null(feature_types)) {
-        keep <- GenomicRanges::mcols(gr)$feature_type %in% feature_types
-        gr   <- gr[keep]
-        if (length(gr) == 0L) {
-            warning(
-                "No features of the requested type(s) found in '", file, "': ",
-                paste(feature_types, collapse = ", ")
-            )
-        }
-    }
-
-    gr
+  gr
 }
 
 #' Detect annotation file format from file extension
 #' @return Character string, either \code{"gff"} or \code{"bed"}.
 #' @keywords internal
 .annotationFileExt <- function(file) {
-    # Strip compression suffix first
-    base <- sub("\\.gz$|\\.bz2$|\\.xz$", "", file, ignore.case = TRUE)
-    ext  <- tolower(tools::file_ext(base))
-    if (ext %in% c("gff", "gff3")) return("gff")
-    if (ext == "bed") return("bed")
-    stop(
-        "Unrecognized annotation file extension for '", file, "'. ",
-        "Supported extensions are .gff, .gff3, and .bed ",
-        "(optionally compressed with .gz, .bz2, or .xz)."
-    )
+  # Strip compression suffix first
+  base <- sub("\\.gz$|\\.bz2$|\\.xz$", "", file, ignore.case = TRUE)
+  ext <- tolower(tools::file_ext(base))
+  if (ext %in% c("gff", "gff3")) {
+    return("gff")
+  }
+  if (ext == "bed") {
+    return("bed")
+  }
+  stop(
+    "Unrecognized annotation file extension for '", file, "'. ",
+    "Supported extensions are .gff, .gff3, and .bed ",
+    "(optionally compressed with .gz, .bz2, or .xz)."
+  )
 }
 
 #' Standardize annotation GRanges mcols to always have feature_type and name
@@ -124,39 +130,39 @@ loadAnnotation <- function(file, feature_types = NULL, ...) {
 #'   \code{name} metadata columns.
 #' @keywords internal
 .standardizeAnnotationMcols <- function(gr, ext) {
-    mc <- GenomicRanges::mcols(gr)
+  mc <- GenomicRanges::mcols(gr)
 
-    if (ext == "gff") {
-        # GFF3: preserve any 'feature_type' attribute (e.g. "Sigma70",
-        # "DNA-Binding-Sites") under 'feature_subtype' before overwriting
-        # 'feature_type' with the GFF3 type column (column 3).
-        if ("feature_type" %in% colnames(mc)) {
-            mc$feature_subtype <- as.character(mc$feature_type)
-        }
-        # GFF3: 'type' column → feature_type
-        if ("type" %in% colnames(mc)) {
-            mc$feature_type <- as.character(mc$type)
-        } else {
-            mc$feature_type <- NA_character_
-        }
-        # Name: prefer Name attribute, fall back to ID
-        if ("Name" %in% colnames(mc)) {
-            mc$name <- as.character(mc$Name)
-        } else if ("ID" %in% colnames(mc)) {
-            mc$name <- as.character(mc$ID)
-        } else {
-            mc$name <- NA_character_
-        }
-    } else {
-        # BED
-        mc$feature_type <- "region"
-        if ("name" %in% colnames(mc)) {
-            mc$name <- as.character(mc$name)
-        } else {
-            mc$name <- NA_character_
-        }
+  if (ext == "gff") {
+    # GFF3: preserve any 'feature_type' attribute (e.g. "Sigma70",
+    # "DNA-Binding-Sites") under 'feature_subtype' before overwriting
+    # 'feature_type' with the GFF3 type column (column 3).
+    if ("feature_type" %in% colnames(mc)) {
+      mc$feature_subtype <- as.character(mc$feature_type)
     }
+    # GFF3: 'type' column → feature_type
+    if ("type" %in% colnames(mc)) {
+      mc$feature_type <- as.character(mc$type)
+    } else {
+      mc$feature_type <- NA_character_
+    }
+    # Name: prefer Name attribute, fall back to ID
+    if ("Name" %in% colnames(mc)) {
+      mc$name <- as.character(mc$Name)
+    } else if ("ID" %in% colnames(mc)) {
+      mc$name <- as.character(mc$ID)
+    } else {
+      mc$name <- NA_character_
+    }
+  } else {
+    # BED
+    mc$feature_type <- "region"
+    if ("name" %in% colnames(mc)) {
+      mc$name <- as.character(mc$name)
+    } else {
+      mc$name <- NA_character_
+    }
+  }
 
-    GenomicRanges::mcols(gr) <- mc
-    gr
+  GenomicRanges::mcols(gr) <- mc
+  gr
 }

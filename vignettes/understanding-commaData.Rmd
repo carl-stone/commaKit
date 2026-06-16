@@ -12,10 +12,10 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-    collapse = TRUE,
-    comment = "#>",
-    warning = FALSE,
-    message = FALSE
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
 )
 ```
 
@@ -90,8 +90,10 @@ For human-readable inspection, `siteInfo()` reconstructs a flat table from
 
 ```{r site-info}
 si <- siteInfo(comma_example_data)
-si[1:5, c("chrom", "position", "strand", "mod_type", "motif",
-          "mod_context", "site_key")]
+si[1:5, c(
+  "chrom", "position", "strand", "mod_type", "motif",
+  "mod_context", "site_key"
+)]
 ```
 
 The `site_key` column is a display label. Alignment between objects and samples
@@ -142,8 +144,8 @@ md <- S4Vectors::metadata(comma_example_data)
 names(md)
 
 c(
-    annotation_features = length(annotation(comma_example_data)),
-    motif_sites = length(motifSites(comma_example_data))
+  annotation_features = length(annotation(comma_example_data)),
+  motif_sites = length(motifSites(comma_example_data))
 )
 
 vapply(md, function(x) paste(class(x), collapse = "/"), character(1))
@@ -205,7 +207,7 @@ Differential methylation adds a statistical result layer. By default,
 which keeps distinct modification-plus-context units separate.
 
 ```{r diff-layer}
-dm <- diffMethyl(annotated, formula = ~ condition, method = "quasi_f")
+dm <- diffMethyl(annotated, formula = ~condition, method = "quasi_f")
 dm_cols <- setdiff(colnames(siteInfo(dm)), colnames(siteInfo(annotated)))
 dm_cols
 
@@ -220,8 +222,10 @@ multiple named runs, pass `result` or `result_name` to retrieve an older layer.
 ```{r results-layer}
 res <- results(dm)
 res <- res[order(res$dm_padj), ]
-head(res[, c("chrom", "position", "strand", "mod_type", "motif",
-             "mod_context", "dm_padj", "dm_delta_beta")])
+head(res[, c(
+  "chrom", "position", "strand", "mod_type", "motif",
+  "mod_context", "dm_padj", "dm_delta_beta"
+)])
 ```
 
 The important pattern is that downstream functions do not replace the central

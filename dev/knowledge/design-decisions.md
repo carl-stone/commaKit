@@ -1,3 +1,14 @@
+---
+type: Decision Record Collection
+title: Design Decisions
+description: Architectural and API decisions that explain why commaKit behaves the way it does.
+resource: dev/knowledge/design-decisions.md
+tags: [architecture, decisions, api, statistics, bioconductor]
+timestamp: 2026-06-15T00:00:00Z
+status: current
+owner: Carl Stone
+---
+
 # Design Decisions — Why We Made These Choices
 
 **Last updated:** 2026-05-30
@@ -14,9 +25,9 @@ This document records significant architectural and API decisions. When you're t
 **Rationale:** Different modification contexts are biologically distinct. 6mA at GATC (Dam methyltransferase) and 6mA at ACCACC (Cellulomonas-specific) are not the same signal. Pooling them would create spurious associations.
 
 **Example:**
-- `6mA:GATC` — 393 sites, tested separately
-- `5mC:CCWGG` — 195 sites, tested separately
-- A site that's `6mA:GATC` is NOT tested in the `5mC:CCWGG` model
+- `6mA_GATC` — 393 sites, tested separately
+- `5mC_CCWGG` — 195 sites, tested separately
+- A site that's `6mA_GATC` is NOT tested in the `5mC_CCWGG` model
 
 **Consequence:** Multiple testing correction is genome-wide across all mod_contexts, not per-mod_type.
 
@@ -172,7 +183,7 @@ This document records significant architectural and API decisions. When you're t
 
 **Rationale:** String-key alignment is fragile (separator collisions, formatting inconsistencies). `GRanges`-based alignment is mathematically correct and leverages Bioconductor infrastructure.
 
-**Consequence:** Assay matrices have no row names. `site_key` is a computed display column only. Its display format is stable and always includes chromosome: `chrom:position:strand:mod_type:motif`.
+**Consequence:** Assay matrices should not be used as the alignment authority. `site_key` is a computed display column only. Its display format is stable and always includes chromosome: `chrom:position:strand:mod_type:motif`.
 
 **Do not change without:** Understanding the no-rownames alignment design (PR #117, #105).
 

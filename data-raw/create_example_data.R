@@ -19,21 +19,27 @@
 set.seed(1312)
 
 # ── Parameters ────────────────────────────────────────────────────────────────
-GENOME_SIZE   <- 100000L
-CHR_NAME      <- "chr_sim"
-SAMPLES       <- c("ctrl_1", "ctrl_2", "ctrl_3", "treat_1", "treat_2", "treat_3")
-CONDITIONS    <- c("control", "control", "control", "treatment", "treatment", "treatment")
-REPLICATES    <- c(1L, 2L, 3L, 1L, 2L, 3L)
-GATC_SPACING  <- 512L    # deterministic backbone interval for 6mA sites (~195 sites)
-CCWGG_SPACING <- 1024L   # deterministic backbone interval for 5mC sites (~97 sites)
-N_RANDOM_6MA  <- 195L    # random sites added on top of backbone
-N_RANDOM_5MC  <- 98L     # random sites added on top of backbone
-N_DIFF_SITES  <- 30L     # 6mA sites that are differentially methylated
-MOTIF_6MA     <- "GATC"  # simulated Dam methyltransferase motif for 6mA sites
-MOTIF_5MC     <- "CCWGG" # simulated Dcm methyltransferase motif for 5mC sites
+GENOME_SIZE <- 100000L
+CHR_NAME <- "chr_sim"
+SAMPLES <- c(
+  "ctrl_1", "ctrl_2", "ctrl_3",
+  "treat_1", "treat_2", "treat_3"
+)
+CONDITIONS <- c(
+  "control", "control", "control",
+  "treatment", "treatment", "treatment"
+)
+REPLICATES <- c(1L, 2L, 3L, 1L, 2L, 3L)
+GATC_SPACING <- 512L
+CCWGG_SPACING <- 1024L
+N_RANDOM_6MA <- 195L # random sites added on top of backbone
+N_RANDOM_5MC <- 98L # random sites added on top of backbone
+N_DIFF_SITES <- 30L # 6mA sites that are differentially methylated
+MOTIF_6MA <- "GATC" # simulated Dam methyltransferase motif for 6mA sites
+MOTIF_5MC <- "CCWGG" # simulated Dcm methyltransferase motif for 5mC sites
 # Anchor positions that MUST be present so position-sensitive tests never skip.
 # 1024 (= 512x2) is already on the backbone and covers the [1000, 1050] window.
-GATC_ANCHORS  <- c(1984L, 49984L, 60032L)
+GATC_ANCHORS <- c(1984L, 49984L, 60032L)
 
 # ── Simulate site positions ───────────────────────────────────────────────────
 # Strategy: deterministic evenly-spaced backbone + random complement + anchors.
@@ -41,17 +47,17 @@ GATC_ANCHORS  <- c(1984L, 49984L, 60032L)
 # ~GENOME_SIZE/512 5mC sites, matching expected biological motif frequencies.
 
 # 6mA (GATC): backbone every 512 bp → ~195 sites
-gatc_backbone  <- seq(GATC_SPACING, GENOME_SIZE - 4L, by = GATC_SPACING)
-gatc_taken     <- sort(unique(c(gatc_backbone, GATC_ANCHORS)))
-gatc_pool      <- setdiff(seq_len(GENOME_SIZE - 4L), gatc_taken)
-gatc_random    <- sample(gatc_pool, N_RANDOM_6MA)
+gatc_backbone <- seq(GATC_SPACING, GENOME_SIZE - 4L, by = GATC_SPACING)
+gatc_taken <- sort(unique(c(gatc_backbone, GATC_ANCHORS)))
+gatc_pool <- setdiff(seq_len(GENOME_SIZE - 4L), gatc_taken)
+gatc_random <- sample(gatc_pool, N_RANDOM_6MA)
 gatc_positions <- sort(unique(c(gatc_backbone, GATC_ANCHORS, gatc_random)))
 
 # 5mC (CCWGG): backbone every 1024 bp → ~97 sites
-ccgg_backbone  <- seq(CCWGG_SPACING, GENOME_SIZE - 4L, by = CCWGG_SPACING)
-ccgg_taken     <- sort(unique(c(ccgg_backbone, gatc_positions)))
-ccgg_pool      <- setdiff(seq_len(GENOME_SIZE - 4L), ccgg_taken)
-ccgg_random    <- sample(ccgg_pool, N_RANDOM_5MC)
+ccgg_backbone <- seq(CCWGG_SPACING, GENOME_SIZE - 4L, by = CCWGG_SPACING)
+ccgg_taken <- sort(unique(c(ccgg_backbone, gatc_positions)))
+ccgg_pool <- setdiff(seq_len(GENOME_SIZE - 4L), ccgg_taken)
+ccgg_random <- sample(ccgg_pool, N_RANDOM_5MC)
 ccgg_positions <- sort(unique(c(ccgg_backbone, ccgg_random)))
 
 # Derive final site counts used everywhere downstream
@@ -59,87 +65,97 @@ N_6MA_SITES <- length(gatc_positions)
 N_5MC_SITES <- length(ccgg_positions)
 
 # Assign strands
-gatc_strands  <- sample(c("+", "-"), N_6MA_SITES, replace = TRUE)
-ccgg_strands  <- sample(c("+", "-"), N_5MC_SITES, replace = TRUE)
+gatc_strands <- sample(c("+", "-"), N_6MA_SITES, replace = TRUE)
+ccgg_strands <- sample(c("+", "-"), N_5MC_SITES, replace = TRUE)
 
 # ── Simulate methylation beta values ──────────────────────────────────────────
 # 6mA: control samples highly methylated (~0.9), treatment mostly methylated
 # but ~30 sites are significantly hypomethylated (~0.3)
-diff_idx_6ma   <- sample.int(N_6MA_SITES, N_DIFF_SITES)
+diff_idx_6ma <- sample.int(N_6MA_SITES, N_DIFF_SITES)
 
 sim_6ma_beta <- function(n, is_diff, is_treatment) {
-    betas <- numeric(n)
-    for (i in seq_len(n)) {
-        if (is_diff[i] && is_treatment) {
-            # Differentially methylated: low in treatment
-            betas[i] <- rbeta(1, 2, 6)   # mean ~0.25
-        } else {
-            # Constitutively methylated: high
-            betas[i] <- rbeta(1, 18, 2)  # mean ~0.90
-        }
+  betas <- numeric(n)
+  for (i in seq_len(n)) {
+    if (is_diff[i] && is_treatment) {
+      # Differentially methylated: low in treatment
+      betas[i] <- rbeta(1, 2, 6) # mean ~0.25
+    } else {
+      # Constitutively methylated: high
+      betas[i] <- rbeta(1, 18, 2) # mean ~0.90
     }
-    pmin(pmax(betas, 0.01), 0.99)
+  }
+  pmin(pmax(betas, 0.01), 0.99)
 }
 
 is_diff_6ma <- seq_len(N_6MA_SITES) %in% diff_idx_6ma
 
-beta_6ma_ctrl1  <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = FALSE)
-beta_6ma_ctrl2  <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = FALSE)
-beta_6ma_ctrl3  <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = FALSE)
+beta_6ma_ctrl1 <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = FALSE)
+beta_6ma_ctrl2 <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = FALSE)
+beta_6ma_ctrl3 <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = FALSE)
 beta_6ma_treat1 <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = TRUE)
 beta_6ma_treat2 <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = TRUE)
 beta_6ma_treat3 <- sim_6ma_beta(N_6MA_SITES, is_diff_6ma, is_treatment = TRUE)
 
 # 5mC: no differential methylation in this example
-beta_5mc_ctrl1  <- rbeta(N_5MC_SITES, 8, 2)  # mean ~0.80
-beta_5mc_ctrl2  <- rbeta(N_5MC_SITES, 8, 2)
-beta_5mc_ctrl3  <- rbeta(N_5MC_SITES, 8, 2)
+beta_5mc_ctrl1 <- rbeta(N_5MC_SITES, 8, 2) # mean ~0.80
+beta_5mc_ctrl2 <- rbeta(N_5MC_SITES, 8, 2)
+beta_5mc_ctrl3 <- rbeta(N_5MC_SITES, 8, 2)
 beta_5mc_treat1 <- rbeta(N_5MC_SITES, 8, 2)
 beta_5mc_treat2 <- rbeta(N_5MC_SITES, 8, 2)
 beta_5mc_treat3 <- rbeta(N_5MC_SITES, 8, 2)
 
 # ── Simulate coverage ─────────────────────────────────────────────────────────
-cov_6ma_ctrl1  <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
-cov_6ma_ctrl2  <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
-cov_6ma_ctrl3  <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
+cov_6ma_ctrl1 <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
+cov_6ma_ctrl2 <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
+cov_6ma_ctrl3 <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
 cov_6ma_treat1 <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
 cov_6ma_treat2 <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
 cov_6ma_treat3 <- sample(10L:150L, N_6MA_SITES, replace = TRUE)
 
-cov_5mc_ctrl1  <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
-cov_5mc_ctrl2  <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
-cov_5mc_ctrl3  <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
+cov_5mc_ctrl1 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
+cov_5mc_ctrl2 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
+cov_5mc_ctrl3 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
 cov_5mc_treat1 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
 cov_5mc_treat2 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
 cov_5mc_treat3 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
 
 # ── Build site keys ───────────────────────────────────────────────────────────
-keys_6ma <- paste(CHR_NAME, gatc_positions, gatc_strands, "6mA", MOTIF_6MA, sep = ":")
-keys_5mc <- paste(CHR_NAME, ccgg_positions, ccgg_strands, "5mC", MOTIF_5MC, sep = ":")
+keys_6ma <- paste(
+  CHR_NAME, gatc_positions, gatc_strands, "6mA", MOTIF_6MA,
+  sep = ":"
+)
+keys_5mc <- paste(
+  CHR_NAME, ccgg_positions, ccgg_strands, "5mC", MOTIF_5MC,
+  sep = ":"
+)
 all_keys <- c(keys_6ma, keys_5mc)
-n_total  <- length(all_keys)
+n_total <- length(all_keys)
 
 # ── Build assay matrices ──────────────────────────────────────────────────────
 methyl_mat <- matrix(
-    c(c(beta_6ma_ctrl1,  beta_5mc_ctrl1),
-      c(beta_6ma_ctrl2,  beta_5mc_ctrl2),
-      c(beta_6ma_ctrl3,  beta_5mc_ctrl3),
-      c(beta_6ma_treat1, beta_5mc_treat1),
-      c(beta_6ma_treat2, beta_5mc_treat2),
-      c(beta_6ma_treat3, beta_5mc_treat3)),
-    nrow = n_total, ncol = 6L,
-    dimnames = list(NULL, SAMPLES)
+  c(
+    c(beta_6ma_ctrl1, beta_5mc_ctrl1),
+    c(beta_6ma_ctrl2, beta_5mc_ctrl2),
+    c(beta_6ma_ctrl3, beta_5mc_ctrl3),
+    c(beta_6ma_treat1, beta_5mc_treat1),
+    c(beta_6ma_treat2, beta_5mc_treat2),
+    c(beta_6ma_treat3, beta_5mc_treat3)
+  ),
+  nrow = n_total, ncol = 6L,
+  dimnames = list(NULL, SAMPLES)
 )
 
 coverage_mat <- matrix(
-    c(c(cov_6ma_ctrl1,  cov_5mc_ctrl1),
-      c(cov_6ma_ctrl2,  cov_5mc_ctrl2),
-      c(cov_6ma_ctrl3,  cov_5mc_ctrl3),
-      c(cov_6ma_treat1, cov_5mc_treat1),
-      c(cov_6ma_treat2, cov_5mc_treat2),
-      c(cov_6ma_treat3, cov_5mc_treat3)),
-    nrow = n_total, ncol = 6L,
-    dimnames = list(NULL, SAMPLES)
+  c(
+    c(cov_6ma_ctrl1, cov_5mc_ctrl1),
+    c(cov_6ma_ctrl2, cov_5mc_ctrl2),
+    c(cov_6ma_ctrl3, cov_5mc_ctrl3),
+    c(cov_6ma_treat1, cov_5mc_treat1),
+    c(cov_6ma_treat2, cov_5mc_treat2),
+    c(cov_6ma_treat3, cov_5mc_treat3)
+  ),
+  nrow = n_total, ncol = 6L,
+  dimnames = list(NULL, SAMPLES)
 )
 storage.mode(coverage_mat) <- "integer"
 
@@ -153,58 +169,63 @@ storage.mode(canonical_counts_mat) <- "integer"
 
 # ── Build rowRanges (GRanges) ────────────────────────────────────────────────
 site_gr <- GenomicRanges::GRanges(
-    seqnames = rep(CHR_NAME, n_total),
-    ranges   = IRanges::IRanges(
-        start = c(gatc_positions, ccgg_positions),
-        width = 1L
-    ),
-    strand   = c(gatc_strands, ccgg_strands),
-    mod_type    = factor(c(rep("6mA", N_6MA_SITES), rep("5mC", N_5MC_SITES)),
-                         levels = c("4mC", "5mC", "6mA")),
-    motif       = c(rep(MOTIF_6MA, N_6MA_SITES), rep(MOTIF_5MC, N_5MC_SITES)),
-    is_diff     = c(is_diff_6ma, rep(FALSE, N_5MC_SITES))  # ground truth for testing
+  seqnames = rep(CHR_NAME, n_total),
+  ranges = IRanges::IRanges(
+    start = c(gatc_positions, ccgg_positions),
+    width = 1L
+  ),
+  strand = c(gatc_strands, ccgg_strands),
+  mod_type = factor(c(rep("6mA", N_6MA_SITES), rep("5mC", N_5MC_SITES)),
+    levels = c("4mC", "5mC", "6mA")
+  ),
+  motif = c(rep(MOTIF_6MA, N_6MA_SITES), rep(MOTIF_5MC, N_5MC_SITES)),
+  is_diff = c(is_diff_6ma, rep(FALSE, N_5MC_SITES)) # ground truth for testing
 )
 
 # ── Attach Seqinfo to rowRanges ────────────────────────────────────────────
 GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
-    seqnames = CHR_NAME,
-    seqlengths = GENOME_SIZE,
-    isCircular = TRUE
+  seqnames = CHR_NAME,
+  seqlengths = GENOME_SIZE,
+  isCircular = TRUE
 )
 
 # ── Build colData ─────────────────────────────────────────────────────────────
 col_df <- S4Vectors::DataFrame(
-    sample_name = SAMPLES,
-    condition   = CONDITIONS,
-    replicate   = REPLICATES,
-    caller      = rep("modkit", 6L),
-    row.names   = SAMPLES
+  sample_name = SAMPLES,
+  condition   = CONDITIONS,
+  replicate   = REPLICATES,
+  caller      = rep("modkit", 6L),
+  row.names   = SAMPLES
 )
 
 # ── Build annotation GRanges ──────────────────────────────────────────────────
 ann_gr <- GenomicRanges::GRanges(
-    seqnames = rep(CHR_NAME, 5L),
-    ranges   = IRanges::IRanges(
-        start = c(1L,    600L,  1400L, 2500L, 4000L),
-        end   = c(500L,  1200L, 2000L, 3500L, 5000L)
-    ),
-    strand   = c("+", "+", "-", "+", "-")
+  seqnames = rep(CHR_NAME, 5L),
+  ranges = IRanges::IRanges(
+    start = c(1L, 600L, 1400L, 2500L, 4000L),
+    end   = c(500L, 1200L, 2000L, 3500L, 5000L)
+  ),
+  strand = c("+", "+", "-", "+", "-")
 )
-GenomicRanges::mcols(ann_gr)$feature_type <- c("gene", "gene", "gene", "rRNA", "tRNA")
-GenomicRanges::mcols(ann_gr)$name         <- c("geneA", "geneB", "geneC", "geneD", "geneE")
+GenomicRanges::mcols(ann_gr)$feature_type <- c(
+  "gene", "gene", "gene", "rRNA", "tRNA"
+)
+GenomicRanges::mcols(ann_gr)$name <- c(
+  "geneA", "geneB", "geneC", "geneD", "geneE"
+)
 
 # ── Assemble commaData object ─────────────────────────────────────────────────
 library(SummarizedExperiment)
 
 rse <- SummarizedExperiment(
-    assays     = list(
-        methylation = methyl_mat,
-        coverage = coverage_mat,
-        mod_counts = mod_counts_mat,
-        canonical_counts = canonical_counts_mat
-    ),
-    rowRanges  = site_gr,
-    colData    = col_df
+  assays = list(
+    methylation = methyl_mat,
+    coverage = coverage_mat,
+    mod_counts = mod_counts_mat,
+    canonical_counts = canonical_counts_mat
+  ),
+  rowRanges = site_gr,
+  colData = col_df
 )
 
 comma_example_data <- new("commaData", rse)
@@ -217,53 +238,57 @@ S4Vectors::metadata(comma_example_data)$motifSites <- GenomicRanges::GRanges()
 S4Vectors::metadata(comma_example_data)$caller <- "modkit"
 S4Vectors::metadata(comma_example_data)$min_coverage <- 5L
 S4Vectors::metadata(comma_example_data)$assay_defaults <- list(
-    methylation = "methylation",
-    coverage = "coverage",
-    mod_counts = "mod_counts",
-    canonical_counts = "canonical_counts"
+  methylation = "methylation",
+  coverage = "coverage",
+  mod_counts = "mod_counts",
+  canonical_counts = "canonical_counts"
 )
 S4Vectors::metadata(comma_example_data)$assay_provenance <- list(
-    methylation = commaKit:::.makeAssayLayerRecord(
-        type = "filtered_beta",
-        source = "synthetic_example",
-        role = "methylation",
-        parent_assays = "coverage",
-        method = "simulation",
-        params = list(min_coverage = 5L),
-        default_for = "methylation"
-    ),
-    coverage = commaKit:::.makeAssayLayerRecord(
-        type = "observed_total_coverage",
-        source = "synthetic_example",
-        role = "coverage",
-        method = "simulation",
-        default_for = "coverage"
-    ),
-    mod_counts = commaKit:::.makeAssayLayerRecord(
-        type = "reconstructed_counts",
-        source = "synthetic_example",
-        role = "mod_counts",
-        parent_assays = c("methylation", "coverage"),
-        method = "round_beta_times_coverage",
-        default_for = "mod_counts"
-    ),
-    canonical_counts = commaKit:::.makeAssayLayerRecord(
-        type = "reconstructed_counts",
-        source = "synthetic_example",
-        role = "canonical_counts",
-        parent_assays = c("coverage", "mod_counts"),
-        method = "coverage_minus_mod_counts",
-        default_for = "canonical_counts"
-    )
+  methylation = commaKit:::.makeAssayLayerRecord(
+    type = "filtered_beta",
+    source = "synthetic_example",
+    role = "methylation",
+    parent_assays = "coverage",
+    method = "simulation",
+    params = list(min_coverage = 5L),
+    default_for = "methylation"
+  ),
+  coverage = commaKit:::.makeAssayLayerRecord(
+    type = "observed_total_coverage",
+    source = "synthetic_example",
+    role = "coverage",
+    method = "simulation",
+    default_for = "coverage"
+  ),
+  mod_counts = commaKit:::.makeAssayLayerRecord(
+    type = "reconstructed_counts",
+    source = "synthetic_example",
+    role = "mod_counts",
+    parent_assays = c("methylation", "coverage"),
+    method = "round_beta_times_coverage",
+    default_for = "mod_counts"
+  ),
+  canonical_counts = commaKit:::.makeAssayLayerRecord(
+    type = "reconstructed_counts",
+    source = "synthetic_example",
+    role = "canonical_counts",
+    parent_assays = c("coverage", "mod_counts"),
+    method = "coverage_minus_mod_counts",
+    default_for = "canonical_counts"
+  )
 )
 
 # ── Save ──────────────────────────────────────────────────────────────────────
 dir.create("data", showWarnings = FALSE)
 save(comma_example_data, file = "data/comma_example_data.rda", compress = "xz")
 
-message("comma_example_data saved. Object size: ",
-        format(object.size(comma_example_data), units = "KB"))
-message("Sites: ", nrow(comma_example_data), " (", N_6MA_SITES, " 6mA + ",
-        N_5MC_SITES, " 5mC)")
+message(
+  "comma_example_data saved. Object size: ",
+  format(object.size(comma_example_data), units = "KB")
+)
+message(
+  "Sites: ", nrow(comma_example_data), " (", N_6MA_SITES, " 6mA + ",
+  N_5MC_SITES, " 5mC)"
+)
 message("Samples: ", ncol(comma_example_data))
 message("Differentially methylated 6mA sites (ground truth): ", N_DIFF_SITES)

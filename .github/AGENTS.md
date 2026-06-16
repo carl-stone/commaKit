@@ -1,6 +1,7 @@
 # .github/AGENTS.md — GitHub automation rules
 
 This directory controls GitHub-facing automation and repository instructions.
+For branch, PR, and validation expectations, see `../dev/knowledge/git-discipline.md` and `../dev/knowledge/branching-releases.md`.
 
 ## Rules
 

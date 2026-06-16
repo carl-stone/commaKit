@@ -17,98 +17,103 @@ NULL
 #'   cond, and group_idx.
 #' @keywords internal
 .resolveDiffMethylDesign <- function(coldata, formula, ref_level = NULL) {
-    if (!inherits(formula, "formula")) {
-        stop("'formula' must be a formula object (e.g., ~ condition).")
-    }
+  if (!inherits(formula, "formula")) {
+    stop("'formula' must be a formula object (e.g., ~ condition).")
+  }
 
-    terms_obj <- terms(formula)
-    term_labels <- attr(terms_obj, "term.labels")
-    term_order <- attr(terms_obj, "order")
-    if (length(term_labels) == 0L) {
-        stop("'formula' must contain exactly one RHS variable (e.g., ~ condition).")
-    }
-    if (length(term_labels) != 1L || any(term_order != 1L)) {
-        stop(
-            "diffMethyl() currently supports exactly one two-level RHS variable ",
-            "per call, e.g. ~ condition. Multi-factor formulas, interactions, ",
-            "offsets, and transformed terms are not yet supported; run a ",
-            "single two-group comparison or track expanded design support in #215."
-        )
-    }
-
-    rhs_vars <- all.vars(formula)
-    if (length(rhs_vars) != 1L || !identical(rhs_vars[[1L]], term_labels[[1L]])) {
-        stop(
-            "diffMethyl() currently supports exactly one untransformed two-level ",
-            "RHS variable per call, e.g. ~ condition. Transformed terms and ",
-            "offsets are not yet supported; track expanded design support in #215."
-        )
-    }
-    primary_var <- rhs_vars[[1L]]
-
-    coldata <- as.data.frame(coldata)
-    if (!primary_var %in% colnames(coldata)) {
-        stop(
-            "Variable '", primary_var, "' from formula not found in sample metadata. ",
-            "Available columns: ", paste(colnames(coldata), collapse = ", ")
-        )
-    }
-
-    cond <- as.character(coldata[[primary_var]])
-    if (anyNA(cond)) {
-        stop("Column '", primary_var, "' contains NA values; diffMethyl() requires complete group labels.")
-    }
-
-    all_levels <- if (is.factor(coldata[[primary_var]])) {
-        levels(coldata[[primary_var]])[levels(coldata[[primary_var]]) %in% cond]
-    } else {
-        sort(unique(cond))
-    }
-
-    if (length(all_levels) < 2L) {
-        stop(
-            "Differential methylation requires exactly 2 distinct levels of '",
-            primary_var, "'. Found only: '", all_levels[[1L]], "'."
-        )
-    }
-    if (length(all_levels) > 2L) {
-        stop(
-            "diffMethyl() currently supports exactly 2 levels for '", primary_var,
-            "' per call. Found ", length(all_levels), " levels: ",
-            paste(all_levels, collapse = ", "),
-            ". For now, subset the object to the two groups you want to compare; ",
-            "explicit multi-level contrasts are planned for a future API."
-        )
-    }
-
-    if (!is.null(ref_level)) {
-        if (!is.character(ref_level) || length(ref_level) != 1L || is.na(ref_level)) {
-            stop("'reference' must be a single non-NA character string or NULL.")
-        }
-        if (!ref_level %in% all_levels) {
-            stop(
-                "'reference' value '", ref_level, "' not found in column '",
-                primary_var, "'. Available values: ",
-                paste(all_levels, collapse = ", ")
-            )
-        }
-    } else {
-        ref_level <- all_levels[[1L]]
-    }
-
-    cond_levels <- c(ref_level, setdiff(all_levels, ref_level))
-    treat_level <- cond_levels[[2L]]
-    group_idx <- lapply(cond_levels, function(lv) which(cond == lv))
-    names(group_idx) <- cond_levels
-
-    list(
-        primary_var = primary_var,
-        ref_level   = ref_level,
-        treat_level = treat_level,
-        cond_levels = cond_levels,
-        cond        = cond,
-        group_idx   = group_idx
+  terms_obj <- terms(formula)
+  term_labels <- attr(terms_obj, "term.labels")
+  term_order <- attr(terms_obj, "order")
+  if (length(term_labels) == 0L) {
+    stop("'formula' must contain exactly one RHS variable (e.g., ~ condition).")
+  }
+  if (length(term_labels) != 1L || any(term_order != 1L)) {
+    stop(
+      "diffMethyl() currently supports exactly one two-level RHS variable ",
+      "per call, e.g. ~ condition. Multi-factor formulas, interactions, ",
+      "offsets, and transformed terms are not yet supported; run a ",
+      "single two-group comparison or track expanded design support in #215."
     )
+  }
+
+  rhs_vars <- all.vars(formula)
+  if (length(rhs_vars) != 1L || !identical(rhs_vars[[1L]], term_labels[[1L]])) {
+    stop(
+      "diffMethyl() currently supports exactly one untransformed two-level ",
+      "RHS variable per call, e.g. ~ condition. Transformed terms and ",
+      "offsets are not yet supported; track expanded design support in #215."
+    )
+  }
+  primary_var <- rhs_vars[[1L]]
+
+  coldata <- as.data.frame(coldata)
+  if (!primary_var %in% colnames(coldata)) {
+    stop(
+      "Variable '", primary_var,
+      "' from formula not found in sample metadata. ",
+      "Available columns: ", paste(colnames(coldata), collapse = ", ")
+    )
+  }
+
+  cond <- as.character(coldata[[primary_var]])
+  if (anyNA(cond)) {
+    stop(
+      "Column '", primary_var,
+      "' contains NA values; diffMethyl() requires complete group labels."
+    )
+  }
+
+  all_levels <- if (is.factor(coldata[[primary_var]])) {
+    levels(coldata[[primary_var]])[levels(coldata[[primary_var]]) %in% cond]
+  } else {
+    sort(unique(cond))
+  }
+
+  if (length(all_levels) < 2L) {
+    stop(
+      "Differential methylation requires exactly 2 distinct levels of '",
+      primary_var, "'. Found only: '", all_levels[[1L]], "'."
+    )
+  }
+  if (length(all_levels) > 2L) {
+    stop(
+      "diffMethyl() currently supports exactly 2 levels for '", primary_var,
+      "' per call. Found ", length(all_levels), " levels: ",
+      paste(all_levels, collapse = ", "),
+      ". For now, subset the object to the two groups you want to compare; ",
+      "explicit multi-level contrasts are planned for a future API."
+    )
+  }
+
+  if (!is.null(ref_level)) {
+    if (!is.character(ref_level) || length(ref_level) != 1L ||
+      is.na(ref_level)) {
+      stop("'reference' must be a single non-NA character string or NULL.")
+    }
+    if (!ref_level %in% all_levels) {
+      stop(
+        "'reference' value '", ref_level, "' not found in column '",
+        primary_var, "'. Available values: ",
+        paste(all_levels, collapse = ", ")
+      )
+    }
+  } else {
+    ref_level <- all_levels[[1L]]
+  }
+
+  cond_levels <- c(ref_level, setdiff(all_levels, ref_level))
+  treat_level <- cond_levels[[2L]]
+  group_idx <- lapply(cond_levels, function(lv) which(cond == lv))
+  names(group_idx) <- cond_levels
+
+  list(
+    primary_var = primary_var,
+    ref_level   = ref_level,
+    treat_level = treat_level,
+    cond_levels = cond_levels,
+    cond        = cond,
+    group_idx   = group_idx
+  )
 }
 
 #' Compute per-group beta means and treatment-reference delta beta
@@ -119,98 +124,102 @@ NULL
 #' @return A list with group_means matrix and delta_beta vector.
 #' @keywords internal
 .computeDiffMethylGroupStats <- function(methyl_mat, design) {
-    n_sites <- nrow(methyl_mat)
-    group_means <- vapply(design$cond_levels, function(lv) {
-        idx <- design$group_idx[[lv]]
-        if (length(idx) == 1L) {
-            methyl_mat[, idx]
-        } else {
-            rowMeans(methyl_mat[, idx, drop = FALSE], na.rm = TRUE)
-        }
-    }, numeric(n_sites))
-
-    if (is.null(dim(group_means))) {
-        group_means <- matrix(group_means, nrow = 1L,
-                              dimnames = list(NULL, design$cond_levels))
+  n_sites <- nrow(methyl_mat)
+  group_means <- vapply(design$cond_levels, function(lv) {
+    idx <- design$group_idx[[lv]]
+    if (length(idx) == 1L) {
+      methyl_mat[, idx]
+    } else {
+      rowMeans(methyl_mat[, idx, drop = FALSE], na.rm = TRUE)
     }
-    group_means[is.nan(group_means)] <- NA_real_
+  }, numeric(n_sites))
 
-    list(
-        group_means = group_means,
-        delta_beta  = group_means[, design$treat_level] -
-                      group_means[, design$ref_level]
+  if (is.null(dim(group_means))) {
+    group_means <- matrix(group_means,
+      nrow = 1L,
+      dimnames = list(NULL, design$cond_levels)
     )
+  }
+  group_means[is.nan(group_means)] <- NA_real_
+
+  list(
+    group_means = group_means,
+    delta_beta = group_means[, design$treat_level] -
+      group_means[, design$ref_level]
+  )
 }
 
 .optionalAssay <- function(object, assay_name) {
-    if (assay_name %in% SummarizedExperiment::assayNames(object)) {
-        SummarizedExperiment::assay(object, assay_name)
-    } else {
-        NULL
-    }
+  if (assay_name %in% SummarizedExperiment::assayNames(object)) {
+    SummarizedExperiment::assay(object, assay_name)
+  } else {
+    NULL
+  }
 }
 
 .reconstructModifiedCounts <- function(methyl_mat, coverage_mat) {
-    n_mod <- round(methyl_mat * coverage_mat)
-    n_mod[is.na(methyl_mat) | is.na(coverage_mat)] <- NA_real_
-    n_mod <- pmax(0, pmin(n_mod, coverage_mat))
-    dim(n_mod) <- dim(coverage_mat)
-    dimnames(n_mod) <- dimnames(coverage_mat)
-    n_mod
+  n_mod <- round(methyl_mat * coverage_mat)
+  n_mod[is.na(methyl_mat) | is.na(coverage_mat)] <- NA_real_
+  n_mod <- pmax(0, pmin(n_mod, coverage_mat))
+  dim(n_mod) <- dim(coverage_mat)
+  dimnames(n_mod) <- dimnames(coverage_mat)
+  n_mod
 }
 
 .resolveCountMatrices <- function(methyl_mat, coverage_mat,
                                   mod_counts_mat = NULL,
                                   canonical_counts_mat = NULL,
                                   other_mod_counts_mat = NULL) {
-    n_mod <- .reconstructModifiedCounts(methyl_mat, coverage_mat)
-    n_unmod <- coverage_mat - n_mod
+  n_mod <- .reconstructModifiedCounts(methyl_mat, coverage_mat)
+  n_unmod <- coverage_mat - n_mod
 
-    observed_mod <- matrix(FALSE, nrow = nrow(coverage_mat), ncol = ncol(coverage_mat),
-                           dimnames = dimnames(coverage_mat))
-    observed_canonical <- observed_mod
+  observed_mod <- matrix(FALSE,
+    nrow = nrow(coverage_mat), ncol = ncol(coverage_mat),
+    dimnames = dimnames(coverage_mat)
+  )
+  observed_canonical <- observed_mod
 
-    if (!is.null(mod_counts_mat)) {
-        observed_mod <- !is.na(mod_counts_mat)
-        n_mod[observed_mod] <- mod_counts_mat[observed_mod]
-    }
+  if (!is.null(mod_counts_mat)) {
+    observed_mod <- !is.na(mod_counts_mat)
+    n_mod[observed_mod] <- mod_counts_mat[observed_mod]
+  }
 
-    if (!is.null(canonical_counts_mat)) {
-        observed_canonical <- !is.na(canonical_counts_mat)
-        n_unmod[observed_canonical] <- canonical_counts_mat[observed_canonical]
-    }
+  if (!is.null(canonical_counts_mat)) {
+    observed_canonical <- !is.na(canonical_counts_mat)
+    n_unmod[observed_canonical] <- canonical_counts_mat[observed_canonical]
+  }
 
-    if (!is.null(other_mod_counts_mat)) {
-        observed_other <- !is.na(other_mod_counts_mat)
-        add_other <- observed_canonical & observed_other
-        n_unmod[add_other] <- n_unmod[add_other] + other_mod_counts_mat[add_other]
+  if (!is.null(other_mod_counts_mat)) {
+    observed_other <- !is.na(other_mod_counts_mat)
+    add_other <- observed_canonical & observed_other
+    n_unmod[add_other] <- n_unmod[add_other] + other_mod_counts_mat[add_other]
 
-        infer_canonical_from_observed_mod_other <- observed_mod &
-            !observed_canonical & observed_other & !is.na(coverage_mat)
-        n_unmod[infer_canonical_from_observed_mod_other] <-
-            coverage_mat[infer_canonical_from_observed_mod_other] -
-            n_mod[infer_canonical_from_observed_mod_other]
-    }
+    infer_canonical_from_observed_mod_other <- observed_mod &
+      !observed_canonical & observed_other & !is.na(coverage_mat)
+    n_unmod[infer_canonical_from_observed_mod_other] <-
+      coverage_mat[infer_canonical_from_observed_mod_other] -
+      n_mod[infer_canonical_from_observed_mod_other]
+  }
 
-    if (!is.null(mod_counts_mat)) {
-        infer_unmod_from_observed_mod <- observed_mod & !observed_canonical &
-            !is.na(coverage_mat)
-        n_unmod[infer_unmod_from_observed_mod] <-
-            coverage_mat[infer_unmod_from_observed_mod] -
-            n_mod[infer_unmod_from_observed_mod]
-    }
+  if (!is.null(mod_counts_mat)) {
+    infer_unmod_from_observed_mod <- observed_mod & !observed_canonical &
+      !is.na(coverage_mat)
+    n_unmod[infer_unmod_from_observed_mod] <-
+      coverage_mat[infer_unmod_from_observed_mod] -
+      n_mod[infer_unmod_from_observed_mod]
+  }
 
-    n_mod <- pmax(0, n_mod)
-    n_unmod <- pmax(0, n_unmod)
-    dim(n_mod) <- dim(coverage_mat)
-    dim(n_unmod) <- dim(coverage_mat)
-    dimnames(n_mod) <- dimnames(coverage_mat)
-    dimnames(n_unmod) <- dimnames(coverage_mat)
+  n_mod <- pmax(0, n_mod)
+  n_unmod <- pmax(0, n_unmod)
+  dim(n_mod) <- dim(coverage_mat)
+  dim(n_unmod) <- dim(coverage_mat)
+  dimnames(n_mod) <- dimnames(coverage_mat)
+  dimnames(n_unmod) <- dimnames(coverage_mat)
 
-    list(
-        modified = n_mod,
-        unmodified = n_unmod,
-        observed_modified = observed_mod,
-        observed_canonical = observed_canonical
-    )
+  list(
+    modified = n_mod,
+    unmodified = n_unmod,
+    observed_modified = observed_mod,
+    observed_canonical = observed_canonical
+  )
 }

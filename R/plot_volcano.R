@@ -45,7 +45,7 @@ NULL
 #'
 #' @examples
 #' data(comma_example_data)
-#' cd_dm <- diffMethyl(comma_example_data, ~ condition)
+#' cd_dm <- diffMethyl(comma_example_data, ~condition)
 #' res <- results(cd_dm)
 #' plot_volcano(res)
 #'
@@ -60,122 +60,127 @@ plot_volcano <- function(results,
                          delta_beta_threshold = NULL,
                          padj_threshold = 0.05,
                          facet = TRUE) {
-
-    ## --- Input validation ---------------------------------------------------
-    if (!is.data.frame(results)) {
-        stop("'results' must be a data.frame returned by results().")
-    }
-    required_cols <- c("dm_delta_beta", "dm_padj")
-    missing_cols <- setdiff(required_cols, colnames(results))
-    if (length(missing_cols) > 0) {
-        stop("'results' is missing required column(s): ",
-             paste(missing_cols, collapse = ", "), ". ",
-             "Ensure 'results' was produced by results() after diffMethyl().")
-    }
-    if (!is.null(delta_beta_threshold)) {
-        if (!is.numeric(delta_beta_threshold) || length(delta_beta_threshold) != 1L ||
-            is.na(delta_beta_threshold) || delta_beta_threshold <= 0 ||
-            delta_beta_threshold >= 1) {
-            stop("'delta_beta_threshold' must be a single numeric value in (0, 1).")
-        }
-    }
-    if (!is.numeric(padj_threshold) || length(padj_threshold) != 1L ||
-        is.na(padj_threshold) || padj_threshold <= 0 || padj_threshold >= 1) {
-        stop("'padj_threshold' must be a single numeric value in (0, 1).")
-    }
-    if (!is.logical(facet) || length(facet) != 1L || is.na(facet)) {
-        stop("'facet' must be a single logical value (TRUE or FALSE).")
-    }
-
-    ## --- Build plot data ----------------------------------------------------
-    keep_cols <- c("dm_delta_beta", "dm_padj")
-    if ("mod_context" %in% colnames(results)) {
-        keep_cols <- c(keep_cols, "mod_context")
-    }
-    df <- results[, keep_cols, drop = FALSE]
-
-    ## Exclude rows with NA padj
-    df <- df[!is.na(df$dm_padj), , drop = FALSE]
-
-    if (nrow(df) == 0L) {
-        stop("No rows with non-NA 'dm_padj' values found in 'results'.")
-    }
-
-    ## Compute y-axis: -log10(padj); clamp padj=0 to min positive double to
-    ## avoid -Inf (can happen with very extreme p-values)
-    padj_clamped <- pmax(df$dm_padj, .Machine$double.xmin)
-    df$neg_log10_padj <- -log10(padj_clamped)
-
-    ## Assign significance category
-    is_sig_p <- df$dm_padj <= padj_threshold
-    if (!is.null(delta_beta_threshold)) {
-        is_sig_db_pos <- df$dm_delta_beta >= delta_beta_threshold
-        is_sig_db_neg <- df$dm_delta_beta <= -delta_beta_threshold
-    } else {
-        is_sig_db_pos <- df$dm_delta_beta > 0
-        is_sig_db_neg <- df$dm_delta_beta < 0
-    }
-
-    df$significance <- "Not significant"
-    df$significance[is_sig_p & is_sig_db_pos] <- "Hypermethylated"
-    df$significance[is_sig_p & is_sig_db_neg] <- "Hypomethylated"
-    df$significance <- factor(df$significance,
-                              levels = c("Hypermethylated",
-                                         "Hypomethylated",
-                                         "Not significant"))
-
-    ## --- Build ggplot -------------------------------------------------------
-    sig_colors <- c(
-        "Hypermethylated" = "#d73027",
-        "Hypomethylated"  = "#4575b4",
-        "Not significant" = "grey60"
+  ## --- Input validation ---------------------------------------------------
+  if (!is.data.frame(results)) {
+    stop("'results' must be a data.frame returned by results().")
+  }
+  required_cols <- c("dm_delta_beta", "dm_padj")
+  missing_cols <- setdiff(required_cols, colnames(results))
+  if (length(missing_cols) > 0) {
+    stop(
+      "'results' is missing required column(s): ",
+      paste(missing_cols, collapse = ", "), ". ",
+      "Ensure 'results' was produced by results() after diffMethyl()."
     )
-
-    p <- ggplot2::ggplot(
-        df,
-        ggplot2::aes(
-            x = .data[["dm_delta_beta"]],
-            y = .data[["neg_log10_padj"]],
-            color = .data[["significance"]]
-        )
-    ) +
-        ggplot2::geom_point(alpha = 0.6, size = 1.2)
-
-    if (!is.null(delta_beta_threshold)) {
-        p <- p +
-            ggplot2::geom_vline(
-                xintercept = -delta_beta_threshold,
-                linetype = "dashed", color = "grey40", linewidth = 0.5
-            ) +
-            ggplot2::geom_vline(
-                xintercept = delta_beta_threshold,
-                linetype = "dashed", color = "grey40", linewidth = 0.5
-            )
+  }
+  if (!is.null(delta_beta_threshold)) {
+    if (!is.numeric(delta_beta_threshold) ||
+          length(delta_beta_threshold) != 1L ||
+          is.na(delta_beta_threshold) || delta_beta_threshold <= 0 ||
+          delta_beta_threshold >= 1) {
+      stop("'delta_beta_threshold' must be a single numeric value in (0, 1).")
     }
+  }
+  if (!is.numeric(padj_threshold) || length(padj_threshold) != 1L ||
+        is.na(padj_threshold) || padj_threshold <= 0 || padj_threshold >= 1) {
+    stop("'padj_threshold' must be a single numeric value in (0, 1).")
+  }
+  if (!is.logical(facet) || length(facet) != 1L || is.na(facet)) {
+    stop("'facet' must be a single logical value (TRUE or FALSE).")
+  }
 
-    has_multi_context <- "mod_context" %in% colnames(df) &&
-        length(unique(df$mod_context)) > 1L
+  ## --- Build plot data ----------------------------------------------------
+  keep_cols <- c("dm_delta_beta", "dm_padj")
+  if ("mod_context" %in% colnames(results)) {
+    keep_cols <- c(keep_cols, "mod_context")
+  }
+  df <- results[, keep_cols, drop = FALSE]
 
-    if (facet && has_multi_context) {
-        p <- p + ggplot2::facet_wrap("mod_context")
-    }
+  ## Exclude rows with NA padj
+  df <- df[!is.na(df$dm_padj), , drop = FALSE]
 
+  if (nrow(df) == 0L) {
+    stop("No rows with non-NA 'dm_padj' values found in 'results'.")
+  }
+
+  ## Compute y-axis: -log10(padj); clamp padj=0 to min positive double to
+  ## avoid -Inf (can happen with very extreme p-values)
+  padj_clamped <- pmax(df$dm_padj, .Machine$double.xmin)
+  df$neg_log10_padj <- -log10(padj_clamped)
+
+  ## Assign significance category
+  is_sig_p <- df$dm_padj <= padj_threshold
+  if (!is.null(delta_beta_threshold)) {
+    is_sig_db_pos <- df$dm_delta_beta >= delta_beta_threshold
+    is_sig_db_neg <- df$dm_delta_beta <= -delta_beta_threshold
+  } else {
+    is_sig_db_pos <- df$dm_delta_beta > 0
+    is_sig_db_neg <- df$dm_delta_beta < 0
+  }
+
+  df$significance <- "Not significant"
+  df$significance[is_sig_p & is_sig_db_pos] <- "Hypermethylated"
+  df$significance[is_sig_p & is_sig_db_neg] <- "Hypomethylated"
+  df$significance <- factor(df$significance,
+    levels = c(
+      "Hypermethylated",
+      "Hypomethylated",
+      "Not significant"
+    )
+  )
+
+  ## --- Build ggplot -------------------------------------------------------
+  sig_colors <- c(
+    "Hypermethylated" = "#d73027",
+    "Hypomethylated"  = "#4575b4",
+    "Not significant" = "grey60"
+  )
+
+  p <- ggplot2::ggplot(
+    df,
+    ggplot2::aes(
+      x = .data[["dm_delta_beta"]],
+      y = .data[["neg_log10_padj"]],
+      color = .data[["significance"]]
+    )
+  ) +
+    ggplot2::geom_point(alpha = 0.6, size = 1.2)
+
+  if (!is.null(delta_beta_threshold)) {
     p <- p +
-        ggplot2::geom_hline(
-            yintercept = -log10(padj_threshold),
-            linetype = "dashed", color = "grey40", linewidth = 0.5
-        ) +
-        ggplot2::scale_color_manual(
-            values = sig_colors,
-            drop = FALSE
-        ) +
-        ggplot2::labs(
-            x     = "delta methylation (treatment - control)",
-            y     = "-log10(adjusted p-value)",
-            title = "Differential Methylation Volcano Plot",
-            color = NULL
-        ) +
-        ggplot2::theme_bw()
+      ggplot2::geom_vline(
+        xintercept = -delta_beta_threshold,
+        linetype = "dashed", color = "grey40", linewidth = 0.5
+      ) +
+      ggplot2::geom_vline(
+        xintercept = delta_beta_threshold,
+        linetype = "dashed", color = "grey40", linewidth = 0.5
+      )
+  }
 
-    p
+  has_multi_context <- "mod_context" %in% colnames(df) &&
+    length(unique(df$mod_context)) > 1L
+
+  if (facet && has_multi_context) {
+    p <- p + ggplot2::facet_wrap("mod_context")
+  }
+
+  p <- p +
+    ggplot2::geom_hline(
+      yintercept = -log10(padj_threshold),
+      linetype = "dashed", color = "grey40", linewidth = 0.5
+    ) +
+    ggplot2::scale_color_manual(
+      values = sig_colors,
+      drop = FALSE
+    ) +
+    ggplot2::labs(
+      x     = "delta methylation (treatment - control)",
+      y     = "-log10(adjusted p-value)",
+      title = "Differential Methylation Volcano Plot",
+      color = NULL
+    ) +
+    ggplot2::theme_bw()
+
+  p
 }

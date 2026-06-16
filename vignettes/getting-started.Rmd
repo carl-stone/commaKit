@@ -12,12 +12,12 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-    collapse   = TRUE,
-    comment    = "#>",
-    fig.width  = 7,
-    fig.height = 5,
-    warning    = FALSE,
-    message    = FALSE
+  collapse   = TRUE,
+  comment    = "#>",
+  fig.width  = 7,
+  fig.height = 5,
+  warning    = FALSE,
+  message    = FALSE
 )
 ```
 
@@ -145,7 +145,7 @@ the percentage of variance explained by each PC is stored in
 
 ```{r pca-data}
 pca_df <- plot_pca(comma_example_data, return_data = TRUE)
-attr(pca_df, "percentVar")  # variance explained by PC1 and PC2
+attr(pca_df, "percentVar") # variance explained by PC1 and PC2
 ```
 
 # Annotating Sites
@@ -192,8 +192,10 @@ plot_tss_profile(comma_example_data, feature_type = "gene")
 along a chromosome region:
 
 ```{r plot-track, fig.cap = "Genome track for the first 50 kb of chr_sim."}
-plot_genome_track(comma_example_data, chromosome = "chr_sim",
-                  start = 1L, end = 50000L, mod_type = "6mA")
+plot_genome_track(comma_example_data,
+  chromosome = "chr_sim",
+  start = 1L, end = 50000L, mod_type = "6mA"
+)
 ```
 
 # Differential Methylation
@@ -206,8 +208,10 @@ one two-group comparison per `diffMethyl()` call. The result is the same object
 with statistical results in `rowData` and in the active result layer.
 
 ```{r diff-methyl}
-cd_dm <- diffMethyl(comma_example_data, formula = ~ condition,
-                    mod_type = "6mA")
+cd_dm <- diffMethyl(comma_example_data,
+  formula = ~condition,
+  mod_type = "6mA"
+)
 cd_dm
 ```
 
@@ -236,8 +240,10 @@ Extract the results as a tidy data frame:
 resultLayers(cd_dm)
 res <- results(cd_dm)
 # Top sites by adjusted p-value
-head(res[order(res$dm_padj),
-         c("chrom", "position", "mod_type", "dm_delta_beta", "dm_padj")])
+head(res[
+  order(res$dm_padj),
+  c("chrom", "position", "mod_type", "dm_delta_beta", "dm_padj")
+])
 ```
 
 Filter to significant sites (padj < 0.05, |Δβ| ≥ 0.2):
@@ -312,13 +318,15 @@ kegg_t2g <- buildKEGGTermGene("eco", file = "kegg_eco.rds")
 
 # Build gene ID map: symbol <-> KEGG ID (1 API call)
 id_map <- buildKEGGGeneIDMap("eco",
-    OrgDb = org.EcK12.eg.db::org.EcK12.eg.db)
+  OrgDb = org.EcK12.eg.db::org.EcK12.eg.db
+)
 
 # Run KEGG enrichment with offline mapping
 enr_kegg <- enrichMethylation(cd_dm,
-    kegg_term2gene = kegg_t2g$term2gene,
-    kegg_term2name = kegg_t2g$term2name,
-    gene_role = "target")
+  kegg_term2gene = kegg_t2g$term2gene,
+  kegg_term2name = kegg_t2g$term2name,
+  gene_role = "target"
+)
 enr_kegg$kegg
 ```
 
@@ -328,8 +336,10 @@ When you want to rank all genes by their methylation score rather than
 using a hard threshold, use GSEA:
 
 ```{r gsea, eval = FALSE}
-enr_gsea <- enrichMethylation(cd_dm, method = "gsea",
-    ont = "BP", gene_role = "target")
+enr_gsea <- enrichMethylation(cd_dm,
+  method = "gsea",
+  ont = "BP", gene_role = "target"
+)
 ```
 
 # Session Information

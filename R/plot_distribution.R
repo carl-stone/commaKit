@@ -45,95 +45,102 @@ NULL
 #'
 #' @export
 plot_methylation_distribution <- function(object,
-                                          mod_type    = NULL,
-                                          motif       = NULL,
+                                          mod_type = NULL,
+                                          motif = NULL,
                                           mod_context = NULL,
-                                          per_sample  = TRUE) {
+                                          per_sample = TRUE) {
+  ## --- Input validation ---------------------------------------------------
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+  if (!is.logical(per_sample) ||
+        length(per_sample) != 1L ||
+        is.na(per_sample)) {
+    stop("'per_sample' must be TRUE or FALSE.")
+  }
 
-    ## --- Input validation ---------------------------------------------------
-    if (!is(object, "commaData")) {
-        stop("'object' must be a commaData object.")
-    }
-    if (!is.logical(per_sample) || length(per_sample) != 1L || is.na(per_sample)) {
-        stop("'per_sample' must be TRUE or FALSE.")
-    }
+  ## --- Optional site filters ----------------------------------------------
+  object <- .applySiteFilters(
+    object,
+    mod_type = mod_type,
+    motif = motif,
+    mod_context = mod_context,
+    caller = "plot_methylation_distribution()"
+  )
 
-    ## --- Optional site filters ----------------------------------------------
-    object <- .applySiteFilters(
-        object,
-        mod_type = mod_type,
-        motif = motif,
-        mod_context = mod_context,
-        caller = "plot_methylation_distribution()"
+  ## --- Extract data -------------------------------------------------------
+  methyl_mat <- methylation(object)
+  si <- sampleInfo(object)
+  site_info <- siteInfo(object)
+  sample_nms <- colnames(methyl_mat)
+  n_sites <- nrow(methyl_mat)
+  n_samples <- length(sample_nms)
+
+  ## Reshape to long data.frame (vectorized)
+  df <- data.frame(
+    beta = as.vector(methyl_mat),
+    sample_name = rep(sample_nms, each = n_sites),
+    mod_type = rep(site_info$mod_type, times = n_samples),
+    stringsAsFactors = FALSE
+  )
+
+  ## Drop NA beta values (sites below min_coverage)
+  df <- df[!is.na(df$beta), , drop = FALSE]
+
+  if (nrow(df) == 0L) {
+    stop(
+      "No non-NA methylation values found after filtering. ",
+      "Check coverage thresholds."
     )
+  }
 
-    ## --- Extract data -------------------------------------------------------
-    methyl_mat  <- methylation(object)
-    si          <- sampleInfo(object)
-    site_info   <- siteInfo(object)
-    sample_nms  <- colnames(methyl_mat)
-    n_sites     <- nrow(methyl_mat)
-    n_samples   <- length(sample_nms)
+  ## Join optional condition from sampleInfo when present. condition is not a
+  ## commaData invariant; QC plots must still work for import/QC-only objects.
+  si_cols <- intersect(c("sample_name", "condition"), colnames(si))
+  si_sub <- si[, si_cols, drop = FALSE]
+  df <- merge(df, si_sub, by = "sample_name", all.x = TRUE)
 
-    ## Reshape to long data.frame (vectorized)
-    df <- data.frame(
-        beta        = as.vector(methyl_mat),
-        sample_name = rep(sample_nms, each = n_sites),
-        mod_type    = rep(site_info$mod_type, times = n_samples),
-        stringsAsFactors = FALSE
-    )
+  ## --- Build ggplot -------------------------------------------------------
+  multi_mod <- length(unique(df$mod_type)) > 1L
 
-    ## Drop NA beta values (sites below min_coverage)
-    df <- df[!is.na(df$beta), , drop = FALSE]
+  if (per_sample) {
+    p <- ggplot2::ggplot(
+      df,
+      ggplot2::aes(
+        x = .data[["beta"]],
+        color = .data[["sample_name"]],
+        fill = .data[["sample_name"]]
+      )
+    ) +
+      ggplot2::geom_density(alpha = 0.3) +
+      ggplot2::labs(color = "Sample", fill = "Sample")
+  } else {
+    p <- ggplot2::ggplot(
+      df,
+      ggplot2::aes(x = .data[["beta"]])
+    ) +
+      ggplot2::geom_density(
+        fill = "steelblue",
+        alpha = 0.4,
+        color = "steelblue4"
+      )
+  }
 
-    if (nrow(df) == 0L) {
-        stop("No non-NA methylation values found after filtering. ",
-             "Check coverage thresholds.")
-    }
+  p <- p +
+    ggplot2::scale_x_continuous(
+      limits = c(0, 1),
+      expand = c(0.01, 0.01),
+      name   = "Methylation"
+    ) +
+    ggplot2::labs(
+      y     = "Density",
+      title = "Methylation Beta Distribution"
+    ) +
+    ggplot2::theme_bw()
 
-    ## Join optional condition from sampleInfo when present. condition is not a
-    ## commaData invariant; QC plots must still work for import/QC-only objects.
-    si_cols <- intersect(c("sample_name", "condition"), colnames(si))
-    si_sub <- si[, si_cols, drop = FALSE]
-    df <- merge(df, si_sub, by = "sample_name", all.x = TRUE)
+  if (multi_mod) {
+    p <- p + ggplot2::facet_wrap("mod_type")
+  }
 
-    ## --- Build ggplot -------------------------------------------------------
-    multi_mod <- length(unique(df$mod_type)) > 1L
-
-    if (per_sample) {
-        p <- ggplot2::ggplot(
-            df,
-            ggplot2::aes(
-                x    = .data[["beta"]],
-                color = .data[["sample_name"]],
-                fill  = .data[["sample_name"]]
-            )
-        ) +
-            ggplot2::geom_density(alpha = 0.3) +
-            ggplot2::labs(color = "Sample", fill = "Sample")
-    } else {
-        p <- ggplot2::ggplot(
-            df,
-            ggplot2::aes(x = .data[["beta"]])
-        ) +
-            ggplot2::geom_density(fill = "steelblue", alpha = 0.4, color = "steelblue4")
-    }
-
-    p <- p +
-        ggplot2::scale_x_continuous(
-            limits = c(0, 1),
-            expand = c(0.01, 0.01),
-            name   = "Methylation"
-        ) +
-        ggplot2::labs(
-            y     = "Density",
-            title = "Methylation Beta Distribution"
-        ) +
-        ggplot2::theme_bw()
-
-    if (multi_mod) {
-        p <- p + ggplot2::facet_wrap("mod_type")
-    }
-
-    p
+  p
 }
