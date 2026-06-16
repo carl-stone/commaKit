@@ -1,12 +1,12 @@
 # commaKit Roadmap — Strategic Direction
 
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-16
 **Current version:** 0.2.0
 **Public name:** commaKit (Comparative Microbial Methylomics Analysis Kit)
 **R package namespace:** commaKit
 **GitHub repo:** carl-stone/commaKit
 
-This file is the strategic roadmap: where commaKit is going and why. Tactical work items are tracked in [GitHub Issues](https://github.com/carl-stone/commaKit/issues).
+This file is the strategic roadmap: where commaKit is going and why. The internal commaBot work queue lives in Linear `commaKit Symphony`; GitHub Issues remain the public/accepted work log for bugs, external-facing blockers, and deferred readiness items.
 
 ---
 
@@ -48,13 +48,13 @@ Key changes:
 
 The test suite has too many smoke tests and not enough discriminating tests. We don't really believe the tests yet — they verify "doesn't crash" but not "produces correct results."
 
-**Open issues:** #75, #153
-**Completed issues:** #73, #74, #124, #126–#129
+**Open issues:** #75, #153, #233
+**Completed issues:** #73, #74, #124, #126-#129
 **Notable PRs:** #132, #133, #190, #204
 
 What this milestone looks like when done:
-- Remaining plot tests verify data mappings (not just ggplot class)
-- enrichMethylation tested with real clusterProfiler (not fake TERM2GENE)
+- Remaining plot/fallback tests verify data mappings and optional-dependency behavior
+- `enrichMethylation()` is exercised with real `clusterProfiler` plus real biological identifiers, not only synthetic TERM2GENE tables
 - Integration test across full pipeline remains reliable and meaningful
 
 Already completed:
@@ -64,7 +64,7 @@ Already completed:
 
 See `dev/knowledge/test-quality.md` for the full audit.
 
-### 3. Code Quality Audits — in progress (correctness)
+### 3. Code Quality Audits — cleanup follow-through (correctness)
 
 Thermonuclear review completed 2026-05-25. Findings filed as issues #135–#163, index #164.
 
@@ -73,7 +73,7 @@ Thermonuclear review completed 2026-05-25. Findings filed as issues #135–#163,
 - #166 — import/enrichment hardening (#139–#143, #146)
 - #174, #177–#187, #192, #194, #197–#201, #203 — follow-up cleanup, plotting, docs, fixtures, and helper extraction
 
-**Remaining:** one open code-quality issue: #150 (plot coverage/distribution behavior when `condition` metadata is absent).
+All behavior-oriented code-quality issues from the thermonuclear review have either been resolved or moved into explicit readiness buckets. The remaining repo-hygiene follow-through is #162 and should close when the buildignore/dependency cleanup lands.
 
 ### 4. Circle Ops — COMPLETE (correctness + robustness)
 
@@ -82,12 +82,11 @@ Audited and documented behavior at circular genome boundaries. `slidingWindow()`
 **Issues:** #112, #122, #129
 **Key functions:** slidingWindow(), plot_metagene(), plot_tss_profile(), annotateSites() with proximity method
 
-### 5. Layered Assays — proposed for v0.3.0 (robustness)
+### 5. Layered Assays and Result Layers — COMPLETE (robustness)
 
-Current in-place mutation of assay matrices is lossy — running `diffMethyl()` with different parameters overwrites previous results. The right pattern is layered assays (assay keys for different analysis runs).
+Layered assay provenance and named differential-methylation result layers are now part of the v0.2.0 codebase. Running `diffMethyl()` with explicit `result_name` values preserves multiple result layers; unnamed runs continue to update the compatibility/default layer.
 
-**Issues:** #118, #167
-**Current PRs:** #208 (layered assay foundation) and #209 (assay layer registry API), stacked and requiring careful review before merge.
+**Issues:** #118, #167, #212
 
 ### 6. Technical Rename to commaKit — COMPLETE (publishability)
 
@@ -111,13 +110,14 @@ Already completed:
 - Troubleshooting guide for data import
 - Method selection guidance for diffMethyl backends
 - commaData object vignette
+- Import troubleshooting guide
 - Onboarding guide function names synchronized with the API
 
 ### 8. Real-World Readiness (robustness + publishability)
 
 Make commaKit handle real data and be ready for broader distribution.
 
-**Issues:** #67, #76, #77, #162, #206
+**Issues:** #67, #68, #76, #206, #232
 
 This is the lowest priority milestone. Bioconductor submission is way down the list.
 

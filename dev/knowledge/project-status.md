@@ -4,7 +4,7 @@ title: commaKit Current Project Status
 description: Current package metadata, source/test inventory, and active context for future agents.
 resource: DESCRIPTION
 tags: [status, package-metadata, tests, source-inventory]
-timestamp: 2026-06-15T00:00:00Z
+timestamp: 2026-06-16T00:00:00Z
 status: current
 owner: Carl Stone
 ---
@@ -28,6 +28,10 @@ owner: Carl Stone
 - Test quality work is still in progress; older audit cards are useful but not a complete current inventory.
 - Plot tests are still a known place to strengthen behavioral contracts.
 - Layered assays and named differential-methylation result layers are present in the codebase.
+- Remaining public GitHub issues are grouped around Bioconductor readiness,
+  real-data/performance evidence, enrichment realism, optional plot dependency
+  behavior, production-like parser fixtures, and small-sample `diffMethyl()`
+  policy. Internal commaBot work remains in Linear `commaKit Symphony`.
 
 # Source Inventory
 
@@ -84,5 +88,7 @@ Current durable facts:
 - `mod_context` uses underscores, for example `6mA_GATC`. Some stale prose may still show colon examples; prefer code and this card.
 - Use `siteCoverage()` rather than `coverage()` in new code and docs.
 - `condition` is optional container metadata but required by workflows that need a grouping/design variable.
+- Full submission validation needs the complete R 4.5/Bioconductor 3.22
+  environment, including all `Suggests` used by examples/vignettes/tests and
+  `BiocCheck`.
 - `man/*.Rd` files are generated from roxygen and must not be hand-edited.
-
