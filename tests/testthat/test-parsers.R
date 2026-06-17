@@ -242,15 +242,17 @@ test_that(".parseModkit() parses the bundled example file without error", {
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that(".parseModkit() errors clearly on partial rows in mixed files", {
-  complete <- .modkit_row(start = 99L)
-  partial <- complete
-  partial$Nmod <- NA_integer_
-  rows <- rbind(complete, partial)
-  f <- .write_tmp_modkit(rows)
+  complete <- as.character(unlist(.modkit_row(start = 99L), use.names = FALSE))
+  partial <- complete[seq_len(13L)]
+  f <- tempfile(fileext = ".bed")
+  writeLines(
+    c(paste(complete, collapse = "\t"), paste(partial, collapse = "\t")),
+    f
+  )
 
   expect_error(
     commaKit:::.parseModkit(f, "s1", min_coverage = 0L),
-    regexp = "missing required field.*Nmod"
+    regexp = "missing required field.*Nother_mod"
   )
 })
 

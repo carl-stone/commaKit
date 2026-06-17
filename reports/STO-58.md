@@ -18,6 +18,7 @@ Added targeted parser edge-case tests and small implementation hardening for pro
 - `tests/testthat/test-parse_dorado.R`
 - `tests/testthat/test-commaData.R`
 - `vignettes/import-troubleshooting.Rmd`
+- `.Rbuildignore`
 - `reports/STO-58.md`
 
 ## Validation
@@ -31,6 +32,8 @@ Added targeted parser edge-case tests and small implementation hardening for pro
 | `Rscript --vanilla -e "parse(file='R/parse_modkit.R'); parse(file='R/parse_dorado.R'); parse(file='R/commaData_constructor.R')"` | passed | Syntax parse check for changed R source files. |
 | `Rscript --vanilla -e "parse(file='tests/testthat/test-parsers.R'); parse(file='tests/testthat/test-parse_dorado.R'); parse(file='tests/testthat/test-commaData.R')"` | passed | Syntax parse check for changed test files. |
 | `git diff --check` | passed | No whitespace errors. |
+| `Rscript --vanilla - <<'RS' ...` | passed | Local dependency-free smoke check of `.parseModkit()` normal row, zero-coverage filtering/retention, and partial-row missing-field error. |
+| GitHub Actions R-CMD-check on PR #234 (first run) | failed | CI exposed one implementation bug (`rowSums()` on one-row input) and one malformed fixture bug (`rbind()` column mismatch). Both were fixed in the follow-up commit. |
 | `Rscript -e "renv::status()"` | failed | Confirms many lockfile packages, including `testthat`, `SummarizedExperiment`, `GenomicRanges`, and `Rsamtools`, are not installed in this workspace. |
 
 ## Branch / PR
@@ -40,8 +43,8 @@ Added targeted parser edge-case tests and small implementation hardening for pro
 
 ## Blockers
 
-No implementation blocker. Full test validation is blocked by the incomplete R dependency library in this workspace.
+No implementation blocker. Local full test validation is blocked by the incomplete R dependency library in this workspace. GitHub Actions is the complete R validation surface for this branch; the first CI run failed and the branch has been revised to address the failures.
 
 ## Next owner
 
-commaBot steward / reviewer should review the PR and run the targeted parser tests plus project-standard check in a complete commaKit R environment.
+commaBot steward / reviewer should review the revised PR and confirm the rerun GitHub Actions R-CMD-check passes in the complete commaKit R environment.

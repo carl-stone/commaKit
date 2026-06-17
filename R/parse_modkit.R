@@ -109,15 +109,19 @@ NULL
     "chrom", "start", "end", "mod_code", "strand", "Nvalid_cov",
     "fraction_modified", "Nmod", "Ncanonical", "Nother_mod"
   )
-  missing_required <- vapply(
-    raw[required_fields],
-    function(x) is.na(x) | !nzchar(trimws(as.character(x))),
-    logical(nrow(raw))
+  missing_required <- as.data.frame(
+    lapply(
+      raw[required_fields],
+      function(x) is.na(x) | !nzchar(trimws(as.character(x)))
+    ),
+    check.names = FALSE
   )
   rows_missing_required <- which(rowSums(missing_required) > 0L)
   if (length(rows_missing_required) > 0L) {
     row_idx <- rows_missing_required[[1L]]
-    fields <- required_fields[missing_required[row_idx, ]]
+    fields <- names(missing_required)[
+      unlist(missing_required[row_idx, ], use.names = FALSE)
+    ]
     stop(
       "modkit BED file '", file, "' has missing required field(s) in ",
       "row ", row_idx, ": ", paste(fields, collapse = ", "), ". ",

@@ -33,5 +33,6 @@
 ^\.Rprofile$
 ^\.git$
 ^dev$
+^reports$
 ^AGENTS\.md$
 ^.*AGENTS\.md$
