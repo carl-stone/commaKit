@@ -33,7 +33,9 @@ Added targeted parser edge-case tests and small implementation hardening for pro
 | `Rscript --vanilla -e "parse(file='tests/testthat/test-parsers.R'); parse(file='tests/testthat/test-parse_dorado.R'); parse(file='tests/testthat/test-commaData.R')"` | passed | Syntax parse check for changed test files. |
 | `git diff --check` | passed | No whitespace errors. |
 | `Rscript --vanilla - <<'RS' ...` | passed | Local dependency-free smoke check of `.parseModkit()` normal row, zero-coverage filtering/retention, and partial-row missing-field error. |
-| GitHub Actions R-CMD-check on PR #234 (first run) | failed | CI exposed one implementation bug (`rowSums()` on one-row input) and one malformed fixture bug (`rbind()` column mismatch). Both were fixed in the follow-up commit. |
+| GitHub Actions R-CMD-check on PR #234 (first run) | failed | CI exposed one implementation bug (`rowSums()` on one-row input) and one malformed fixture bug (`rbind()` column mismatch). Both were fixed in follow-up commit `2aec6d7`. |
+| GitHub Actions R-CMD-check on PR #234 (rerun after `2aec6d7`) | passed | Full package check passed in the complete GitHub Actions R environment. |
+| GitHub Actions pkgdown on PR #234 (rerun after `2aec6d7`) | passed | Site build passed. |
 | `Rscript -e "renv::status()"` | failed | Confirms many lockfile packages, including `testthat`, `SummarizedExperiment`, `GenomicRanges`, and `Rsamtools`, are not installed in this workspace. |
 
 ## Branch / PR
@@ -43,8 +45,8 @@ Added targeted parser edge-case tests and small implementation hardening for pro
 
 ## Blockers
 
-No implementation blocker. Local full test validation is blocked by the incomplete R dependency library in this workspace. GitHub Actions is the complete R validation surface for this branch; the first CI run failed and the branch has been revised to address the failures.
+No implementation blocker. Local full test validation is blocked by the incomplete R dependency library in this workspace, but GitHub Actions R-CMD-check and pkgdown both pass on the revised branch.
 
 ## Next owner
 
-commaBot steward / reviewer should review the revised PR and confirm the rerun GitHub Actions R-CMD-check passes in the complete commaKit R environment.
+commaBot steward / reviewer should review PR #234. GitHub Actions R-CMD-check and pkgdown are green on the revised branch.
