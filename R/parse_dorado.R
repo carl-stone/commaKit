@@ -241,12 +241,16 @@ NULL
   # Parse CIGAR into (op, len) pairs
   matches <- gregexpr("([0-9]+)([MIDNSHP=X])", cigar_str, perl = TRUE)
   ops_raw <- regmatches(cigar_str, matches)[[1L]]
-  if (length(ops_raw) == 0L) {
+  parsed_cigar <- paste0(ops_raw, collapse = "")
+  if (length(ops_raw) == 0L || !identical(parsed_cigar, cigar_str)) {
     return(NULL)
   }
 
   ops <- sub("^([0-9]+)([MIDNSHP=X])$", "\\2", ops_raw)
   lens <- as.integer(sub("^([0-9]+)([MIDNSHP=X])$", "\\1", ops_raw))
+  if (any(is.na(lens)) || any(lens <= 0L)) {
+    return(NULL)
+  }
 
   # Map each read position to its reference position
   ref_pos_map <- integer(read_len)
@@ -261,14 +265,18 @@ NULL
 
     if (op %in% c("M", "=", "X")) {
       # Match/mismatch: advances both read and reference
-      read_end <- read_cur + len - 1L
-      if (read_end > read_len) read_end <- read_len
+      if (read_cur > read_len) {
+        break
+      }
+      read_end <- min(read_cur + len - 1L, read_len)
       n_use <- read_end - read_cur + 1L
-      ref_pos_map[read_cur:read_end] <- seq(
-        ref_cur,
-        by = 1L,
-        length.out = n_use
-      )
+      if (n_use > 0L) {
+        ref_pos_map[read_cur:read_end] <- seq(
+          ref_cur,
+          by = 1L,
+          length.out = n_use
+        )
+      }
       ref_cur <- ref_cur + len
       read_cur <- read_cur + len
     } else if (op == "I") {
