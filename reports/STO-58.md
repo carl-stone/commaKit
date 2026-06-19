@@ -37,6 +37,16 @@ Added targeted parser edge-case tests and small implementation hardening for pro
 | GitHub Actions R-CMD-check on PR #234 (rerun after `2aec6d7`) | passed | Full package check passed in the complete GitHub Actions R environment. |
 | GitHub Actions pkgdown on PR #234 (rerun after `2aec6d7`) | passed | Site build passed. |
 | `Rscript -e "renv::status()"` | failed | Confirms many lockfile packages, including `testthat`, `SummarizedExperiment`, `GenomicRanges`, and `Rsamtools`, are not installed in this workspace. |
+| `timeout 120s Rscript -e "testthat::test_file('tests/testthat/test-parsers.R')"` | failed | Revising pass on 2026-06-17: command timed out with exit code 124 and no output in the local workspace. CI R-CMD-check remains the authoritative validation for this branch. |
+| `timeout 120s Rscript -e "testthat::test_file('tests/testthat/test-parse_dorado.R')"` | failed | Revising pass on 2026-06-17: command timed out with exit code 124 and no output in the local workspace. CI R-CMD-check remains the authoritative validation for this branch. |
+| `gh pr view 234 --json number,url,state,headRefName,baseRefName,title,mergeable,statusCheckRollup,reviewDecision` | passed | PR #234 is open, targets `main` from `symphony/STO-58`, is mergeable, and has successful R-CMD-check and pkgdown checks. |
+| `git diff --check` | passed | Revising pass found no whitespace errors in the report-only workspace diff. |
+| `Rscript -e "testthat::test_file('tests/testthat/test-parsers.R')"` | failed | Revising pass on 2026-06-17: interrupted after about 90 seconds with no output in the local workspace. CI R-CMD-check remains the authoritative validation for this branch. |
+| `Rscript -e "testthat::test_file('tests/testthat/test-parse_dorado.R')"` | failed | Revising pass on 2026-06-17: interrupted after about 90 seconds with no output in the local workspace. CI R-CMD-check remains the authoritative validation for this branch. |
+| `Rscript -e "testthat::test_file('tests/testthat/test-parse_megalodon.R')"` | failed | Revising pass on 2026-06-17: interrupted after about 90 seconds with no output in the local workspace. CI R-CMD-check remains the authoritative validation for this branch. |
+| `git log --oneline --decorate -5` | passed | Confirmed `6243054` (`Record passing CI for STO-58.`) is `HEAD`, branch `symphony/STO-58`, and matches `origin/symphony/STO-58`. |
+| `git diff --stat HEAD` | passed | Only uncommitted tracked diff is this durable report: `reports/STO-58.md`. |
+| `gh pr view 234 --json number,url,state,headRefName,baseRefName,title,mergeable,statusCheckRollup,reviewDecision` | passed | Reconfirmed PR #234 is open, mergeable, and has successful `R-CMD-check` and `pkgdown` check runs. |
 
 ## Branch / PR
 
@@ -46,6 +56,7 @@ Added targeted parser edge-case tests and small implementation hardening for pro
 ## Blockers
 
 No implementation blocker. Local full test validation is blocked by the incomplete R dependency library in this workspace, but GitHub Actions R-CMD-check and pkgdown both pass on the revised branch.
+
 
 ## Next owner
 
