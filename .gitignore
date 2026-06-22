@@ -7,11 +7,12 @@
 *.BiocCheck/
 *.tar.gz
 *.deb
-docs
+docs/*
+!docs/agents/
+!docs/agents/*.md
 .claude/settings.local.json
 .claude/worktrees/
 .codex/
 .letta/
 .lteams/
 .vscode/
-

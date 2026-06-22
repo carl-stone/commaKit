@@ -37,6 +37,20 @@ Read [dev/knowledge/project-status.md](dev/knowledge/project-status.md) for the 
 | Strategy, roadmap, PRD, durable project knowledge | [dev/AGENTS.md](dev/AGENTS.md), [dev/knowledge/index.md](dev/knowledge/index.md) |
 | Agent operating model and context hygiene | [dev/knowledge/agent-harness.md](dev/knowledge/agent-harness.md), [dev/knowledge/okf-guidelines.md](dev/knowledge/okf-guidelines.md) |
 
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `carl-stone/commaKit`; external PRs are also a triage request surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the canonical triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use the single-context domain-doc layout: root `CONTEXT.md` plus root `docs/adr/` when they exist. See `docs/agents/domain.md`.
+
 ## Core Contracts
 
 - `commaData` stores genomic sites in `rowRanges()` as 1-bp `GRanges`; do not move genomic coordinates back into ordinary row-data columns.
