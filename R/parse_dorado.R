@@ -15,7 +15,7 @@ NULL
 #' processes the MM/ML tags from each aligned read. The MM tag encodes which
 #' bases carry modifications and their positions within the read sequence
 #' (as inter-base offsets); the parallel ML tag provides modification
-#' probabilities (0–255 scaled to 0–1).
+#' probabilities (0-255 scaled to 0-1).
 #'
 #' A base is called modified when its ML probability is \eqn{> 0.5}.
 #' Per-site statistics are aggregated by counting modified reads
@@ -26,6 +26,18 @@ NULL
 #' CIGAR operations are used to map read positions to reference coordinates.
 #' Soft-clipped (\code{S}) and hard-clipped (\code{H}) bases are excluded;
 #' insertions (\code{I}) consume read positions without advancing the reference.
+#'
+#' Two kinds of information loss can occur and should be distinguished:
+#' \describe{
+#'   \item{Read-level skips}{An entire read is skipped when its CIGAR string
+#'     is malformed or its MM/ML tags are missing or truncated. No
+#'     modified-base calls from that read contribute to any site.}
+#'   \item{Call-level drops}{Individual modified-base calls whose read
+#'     positions cannot be mapped to reference sites (inserted or
+#'     soft-clipped positions) are dropped before site aggregation. The
+#'     rest of the read is still used; only the unmappable call is
+#'     discarded.}
+#' }
 #'
 #' \strong{Recommended workflow:} For most users, it is simpler to first run
 #' \code{modkit pileup} on the Dorado BAM, then load the resulting BED file

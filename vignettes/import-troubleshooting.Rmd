@@ -63,10 +63,25 @@ path for most Dorado-based workflows: call bases with Dorado, run
 
 Use `caller = "dorado"` only when you want commaKit to parse an aligned BAM file
 with MM/ML base modification tags directly. The BAM must contain modification
-tags and should be indexed. Direct BAM parsing skips reads with malformed CIGAR
-strings, missing or truncated MM/ML tags, or modification calls that cannot be
-mapped onto reference positions. Direct BAM parsing does not provide motif
-context, so per-site `motif` values will be `NA`.
+tags and should be indexed. Direct BAM parsing does not provide motif context,
+so per-site `motif` values will be `NA`.
+
+During direct BAM parsing, two kinds of information loss can occur and should
+not be confused:
+
+1. **Read-level skips.** An entire read is skipped when it cannot be parsed at
+   all. This happens when the CIGAR string is malformed or the MM/ML tags are
+   missing or truncated. No modified-base calls from that read contribute to
+   any site.
+2. **Call-level drops.** Individual modified-base calls whose read positions
+   cannot be mapped to reference sites are dropped *before* site aggregation.
+   This happens when the call falls on an inserted or soft-clipped read
+   position that has no corresponding reference coordinate. The rest of the
+   read is still used; only the unmappable call is discarded.
+
+In other words, a read with a usable CIGAR and valid MM/ML tags may still lose
+some modified-base calls to call-level drops, but the read itself is not
+skipped.
 
 Use `caller = "megalodon"` for legacy Megalodon per-read modification BED
 files. Megalodon files do not encode the modification type in a way commaKit
