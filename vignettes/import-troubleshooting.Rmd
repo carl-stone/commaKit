@@ -117,10 +117,13 @@ header row. The parser uses the first 18 fields:
 - column 4: modification code, often `code,motif,position`
 - column 6: strand
 - column 10: valid coverage
-- column 11: percent modified
+- column 11: percent modified (non-authoritative; beta is computed from count fields)
 
-The parser converts 0-based BED starts to 1-based genomic positions and converts
-percent modified values from 0 to 100 into beta values from 0 to 1.
+The parser converts 0-based BED starts to 1-based genomic positions and
+computes beta from authoritative count fields (`Nmod / Nvalid_cov`) rather
+than the `fraction_modified` percent column. Zero-valid-coverage rows with
+missing or undefined `fraction_modified` are dropped by the coverage filter
+rather than failing import.
 
 Common symptoms and fixes:
 

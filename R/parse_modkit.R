@@ -11,7 +11,8 @@ NULL
 
 # modkit pileup bedMethyl column names (18 columns, tab-separated)
 # Columns 7-9 (thickStart, thickEnd, itemRgb) are BED compatibility fields.
-# fraction_modified (col 11) is a percentage (0-100); divide by 100 for beta.
+# fraction_modified (col 11) is a derived percentage (0-100); beta is computed
+# from authoritative count fields: Nmod / Nvalid_cov.
 # mod_code (col 4) uses compound format "code,motif,position" (e.g. "a,GATC,1").
 .MODKIT_COLS <- c(
   "chrom", "start", "end", "mod_code", "score", "strand",
@@ -46,8 +47,9 @@ NULL
 #'       \code{mod_code} field (e.g., \code{"GATC"}, \code{"CCWGG"}).
 #'       \code{NA} if the \code{mod_code} field does not contain motif
 #'       information (older modkit formats).}
-#'     \item{\code{beta}}{Proportion of reads called methylated, range 0–1
-#'       (numeric).}
+#'     \item{\code{beta}}{Proportion of reads called methylated, computed as
+#'       \code{Nmod / Nvalid_cov} from authoritative count fields. Range 0-1
+#'       for positive-coverage rows; 0 for zero-coverage rows.}
 #'     \item{\code{coverage}}{Total read depth at this site (integer).}
 #'     \item{\code{mod_counts}}{Observed reads called as this modification.}
 #'     \item{\code{canonical_counts}}{Observed reads called canonical/unmodified.}
@@ -114,7 +116,7 @@ NULL
 
   required_fields <- c(
     "chrom", "start", "end", "mod_code", "strand", "Nvalid_cov",
-    "fraction_modified", "Nmod", "Ncanonical", "Nother_mod"
+    "Nmod", "Ncanonical", "Nother_mod"
   )
   missing_required <- as.data.frame(
     lapply(
@@ -182,7 +184,8 @@ NULL
     strand = as.character(raw$strand),
     mod_type = raw$mod_type_mapped,
     motif = raw$motif,
-    beta = as.numeric(raw$fraction_modified) / 100, # percentage → fraction
+    beta = ifelse(raw$Nvalid_cov > 0,
+      as.numeric(raw$Nmod) / as.numeric(raw$Nvalid_cov), 0),
     coverage = raw$Nvalid_cov,
     mod_counts = as.integer(raw$Nmod),
     canonical_counts = as.integer(raw$Ncanonical),

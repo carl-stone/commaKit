@@ -339,3 +339,48 @@ test_that(".parseModkit() preserves all-tab bedMethyl with no blank fields", {
   expect_equal(nrow(result), 2L)
   expect_equal(sort(result$mod_type), c("5mC", "6mA"))
 })
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Authoritative count fields and zero-coverage drops (#237)
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that(".parseModkit() computes beta from Nmod/Nvalid_cov, not fraction_modified", {
+  # Row where fraction_modified (40%) disagrees with Nmod/Nvalid_cov (7/20 = 35%)
+  row <- paste(c(
+    "chr1", "99", "100", "a,GATC,1", "20", "+",
+    "99", "100", "255,0,0",
+    "20", "40", "7", "11", "2", "0", "0", "0", "0"
+  ), collapse = "\t")
+  f <- tempfile(fileext = ".bed")
+  writeLines(row, f)
+
+  result <- commaKit:::.parseModkit(f, "s1", min_coverage = 0L)
+  expect_equal(nrow(result), 1L)
+  expect_equal(result$beta, 0.35, tolerance = 1e-6)
+  expect_equal(result$mod_counts, 7L)
+  expect_equal(result$coverage, 20L)
+})
+
+test_that(".parseModkit() drops zero-coverage rows with undefined fraction_modified", {
+  # Row with Nvalid_cov = 0 and blank fraction_modified.
+  # fraction_modified is no longer a required field, so the row passes
+  # the required-fields check and is dropped by the coverage filter.
+  row <- paste(c(
+    "chr1", "99", "100", "a,GATC,1", "0", "+",
+    "99", "100", "255,0,0",
+    "0", "", "0", "0", "0", "0", "0", "0", "0"
+  ), collapse = "\t")
+  f <- tempfile(fileext = ".bed")
+  writeLines(row, f)
+
+  # Default min_coverage = 5 drops the zero-coverage row without error
+  result <- commaKit:::.parseModkit(f, "s1")
+  expect_equal(nrow(result), 0L)
+
+  # With min_coverage = 0 the row is retained with beta = 0
+  kept <- commaKit:::.parseModkit(f, "s1", min_coverage = 0L)
+  expect_equal(nrow(kept), 1L)
+  expect_equal(kept$coverage, 0L)
+  expect_equal(kept$beta, 0)
+  expect_equal(kept$mod_counts, 0L)
+})
