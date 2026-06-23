@@ -407,9 +407,21 @@ commaData <- function(files,
   # ── Genome info ─────────────────────────────────────────────────────────
   genome_info <- .validateGenomeInfo(genome)
 
-  # Restrict genome info to chromosomes actually present in the data
+  # Restrict genome info to chromosomes actually present in the data, while
+  # failing clearly when methylation files contain chromosomes absent from the
+  # supplied genome. A later Seqinfo assignment would fail too, but with a
+  # lower-level message that is hard to connect to the input files.
   if (!is.null(genome_info)) {
     data_chroms <- unique(all_sites$chrom)
+    missing_chroms <- setdiff(data_chroms, names(genome_info))
+    if (length(missing_chroms) > 0L) {
+      stop(
+        "genome is missing chromosome(s) present in methylation data: ",
+        paste(missing_chroms, collapse = ", "), ". ",
+        "Chromosome names in 'genome' must match the imported files."
+      )
+    }
+
     extra_chroms <- setdiff(names(genome_info), data_chroms)
     if (length(extra_chroms) > 0L) {
       message(

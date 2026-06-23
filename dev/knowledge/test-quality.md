@@ -280,7 +280,7 @@ All 24 keep. Strong coverage of .validateGenomeInfo, .circularIndex, and .makeSe
 
 2. **Real enrichment semantics.** `enrichMethylation()` is tested with `clusterProfiler` when installed and synthetic TERM2GENE mappings, but not yet with real biological identifiers and real GO/KEGG mappings aligned to a real example dataset.
 
-3. **Parser edge cases.** Tests use `example_modkit.bed` and `comma_example_data`. We haven't fully verified that parsers handle real production data edge cases (malformed lines, unexpected chromosomes, missing fields).
+3. **Parser edge cases — PARTIALLY COVERED.** Tests now cover blank-field detection with tab-delimited parsing, space-separated file rejection, count-based beta computation (`Nmod / Nvalid_cov`), zero-coverage drops with undefined `fraction_modified`, unexpected motif strings, partial-row errors, and Dorado CIGAR/MM/ML edge cases (malformed CIGAR, insertions, soft clips, truncated ML arrays). Remaining gaps: no tests with real production files, unexpected chromosome names, large-file performance, or Megalodon edge cases beyond basic valid/invalid input.
 
 4. **Small-sample behavior.** `diffMethyl()` with exactly 2 samples per condition has 1 residual df for quasi-F. Is this still valid? What happens with exactly 2 samples total? Not tested.
 
@@ -293,7 +293,7 @@ All 24 keep. Strong coverage of .validateGenomeInfo, .circularIndex, and .makeSe
 1. **Finish plot fallback coverage:** Decide whether missing `patchwork` should message, warn, or error; test that behavior directly.
 2. **Keep strengthening plot contracts:** Use `ggplot_build()` to verify data mappings, point counts, aesthetic mappings, and layer structure when touching plot files.
 3. **Add real-ID enrichment coverage:** Use real biological identifiers and real GO/KEGG mappings once an appropriate dataset exists.
-4. **Add real parser fixtures:** Cover malformed and edge-case caller outputs from production-like files.
+4. **Add real parser fixtures:** Cover malformed and edge-case caller outputs from production-like files. Specific edge cases now covered (blank fields, delimiter shapes, count-based beta, zero-coverage drops, Dorado CIGAR/MM/ML); remaining work is real production files, unexpected chromosome names, large-file performance, and Megalodon edge cases.
 5. **Benchmark realistic scale:** Measure memory/runtime for constructor, `validObject()`, `diffMethyl()`, `siteInfo()`, and `slidingWindow()`.
 
 See GitHub Issues for prioritized work items.
