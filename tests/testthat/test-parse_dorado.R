@@ -256,3 +256,40 @@ test_that("parseMmTag: ML at exactly 127/255 ≈ 0.498 is_mod = FALSE", {
   )
   expect_false(result$is_mod[1])
 })
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Production-like Dorado MM/ML/CIGAR edge cases
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that("cigarToRefPos: malformed CIGAR returns NULL rather than partial map", {
+  expect_null(commaKit:::.cigarToRefPos(
+    "3M2Z2M",
+    ref_start = 100L,
+    seq_bases = "ACGTACG"
+  ))
+})
+
+test_that("Dorado MM/ML helper path drops modification calls on insertions", {
+  ref_positions <- commaKit:::.cigarToRefPos(
+    "1M1I2M",
+    ref_start = 100L,
+    seq_bases = "AAAA"
+  )
+  calls <- commaKit:::.parseMmTag(
+    mm_tag = "A+a?,1",
+    ml_tag = as.raw(200L),
+    seq_bases = "AAAA"
+  )
+
+  expect_equal(calls$read_pos, 2L)
+  expect_true(is.na(ref_positions[calls$read_pos]))
+})
+
+test_that("parseMmTag: truncated ML array returns NULL without recycling", {
+  result <- commaKit:::.parseMmTag(
+    mm_tag = "A+a?,0,0",
+    ml_tag = as.raw(200L),
+    seq_bases = "AAAA"
+  )
+  expect_null(result)
+})

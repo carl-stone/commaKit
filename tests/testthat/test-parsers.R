@@ -236,3 +236,151 @@ test_that(".parseModkit() parses the bundled example file without error", {
   expect_true(all(result$beta >= 0 & result$beta <= 1))
   expect_true(all(result$coverage > 0))
 })
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Production-like modkit edge cases
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that(".parseModkit() errors clearly on partial rows in mixed files", {
+  complete <- as.character(unlist(.modkit_row(start = 99L), use.names = FALSE))
+  partial <- complete[seq_len(13L)]
+  f <- tempfile(fileext = ".bed")
+  writeLines(
+    c(paste(complete, collapse = "\t"), paste(partial, collapse = "\t")),
+    f
+  )
+
+  expect_error(
+    commaKit:::.parseModkit(f, "s1", min_coverage = 0L),
+    regexp = "missing required field.*Nother_mod"
+  )
+})
+
+test_that(".parseModkit() retains zero-coverage rows only when requested", {
+  f <- .write_tmp_modkit(.modkit_row(cov = 0L, mod_freq = 0, start = 99L))
+
+  default_result <- commaKit:::.parseModkit(f, "s1")
+  expect_equal(nrow(default_result), 0L)
+  expect_named(default_result, c(
+    "chrom", "position", "strand", "mod_type", "motif",
+    "beta", "coverage", "mod_counts", "canonical_counts",
+    "other_mod_counts"
+  ))
+
+  kept_result <- commaKit:::.parseModkit(f, "s1", min_coverage = 0L)
+  expect_equal(nrow(kept_result), 1L)
+  expect_equal(kept_result$coverage, 0L)
+  expect_equal(kept_result$beta, 0)
+  expect_equal(kept_result$mod_counts + kept_result$canonical_counts +
+    kept_result$other_mod_counts, 0L)
+})
+
+test_that(".parseModkit() preserves unexpected motif strings without schema changes", {
+  rows <- rbind(
+    .modkit_row(mod_code = "a,GATC,1", start = 99L),
+    .modkit_row(mod_code = "a,not-a-standard-motif,1", start = 199L),
+    .modkit_row(mod_code = "m,CCWGG,1", start = 299L)
+  )
+  f <- .write_tmp_modkit(rows)
+
+  result <- commaKit:::.parseModkit(f, "s1", min_coverage = 0L)
+  expect_named(result, c(
+    "chrom", "position", "strand", "mod_type", "motif",
+    "beta", "coverage", "mod_counts", "canonical_counts",
+    "other_mod_counts"
+  ))
+  expect_equal(nrow(result), 3L)
+  expect_true("not-a-standard-motif" %in% result$motif)
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Delimiter structure and blank-field detection (#235)
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that(".parseModkit() rejects blank required fields without shifting later values", {
+  # Row with blank Nvalid_cov (column 10) but valid later fields.
+  # With sep = "" the blank would be collapsed and fraction_modified
+  # would shift into the Nvalid_cov position, hiding the error.
+  row <- paste(c(
+    "chr1", "99", "100", "a,GATC,1", "20", "+",
+    "99", "100", "255,0,0",
+    "", "90", "18", "2", "0", "0", "0", "0", "0"
+  ), collapse = "\t")
+  f <- tempfile(fileext = ".bed")
+  writeLines(row, f)
+
+  expect_error(
+    commaKit:::.parseModkit(f, "s1", min_coverage = 0L),
+    regexp = "missing required field.*Nvalid_cov"
+  )
+})
+
+test_that(".parseModkit() rejects space-separated (non-tab) bedMethyl files", {
+  row <- paste(c(
+    "chr1", "99", "100", "a,GATC,1", "20", "+",
+    "99", "100", "255,0,0",
+    "20", "90", "18", "2", "0", "0", "0", "0", "0"
+  ), collapse = " ")
+  f <- tempfile(fileext = ".bed")
+  writeLines(row, f)
+
+  expect_error(
+    commaKit:::.parseModkit(f, "s1"),
+    regexp = "tab-separated"
+  )
+})
+
+test_that(".parseModkit() preserves all-tab bedMethyl with no blank fields", {
+  f <- .write_tmp_modkit(rbind(
+    .modkit_row(start = 99L),
+    .modkit_row(start = 199L, mod_code = "m,CCWGG,1")
+  ))
+  result <- commaKit:::.parseModkit(f, "s1")
+  expect_equal(nrow(result), 2L)
+  expect_equal(sort(result$mod_type), c("5mC", "6mA"))
+})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Authoritative count fields and zero-coverage drops (#237)
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that(".parseModkit() computes beta from Nmod/Nvalid_cov, not fraction_modified", {
+  # Row where fraction_modified (40%) disagrees with Nmod/Nvalid_cov (7/20 = 35%)
+  row <- paste(c(
+    "chr1", "99", "100", "a,GATC,1", "20", "+",
+    "99", "100", "255,0,0",
+    "20", "40", "7", "11", "2", "0", "0", "0", "0"
+  ), collapse = "\t")
+  f <- tempfile(fileext = ".bed")
+  writeLines(row, f)
+
+  result <- commaKit:::.parseModkit(f, "s1", min_coverage = 0L)
+  expect_equal(nrow(result), 1L)
+  expect_equal(result$beta, 0.35, tolerance = 1e-6)
+  expect_equal(result$mod_counts, 7L)
+  expect_equal(result$coverage, 20L)
+})
+
+test_that(".parseModkit() drops zero-coverage rows with undefined fraction_modified", {
+  # Row with Nvalid_cov = 0 and blank fraction_modified.
+  # fraction_modified is no longer a required field, so the row passes
+  # the required-fields check and is dropped by the coverage filter.
+  row <- paste(c(
+    "chr1", "99", "100", "a,GATC,1", "0", "+",
+    "99", "100", "255,0,0",
+    "0", "", "0", "0", "0", "0", "0", "0", "0"
+  ), collapse = "\t")
+  f <- tempfile(fileext = ".bed")
+  writeLines(row, f)
+
+  # Default min_coverage = 5 drops the zero-coverage row without error
+  result <- commaKit:::.parseModkit(f, "s1")
+  expect_equal(nrow(result), 0L)
+
+  # With min_coverage = 0 the row is retained with beta = 0
+  kept <- commaKit:::.parseModkit(f, "s1", min_coverage = 0L)
+  expect_equal(nrow(kept), 1L)
+  expect_equal(kept$coverage, 0L)
+  expect_equal(kept$beta, 0)
+  expect_equal(kept$mod_counts, 0L)
+})

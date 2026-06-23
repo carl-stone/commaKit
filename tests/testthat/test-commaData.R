@@ -590,3 +590,18 @@ test_that(
     )
   }
 )
+
+test_that("commaData() errors clearly when data chromosomes are absent from genome", {
+  bed_file <- .write_constructor_modkit()
+
+  expect_error(
+    suppressMessages(commaData(
+      files = c(s1 = bed_file),
+      colData = data.frame(sample_name = "s1", replicate = 1L),
+      genome = c(chr_other = 1000L),
+      caller = "modkit",
+      min_coverage = 1L
+    )),
+    regexp = "genome is missing chromosome.*chr_sim"
+  )
+})

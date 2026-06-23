@@ -29,3 +29,23 @@ test_that(
     }
   }
 )
+
+test_that(
+  "import troubleshooting vignette distinguishes Dorado read-level skips from call-level drops",
+  {
+    vignette_path <- testthat::test_path(
+      "..", "..", "vignettes", "import-troubleshooting.Rmd"
+    )
+    testthat::skip_if_not(
+      file.exists(vignette_path),
+      "source vignettes are unavailable"
+    )
+
+    text <- paste(readLines(vignette_path, warn = FALSE), collapse = "\n")
+
+    expect_match(text, "read-level skips")
+    expect_match(text, "call-level drops")
+    expect_match(text, "modified-base calls")
+    expect_match(text, "site aggregation")
+  }
+)

@@ -11,7 +11,8 @@ NULL
 
 # modkit pileup bedMethyl column names (18 columns, tab-separated)
 # Columns 7-9 (thickStart, thickEnd, itemRgb) are BED compatibility fields.
-# fraction_modified (col 11) is a percentage (0-100); divide by 100 for beta.
+# fraction_modified (col 11) is a derived percentage (0-100); beta is computed
+# from authoritative count fields: Nmod / Nvalid_cov.
 # mod_code (col 4) uses compound format "code,motif,position" (e.g. "a,GATC,1").
 .MODKIT_COLS <- c(
   "chrom", "start", "end", "mod_code", "score", "strand",
@@ -46,8 +47,9 @@ NULL
 #'       \code{mod_code} field (e.g., \code{"GATC"}, \code{"CCWGG"}).
 #'       \code{NA} if the \code{mod_code} field does not contain motif
 #'       information (older modkit formats).}
-#'     \item{\code{beta}}{Proportion of reads called methylated, range 0–1
-#'       (numeric).}
+#'     \item{\code{beta}}{Proportion of reads called methylated, computed as
+#'       \code{Nmod / Nvalid_cov} from authoritative count fields. Range 0-1
+#'       for positive-coverage rows; 0 for zero-coverage rows.}
 #'     \item{\code{coverage}}{Total read depth at this site (integer).}
 #'     \item{\code{mod_counts}}{Observed reads called as this modification.}
 #'     \item{\code{canonical_counts}}{Observed reads called canonical/unmodified.}
@@ -72,11 +74,17 @@ NULL
   min_coverage <- as.integer(min_coverage)
 
   # ── Read file ───────────────────────────────────────────────────────────
+  # Use sep = "\t" (not sep = "") so blank fields are preserved as empty
+  # strings rather than collapsed by whitespace-skipping behaviour.
+  # With sep = "" consecutive whitespace is treated as one delimiter, which
+  # can shift later bedMethyl values into the wrong columns when a required
+  # field is blank.
   raw <- tryCatch(
     read.table(
       file,
       header = FALSE,
-      sep = "",
+      sep = "\t",
+      quote = "",
       stringsAsFactors = FALSE,
       comment.char = "#",
       fill = TRUE
@@ -96,14 +104,39 @@ NULL
 
   if (ncol(raw) < 18L) {
     stop(
-      "modkit BED file '", file, "' has ", ncol(raw), " columns; ",
+      "modkit BED file '", file, "' has ", ncol(raw), " column(s); ",
       "expected at least 18 (modkit pileup bedMethyl format). ",
+      "The file must be tab-separated. ",
       "Check that the file is a modkit pileup output."
     )
   }
   # Use only the first 18 columns
   raw <- raw[, seq_len(18L), drop = FALSE]
   colnames(raw) <- .MODKIT_COLS
+
+  required_fields <- c(
+    "chrom", "start", "end", "mod_code", "strand", "Nvalid_cov",
+    "Nmod", "Ncanonical", "Nother_mod"
+  )
+  missing_required <- as.data.frame(
+    lapply(
+      raw[required_fields],
+      function(x) is.na(x) | !nzchar(trimws(as.character(x)))
+    ),
+    check.names = FALSE
+  )
+  rows_missing_required <- which(rowSums(missing_required) > 0L)
+  if (length(rows_missing_required) > 0L) {
+    row_idx <- rows_missing_required[[1L]]
+    fields <- names(missing_required)[
+      unlist(missing_required[row_idx, ], use.names = FALSE)
+    ]
+    stop(
+      "modkit BED file '", file, "' has missing required field(s) in ",
+      "row ", row_idx, ": ", paste(fields, collapse = ", "), ". ",
+      "Check that the file is complete modkit pileup bedMethyl output."
+    )
+  }
 
   # ── Map mod_code → mod_type, extract motif ──────────────────────────────
   # mod_code is compound "code,motif,position" (e.g. "a,GATC,1"); extract
@@ -151,7 +184,8 @@ NULL
     strand = as.character(raw$strand),
     mod_type = raw$mod_type_mapped,
     motif = raw$motif,
-    beta = as.numeric(raw$fraction_modified) / 100, # percentage → fraction
+    beta = ifelse(raw$Nvalid_cov > 0,
+      as.numeric(raw$Nmod) / as.numeric(raw$Nvalid_cov), 0),
     coverage = raw$Nvalid_cov,
     mod_counts = as.integer(raw$Nmod),
     canonical_counts = as.integer(raw$Ncanonical),
