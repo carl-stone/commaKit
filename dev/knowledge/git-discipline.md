@@ -350,7 +350,7 @@ Examples:
 
 ## Current Repo Policy
 
-- All changes go through PRs. No direct commits to `main`.
+- All changes go through PRs. Do not push or merge changes directly to `main` without a PR.
 - `main` is protected by convention (not yet by branch protection rules).
 - Bioconductor submission work should happen on a branch when the time comes.
 
