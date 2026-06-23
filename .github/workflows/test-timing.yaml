@@ -48,13 +48,12 @@ jobs:
               echo ""
               echo "| File | Duration (s) |"
               echo "|------|-------------|"
-              head -1 test-timing-report.csv | sed 's/^/| /; s/,/ | /; s/$/ |/'
               tail -n +2 test-timing-report.csv | sort -t, -k2 -rn | head -10 | \
                 while IFS=, read -r file dur; do
                   echo "| $file | $dur |"
                 done
               echo ""
-              total=$(tail -n +2 test-timing-report.csv | cut -d, -f2 | paste -sd+ | bc)
+              total=$(awk -F, 'NR > 1 { sum += $2 } END { printf "%.2f", sum }' test-timing-report.csv)
               echo "**Total test time:** ${total}s"
             } >> "$GITHUB_STEP_SUMMARY"
           fi

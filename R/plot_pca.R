@@ -100,11 +100,11 @@ plot_pca <- function(object,
   si <- sampleInfo(object)
   si_cols <- colnames(si)
   if (color_by_default && identical(color_by, "condition") &&
-        !"condition" %in% si_cols) {
+    !"condition" %in% si_cols) {
     color_by <- "sample_name"
   }
   if (!is.character(color_by) || length(color_by) != 1L ||
-        is.na(color_by) || !nzchar(color_by)) {
+    is.na(color_by) || !nzchar(color_by)) {
     stop(
       "'color_by' must be a single non-empty character string naming ",
       "a column in sampleInfo(object)."
@@ -118,7 +118,7 @@ plot_pca <- function(object,
   }
   if (!is.null(shape_by)) {
     if (!is.character(shape_by) || length(shape_by) != 1L ||
-          is.na(shape_by) || !nzchar(shape_by)) {
+      is.na(shape_by) || !nzchar(shape_by)) {
       stop(
         "'shape_by' must be NULL or a single non-empty character ",
         "string naming a column in sampleInfo(object)."

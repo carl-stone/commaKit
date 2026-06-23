@@ -43,8 +43,8 @@ test_that(
 
     text <- paste(readLines(vignette_path, warn = FALSE), collapse = "\n")
 
-    expect_match(text, "read-level skips")
-    expect_match(text, "call-level drops")
+    expect_match(text, "[Rr]ead-level skips")
+    expect_match(text, "[Cc]all-level drops")
     expect_match(text, "modified-base calls")
     expect_match(text, "site aggregation")
   }

@@ -30,10 +30,6 @@ jobs:
 
       - name: Check code style
         run: |
-          res <- styler::style_pkg(dry = "fail")
-          if (!res) {
-            message("\nCode style check failed. Please run `styler::style_pkg()` to format the code.\n")
-            quit(status = 1)
-          }
+          styler::style_pkg(dry = "fail")
           message("All R source files are properly formatted.")
         shell: Rscript {0}

@@ -6,6 +6,12 @@
 
 library(testthat)
 
+if (requireNamespace("pkgload", quietly = TRUE)) {
+  pkgload::load_all(".", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+} else {
+  library(commaKit)
+}
+
 test_path <- "tests/testthat"
 test_files <- list.files(test_path, pattern = "^test-.*\\.R$", full.names = TRUE)
 test_files <- sort(test_files)
@@ -14,10 +20,33 @@ cat("Running", length(test_files), "test files with timing...\n\n")
 
 results <- vector("list", length(test_files))
 
+run_test_file <- function(path) {
+  test_file_formals <- names(formals(testthat::test_file))
+  supports_dots <- "..." %in% test_file_formals
+  args <- list(
+    path = path,
+    reporter = testthat::SummaryReporter$new()
+  )
+
+  add_arg <- function(name, value) {
+    if (name %in% test_file_formals || supports_dots) {
+      args[[name]] <<- value
+    }
+  }
+
+  add_arg("package", "commaKit")
+  add_arg("load_package", "none")
+  add_arg("load_helpers", TRUE)
+  add_arg("stop_on_failure", TRUE)
+  add_arg("stop_on_warning", FALSE)
+
+  do.call(testthat::test_file, args)
+}
+
 for (i in seq_along(test_files)) {
   f <- test_files[i]
   elapsed <- system.time({
-    testthat::test_file(f, reporter = testthat::SilentReporter$new())
+    run_test_file(f)
   })["elapsed"]
 
   results[[i]] <- data.frame(
