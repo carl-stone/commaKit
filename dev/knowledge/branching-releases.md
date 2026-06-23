@@ -281,6 +281,8 @@ Example:
 
 ```bash
 git status --short
+git switch main
+git pull --ff-only
 git switch -c docs/fix-typo-in-readme
 # edit one or two files
 git diff
