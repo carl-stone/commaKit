@@ -286,7 +286,7 @@ git diff
 git add specific-file
 git commit -m "Clear message"
 git push -u origin docs/fix-typo-in-readme
-gh pr create
+gh pr create --web
 ```
 
 ### Normal feature/fix workflow
