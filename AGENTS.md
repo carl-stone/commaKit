@@ -15,6 +15,10 @@ instructions. For branch, PR, and validation expectations, see
   `commaKit Symphony` when work originates from commaBot.
 - Avoid committing secrets, tokens, local paths, or machine-specific
   caches.
+- Use closing keywords (`Closes #N`, `Fixes #N`, `Resolves #N`) in
+  commit messages when a commit fully implements a GitHub issue. A bare
+  `(#N)` reference does NOT close the issue. The PR template includes a
+  “Closes” section as a reminder.
 
 ## Validation
 
