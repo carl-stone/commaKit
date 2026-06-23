@@ -1,3 +1,4 @@
 url: https://carl-stone.github.io/commaKit/
 template:
   bootstrap: 5
+destination: docs/_site
