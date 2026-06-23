@@ -292,3 +292,50 @@ test_that(".parseModkit() preserves unexpected motif strings without schema chan
   expect_equal(nrow(result), 3L)
   expect_true("not-a-standard-motif" %in% result$motif)
 })
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Delimiter structure and blank-field detection (#235)
+# ─────────────────────────────────────────────────────────────────────────────
+
+test_that(".parseModkit() rejects blank required fields without shifting later values", {
+  # Row with blank Nvalid_cov (column 10) but valid later fields.
+  # With sep = "" the blank would be collapsed and fraction_modified
+  # would shift into the Nvalid_cov position, hiding the error.
+  row <- paste(c(
+    "chr1", "99", "100", "a,GATC,1", "20", "+",
+    "99", "100", "255,0,0",
+    "", "90", "18", "2", "0", "0", "0", "0", "0"
+  ), collapse = "\t")
+  f <- tempfile(fileext = ".bed")
+  writeLines(row, f)
+
+  expect_error(
+    commaKit:::.parseModkit(f, "s1", min_coverage = 0L),
+    regexp = "missing required field.*Nvalid_cov"
+  )
+})
+
+test_that(".parseModkit() rejects space-separated (non-tab) bedMethyl files", {
+  row <- paste(c(
+    "chr1", "99", "100", "a,GATC,1", "20", "+",
+    "99", "100", "255,0,0",
+    "20", "90", "18", "2", "0", "0", "0", "0", "0"
+  ), collapse = " ")
+  f <- tempfile(fileext = ".bed")
+  writeLines(row, f)
+
+  expect_error(
+    commaKit:::.parseModkit(f, "s1"),
+    regexp = "tab-separated"
+  )
+})
+
+test_that(".parseModkit() preserves all-tab bedMethyl with no blank fields", {
+  f <- .write_tmp_modkit(rbind(
+    .modkit_row(start = 99L),
+    .modkit_row(start = 199L, mod_code = "m,CCWGG,1")
+  ))
+  result <- commaKit:::.parseModkit(f, "s1")
+  expect_equal(nrow(result), 2L)
+  expect_equal(sort(result$mod_type), c("5mC", "6mA"))
+})

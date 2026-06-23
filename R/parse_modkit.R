@@ -72,11 +72,17 @@ NULL
   min_coverage <- as.integer(min_coverage)
 
   # ── Read file ───────────────────────────────────────────────────────────
+  # Use sep = "\t" (not sep = "") so blank fields are preserved as empty
+  # strings rather than collapsed by whitespace-skipping behaviour.
+  # With sep = "" consecutive whitespace is treated as one delimiter, which
+  # can shift later bedMethyl values into the wrong columns when a required
+  # field is blank.
   raw <- tryCatch(
     read.table(
       file,
       header = FALSE,
-      sep = "",
+      sep = "\t",
+      quote = "",
       stringsAsFactors = FALSE,
       comment.char = "#",
       fill = TRUE
@@ -96,8 +102,9 @@ NULL
 
   if (ncol(raw) < 18L) {
     stop(
-      "modkit BED file '", file, "' has ", ncol(raw), " columns; ",
+      "modkit BED file '", file, "' has ", ncol(raw), " column(s); ",
       "expected at least 18 (modkit pileup bedMethyl format). ",
+      "The file must be tab-separated. ",
       "Check that the file is a modkit pileup output."
     )
   }
