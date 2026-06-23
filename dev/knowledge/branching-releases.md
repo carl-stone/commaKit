@@ -95,17 +95,11 @@ api/mod-type-vector-consistency
 release/0.1.0
 ```
 
-### Direct-to-main exceptions
+### No direct-to-main commits
 
-Small, low-risk changes may go directly to `main`:
-
-- typo fixes
-- small `.gitignore` / `.Rbuildignore` changes
-- small planning/documentation updates
-- GitHub Issues updates
-- focused project-management docs
-
-When in doubt, branch.
+All changes, no matter how small, go through a branch and PR. This includes
+typo fixes, `.gitignore` / `.Rbuildignore` changes, documentation updates, and
+GitHub Issues updates. Direct commits to `main` are not allowed.
 
 ---
 
@@ -282,15 +276,17 @@ Example:
 
 ## Practical Workflows
 
-### Small direct-to-main docs/config fix
+### Small docs/config fix
 
 ```bash
 git status --short
+git switch -c docs/fix-typo-in-readme
 # edit one or two files
 git diff
 git add specific-file
 git commit -m "Clear message"
-git push
+git push -u origin docs/fix-typo-in-readme
+gh pr create
 ```
 
 ### Normal feature/fix workflow
