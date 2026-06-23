@@ -33,6 +33,10 @@ test_that("structured logger is silent unless enabled", {
   out <- character()
   con <- textConnection("out", "w", local = TRUE)
   old <- options(commaKit.log = FALSE, commaKit.log.connection = con)
+  on.exit({
+    try(if (isOpen(con)) close(con), silent = TRUE)
+    options(old)
+  })
 
   logged <- commaKit:::.comma_log_event(
     "suppressed_event",
@@ -50,6 +54,10 @@ test_that("structured logger emits machine-readable JSON fields", {
   out <- character()
   con <- textConnection("out", "w", local = TRUE)
   old <- options(commaKit.log = TRUE, commaKit.log.connection = con)
+  on.exit({
+    try(if (isOpen(con)) close(con), silent = TRUE)
+    options(old)
+  })
 
   logged <- commaKit:::.comma_log_event(
     "sample_parse_finished",
@@ -82,6 +90,11 @@ test_that("commaData constructor records structured lifecycle events", {
   con <- textConnection("out", "w", local = TRUE)
   old <- options(commaKit.log = TRUE, commaKit.log.connection = con)
   bed_file <- .write_logger_modkit()
+  on.exit({
+    try(if (isOpen(con)) close(con), silent = TRUE)
+    options(old)
+    unlink(bed_file)
+  })
 
   obj <- suppressMessages(commaData(
     files = c(s1 = bed_file),
@@ -102,4 +115,55 @@ test_that("commaData constructor records structured lifecycle events", {
   expect_match(log_text, '"sample_count":1', fixed = TRUE)
   expect_match(log_text, '"site_count":1', fixed = TRUE)
   expect_match(log_text, '"caller":"modkit"', fixed = TRUE)
+})
+
+test_that("structured logger uses JSON-safe numeric and string encoding", {
+  out <- character()
+  con <- textConnection("out", "w", local = TRUE)
+  old <- options(
+    commaKit.log = TRUE,
+    commaKit.log.connection = con,
+    OutDec = ","
+  )
+  on.exit({
+    try(if (isOpen(con)) close(con), silent = TRUE)
+    options(old)
+  })
+
+  logged <- commaKit:::.comma_log_event(
+    "encoding_check",
+    component = "test",
+    ratio = 1.25,
+    note = paste0("back", "\b", "form", "\f", "unit", "\001"),
+    .time = as.POSIXct("2026-01-02 03:04:05", tz = "UTC")
+  )
+
+  close(con)
+  options(old)
+  expect_true(logged)
+  expect_length(out, 1L)
+  expect_match(out, '"ratio":1.25', fixed = TRUE)
+  expect_match(out, '"note":"back\\bform\\funit\\u0001"', fixed = TRUE)
+})
+
+test_that("structured logger failures do not interrupt callers", {
+  out <- character()
+  con <- textConnection("out", "w", local = TRUE)
+  old <- options(commaKit.log = TRUE, commaKit.log.connection = con)
+  on.exit({
+    try(if (isOpen(con)) close(con), silent = TRUE)
+    options(old)
+  })
+
+  logged <- expect_no_error(commaKit:::.comma_log_event(
+    "bad_fields",
+    level = "info",
+    component = NULL,
+    list(unnamed = TRUE)
+  ))
+
+  close(con)
+  options(old)
+  expect_false(logged)
+  expect_equal(out, character())
 })

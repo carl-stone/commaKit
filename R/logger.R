@@ -38,8 +38,14 @@
   fields <- c(fields, list(...))
   fields <- fields[!vapply(fields, is.null, logical(1))]
 
-  cat(.comma_json_object(fields), "\n", sep = "", file = .stream)
-  invisible(TRUE)
+  ok <- tryCatch(
+    {
+      cat(.comma_json_object(fields), "\n", sep = "", file = .stream)
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+  invisible(ok)
 }
 
 .comma_json_object <- function(fields) {
@@ -112,7 +118,10 @@
     if (!is.finite(value)) {
       return("null")
     }
-    return(format(value, scientific = FALSE, trim = TRUE))
+    return(format(value,
+      scientific = FALSE, trim = TRUE,
+      decimal.mark = "."
+    ))
   }
 
   .comma_json_string(as.character(value))
@@ -127,12 +136,20 @@
         vapply(
           characters,
           function(character) {
+            code <- utf8ToInt(character)
+            if (code < 32L) {
+              return(switch(character,
+                "\b" = "\\b",
+                "\f" = "\\f",
+                "\n" = "\\n",
+                "\r" = "\\r",
+                "\t" = "\\t",
+                sprintf("\\u%04x", code)
+              ))
+            }
             switch(character,
               "\\" = "\\\\",
               "\"" = "\\\"",
-              "\n" = "\\n",
-              "\r" = "\\r",
-              "\t" = "\\t",
               character
             )
           },
