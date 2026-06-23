@@ -1,0 +1,39 @@
+# Code style check using styler (tidyverse style guide)
+# Runs on PRs to ensure R source files are properly formatted.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+name: style.yaml
+
+permissions: read-all
+
+jobs:
+  style:
+    runs-on: ubuntu-latest
+    container: bioconductor/bioconductor_docker:RELEASE_3_22
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check R and Bioconductor versions
+        run: |
+          Rscript -e 'cat("R ", as.character(getRversion()), "\n", sep = "")'
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::styler
+          needs: check
+
+      - name: Check code style
+        run: |
+          res <- styler::style_pkg(dry = "fail")
+          if (!res) {
+            message("\nCode style check failed. Please run `styler::style_pkg()` to format the code.\n")
+            quit(status = 1)
+          }
+          message("All R source files are properly formatted.")
+        shell: Rscript {0}

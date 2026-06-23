@@ -36,3 +36,5 @@
 ^reports$
 ^AGENTS\.md$
 ^.*AGENTS\.md$
+^test-timing-report\.csv$
+^test-timing-output\.txt$
