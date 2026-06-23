@@ -99,7 +99,8 @@ release/0.1.0
 
 All changes, no matter how small, go through a branch and PR. This includes
 typo fixes, `.gitignore` / `.Rbuildignore` changes, documentation updates, and
-GitHub Issues updates. Direct commits to `main` are not allowed.
+GitHub issue template/config updates under `.github/`. Direct pushes/merges to
+`main` are not allowed.
 
 ---
 
