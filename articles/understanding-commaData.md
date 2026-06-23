@@ -314,7 +314,7 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-23 17:36:03 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-23 18:30:10 ..           0.2.0
 ```
 
 [`results()`](https://carl-stone.github.io/commaKit/reference/results.md)

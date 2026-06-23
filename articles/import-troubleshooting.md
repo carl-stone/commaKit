@@ -51,6 +51,24 @@ BAM file with MM/ML base modification tags directly. The BAM must
 contain modification tags and should be indexed. Direct BAM parsing does
 not provide motif context, so per-site `motif` values will be `NA`.
 
+During direct BAM parsing, two kinds of information loss can occur and
+should not be confused:
+
+1.  **Read-level skips.** An entire read is skipped when it cannot be
+    parsed at all. This happens when the CIGAR string is malformed or
+    the MM/ML tags are missing or truncated. No modified-base calls from
+    that read contribute to any site.
+2.  **Call-level drops.** Individual modified-base calls whose read
+    positions cannot be mapped to reference sites are dropped *before*
+    site aggregation. This happens when the call falls on an inserted or
+    soft-clipped read position that has no corresponding reference
+    coordinate. The rest of the read is still used; only the unmappable
+    call is discarded.
+
+In other words, a read with a usable CIGAR and valid MM/ML tags may
+still lose some modified-base calls to call-level drops, but the read
+itself is not skipped.
+
 Use `caller = "megalodon"` for legacy Megalodon per-read modification
 BED files. Megalodon files do not encode the modification type in a way
 commaKit can infer, so provide exactly one `mod_type` value.
@@ -86,11 +104,14 @@ and no header row. The parser uses the first 18 fields:
 - column 4: modification code, often `code,motif,position`
 - column 6: strand
 - column 10: valid coverage
-- column 11: percent modified
+- column 11: percent modified (non-authoritative; beta is computed from
+  count fields)
 
 The parser converts 0-based BED starts to 1-based genomic positions and
-converts percent modified values from 0 to 100 into beta values from 0
-to 1.
+computes beta from authoritative count fields (`Nmod / Nvalid_cov`)
+rather than the `fraction_modified` percent column. Zero-valid-coverage
+rows with missing or undefined `fraction_modified` are dropped by the
+coverage filter rather than failing import.
 
 Common symptoms and fixes:
 
@@ -98,6 +119,7 @@ Common symptoms and fixes:
 |----|----|----|
 | `expected at least 18` | The file is not modkit pileup bedMethyl output, or it was truncated. | Re-run `modkit pileup` and pass the BED output, not the BAM. |
 | Unknown `mod_code` warning | Column 4 contains codes outside the supported modkit map. | Confirm the file is a methylation pileup and decide whether the code should map to `6mA`, `5mC`, or `4mC`. |
+| Missing required fields | One or more rows are partial or malformed after parsing the first 18 bedMethyl columns. | Inspect the reported row, then regenerate or filter the pileup before import. |
 | No sites remain | Coverage or `mod_type` filtering removed every row. | Lower `min_coverage`, check `mod_type`, and inspect the input file for nonzero coverage. |
 | Duplicate methylation site rows | The file has repeated rows for the same chromosome, position, strand, modification type, and motif. | Aggregate or regenerate the per-sample pileup before importing. |
 
@@ -162,8 +184,11 @@ instead.
 
 Chromosome names must match the methylation files. If the BED file uses
 `chr1` but the genome vector is named `NC_000913`, rename one side
-before import. Extra chromosomes in the genome input are dropped with a
-message when they are not present in the methylation data.
+before import. commaKit stops with a clear error when methylation data
+contain chromosomes that are absent from `genome`, because it cannot
+attach valid `Seqinfo` for those sites. Extra chromosomes in the genome
+input are dropped with a message when they are not present in the
+methylation data.
 
 ``` r
 

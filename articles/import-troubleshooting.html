@@ -118,6 +118,25 @@ parse an aligned BAM file with MM/ML base modification tags directly.
 The BAM must contain modification tags and should be indexed. Direct BAM
 parsing does not provide motif context, so per-site <code>motif</code>
 values will be <code>NA</code>.</p>
+<p>During direct BAM parsing, two kinds of information loss can occur
+and should not be confused:</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Read-level skips.</strong> An entire read is skipped when it
+cannot be parsed at all. This happens when the CIGAR string is malformed
+or the MM/ML tags are missing or truncated. No modified-base calls from
+that read contribute to any site.</li>
+<li>
+<strong>Call-level drops.</strong> Individual modified-base calls
+whose read positions cannot be mapped to reference sites are dropped
+<em>before</em> site aggregation. This happens when the call falls on an
+inserted or soft-clipped read position that has no corresponding
+reference coordinate. The rest of the read is still used; only the
+unmappable call is discarded.</li>
+</ol>
+<p>In other words, a read with a usable CIGAR and valid MM/ML tags may
+still lose some modified-base calls to call-level drops, but the read
+itself is not skipped.</p>
 <p>Use <code>caller = "megalodon"</code> for legacy Megalodon per-read
 modification BED files. Megalodon files do not encode the modification
 type in a way commaKit can infer, so provide exactly one
@@ -154,11 +173,15 @@ columns and no header row. The parser uses the first 18 fields:</p>
 </li>
 <li>column 6: strand</li>
 <li>column 10: valid coverage</li>
-<li>column 11: percent modified</li>
+<li>column 11: percent modified (non-authoritative; beta is computed
+from count fields)</li>
 </ul>
 <p>The parser converts 0-based BED starts to 1-based genomic positions
-and converts percent modified values from 0 to 100 into beta values from
-0 to 1.</p>
+and computes beta from authoritative count fields
+(<code>Nmod / Nvalid_cov</code>) rather than the
+<code>fraction_modified</code> percent column. Zero-valid-coverage rows
+with missing or undefined <code>fraction_modified</code> are dropped by
+the coverage filter rather than failing import.</p>
 <p>Common symptoms and fixes:</p>
 <table class="table">
 <colgroup>
@@ -187,12 +210,19 @@ should map to <code>6mA</code>, <code>5mC</code>, or
 <code>4mC</code>.</td>
 </tr>
 <tr class="odd">
+<td>Missing required fields</td>
+<td>One or more rows are partial or malformed after parsing the first 18
+bedMethyl columns.</td>
+<td>Inspect the reported row, then regenerate or filter the pileup
+before import.</td>
+</tr>
+<tr class="even">
 <td>No sites remain</td>
 <td>Coverage or <code>mod_type</code> filtering removed every row.</td>
 <td>Lower <code>min_coverage</code>, check <code>mod_type</code>, and
 inspect the input file for nonzero coverage.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Duplicate methylation site rows</td>
 <td>The file has repeated rows for the same chromosome, position,
 strand, modification type, and motif.</td>
@@ -254,9 +284,12 @@ attach the sequence length to methylation sites. Use the whole
 <code>BSgenome</code> object or a named vector instead.</p>
 <p>Chromosome names must match the methylation files. If the BED file
 uses <code>chr1</code> but the genome vector is named
-<code>NC_000913</code>, rename one side before import. Extra chromosomes
-in the genome input are dropped with a message when they are not present
-in the methylation data.</p>
+<code>NC_000913</code>, rename one side before import. commaKit stops
+with a clear error when methylation data contain chromosomes that are
+absent from <code>genome</code>, because it cannot attach valid
+<code>Seqinfo</code> for those sites. Extra chromosomes in the genome
+input are dropped with a message when they are not present in the
+methylation data.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bed_chroms</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.table</a></span><span class="op">(</span><span class="st">"ctrl_1.modkit.bed"</span>, nrows <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">genome</span><span class="op">)</span></span>
