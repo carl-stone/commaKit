@@ -11,7 +11,8 @@ This is the first file coding agents should read at the repository root. Keep it
 5. Make the smallest coherent change that satisfies the request.
 6. Run targeted validation and record the exact command/result.
 7. Do not stage, revert, or overwrite unrelated user or agent changes.
-8. When a commit fully implements a GitHub issue, include a closing keyword (`Closes #N`, `Fixes #N`, or `Resolves #N`) in the commit message. A bare `(#N)` reference does not close the issue.
+8. All changes go through PRs. Never push or merge changes directly to `main` without a PR.
+9. When a commit fully implements a GitHub issue, include a closing keyword (`Closes #N`, `Fixes #N`, or `Resolves #N`) in the commit message. A bare `(#N)` reference does not close the issue.
 
 ## Project Snapshot
 

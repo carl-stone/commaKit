@@ -350,8 +350,8 @@ Examples:
 
 ## Current Repo Policy
 
-- `main` is allowed for now because Carl is the only human user and commaBot is the only stateful agent.
-- If Claire starts contributing regularly, switch to feature branches and PRs.
+- All changes go through PRs. Do not push or merge changes directly to `main` without a PR.
+- `main` is protected by convention (not yet by branch protection rules).
 - Bioconductor submission work should happen on a branch when the time comes.
 
 ---
