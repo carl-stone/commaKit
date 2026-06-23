@@ -11,6 +11,7 @@ This is the first file coding agents should read at the repository root. Keep it
 5. Make the smallest coherent change that satisfies the request.
 6. Run targeted validation and record the exact command/result.
 7. Do not stage, revert, or overwrite unrelated user or agent changes.
+8. When a commit fully implements a GitHub issue, include a closing keyword (`Closes #N`, `Fixes #N`, or `Resolves #N`) in the commit message. A bare `(#N)` reference does not close the issue.
 
 ## Project Snapshot
 
@@ -71,11 +72,12 @@ Rscript -e "devtools::test()"
 Rscript -e "devtools::test(filter = 'annotateSites')"
 Rscript -e "testthat::test_file('tests/testthat/test-annotateSites.R')"
 Rscript -e "devtools::document()"
+Rscript -e "styler::style_pkg()"
 Rscript -e "devtools::check(build_args = c('--no-build-vignettes'))"
 Rscript -e "devtools::check()"
 ```
 
-Use the narrowest command that proves the change. Escalate to `devtools::document()` for roxygen edits, and to check-level validation for package metadata, examples, vignettes, dependencies, or broad API changes.
+Use the narrowest command that proves the change. Run `styler::style_pkg()` before committing to keep code formatted (CI enforces the tidyverse style guide with 2-space indentation and 80-char line width). Escalate to `devtools::document()` for roxygen edits, and to check-level validation for package metadata, examples, vignettes, dependencies, or broad API changes.
 
 ## Knowledge Format
 
