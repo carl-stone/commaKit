@@ -75,14 +75,14 @@ plot_volcano <- function(results,
   }
   if (!is.null(delta_beta_threshold)) {
     if (!is.numeric(delta_beta_threshold) ||
-          length(delta_beta_threshold) != 1L ||
-          is.na(delta_beta_threshold) || delta_beta_threshold <= 0 ||
-          delta_beta_threshold >= 1) {
+      length(delta_beta_threshold) != 1L ||
+      is.na(delta_beta_threshold) || delta_beta_threshold <= 0 ||
+      delta_beta_threshold >= 1) {
       stop("'delta_beta_threshold' must be a single numeric value in (0, 1).")
     }
   }
   if (!is.numeric(padj_threshold) || length(padj_threshold) != 1L ||
-        is.na(padj_threshold) || padj_threshold <= 0 || padj_threshold >= 1) {
+    is.na(padj_threshold) || padj_threshold <= 0 || padj_threshold >= 1) {
     stop("'padj_threshold' must be a single numeric value in (0, 1).")
   }
   if (!is.logical(facet) || length(facet) != 1L || is.na(facet)) {

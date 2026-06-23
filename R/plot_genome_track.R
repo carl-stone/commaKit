@@ -73,14 +73,14 @@ plot_genome_track <- function(object,
   }
   genome_info <- genomeSizes(object)
   if (!is.null(genome_info) && length(genome_info) > 0L &&
-        !chromosome %in% names(genome_info)) {
+    !chromosome %in% names(genome_info)) {
     stop(
       "'chromosome' = '", chromosome, "' not found in genomeSizes(object). ",
       "Available chromosomes: ", paste(names(genome_info), collapse = ", "), "."
     )
   }
   if (!is.null(start) &&
-        (!is.numeric(start) || length(start) != 1L || start < 1)) {
+    (!is.numeric(start) || length(start) != 1L || start < 1)) {
     stop("'start' must be a single positive integer or NULL.")
   }
   if (!is.null(end) && (!is.numeric(end) || length(end) != 1L || end < 1)) {
