@@ -343,7 +343,7 @@ resultLayers(cd_dm)
 #> 1             6mA                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-17 00:10:53 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-23 17:18:52 ..           0.2.0
 res <- results(cd_dm)
 # Top sites by adjusted p-value
 head(res[
@@ -519,7 +519,7 @@ sessionInfo()
 #>  [15] XVector_0.50.0              labeling_0.4.3             
 #>  [17] Rsamtools_2.26.0            rmarkdown_2.31             
 #>  [19] UCSC.utils_1.6.1            ragg_1.5.2                 
-#>  [21] xfun_0.58                   cachem_1.1.0               
+#>  [21] xfun_0.59                   cachem_1.1.0               
 #>  [23] cigarillo_1.0.0             GenomeInfoDb_1.46.2        
 #>  [25] jsonlite_2.0.0              DelayedArray_0.36.1        
 #>  [27] BiocParallel_1.44.0         parallel_4.5.2             
@@ -528,7 +528,7 @@ sessionInfo()
 #>  [33] limma_3.66.0                rtracklayer_1.70.1         
 #>  [35] GenomicRanges_1.62.1        jquerylib_0.1.4            
 #>  [37] numDeriv_2016.8-1.1         Rcpp_1.1.1-1.1             
-#>  [39] Seqinfo_1.0.0               bookdown_0.46              
+#>  [39] Seqinfo_1.0.0               bookdown_0.47              
 #>  [41] SummarizedExperiment_1.40.0 knitr_1.51                 
 #>  [43] zoo_1.8-15                  R.utils_2.13.0             
 #>  [45] IRanges_2.44.0              Matrix_1.7-4               
@@ -537,7 +537,7 @@ sessionInfo()
 #>  [51] yaml_2.3.12                 codetools_0.2-20           
 #>  [53] curl_7.1.0                  lattice_0.22-7             
 #>  [55] tibble_3.3.1                plyr_1.8.9                 
-#>  [57] Biobase_2.70.0              withr_3.0.2                
+#>  [57] Biobase_2.70.0              withr_3.0.3                
 #>  [59] S7_0.2.2                    coda_0.19-4.1              
 #>  [61] evaluate_1.0.5              desc_1.4.3                 
 #>  [63] mclust_6.1.2                Biostrings_2.78.0          

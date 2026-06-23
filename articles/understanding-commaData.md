@@ -314,7 +314,7 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-17 00:11:40 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-23 17:19:33 ..           0.2.0
 ```
 
 [`results()`](https://carl-stone.github.io/commaKit/reference/results.md)
@@ -382,7 +382,7 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] SummarizedExperiment_1.40.0 gtable_0.3.6               
-#>  [3] xfun_0.58                   bslib_0.11.0               
+#>  [3] xfun_0.59                   bslib_0.11.0               
 #>  [5] ggplot2_4.0.3               htmlwidgets_1.6.4          
 #>  [7] Biobase_2.70.0              lattice_0.22-7             
 #>  [9] vctrs_0.7.3                 tools_4.5.2                
@@ -404,7 +404,7 @@ sessionInfo()
 #> [41] cachem_1.1.0                DelayedArray_0.36.1        
 #> [43] abind_1.4-8                 tidyselect_1.2.1           
 #> [45] digest_0.6.39               dplyr_1.2.1                
-#> [47] bookdown_0.46               fastmap_1.2.0              
+#> [47] bookdown_0.47               fastmap_1.2.0              
 #> [49] grid_4.5.2                  cli_3.6.6                  
 #> [51] SparseArray_1.10.10         magrittr_2.0.5             
 #> [53] S4Arrays_1.10.1             UCSC.utils_1.6.1           
