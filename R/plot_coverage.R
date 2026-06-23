@@ -53,8 +53,8 @@ plot_coverage <- function(object,
     stop("'object' must be a commaData object.")
   }
   if (!is.logical(per_sample) ||
-        length(per_sample) != 1L ||
-        is.na(per_sample)) {
+    length(per_sample) != 1L ||
+    is.na(per_sample)) {
     stop("'per_sample' must be TRUE or FALSE.")
   }
 
@@ -121,8 +121,8 @@ plot_coverage <- function(object,
     p <- ggplot2::ggplot(
       df,
       ggplot2::aes(
-        x     = .data[["depth"]],
-        fill  = .data[["sample_name"]],
+        x = .data[["depth"]],
+        fill = .data[["sample_name"]],
         color = .data[["sample_name"]]
       )
     ) +
@@ -141,8 +141,8 @@ plot_coverage <- function(object,
       labels = scales_comma_label()
     ) +
     ggplot2::labs(
-      x     = expression("Coverage depth (reads, " * log[10] * " scale)"),
-      y     = "Number of sites",
+      x = expression("Coverage depth (reads, " * log[10] * " scale)"),
+      y = "Number of sites",
       title = "Coverage Depth Distribution"
     ) +
     ggplot2::theme_bw()

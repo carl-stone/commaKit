@@ -185,7 +185,8 @@ NULL
     mod_type = raw$mod_type_mapped,
     motif = raw$motif,
     beta = ifelse(raw$Nvalid_cov > 0,
-      as.numeric(raw$Nmod) / as.numeric(raw$Nvalid_cov), 0),
+      as.numeric(raw$Nmod) / as.numeric(raw$Nvalid_cov), 0
+    ),
     coverage = raw$Nvalid_cov,
     mod_counts = as.integer(raw$Nmod),
     canonical_counts = as.integer(raw$Ncanonical),

@@ -1,0 +1,70 @@
+# Test timing report - runs each test file individually and tracks duration.
+# Uploads a CSV report as an artifact and prints slowest tests to the job summary.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+name: test-timing.yaml
+
+permissions: read-all
+
+jobs:
+  test-timing:
+    runs-on: ubuntu-latest
+    container: bioconductor/bioconductor_docker:RELEASE_3_22
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check R and Bioconductor versions
+        run: |
+          Rscript -e 'cat("R ", as.character(getRversion()), "\n", sep = "")'
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::sessioninfo
+          extra-packages: local::.
+          needs: check
+
+      - name: Run test timing report
+        run: |
+          Rscript dev/test-timing.R > test-timing-output.txt 2>&1
+          cat test-timing-output.txt
+        shell: bash
+
+      - name: Add timing summary to job summary
+        if: always()
+        run: |
+          if [ -f test-timing-report.csv ]; then
+            {
+              echo "## Test Timing Report"
+              echo ""
+              echo "See full CSV report in the artifacts section."
+              echo ""
+              echo "### Top 10 Slowest Test Files"
+              echo ""
+              echo "| File | Duration (s) |"
+              echo "|------|-------------|"
+              tail -n +2 test-timing-report.csv | sort -t, -k2 -rn | head -10 | \
+                while IFS=, read -r file dur; do
+                  echo "| $file | $dur |"
+                done
+              echo ""
+              total=$(awk -F, 'NR > 1 { sum += $2 } END { printf "%.2f", sum }' test-timing-report.csv)
+              echo "**Total test time:** ${total}s"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+        shell: bash
+
+      - name: Upload test timing report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-timing-report
+          path: |
+            test-timing-report.csv
+            test-timing-output.txt
+          retention-days: 30

@@ -18,7 +18,7 @@ NULL
   )
 
   if (is.null(row_names) || length(row_names) != n_selected ||
-        anyNA(row_names) || any(!nzchar(row_names))) {
+    anyNA(row_names) || any(!nzchar(row_names))) {
     stop(contract_msg, call. = FALSE)
   }
 
@@ -208,8 +208,8 @@ plot_heatmap <- function(results,
     ggplot2::scale_y_discrete(limits = site_keys) +
     ggplot2::scale_x_discrete(limits = sample_nms) +
     ggplot2::labs(
-      x     = NULL,
-      y     = paste0(
+      x = NULL,
+      y = paste0(
         "Top ", n_final, " differential sites\n",
         "(ordered by delta methylation)"
       ),

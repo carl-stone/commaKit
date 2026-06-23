@@ -54,8 +54,8 @@ plot_methylation_distribution <- function(object,
     stop("'object' must be a commaData object.")
   }
   if (!is.logical(per_sample) ||
-        length(per_sample) != 1L ||
-        is.na(per_sample)) {
+    length(per_sample) != 1L ||
+    is.na(per_sample)) {
     stop("'per_sample' must be TRUE or FALSE.")
   }
 
