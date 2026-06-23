@@ -175,6 +175,19 @@ Fixed typo
 
 Those may be acceptable for tiny changes, but most commits need the reason.
 
+When a commit fully implements a GitHub issue, include a closing keyword so
+GitHub auto-closes the issue when the commit reaches `main`:
+
+```text
+Fix malformed CIGAR handling in Dorado parser.
+
+Closes #231
+```
+
+Closing keywords: `Closes #N`, `Fixes #N`, `Resolves #N`. A bare `(#N)`
+reference does NOT close the issue. The PR template includes a "Closes"
+section as a reminder to state which issues the PR resolves.
+
 ---
 
 ### 6. Test before committing code changes
