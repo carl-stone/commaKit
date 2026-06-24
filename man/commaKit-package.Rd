@@ -60,7 +60,15 @@ methylation result runs.}
 
 \section{Package options}{
 
-None. All parameters are passed directly to individual functions.
+commaKit records structured breadcrumbs for parsing and construction
+events when contextual error tracking is enabled. Set
+\code{options(commaKit.error_tracking = TRUE)} or
+\code{COMMAKIT_ERROR_TRACKING=true} to capture error events locally. Set
+\code{options(commaKit.sentry.dsn = "...")} or \code{SENTRY_DSN} to send
+captured errors to Sentry when the suggested \pkg{curl} package is
+installed. Optional context can be supplied through
+\code{commaKit.error_tracking.user}, \code{commaKit.error_tracking.release},
+and \code{commaKit.error_tracking.environment}.
 }
 
 \references{

@@ -18,10 +18,6 @@
                              ...,
                              .time = Sys.time(),
                              .stream = .comma_log_connection()) {
-  if (!.comma_log_enabled()) {
-    return(invisible(FALSE))
-  }
-
   fields <- list(
     timestamp = format(
       as.POSIXct(.time, tz = "UTC"),
@@ -38,6 +34,18 @@
   fields <- c(fields, list(...))
   fields <- fields[!vapply(fields, is.null, logical(1))]
 
+  .comma_add_breadcrumb(
+    message = event,
+    category = if (is.null(component)) "commaKit" else component,
+    level = level,
+    data = fields,
+    .time = .time
+  )
+
+  if (!.comma_log_enabled()) {
+    return(invisible(FALSE))
+  }
+
   ok <- tryCatch(
     {
       cat(.comma_json_object(fields), "\n", sep = "", file = .stream)
@@ -46,6 +54,311 @@
     error = function(e) FALSE
   )
   invisible(ok)
+}
+
+.comma_error_tracking_enabled <- function() {
+  opt <- getOption("commaKit.error_tracking", FALSE)
+  env <- Sys.getenv("COMMAKIT_ERROR_TRACKING", unset = "")
+  enabled_values <- c("1", "true", "yes", "sentry", "structured")
+
+  isTRUE(opt) ||
+    tolower(as.character(opt)[1L]) %in% enabled_values ||
+    tolower(env) %in% enabled_values ||
+    nzchar(.comma_sentry_dsn())
+}
+
+.comma_sentry_dsn <- function() {
+  opt <- getOption("commaKit.sentry.dsn", "")
+  env <- Sys.getenv("COMMAKIT_SENTRY_DSN", unset = "")
+  sentry_env <- Sys.getenv("SENTRY_DSN", unset = "")
+  dsn <- c(opt, env, sentry_env)
+  dsn <- dsn[nzchar(dsn)]
+  if (length(dsn) == 0L) {
+    return("")
+  }
+  as.character(dsn[1L])
+}
+
+.comma_add_breadcrumb <- function(message,
+                                  category = "commaKit",
+                                  level = "info",
+                                  data = list(),
+                                  .time = Sys.time()) {
+  if (!.comma_error_tracking_enabled()) {
+    return(invisible(FALSE))
+  }
+
+  breadcrumb <- list(
+    timestamp = format(
+      as.POSIXct(.time, tz = "UTC"),
+      "%Y-%m-%dT%H:%M:%OS3Z",
+      tz = "UTC"
+    ),
+    type = "default",
+    category = category,
+    level = level,
+    message = message,
+    data = .comma_sanitize_context(data)
+  )
+  max_breadcrumbs <- getOption("commaKit.error_tracking.max_breadcrumbs", 50L)
+  max_breadcrumbs <- max(1L, as.integer(max_breadcrumbs)[1L])
+  breadcrumbs <- getOption("commaKit.error_tracking.breadcrumbs", list())
+  breadcrumbs <- c(breadcrumbs, list(breadcrumb))
+  if (length(breadcrumbs) > max_breadcrumbs) {
+    breadcrumbs <- breadcrumbs[
+      seq.int(length(breadcrumbs) - max_breadcrumbs + 1L, length(breadcrumbs))
+    ]
+  }
+  options(commaKit.error_tracking.breadcrumbs = breadcrumbs)
+  invisible(TRUE)
+}
+
+.comma_track_error <- function(condition,
+                               component,
+                               operation,
+                               ...,
+                               .time = Sys.time(),
+                               .calls = sys.calls()) {
+  context <- .comma_sanitize_context(list(...))
+  .comma_log_event(
+    "error_captured",
+    level = "error",
+    component = component,
+    operation = operation,
+    error_class = class(condition),
+    error_message = conditionMessage(condition),
+    context = context,
+    .time = .time
+  )
+
+  if (!.comma_error_tracking_enabled()) {
+    return(invisible(FALSE))
+  }
+
+  event <- .comma_error_event(
+    condition = condition,
+    component = component,
+    operation = operation,
+    context = context,
+    .time = .time,
+    .calls = .calls
+  )
+  ok <- .comma_send_error_event(event)
+  invisible(ok)
+}
+
+.comma_error_event <- function(condition,
+                               component,
+                               operation,
+                               context = list(),
+                               .time = Sys.time(),
+                               .calls = sys.calls()) {
+  list(
+    event_id = .comma_event_id(),
+    timestamp = format(
+      as.POSIXct(.time, tz = "UTC"),
+      "%Y-%m-%dT%H:%M:%OS3Z",
+      tz = "UTC"
+    ),
+    platform = "r",
+    logger = "commaKit",
+    level = "error",
+    release = .comma_release(),
+    environment = .comma_environment(),
+    transaction = operation,
+    tags = list(
+      package = "commaKit",
+      component = component,
+      operation = operation
+    ),
+    user = .comma_user_context(),
+    contexts = list(
+      runtime = list(name = "R", version = as.character(getRversion())),
+      trace = list(operation = operation)
+    ),
+    extra = context,
+    breadcrumbs = list(
+      values = getOption("commaKit.error_tracking.breadcrumbs", list())
+    ),
+    exception = list(
+      values = list(list(
+        type = class(condition)[1L],
+        value = conditionMessage(condition),
+        stacktrace = list(frames = .comma_stack_frames(.calls))
+      ))
+    )
+  )
+}
+
+.comma_send_error_event <- function(event) {
+  reporter <- getOption("commaKit.error_tracking.reporter", NULL)
+  if (is.function(reporter)) {
+    return(tryCatch(isTRUE(reporter(event)), error = function(e) FALSE))
+  }
+
+  dsn <- .comma_sentry_dsn()
+  if (!nzchar(dsn) || !requireNamespace("curl", quietly = TRUE)) {
+    return(FALSE)
+  }
+
+  endpoint <- .comma_sentry_envelope_url(dsn)
+  if (!nzchar(endpoint)) {
+    return(FALSE)
+  }
+
+  envelope <- paste(
+    .comma_json_object(list(
+      event_id = event$event_id,
+      dsn = dsn,
+      sent_at = event$timestamp
+    )),
+    .comma_json_object(list(type = "event")),
+    .comma_json_object(event),
+    sep = "\n"
+  )
+  tryCatch(
+    {
+      curl::curl_fetch_memory(
+        endpoint,
+        handle = curl::new_handle(
+          post = TRUE,
+          postfields = charToRaw(envelope),
+          httpheader = c("Content-Type" = "application/x-sentry-envelope")
+        )
+      )
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+}
+
+.comma_sentry_envelope_url <- function(dsn) {
+  parsed <- utils::URLdecode(dsn)
+  match <- regexec(
+    "^([^:]+)://([^@]+)@([^/]+)(/.*)?/([^/]+)$",
+    parsed
+  )
+  parts <- regmatches(parsed, match)[[1L]]
+  if (length(parts) != 6L) {
+    return("")
+  }
+  protocol <- parts[2L]
+  host <- parts[4L]
+  path <- parts[5L]
+  project_id <- parts[6L]
+  if (!nzchar(path)) {
+    path <- ""
+  }
+  paste0(protocol, "://", host, path, "/api/", project_id, "/envelope/")
+}
+
+.comma_stack_frames <- function(calls) {
+  if (length(calls) == 0L) {
+    return(list())
+  }
+  calls <- tail(calls, 40L)
+  frames <- lapply(calls, function(call) {
+    frame <- list(
+      "function" = .comma_call_function(call),
+      context_line = paste(deparse(call), collapse = " ")
+    )
+    srcref <- attr(call, "srcref", exact = TRUE)
+    if (!is.null(srcref)) {
+      srcfile <- attr(srcref, "srcfile", exact = TRUE)
+      frame$filename <- if (!is.null(srcfile)) srcfile$filename else NULL
+      frame$abs_path <- frame$filename
+      frame$lineno <- as.integer(srcref[1L])
+      frame$colno <- as.integer(srcref[5L])
+    }
+    frame[!vapply(frame, is.null, logical(1))]
+  })
+  rev(frames)
+}
+
+.comma_call_function <- function(call) {
+  if (!is.call(call) || length(call) == 0L) {
+    return("<unknown>")
+  }
+  fun <- call[[1L]]
+  paste(deparse(fun), collapse = "::")
+}
+
+.comma_user_context <- function() {
+  user <- getOption("commaKit.error_tracking.user", NULL)
+  if (is.null(user)) {
+    user <- list(
+      id = Sys.getenv("COMMAKIT_USER_ID", unset = ""),
+      email = Sys.getenv("COMMAKIT_USER_EMAIL", unset = ""),
+      username = Sys.getenv("COMMAKIT_USER_NAME", unset = "")
+    )
+  }
+  if (!is.list(user)) {
+    user <- list(id = as.character(user)[1L])
+  }
+  user <- .comma_sanitize_context(user)
+  present <- vapply(
+    user,
+    function(value) {
+      length(value) > 0L && nzchar(as.character(value)[1L])
+    },
+    logical(1)
+  )
+  user[present]
+}
+
+.comma_environment <- function() {
+  env <- getOption(
+    "commaKit.error_tracking.environment",
+    Sys.getenv("COMMAKIT_ENVIRONMENT", unset = "")
+  )
+  if (!nzchar(env)) {
+    env <- Sys.getenv("SENTRY_ENVIRONMENT", unset = "production")
+  }
+  as.character(env)[1L]
+}
+
+.comma_release <- function() {
+  release <- getOption(
+    "commaKit.error_tracking.release",
+    Sys.getenv("SENTRY_RELEASE", unset = "")
+  )
+  if (nzchar(release)) {
+    return(as.character(release)[1L])
+  }
+  version <- tryCatch(
+    as.character(utils::packageVersion("commaKit")),
+    error = function(e) "unknown"
+  )
+  paste0("commaKit@", version)
+}
+
+.comma_event_id <- function() {
+  paste0(
+    sample(c(0:9, letters[1:6]), 32L, replace = TRUE),
+    collapse = ""
+  )
+}
+
+.comma_sanitize_context <- function(context) {
+  if (!is.list(context)) {
+    return(as.character(context)[1L])
+  }
+  cleaned <- lapply(context, function(value) {
+    if (is.null(value) || length(value) == 0L || all(is.na(value))) {
+      return(NULL)
+    }
+    if (is.list(value)) {
+      return(.comma_sanitize_context(value))
+    }
+    if (inherits(value, c("POSIXct", "POSIXlt", "Date"))) {
+      return(value[1L])
+    }
+    if (length(value) > 20L) {
+      value <- c(value[seq_len(20L)], "...")
+    }
+    as.character(value)
+  })
+  cleaned[!vapply(cleaned, is.null, logical(1))]
 }
 
 .comma_json_object <- function(fields) {
