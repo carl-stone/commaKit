@@ -29,6 +29,7 @@ renv::restore(prompt = FALSE)
 renv::load(project = getwd())
 
 dev_packages <- c(
+  "BiocCheck",
   "devtools",
   "httpgd",
   "languageserver",
