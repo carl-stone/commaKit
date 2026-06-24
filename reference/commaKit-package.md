@@ -77,7 +77,20 @@ CoMMA.
 
 ## Package options
 
-None. All parameters are passed directly to individual functions.
+commaKit records structured breadcrumbs for parsing and construction
+events when contextual error tracking is enabled. Set
+`options(commaKit.error_tracking = TRUE)` or
+`COMMAKIT_ERROR_TRACKING=true` to capture recent error events in
+`options("commaKit.error_tracking.events")`. Set
+`options(commaKit.error_tracking.reporter = function(event) ...)` to
+receive event payloads in process, or set
+`options(commaKit.sentry.dsn = "...")` / `SENTRY_DSN` to send captured
+errors to Sentry when the suggested curl package is installed. Optional
+context can be supplied through `commaKit.error_tracking.user`,
+`commaKit.error_tracking.release`,
+`commaKit.error_tracking.environment`, and the timeout options
+`commaKit.error_tracking.timeout` and
+`commaKit.error_tracking.connect_timeout`.
 
 ## References
 

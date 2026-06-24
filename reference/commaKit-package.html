@@ -115,7 +115,20 @@ methylation result runs.</p></dd>
     <h2 id="package-options">Package options<a class="anchor" aria-label="anchor" href="#package-options"></a></h2>
 
 
-<p>None. All parameters are passed directly to individual functions.</p>
+<p>commaKit records structured breadcrumbs for parsing and construction
+events when contextual error tracking is enabled. Set
+<code>options(commaKit.error_tracking = TRUE)</code> or
+<code>COMMAKIT_ERROR_TRACKING=true</code> to capture recent error events in
+<code>options("commaKit.error_tracking.events")</code>. Set
+<code>options(commaKit.error_tracking.reporter = function(event) ...)</code> to
+receive event payloads in process, or set
+<code>options(commaKit.sentry.dsn = "...")</code> / <code>SENTRY_DSN</code> to send
+captured errors to Sentry when the suggested <span class="pkg">curl</span> package is
+installed. Optional context can be supplied through
+<code>commaKit.error_tracking.user</code>, <code>commaKit.error_tracking.release</code>,
+<code>commaKit.error_tracking.environment</code>, and the timeout options
+<code>commaKit.error_tracking.timeout</code> and
+<code>commaKit.error_tracking.connect_timeout</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
