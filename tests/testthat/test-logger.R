@@ -194,3 +194,200 @@ test_that("structured logger failures do not interrupt callers", {
   expect_false(logged)
   expect_equal(out, character())
 })
+
+test_that("contextual error tracking captures breadcrumbs and user context", {
+  captured <- NULL
+  old <- options(
+    commaKit.error_tracking = TRUE,
+    commaKit.error_tracking.breadcrumbs = list(),
+    commaKit.error_tracking.user = list(
+      id = "agent-1",
+      email = "agent@example.test"
+    ),
+    commaKit.error_tracking.release = "commaKit@test",
+    commaKit.error_tracking.environment = "test",
+    commaKit.error_tracking.reporter = function(event) {
+      captured <<- event
+      TRUE
+    },
+    commaKit.sentry.dsn = ""
+  )
+  on.exit(options(old))
+
+  commaKit:::.comma_log_event(
+    "sample_parse_started",
+    component = "commaData",
+    caller = "modkit",
+    sample_name = "s1",
+    .time = as.POSIXct("2026-01-02 03:04:05", tz = "UTC")
+  )
+  tracked <- commaKit:::.comma_track_error(
+    simpleError("synthetic failure"),
+    component = "commaData",
+    operation = "sample_parse",
+    caller = "modkit",
+    sample_name = "s1",
+    .time = as.POSIXct("2026-01-02 03:04:06", tz = "UTC")
+  )
+
+  expect_true(tracked)
+  expect_type(captured, "list")
+  expect_equal(captured$logger, "commaKit")
+  expect_equal(captured$release, "commaKit@test")
+  expect_equal(captured$environment, "test")
+  expect_equal(captured$user$id, "agent-1")
+  expect_equal(captured$tags$component, "commaData")
+  expect_equal(captured$tags$operation, "sample_parse")
+  expect_equal(captured$extra$caller, "modkit")
+  expect_equal(captured$extra$sample_name, "s1")
+  expect_equal(
+    captured$exception$values[[1L]]$value,
+    "synthetic failure"
+  )
+  expect_true(length(captured$exception$values[[1L]]$stacktrace$frames) > 0L)
+  messages <- vapply(
+    captured$breadcrumbs$values,
+    `[[`,
+    character(1),
+    "message"
+  )
+  expect_true("sample_parse_started" %in% messages)
+})
+
+test_that("commaData parse errors are reported with sample context", {
+  captured <- NULL
+  missing_file <- tempfile(fileext = ".bed")
+  old <- options(
+    commaKit.error_tracking = TRUE,
+    commaKit.error_tracking.breadcrumbs = list(),
+    commaKit.error_tracking.events = list(),
+    commaKit.error_tracking.reporter = function(event) {
+      captured <<- event
+      TRUE
+    },
+    commaKit.sentry.dsn = ""
+  )
+  on.exit(options(old))
+
+  expect_error(
+    suppressMessages(commaData(
+      files = c(s1 = missing_file),
+      colData = data.frame(sample_name = "s1", replicate = 1L),
+      genome = c(chr_sim = 1000L),
+      caller = "modkit",
+      min_coverage = 1L
+    )),
+    "file not found|not found"
+  )
+
+  expect_type(captured, "list")
+  expect_equal(captured$transaction, "sample_parse")
+  expect_equal(captured$extra$caller, "modkit")
+  expect_equal(captured$extra$sample_name, "s1")
+  expect_equal(captured$extra$file, missing_file)
+  frame_context <- vapply(
+    captured$exception$values[[1L]]$stacktrace$frames,
+    `[[`,
+    character(1),
+    "context_line"
+  )
+  expect_true(any(grepl("parser_fn", frame_context, fixed = TRUE)))
+  messages <- vapply(
+    captured$breadcrumbs$values,
+    `[[`,
+    character(1),
+    "message"
+  )
+  expect_true("commaData_construct_started" %in% messages)
+  expect_true("sample_parse_started" %in% messages)
+})
+
+test_that("local error tracking persists events without reporter or DSN", {
+  old <- options(
+    commaKit.error_tracking = TRUE,
+    commaKit.error_tracking.events = list(),
+    commaKit.error_tracking.max_events = 1L,
+    commaKit.error_tracking.reporter = NULL,
+    commaKit.sentry.dsn = ""
+  )
+  on.exit(options(old))
+
+  tracked <- commaKit:::.comma_track_error(
+    simpleError("local capture"),
+    component = "logger",
+    operation = "unit_test",
+    sample_name = "s1",
+    .time = as.POSIXct("2026-01-02 03:04:06", tz = "UTC")
+  )
+
+  events <- getOption("commaKit.error_tracking.events")
+  expect_true(tracked)
+  expect_length(events, 1L)
+  expect_equal(events[[1L]]$exception$values[[1L]]$value, "local capture")
+  expect_equal(events[[1L]]$extra$sample_name, "s1")
+})
+
+test_that("error tracking options tolerate missing and malformed values", {
+  old <- options(
+    commaKit.error_tracking = TRUE,
+    commaKit.error_tracking.breadcrumbs = list(),
+    commaKit.error_tracking.max_breadcrumbs = "not-a-number",
+    commaKit.error_tracking.events = "not-a-list",
+    commaKit.sentry.dsn = NA_character_,
+    commaKit.error_tracking.release = NA_character_,
+    commaKit.error_tracking.environment = NA_character_,
+    commaKit.error_tracking.timeout = "not-a-number",
+    commaKit.error_tracking.connect_timeout = NA_real_
+  )
+  on.exit(options(old))
+
+  expect_equal(commaKit:::.comma_sentry_dsn(), "")
+  expect_true(commaKit:::.comma_add_breadcrumb("option_check"))
+  expect_length(getOption("commaKit.error_tracking.breadcrumbs"), 1L)
+  expect_equal(commaKit:::.comma_error_tracking_timeout(), 2)
+  expect_equal(commaKit:::.comma_error_tracking_connect_timeout(), 1)
+  expect_equal(commaKit:::.comma_environment(), "production")
+  expect_match(commaKit:::.comma_release(), "^commaKit@")
+  expect_true(commaKit:::.comma_store_error_event(list(event_id = "1")))
+  expect_type(getOption("commaKit.error_tracking.events"), "list")
+})
+
+test_that("event IDs do not advance the user's RNG state", {
+  old <- options(commaKit.error_tracking.event_counter = 0L)
+  on.exit(options(old))
+
+  set.seed(42)
+  expected <- runif(3)
+  set.seed(42)
+  id <- commaKit:::.comma_event_id()
+  actual <- runif(3)
+
+  expect_match(id, "^[0-9a-f]{32}$")
+  expect_equal(actual, expected)
+})
+
+test_that("stack frames preserve oldest-to-newest call order", {
+  frames <- commaKit:::.comma_stack_frames(list(
+    quote(commaData()),
+    quote(.parseModkit(file = "missing.bed")),
+    quote(.comma_track_error(e))
+  ))
+
+  functions <- vapply(frames, `[[`, character(1), "function")
+  expect_equal(functions, c("commaData", ".parseModkit", ".comma_track_error"))
+})
+
+test_that("Sentry DSN is mapped to the envelope endpoint", {
+  endpoint <- commaKit:::.comma_sentry_envelope_url(
+    "https://public@example.sentry.io/12345"
+  )
+  path_endpoint <- commaKit:::.comma_sentry_envelope_url(
+    "https://public@example.sentry.io/sentry/12345"
+  )
+
+  expect_equal(endpoint, "https://example.sentry.io/api/12345/envelope/")
+  expect_equal(
+    path_endpoint,
+    "https://example.sentry.io/sentry/api/12345/envelope/"
+  )
+})
