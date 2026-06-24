@@ -6,6 +6,7 @@
 ^\.agents$
 ^\.R-version$
 ^\.lintr$
+^\.pre-commit-config\.yaml$
 ^\.vscode$
 ^LICENSE\.md$
 ^README\.Rmd$
