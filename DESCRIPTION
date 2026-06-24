@@ -29,6 +29,7 @@ Suggests:
     KEGGREST,
     DelayedArray,
     limma,
+    lintr,
     methylKit,
     org.EcK12.eg.db,
     patchwork,
