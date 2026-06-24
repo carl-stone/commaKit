@@ -26,6 +26,7 @@ Suggests:
     Biostrings,
     BiocStyle,
     clusterProfiler,
+    curl,
     KEGGREST,
     DelayedArray,
     limma,

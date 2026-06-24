@@ -226,11 +226,26 @@ commaData <- function(files,
       file = unname(files[sn])
     )
     message("Parsing ", caller, " file for sample '", sn, "'...")
-    parsed_list[[sn]] <- parser_fn(
-      file = files[sn],
-      sample_name = sn,
-      mod_type = mod_type,
-      min_coverage = 1L # apply min_coverage AFTER merging (see below)
+    parsed_list[[sn]] <- withCallingHandlers(
+      parser_fn(
+        file = files[sn],
+        sample_name = sn,
+        mod_type = mod_type,
+        min_coverage = 1L # apply min_coverage AFTER merging (see below)
+      ),
+      error = function(e) {
+        calls <- sys.calls()
+        .comma_track_error(
+          e,
+          component = "commaData",
+          operation = "sample_parse",
+          caller = caller,
+          sample_name = sn,
+          file = unname(files[sn]),
+          min_coverage = 1L,
+          .calls = calls
+        )
+      }
     )
     .comma_log_event(
       "sample_parse_finished",
