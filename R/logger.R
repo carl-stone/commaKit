@@ -9,7 +9,7 @@
 }
 
 .comma_log_connection <- function() {
-  getOption("commaKit.log.connection", stderr())
+  getOption("commaKit.log.connection", stdout())
 }
 
 .comma_log_event <- function(event,

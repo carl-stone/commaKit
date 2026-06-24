@@ -85,6 +85,33 @@ test_that("structured logger emits machine-readable JSON fields", {
   expect_match(out, '"ok":true', fixed = TRUE)
 })
 
+test_that("structured logger default stream is separate from messages", {
+  old <- options(commaKit.log = TRUE)
+  options(commaKit.log.connection = NULL)
+  on.exit(options(old))
+
+  messages <- NULL
+  logged <- FALSE
+  output <- capture.output(
+    messages <- capture.output(
+      {
+        logged <- commaKit:::.comma_log_event(
+          "default_stream",
+          component = "test",
+          .time = as.POSIXct("2026-01-02 03:04:05", tz = "UTC")
+        )
+        message("human-readable progress")
+      },
+      type = "message"
+    ),
+    type = "output"
+  )
+
+  expect_true(logged)
+  expect_match(output, '"event":"default_stream"', fixed = TRUE)
+  expect_equal(messages, "human-readable progress")
+})
+
 test_that("commaData constructor records structured lifecycle events", {
   out <- character()
   con <- textConnection("out", "w", local = TRUE)
