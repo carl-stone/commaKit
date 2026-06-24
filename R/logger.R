@@ -71,8 +71,8 @@
   opt <- getOption("commaKit.sentry.dsn", "")
   env <- Sys.getenv("COMMAKIT_SENTRY_DSN", unset = "")
   sentry_env <- Sys.getenv("SENTRY_DSN", unset = "")
-  dsn <- c(opt, env, sentry_env)
-  dsn <- dsn[nzchar(dsn)]
+  dsn <- as.character(c(opt, env, sentry_env))
+  dsn <- dsn[!is.na(dsn) & nzchar(dsn)]
   if (length(dsn) == 0L) {
     return("")
   }
@@ -101,7 +101,10 @@
     data = .comma_sanitize_context(data)
   )
   max_breadcrumbs <- getOption("commaKit.error_tracking.max_breadcrumbs", 50L)
-  max_breadcrumbs <- max(1L, as.integer(max_breadcrumbs)[1L])
+  max_breadcrumbs <- suppressWarnings(as.integer(max_breadcrumbs)[1L])
+  if (is.na(max_breadcrumbs) || max_breadcrumbs < 1L) {
+    max_breadcrumbs <- 50L
+  }
   breadcrumbs <- getOption("commaKit.error_tracking.breadcrumbs", list())
   breadcrumbs <- c(breadcrumbs, list(breadcrumb))
   if (length(breadcrumbs) > max_breadcrumbs) {
@@ -191,6 +194,7 @@
 }
 
 .comma_send_error_event <- function(event) {
+  stored <- .comma_store_error_event(event)
   reporter <- getOption("commaKit.error_tracking.reporter", NULL)
   if (is.function(reporter)) {
     return(tryCatch(isTRUE(reporter(event)), error = function(e) FALSE))
@@ -198,12 +202,12 @@
 
   dsn <- .comma_sentry_dsn()
   if (!nzchar(dsn) || !requireNamespace("curl", quietly = TRUE)) {
-    return(FALSE)
+    return(stored)
   }
 
   endpoint <- .comma_sentry_envelope_url(dsn)
   if (!nzchar(endpoint)) {
-    return(FALSE)
+    return(stored)
   }
 
   envelope <- paste(
@@ -218,18 +222,62 @@
   )
   tryCatch(
     {
-      curl::curl_fetch_memory(
+      response <- curl::curl_fetch_memory(
         endpoint,
         handle = curl::new_handle(
           post = TRUE,
           postfields = charToRaw(envelope),
+          timeout = .comma_error_tracking_timeout(),
+          connecttimeout = .comma_error_tracking_connect_timeout(),
           httpheader = c("Content-Type" = "application/x-sentry-envelope")
         )
       )
-      TRUE
+      response$status_code >= 200L && response$status_code < 300L
     },
     error = function(e) FALSE
   )
+}
+
+.comma_store_error_event <- function(event) {
+  max_events <- getOption("commaKit.error_tracking.max_events", 25L)
+  max_events <- suppressWarnings(as.integer(max_events)[1L])
+  if (is.na(max_events) || max_events < 1L) {
+    max_events <- 25L
+  }
+  events <- getOption("commaKit.error_tracking.events", list())
+  if (!is.list(events)) {
+    events <- list()
+  }
+  events <- c(events, list(event))
+  if (length(events) > max_events) {
+    events <- events[seq.int(length(events) - max_events + 1L, length(events))]
+  }
+  options(commaKit.error_tracking.events = events)
+  invisible(TRUE)
+}
+
+.comma_error_tracking_timeout <- function() {
+  timeout <- getOption(
+    "commaKit.error_tracking.timeout",
+    Sys.getenv("COMMAKIT_ERROR_TRACKING_TIMEOUT", unset = "2")
+  )
+  timeout <- suppressWarnings(as.numeric(timeout)[1L])
+  if (is.na(timeout) || timeout <= 0) {
+    return(2)
+  }
+  timeout
+}
+
+.comma_error_tracking_connect_timeout <- function() {
+  timeout <- getOption(
+    "commaKit.error_tracking.connect_timeout",
+    Sys.getenv("COMMAKIT_ERROR_TRACKING_CONNECT_TIMEOUT", unset = "1")
+  )
+  timeout <- suppressWarnings(as.numeric(timeout)[1L])
+  if (is.na(timeout) || timeout <= 0) {
+    return(1)
+  }
+  timeout
 }
 
 .comma_sentry_envelope_url <- function(dsn) {
@@ -246,7 +294,7 @@
   host <- parts[4L]
   path <- parts[5L]
   project_id <- parts[6L]
-  if (!nzchar(path)) {
+  if (is.na(path) || !nzchar(path)) {
     path <- ""
   }
   paste0(protocol, "://", host, path, "/api/", project_id, "/envelope/")
@@ -311,10 +359,15 @@
     "commaKit.error_tracking.environment",
     Sys.getenv("COMMAKIT_ENVIRONMENT", unset = "")
   )
-  if (!nzchar(env)) {
+  env <- as.character(env)[1L]
+  if (is.na(env) || !nzchar(env)) {
     env <- Sys.getenv("SENTRY_ENVIRONMENT", unset = "production")
   }
-  as.character(env)[1L]
+  env <- as.character(env)[1L]
+  if (is.na(env) || !nzchar(env)) {
+    return("production")
+  }
+  env
 }
 
 .comma_release <- function() {
@@ -322,8 +375,9 @@
     "commaKit.error_tracking.release",
     Sys.getenv("SENTRY_RELEASE", unset = "")
   )
-  if (nzchar(release)) {
-    return(as.character(release)[1L])
+  release <- as.character(release)[1L]
+  if (!is.na(release) && nzchar(release)) {
+    return(release)
   }
   version <- tryCatch(
     as.character(utils::packageVersion("commaKit")),
@@ -333,10 +387,40 @@
 }
 
 .comma_event_id <- function() {
-  paste0(
-    sample(c(0:9, letters[1:6]), 32L, replace = TRUE),
-    collapse = ""
+  counter <- getOption("commaKit.error_tracking.event_counter", 0L)
+  counter <- suppressWarnings(as.integer(counter)[1L])
+  if (is.na(counter)) {
+    counter <- 0L
+  }
+  counter <- counter + 1L
+  options(commaKit.error_tracking.event_counter = counter)
+
+  seed <- paste(
+    format(Sys.time(), "%Y-%m-%dT%H:%M:%OS6Z", tz = "UTC"),
+    Sys.getpid(),
+    counter,
+    sep = ":"
   )
+  ints <- utf8ToInt(seed)
+  hashes <- vapply(
+    0:3,
+    function(offset) {
+      sum((ints + offset) * seq_along(ints)) %% 4294967296
+    },
+    numeric(1)
+  )
+  paste(vapply(hashes, .comma_hex8, character(1)), collapse = "")
+}
+
+.comma_hex8 <- function(value) {
+  digits <- strsplit("0123456789abcdef", "", fixed = TRUE)[[1L]]
+  value <- floor(as.numeric(value))
+  chars <- character(8L)
+  for (i in 8:1) {
+    chars[[i]] <- digits[[value %% 16L + 1L]]
+    value <- floor(value / 16L)
+  }
+  paste(chars, collapse = "")
 }
 
 .comma_sanitize_context <- function(context) {

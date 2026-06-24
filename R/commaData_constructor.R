@@ -226,7 +226,7 @@ commaData <- function(files,
       file = unname(files[sn])
     )
     message("Parsing ", caller, " file for sample '", sn, "'...")
-    parsed_list[[sn]] <- tryCatch(
+    parsed_list[[sn]] <- withCallingHandlers(
       parser_fn(
         file = files[sn],
         sample_name = sn,
@@ -234,6 +234,7 @@ commaData <- function(files,
         min_coverage = 1L # apply min_coverage AFTER merging (see below)
       ),
       error = function(e) {
+        calls <- sys.calls()
         .comma_track_error(
           e,
           component = "commaData",
@@ -241,9 +242,9 @@ commaData <- function(files,
           caller = caller,
           sample_name = sn,
           file = unname(files[sn]),
-          min_coverage = 1L
+          min_coverage = 1L,
+          .calls = calls
         )
-        stop(e)
       }
     )
     .comma_log_event(
