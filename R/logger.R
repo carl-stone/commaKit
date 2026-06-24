@@ -320,7 +320,7 @@
     }
     frame[!vapply(frame, is.null, logical(1))]
   })
-  rev(frames)
+  frames
 }
 
 .comma_call_function <- function(call) {

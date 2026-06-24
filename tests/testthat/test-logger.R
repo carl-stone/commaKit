@@ -366,6 +366,17 @@ test_that("event IDs do not advance the user's RNG state", {
   expect_equal(actual, expected)
 })
 
+test_that("stack frames preserve oldest-to-newest call order", {
+  frames <- commaKit:::.comma_stack_frames(list(
+    quote(commaData()),
+    quote(.parseModkit(file = "missing.bed")),
+    quote(.comma_track_error(e))
+  ))
+
+  functions <- vapply(frames, `[[`, character(1), "function")
+  expect_equal(functions, c("commaData", ".parseModkit", ".comma_track_error"))
+})
+
 test_that("Sentry DSN is mapped to the envelope endpoint", {
   endpoint <- commaKit:::.comma_sentry_envelope_url(
     "https://public@example.sentry.io/12345"
