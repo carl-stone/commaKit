@@ -207,16 +207,37 @@ commaData <- function(files,
 
   # ── Parse each sample ───────────────────────────────────────────────────
   sample_names <- colData$sample_name
+  .comma_log_event(
+    "commaData_construct_started",
+    component = "commaData",
+    caller = caller,
+    sample_count = length(sample_names),
+    min_coverage = min_coverage
+  )
   parsed_list <- vector("list", length(sample_names))
   names(parsed_list) <- sample_names
 
   for (sn in sample_names) {
+    .comma_log_event(
+      "sample_parse_started",
+      component = "commaData",
+      caller = caller,
+      sample_name = sn,
+      file = unname(files[sn])
+    )
     message("Parsing ", caller, " file for sample '", sn, "'...")
     parsed_list[[sn]] <- parser_fn(
       file = files[sn],
       sample_name = sn,
       mod_type = mod_type,
       min_coverage = 1L # apply min_coverage AFTER merging (see below)
+    )
+    .comma_log_event(
+      "sample_parse_finished",
+      component = "commaData",
+      caller = caller,
+      sample_name = sn,
+      site_count = nrow(parsed_list[[sn]])
     )
   }
 
@@ -278,6 +299,12 @@ commaData <- function(files,
       dropped <- all_sites[drop_mask, , drop = FALSE]
       for (mt in unique(dropped$mod_type)) {
         n_drop <- sum(dropped$mod_type == mt)
+        .comma_log_event(
+          "expected_mod_contexts_sites_dropped",
+          component = "commaData",
+          mod_type = mt,
+          dropped_site_count = n_drop
+        )
         message(
           "expected_mod_contexts: dropping ", n_drop,
           " site(s) with mod_type='", mt,
@@ -557,5 +584,15 @@ commaData <- function(files,
   )
 
   validObject(obj)
+  .comma_log_event(
+    "commaData_construct_finished",
+    component = "commaData",
+    caller = caller,
+    sample_count = n_samples,
+    site_count = n_sites,
+    assay_count = length(SummarizedExperiment::assayNames(obj)),
+    has_annotation = length(ann_gr) > 0L,
+    motif_site_count = length(motif_gr)
+  )
   obj
 }

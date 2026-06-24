@@ -43,6 +43,7 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 Collate:
     'commaKit-package.R'
+    'logger.R'
     'commaData_class.R'
     'assay_layers.R'
     'result_layers.R'
