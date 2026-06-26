@@ -92,6 +92,7 @@ Imports:
     SummarizedExperiment,
     zoo,
     ggplot2,
+    grDevices,
     methods,
     stats,
     utils

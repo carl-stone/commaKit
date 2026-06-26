@@ -29,7 +29,7 @@ renv::restore(prompt = FALSE)
 renv::load(project = getwd())
 
 dev_packages <- c(
-  "BiocCheck",
+  "bioc::BiocCheck",
   "devtools",
   "httpgd",
   "languageserver",
@@ -38,11 +38,12 @@ dev_packages <- c(
   "roxygen2",
   "styler"
 )
+dev_package_names <- sub("^bioc::", "", dev_packages)
 missing_dev_packages <- dev_packages[
-  !vapply(dev_packages, requireNamespace, logical(1), quietly = TRUE)
+  !vapply(dev_package_names, requireNamespace, logical(1), quietly = TRUE)
 ]
 if (length(missing_dev_packages) > 0) {
-  renv::install(missing_dev_packages, prompt = FALSE)
+  renv::install(missing_dev_packages, prompt = FALSE, lock = FALSE)
 }
 
 cat("Devcontainer R environment is ready.\n")
