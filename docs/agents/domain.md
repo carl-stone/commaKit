@@ -11,7 +11,7 @@ commaKit uses the single-context domain-doc layout:
 
 ## Before exploring, read these
 
-- `CONTEXT.md` at the repo root.
+- `CONTEXT.md` at the repo root, if it exists.
 - ADRs under `docs/adr/` that touch the area you are about to work in, if they exist.
 - The existing commaKit knowledge bundle under `dev/knowledge/`, especially `dev/knowledge/index.md`, when the task concerns package architecture, project status, tests, durable decisions, or agent operating model.
 
