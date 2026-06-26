@@ -228,7 +228,7 @@
           post = TRUE,
           postfields = charToRaw(envelope),
           timeout = .comma_error_tracking_timeout(),
-          connecttimeout = .comma_error_tracking_connect_timeout(),
+          connecttimeout = .comma_connect_timeout(),
           httpheader = c("Content-Type" = "application/x-sentry-envelope")
         )
       )
@@ -268,7 +268,7 @@
   timeout
 }
 
-.comma_error_tracking_connect_timeout <- function() {
+.comma_connect_timeout <- function() {
   timeout <- getOption(
     "commaKit.error_tracking.connect_timeout",
     Sys.getenv("COMMAKIT_ERROR_TRACKING_CONNECT_TIMEOUT", unset = "1")
@@ -427,7 +427,11 @@
   if (!is.list(context)) {
     return(as.character(context)[1L])
   }
-  cleaned <- lapply(context, function(value) {
+  field_names <- names(context)
+  cleaned <- Map(function(value, name) {
+    if (.comma_sensitive_field(name)) {
+      return("[REDACTED]")
+    }
     if (is.null(value) || length(value) == 0L || all(is.na(value))) {
       return(NULL)
     }
@@ -441,14 +445,44 @@
       value <- c(value[seq_len(20L)], "...")
     }
     as.character(value)
-  })
+  }, context, field_names %||% rep("", length(context)))
   cleaned[!vapply(cleaned, is.null, logical(1))]
 }
 
+.comma_sensitive_field <- function(name) {
+  if (is.null(name) || is.na(name) || !nzchar(name)) {
+    return(FALSE)
+  }
+  pattern <- paste(
+    "password",
+    "passwd",
+    "secret",
+    "token",
+    "api[_-]?key",
+    "access[_-]?key",
+    "private[_-]?key",
+    "dsn",
+    "authorization",
+    "cookie",
+    "email",
+    sep = "|"
+  )
+  grepl(
+    pattern,
+    name,
+    ignore.case = TRUE
+  )
+}
+
+`%||%` <- function(lhs, rhs) {
+  if (is.null(lhs)) rhs else lhs
+}
+
 .comma_json_object <- function(fields) {
-  if (is.null(names(fields)) ||
+  invalid_names <- is.null(names(fields)) ||
     any(is.na(names(fields))) ||
-    any(names(fields) == "")) {
+    any(names(fields) == "")
+  if (invalid_names) {
     stop("Structured log fields must be named.", call. = FALSE)
   }
 

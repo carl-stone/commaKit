@@ -345,11 +345,31 @@ test_that("error tracking options tolerate missing and malformed values", {
   expect_true(commaKit:::.comma_add_breadcrumb("option_check"))
   expect_length(getOption("commaKit.error_tracking.breadcrumbs"), 1L)
   expect_equal(commaKit:::.comma_error_tracking_timeout(), 2)
-  expect_equal(commaKit:::.comma_error_tracking_connect_timeout(), 1)
+  expect_equal(commaKit:::.comma_connect_timeout(), 1)
   expect_equal(commaKit:::.comma_environment(), "production")
   expect_match(commaKit:::.comma_release(), "^commaKit@")
   expect_true(commaKit:::.comma_store_error_event(list(event_id = "1")))
   expect_type(getOption("commaKit.error_tracking.events"), "list")
+})
+
+test_that("sensitive logging context is redacted recursively", {
+  context <- commaKit:::.comma_sanitize_context(list(
+    sample_name = "s1",
+    api_token = "plain-token",
+    sentry_dsn = "https://public@example.test/1",
+    nested = list(
+      password = "plain-password",
+      user_email = "agent@example.test",
+      caller = "modkit"
+    )
+  ))
+
+  expect_equal(context$sample_name, "s1")
+  expect_equal(context$api_token, "[REDACTED]")
+  expect_equal(context$sentry_dsn, "[REDACTED]")
+  expect_equal(context$nested$password, "[REDACTED]")
+  expect_equal(context$nested$user_email, "[REDACTED]")
+  expect_equal(context$nested$caller, "modkit")
 })
 
 test_that("event IDs do not advance the user's RNG state", {

@@ -18,6 +18,27 @@ repos:
         pass_filenames: true
         files: ^(R|tests|vignettes|data-raw|dev)/.*\.[Rr](md)?$|^README\.Rmd$|^\.Rprofile$|^\.lintr$
 
+      - id: readiness-large-files
+        name: Block oversized repository files
+        entry: Rscript dev/readiness-checks.R large-files
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: readiness-debt-markers
+        name: Require issue links for debt markers
+        entry: Rscript dev/readiness-checks.R debt-markers
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: readiness-agents-links
+        name: Validate AGENTS.md local links
+        entry: Rscript dev/readiness-checks.R agents-links
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: r-tests
         name: Run package tests before push
         entry: Rscript dev/precommit.R test
