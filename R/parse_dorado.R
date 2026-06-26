@@ -1,6 +1,3 @@
-#' @importFrom Rsamtools BamFile ScanBamParam scanBam
-NULL
-
 # ─── Dorado BAM parser ────────────────────────────────────────────────────────
 
 #' Parse a Dorado BAM file with MM/ML base modification tags
@@ -86,6 +83,12 @@ NULL
   }
   if (!file.exists(file)) {
     stop("Dorado BAM file not found: ", file)
+  }
+  if (!requireNamespace("Rsamtools", quietly = TRUE)) {
+    stop(
+      "Dorado BAM parsing requires the optional 'Rsamtools' package.\n",
+      "Install it with: BiocManager::install('Rsamtools')"
+    )
   }
   min_coverage <- as.integer(min_coverage)
 

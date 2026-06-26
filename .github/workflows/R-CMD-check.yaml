@@ -40,3 +40,41 @@ jobs:
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+
+  BiocCheck:
+    runs-on: ubuntu-latest
+    container: bioconductor/bioconductor_docker:RELEASE_3_22
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check R and Bioconductor versions
+        run: |
+          Rscript -e 'cat("R ", as.character(getRversion()), "\n", sep = "")'
+          Rscript -e 'cat("Bioconductor ", as.character(BiocManager::version()), "\n", sep = "")'
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::sessioninfo
+          extra-packages: bioc::BiocCheck, local::.
+          needs: check
+
+      - name: Run BiocCheck
+        run: |
+          status <- system2(
+            "R",
+            c("CMD", "build", "--no-build-vignettes", "--no-manual", ".")
+          )
+          if (!identical(status, 0L)) {
+            stop("R CMD build failed with status ", status)
+          }
+          tarball <- Sys.glob("commaKit_*.tar.gz")
+          stopifnot(length(tarball) == 1L)
+          BiocCheck::BiocCheck(
+            tarball,
+            `no-check-bioc-help` = TRUE,
+            `quit-with-status` = TRUE
+          )
+        shell: Rscript {0}

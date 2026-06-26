@@ -15,6 +15,7 @@
 ^\.dockerignore$
 ^data-raw$
 ^CLAUDE\.md$
+^CONTEXT\.md$
 ^\.claude$
 ^\.codex$
 ^\.letta$
@@ -28,6 +29,7 @@
 ^.*\.tar\.gz$
 ^_pkgdown\.yml$
 ^docs$
+^droid-wiki$
 ^pkgdown$
 ^\.DS_Store$
 ^\.Rhistory$

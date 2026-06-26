@@ -28,12 +28,22 @@ if (length(lock_dirs) > 0) {
 renv::restore(prompt = FALSE)
 renv::load(project = getwd())
 
-editor_packages <- c("languageserver", "httpgd", "lintr", "styler")
-missing_editor_packages <- editor_packages[
-  !vapply(editor_packages, requireNamespace, logical(1), quietly = TRUE)
+dev_packages <- c(
+  "bioc::BiocCheck",
+  "devtools",
+  "httpgd",
+  "languageserver",
+  "lintr",
+  "pkgdown",
+  "roxygen2",
+  "styler"
+)
+dev_package_names <- sub("^bioc::", "", dev_packages)
+missing_dev_packages <- dev_packages[
+  !vapply(dev_package_names, requireNamespace, logical(1), quietly = TRUE)
 ]
-if (length(missing_editor_packages) > 0) {
-  renv::install(missing_editor_packages, prompt = FALSE)
+if (length(missing_dev_packages) > 0) {
+  renv::install(missing_dev_packages, prompt = FALSE, lock = FALSE)
 }
 
 cat("Devcontainer R environment is ready.\n")
