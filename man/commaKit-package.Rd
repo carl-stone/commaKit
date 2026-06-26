@@ -90,11 +90,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Carl Stone \email{carl.j.stone@vanderbilt.edu} (\href{https://orcid.org/0000-0003-0232-5223}{ORCID})
+\strong{Maintainer}: Carl Stone \email{carlstone001@gmail.com} (\href{https://orcid.org/0000-0003-0232-5223}{ORCID})
 
 Authors:
 \itemize{
-  \item Carl Stone \email{carl.j.stone@vanderbilt.edu} (\href{https://orcid.org/0000-0003-0232-5223}{ORCID})
+  \item Carl Stone \email{carlstone001@gmail.com} (\href{https://orcid.org/0000-0003-0232-5223}{ORCID})
 }
 
 }

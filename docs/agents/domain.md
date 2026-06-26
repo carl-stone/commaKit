@@ -9,8 +9,6 @@ commaKit uses the single-context domain-doc layout:
 - `CONTEXT.md` at the repo root for domain vocabulary, if it exists.
 - `docs/adr/` at the repo root for architectural decisions, if it exists.
 
-If these files do not exist, proceed silently. Do not flag their absence or suggest creating them upfront. The `/domain-modeling` skill, reached via `/grill-with-docs` and `/improve-codebase-architecture`, creates them lazily when terms or decisions actually get resolved.
-
 ## Before exploring, read these
 
 - `CONTEXT.md` at the repo root, if it exists.

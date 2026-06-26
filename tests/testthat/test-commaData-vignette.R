@@ -12,6 +12,10 @@
 
 test_that("commaData vignette source has expected teaching contract", {
   vignette_file <- .commaDataVignettePath()
+  skip_if(
+    is.na(vignette_file),
+    "understanding-commaData vignette source is not available in this build"
+  )
 
   expect_true(file.exists(vignette_file))
 
@@ -37,6 +41,11 @@ test_that("commaData vignette source has expected teaching contract", {
 
 test_that("commaData vignette knits with package-provided data", {
   vignette_file <- .commaDataVignettePath()
+  skip_if(
+    is.na(vignette_file),
+    "understanding-commaData vignette source is not available in this build"
+  )
+
   output_file <- tempfile(fileext = ".md")
   expect_no_error(
     knitr::knit(

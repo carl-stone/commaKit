@@ -49,8 +49,7 @@ RUN python3 -m venv /opt/radian \
   && /opt/radian/bin/pip install --no-cache-dir radian \
   && ln -s /opt/radian/bin/radian /usr/local/bin/radian
 
-RUN Rscript --vanilla -e "install.packages('https://cran.r-project.org/src/contrib/Archive/renv/renv_1.1.8.tar.gz', repos = NULL, type = 'source')" \
-  && Rscript --vanilla -e "install.packages(c('devtools', 'roxygen2', 'testthat', 'pkgdown', 'languageserver', 'httpgd', 'lintr', 'styler'), repos = 'https://cloud.r-project.org')"
+RUN Rscript --vanilla -e "install.packages('https://cran.r-project.org/src/contrib/Archive/renv/renv_1.1.8.tar.gz', repos = NULL, type = 'source')"
 
 RUN apt-get update && apt-get install -y --no-install-recommends ripgrep \
   && rm -rf /var/lib/apt/lists/*
