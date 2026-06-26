@@ -314,7 +314,7 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-24 14:11:34 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-06-26 18:00:16 ..           0.2.0
 ```
 
 [`results()`](https://carl-stone.github.io/commaKit/reference/results.md)
@@ -386,37 +386,33 @@ sessionInfo()
 #>  [5] ggplot2_4.0.3               htmlwidgets_1.6.4          
 #>  [7] Biobase_2.70.0              lattice_0.22-7             
 #>  [9] vctrs_0.7.3                 tools_4.5.2                
-#> [11] bitops_1.0-9                generics_0.1.4             
-#> [13] stats4_4.5.2                parallel_4.5.2             
-#> [15] tibble_3.3.1                pkgconfig_2.0.3            
-#> [17] Matrix_1.7-4                RColorBrewer_1.1-3         
-#> [19] S7_0.2.2                    desc_1.4.3                 
-#> [21] S4Vectors_0.48.1            lifecycle_1.0.5            
-#> [23] compiler_4.5.2              farver_2.1.2               
-#> [25] Rsamtools_2.26.0            textshaping_1.0.5          
-#> [27] Biostrings_2.78.0           statmod_1.5.2              
-#> [29] Seqinfo_1.0.0               codetools_0.2-20           
-#> [31] GenomeInfoDb_1.46.2         htmltools_0.5.9            
-#> [33] sass_0.4.10                 yaml_2.3.12                
-#> [35] pkgdown_2.2.0               pillar_1.11.1              
-#> [37] crayon_1.5.3                jquerylib_0.1.4            
-#> [39] BiocParallel_1.44.0         limma_3.66.0               
-#> [41] cachem_1.1.0                DelayedArray_0.36.1        
-#> [43] abind_1.4-8                 tidyselect_1.2.1           
-#> [45] digest_0.6.39               dplyr_1.2.1                
-#> [47] bookdown_0.47               fastmap_1.2.0              
-#> [49] grid_4.5.2                  cli_3.6.6                  
-#> [51] SparseArray_1.10.10         magrittr_2.0.5             
-#> [53] S4Arrays_1.10.1             UCSC.utils_1.6.1           
-#> [55] scales_1.4.0                rmarkdown_2.31             
-#> [57] XVector_0.50.0              httr_1.4.8                 
-#> [59] matrixStats_1.5.0           otel_0.2.0                 
-#> [61] zoo_1.8-15                  ragg_1.5.2                 
-#> [63] evaluate_1.0.5              knitr_1.51                 
-#> [65] GenomicRanges_1.62.1        IRanges_2.44.0             
-#> [67] rlang_1.2.0                 glue_1.8.1                 
-#> [69] BiocManager_1.30.27         BiocGenerics_0.56.0        
-#> [71] jsonlite_2.0.0              R6_2.6.1                   
-#> [73] MatrixGenerics_1.22.0       systemfonts_1.3.2          
-#> [75] fs_2.1.0
+#> [11] generics_0.1.4              stats4_4.5.2               
+#> [13] tibble_3.3.1                pkgconfig_2.0.3            
+#> [15] Matrix_1.7-4                RColorBrewer_1.1-3         
+#> [17] S7_0.2.2                    desc_1.4.3                 
+#> [19] S4Vectors_0.48.1            lifecycle_1.0.5            
+#> [21] compiler_4.5.2              farver_2.1.2               
+#> [23] textshaping_1.0.5           statmod_1.5.2              
+#> [25] Seqinfo_1.0.0               GenomeInfoDb_1.46.2        
+#> [27] htmltools_0.5.9             sass_0.4.10                
+#> [29] yaml_2.3.12                 pkgdown_2.2.0              
+#> [31] pillar_1.11.1               jquerylib_0.1.4            
+#> [33] DelayedArray_0.36.1         cachem_1.1.0               
+#> [35] limma_3.66.0                abind_1.4-8                
+#> [37] tidyselect_1.2.1            digest_0.6.39              
+#> [39] dplyr_1.2.1                 bookdown_0.47              
+#> [41] fastmap_1.2.0               grid_4.5.2                 
+#> [43] cli_3.6.6                   SparseArray_1.10.10        
+#> [45] magrittr_2.0.5              S4Arrays_1.10.1            
+#> [47] UCSC.utils_1.6.1            scales_1.4.0               
+#> [49] rmarkdown_2.31              XVector_0.50.0             
+#> [51] httr_1.4.8                  matrixStats_1.5.0          
+#> [53] otel_0.2.0                  ragg_1.5.2                 
+#> [55] zoo_1.8-15                  evaluate_1.0.5             
+#> [57] knitr_1.51                  GenomicRanges_1.62.1       
+#> [59] IRanges_2.44.0              rlang_1.2.0                
+#> [61] glue_1.8.1                  BiocManager_1.30.27        
+#> [63] BiocGenerics_0.56.0         jsonlite_2.0.0             
+#> [65] R6_2.6.1                    MatrixGenerics_1.22.0      
+#> [67] systemfonts_1.3.2           fs_2.1.0
 ```

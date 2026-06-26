@@ -109,10 +109,10 @@ Useful links:
 
 ## Author
 
-**Maintainer**: Carl Stone <carl.j.stone@vanderbilt.edu>
+**Maintainer**: Carl Stone <carlstone001@gmail.com>
 ([ORCID](https://orcid.org/0000-0003-0232-5223))
 
 Authors:
 
-- Carl Stone <carl.j.stone@vanderbilt.edu>
+- Carl Stone <carlstone001@gmail.com>
   ([ORCID](https://orcid.org/0000-0003-0232-5223))
