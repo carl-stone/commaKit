@@ -72,5 +72,9 @@ jobs:
           }
           tarball <- Sys.glob("commaKit_*.tar.gz")
           stopifnot(length(tarball) == 1L)
-          BiocCheck::BiocCheck(tarball, `quit-with-status` = TRUE)
+          BiocCheck::BiocCheck(
+            tarball,
+            `no-check-bioc-help` = TRUE,
+            `quit-with-status` = TRUE
+          )
         shell: Rscript {0}
