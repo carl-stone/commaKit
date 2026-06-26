@@ -7,10 +7,20 @@ readiness_repo_root <- function() {
     stdout = TRUE,
     stderr = FALSE
   ))
-  if (length(root) != 1L || !nzchar(root)) {
-    stop("Could not determine git repository root.", call. = FALSE)
+  if (length(root) == 1L && nzchar(root)) {
+    return(normalizePath(root, winslash = "/", mustWork = TRUE))
   }
-  normalizePath(root, winslash = "/", mustWork = TRUE)
+
+  workspace <- Sys.getenv("GITHUB_WORKSPACE", unset = "")
+  if (nzchar(workspace) && dir.exists(file.path(workspace, ".git"))) {
+    return(normalizePath(workspace, winslash = "/", mustWork = TRUE))
+  }
+
+  if (dir.exists(".git")) {
+    return(normalizePath(getwd(), winslash = "/", mustWork = TRUE))
+  }
+
+  stop("Could not determine git repository root.", call. = FALSE)
 }
 
 readiness_git_files <- function(root = readiness_repo_root()) {
