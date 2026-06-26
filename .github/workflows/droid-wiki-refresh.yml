@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
 
-permissions: read-all
+permissions:
+  contents: write
 
 jobs:
   wiki-refresh:
@@ -17,7 +18,16 @@ jobs:
       - name: Install Factory Droid
         run: curl -fsSL https://app.factory.ai/cli | sh
 
+      - name: Configure wiki push credentials
+        run: |
+          git config --global user.name "factory-droid[bot]"
+          git config --global user.email "138933559+factory-droid[bot]@users.noreply.github.com"
+          git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Generate wiki
         run: droid exec --auto high --skip-permissions-unsafe "/wiki"
         env:
           FACTORY_API_KEY: ${{ secrets.FACTORY_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
