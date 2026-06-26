@@ -5,8 +5,7 @@
   ],
   "enabledManagers": [
     "github-actions",
-    "dockerfile",
-    "renv"
+    "dockerfile"
   ],
   "minimumReleaseAge": "7 days",
   "labels": [
@@ -26,15 +25,6 @@
         "dockerfile"
       ],
       "groupName": "Container image dependencies"
-    },
-    {
-      "matchManagers": [
-        "renv"
-      ],
-      "groupName": "R lockfile dependencies",
-      "schedule": [
-        "before 6am on monday"
-      ]
     }
   ]
 }

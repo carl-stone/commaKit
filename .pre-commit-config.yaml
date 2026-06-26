@@ -20,21 +20,21 @@ repos:
 
       - id: readiness-large-files
         name: Block oversized repository files
-        entry: Rscript dev/readiness-checks.R large-files
+        entry: Rscript inst/scripts/readiness-checks.R large-files
         language: system
         pass_filenames: false
         always_run: true
 
       - id: readiness-debt-markers
         name: Require issue links for debt markers
-        entry: Rscript dev/readiness-checks.R debt-markers
+        entry: Rscript inst/scripts/readiness-checks.R debt-markers
         language: system
         pass_filenames: false
         always_run: true
 
       - id: readiness-agents-links
         name: Validate AGENTS.md local links
-        entry: Rscript dev/readiness-checks.R agents-links
+        entry: Rscript inst/scripts/readiness-checks.R agents-links
         language: system
         pass_filenames: false
         always_run: true

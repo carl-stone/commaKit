@@ -33,6 +33,7 @@
   }
   fields <- c(fields, list(...))
   fields <- fields[!vapply(fields, is.null, logical(1))]
+  fields <- .comma_redact_fields(fields)
 
   .comma_add_breadcrumb(
     message = event,
@@ -428,6 +429,9 @@
     return(as.character(context)[1L])
   }
   field_names <- names(context)
+  if (is.null(field_names)) {
+    field_names <- rep("", length(context))
+  }
   cleaned <- Map(function(value, name) {
     if (.comma_sensitive_field(name)) {
       return("[REDACTED]")
@@ -445,8 +449,31 @@
       value <- c(value[seq_len(20L)], "...")
     }
     as.character(value)
-  }, context, field_names %||% rep("", length(context)))
+  }, context, field_names)
   cleaned[!vapply(cleaned, is.null, logical(1))]
+}
+
+.comma_redact_fields <- function(fields) {
+  if (!is.list(fields)) {
+    return(fields)
+  }
+  field_names <- names(fields)
+  if (is.null(field_names)) {
+    field_names <- rep("", length(fields))
+  }
+  redacted <- Map(function(value, name) {
+    if (.comma_sensitive_field(name)) {
+      return("[REDACTED]")
+    }
+    if (is.list(value)) {
+      return(.comma_redact_fields(value))
+    }
+    value
+  }, fields, field_names)
+  if (!is.null(names(fields))) {
+    names(redacted) <- names(fields)
+  }
+  redacted
 }
 
 .comma_sensitive_field <- function(name) {
@@ -472,10 +499,6 @@
     name,
     ignore.case = TRUE
   )
-}
-
-`%||%` <- function(lhs, rhs) {
-  if (is.null(lhs)) rhs else lhs
 }
 
 .comma_json_object <- function(fields) {

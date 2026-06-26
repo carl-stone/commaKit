@@ -1,6 +1,6 @@
 readiness_env <- new.env(parent = baseenv())
 sys.source(
-  testthat::test_path("..", "..", "dev", "readiness-checks.R"),
+  testthat::test_path("..", "..", "inst", "scripts", "readiness-checks.R"),
   envir = readiness_env
 )
 

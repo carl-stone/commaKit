@@ -66,6 +66,8 @@ test_that("structured logger emits machine-readable JSON fields", {
     site_count = 2L,
     labels = c("6mA", "5mC"),
     note = "quoted \"value\"",
+    api_token = "redact-me-1",
+    nested = list(password = "redact-me-2", caller = "modkit"),
     ok = TRUE,
     .time = as.POSIXct("2026-01-02 03:04:05", tz = "UTC")
   )
@@ -82,6 +84,10 @@ test_that("structured logger emits machine-readable JSON fields", {
   expect_match(out, '"site_count":2', fixed = TRUE)
   expect_match(out, '"labels":["6mA","5mC"]', fixed = TRUE)
   expect_match(out, '"note":"quoted \\"value\\""', fixed = TRUE)
+  expect_match(out, '"api_token":"[REDACTED]"', fixed = TRUE)
+  expect_match(out, '"password":"[REDACTED]"', fixed = TRUE)
+  expect_no_match(out, "redact-me-1", fixed = TRUE)
+  expect_no_match(out, "redact-me-2", fixed = TRUE)
   expect_match(out, '"ok":true', fixed = TRUE)
 })
 
@@ -355,10 +361,10 @@ test_that("error tracking options tolerate missing and malformed values", {
 test_that("sensitive logging context is redacted recursively", {
   context <- commaKit:::.comma_sanitize_context(list(
     sample_name = "s1",
-    api_token = "plain-token",
+    api_token = "redact-me-1",
     sentry_dsn = "https://public@example.test/1",
     nested = list(
-      password = "plain-password",
+      password = "redact-me-2",
       user_email = "agent@example.test",
       caller = "modkit"
     )

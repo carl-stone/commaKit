@@ -21,7 +21,7 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Run repository readiness checks
-        run: Rscript dev/readiness-checks.R all
+        run: Rscript inst/scripts/readiness-checks.R all
 
   secret-scan:
     runs-on: ubuntu-latest
