@@ -12,6 +12,8 @@ jobs:
   readiness-guards:
     runs-on: ubuntu-latest
     container: bioconductor/bioconductor_docker:RELEASE_3_22
+    env:
+      RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
     steps:
       - uses: actions/checkout@v4
 
