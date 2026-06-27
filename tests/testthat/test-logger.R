@@ -368,6 +368,10 @@ test_that("sensitive logging context is redacted recursively", {
       password = "redact-me-2",
       user_email = "agent@example.test",
       caller = "modkit"
+    ),
+    headers = c(
+      authorization = "Bearer redact-me-3",
+      accept = "application/json"
     )
   ))
 
@@ -378,6 +382,8 @@ test_that("sensitive logging context is redacted recursively", {
   expect_equal(context$nested$password, "[REDACTED]")
   expect_equal(context$nested$user_email, "[REDACTED]")
   expect_equal(context$nested$caller, "modkit")
+  expect_equal(context$headers[["authorization"]], "[REDACTED]")
+  expect_equal(context$headers[["accept"]], "application/json")
 })
 
 test_that("user context drops blank sensitive fields", {

@@ -445,10 +445,13 @@
     if (inherits(value, c("POSIXct", "POSIXlt", "Date"))) {
       return(value[1L])
     }
+    value <- .comma_redact_atomic_names(value)
     if (length(value) > 20L) {
       value <- c(value[seq_len(20L)], "...")
     }
-    as.character(value)
+    result <- as.character(value)
+    names(result) <- names(value)
+    result
   }, context, field_names)
   cleaned[!vapply(cleaned, is.null, logical(1))]
 }
