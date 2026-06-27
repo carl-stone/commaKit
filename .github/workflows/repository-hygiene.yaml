@@ -3,13 +3,14 @@ on:
     branches: [main, master]
   pull_request:
 
-name: agent-readiness.yaml
+name: Repository hygiene checks
 
 permissions:
   contents: read
 
 jobs:
-  readiness-guards:
+  repository-hygiene:
+    name: Repository hygiene checks
     runs-on: ubuntu-latest
     container: bioconductor/bioconductor_docker:RELEASE_3_22
     env:
@@ -20,10 +21,11 @@ jobs:
       - name: Configure git safe directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      - name: Run repository readiness checks
+      - name: Run repository hygiene checks
         run: Rscript inst/scripts/readiness-checks.R all
 
   secret-scan:
+    name: Secret scanning
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
