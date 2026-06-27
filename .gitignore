@@ -3,6 +3,9 @@
 .Rhistory
 .RData
 .Ruserdata
+.env
+.env.*
+!.env.example
 *.Rcheck/
 *.BiocCheck/
 *.tar.gz

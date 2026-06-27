@@ -33,6 +33,7 @@
   }
   fields <- c(fields, list(...))
   fields <- fields[!vapply(fields, is.null, logical(1))]
+  fields <- .comma_redact_fields(fields)
 
   .comma_add_breadcrumb(
     message = event,
@@ -228,7 +229,7 @@
           post = TRUE,
           postfields = charToRaw(envelope),
           timeout = .comma_error_tracking_timeout(),
-          connecttimeout = .comma_error_tracking_connect_timeout(),
+          connecttimeout = .comma_connect_timeout(),
           httpheader = c("Content-Type" = "application/x-sentry-envelope")
         )
       )
@@ -268,7 +269,7 @@
   timeout
 }
 
-.comma_error_tracking_connect_timeout <- function() {
+.comma_connect_timeout <- function() {
   timeout <- getOption(
     "commaKit.error_tracking.connect_timeout",
     Sys.getenv("COMMAKIT_ERROR_TRACKING_CONNECT_TIMEOUT", unset = "1")
@@ -304,7 +305,7 @@
   if (length(calls) == 0L) {
     return(list())
   }
-  calls <- tail(calls, 40L)
+  calls <- utils::tail(calls, 40L)
   frames <- lapply(calls, function(call) {
     frame <- list(
       "function" = .comma_call_function(call),
@@ -427,9 +428,16 @@
   if (!is.list(context)) {
     return(as.character(context)[1L])
   }
-  cleaned <- lapply(context, function(value) {
-    if (is.null(value) || length(value) == 0L || all(is.na(value))) {
+  field_names <- names(context)
+  if (is.null(field_names)) {
+    field_names <- rep("", length(context))
+  }
+  cleaned <- Map(function(value, name) {
+    if (.comma_empty_value(value)) {
       return(NULL)
+    }
+    if (.comma_sensitive_field(name)) {
+      return("[REDACTED]")
     }
     if (is.list(value)) {
       return(.comma_sanitize_context(value))
@@ -437,18 +445,99 @@
     if (inherits(value, c("POSIXct", "POSIXlt", "Date"))) {
       return(value[1L])
     }
+    value <- .comma_redact_atomic_names(value)
     if (length(value) > 20L) {
       value <- c(value[seq_len(20L)], "...")
     }
-    as.character(value)
-  })
+    result <- as.character(value)
+    names(result) <- names(value)
+    result
+  }, context, field_names)
   cleaned[!vapply(cleaned, is.null, logical(1))]
 }
 
+.comma_empty_value <- function(value) {
+  if (is.null(value) || length(value) == 0L) {
+    return(TRUE)
+  }
+  if (!is.atomic(value)) {
+    return(FALSE)
+  }
+  missing <- is.na(value)
+  if (is.character(value)) {
+    missing <- missing | !nzchar(value)
+  }
+  all(missing)
+}
+
+.comma_redact_fields <- function(fields) {
+  if (!is.list(fields)) {
+    return(.comma_redact_atomic_names(fields))
+  }
+  field_names <- names(fields)
+  if (is.null(field_names)) {
+    field_names <- rep("", length(fields))
+  }
+  redacted <- Map(function(value, name) {
+    if (.comma_sensitive_field(name)) {
+      return("[REDACTED]")
+    }
+    if (is.list(value)) {
+      return(.comma_redact_fields(value))
+    }
+    .comma_redact_atomic_names(value)
+  }, fields, field_names)
+  if (!is.null(names(fields))) {
+    names(redacted) <- names(fields)
+  }
+  redacted
+}
+
+.comma_redact_atomic_names <- function(value) {
+  value_names <- names(value)
+  if (is.null(value_names) || length(value_names) == 0L) {
+    return(value)
+  }
+  sensitive <- vapply(value_names, .comma_sensitive_field, logical(1))
+  if (!any(sensitive)) {
+    return(value)
+  }
+  value <- as.character(value)
+  names(value) <- value_names
+  value[sensitive] <- "[REDACTED]"
+  value
+}
+
+.comma_sensitive_field <- function(name) {
+  if (is.null(name) || is.na(name) || !nzchar(name)) {
+    return(FALSE)
+  }
+  pattern <- paste(
+    "password",
+    "passwd",
+    "secret",
+    "token",
+    "api[_-]?key",
+    "access[_-]?key",
+    "private[_-]?key",
+    "dsn",
+    "authorization",
+    "cookie",
+    "email",
+    sep = "|"
+  )
+  grepl(
+    pattern,
+    name,
+    ignore.case = TRUE
+  )
+}
+
 .comma_json_object <- function(fields) {
-  if (is.null(names(fields)) ||
+  invalid_names <- is.null(names(fields)) ||
     any(is.na(names(fields))) ||
-    any(names(fields) == "")) {
+    any(names(fields) == "")
+  if (invalid_names) {
     stop("Structured log fields must be named.", call. = FALSE)
   }
 

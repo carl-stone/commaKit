@@ -7,6 +7,9 @@
 ^\.R-version$
 ^\.lintr$
 ^\.pre-commit-config\.yaml$
+^\.env($|\.)
+^\.env\.example$
+^renovate\.json$
 ^\.vscode$
 ^LICENSE\.md$
 ^README\.Rmd$
