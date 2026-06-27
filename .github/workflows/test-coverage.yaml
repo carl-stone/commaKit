@@ -16,6 +16,7 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
       COMMAKIT_MIN_COVERAGE: "50"
+      COMMAKIT_SOURCE_DIR: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v5
 
