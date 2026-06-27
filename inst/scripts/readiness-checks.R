@@ -34,6 +34,21 @@ readiness_git_files <- function(root = readiness_repo_root()) {
   files[nzchar(files)]
 }
 
+readiness_tracked_files <- function(root = readiness_repo_root()) {
+  old <- setwd(root)
+  on.exit(setwd(old), add = TRUE)
+  files <- suppressWarnings(system2(
+    "git",
+    c("ls-files", "--cached"),
+    stdout = TRUE,
+    stderr = FALSE
+  ))
+  if (!is.null(attr(files, "status"))) {
+    return(character())
+  }
+  files[nzchar(files)]
+}
+
 readiness_abs_path <- function(root, files) {
   normalizePath(file.path(root, files), winslash = "/", mustWork = FALSE)
 }
@@ -332,7 +347,11 @@ readiness_check_dead_code <- function(
   root = readiness_repo_root()
 ) {
   r_files <- readiness_r_quality_files(files)
-  searchable <- files[readiness_text_candidates(files)]
+  searchable <- readiness_tracked_files(root)
+  if (length(searchable) == 0L) {
+    searchable <- files
+  }
+  searchable <- searchable[readiness_text_candidates(searchable)]
   defs <- readiness_internal_definitions(r_files, root)
   unused <- character()
   for (i in seq_len(nrow(defs))) {

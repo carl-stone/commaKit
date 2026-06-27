@@ -161,6 +161,28 @@ test_that("dead-code readiness check flags unused internal helpers", {
   )
 })
 
+test_that("dead-code check searches beyond explicit definition files", {
+  root <- tempfile("readiness-root-")
+  dir.create(file.path(root, "R"), recursive = TRUE)
+  writeLines(
+    ".used_helper <- function(x) x + 1",
+    file.path(root, "R", "helpers.R")
+  )
+  writeLines(
+    "public <- function(x) .used_helper(x)",
+    file.path(root, "R", "caller.R")
+  )
+  old <- setwd(root)
+  on.exit(setwd(old), add = TRUE)
+  system2("git", "init", stdout = FALSE, stderr = FALSE)
+  system2("git", c("add", "R/helpers.R", "R/caller.R"), stdout = FALSE)
+
+  expect_true(readiness_env$readiness_check_dead_code(
+    files = "R/helpers.R",
+    root = root
+  ))
+})
+
 test_that("duplicate-code readiness check compares normalized windows", {
   root <- tempfile("readiness-root-")
   dir.create(file.path(root, "R"), recursive = TRUE)
