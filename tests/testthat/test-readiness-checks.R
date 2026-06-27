@@ -1,8 +1,19 @@
 readiness_env <- new.env(parent = baseenv())
-sys.source(
-  testthat::test_path("..", "..", "inst", "scripts", "readiness-checks.R"),
-  envir = readiness_env
+readiness_script <- system.file(
+  "scripts",
+  "readiness-checks.R",
+  package = "commaKit"
 )
+if (!nzchar(readiness_script)) {
+  readiness_script <- testthat::test_path(
+    "..",
+    "..",
+    "inst",
+    "scripts",
+    "readiness-checks.R"
+  )
+}
+sys.source(readiness_script, envir = readiness_env)
 
 test_that("large-file readiness check enforces byte limit", {
   root <- tempfile("readiness-root-")

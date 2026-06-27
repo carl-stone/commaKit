@@ -305,7 +305,7 @@
   if (length(calls) == 0L) {
     return(list())
   }
-  calls <- tail(calls, 40L)
+  calls <- utils::tail(calls, 40L)
   frames <- lapply(calls, function(call) {
     frame <- list(
       "function" = .comma_call_function(call),
