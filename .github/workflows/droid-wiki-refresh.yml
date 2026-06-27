@@ -11,7 +11,7 @@ jobs:
   wiki-refresh:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
@@ -27,7 +27,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate wiki
-        run: droid exec --auto high --skip-permissions-unsafe "/wiki"
+        run: droid exec --auto high "/wiki"
         env:
           FACTORY_API_KEY: ${{ secrets.FACTORY_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
