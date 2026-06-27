@@ -1,5 +1,11 @@
 test_that("diffMethyl method docs preserve default and practical guidance", {
+  source_dir <- Sys.getenv("COMMAKIT_SOURCE_DIR", unset = "")
   source_path <- c(
+    if (nzchar(source_dir)) {
+      file.path(source_dir, "R", "diffMethyl.R")
+    } else {
+      character()
+    },
     test_path("..", "..", "R", "diffMethyl.R"),
     test_path("..", "..", "00_pkg_src", "commaKit", "R", "diffMethyl.R")
   )
@@ -9,6 +15,11 @@ test_that("diffMethyl method docs preserve default and practical guidance", {
   )
 
   vignette_path <- c(
+    if (nzchar(source_dir)) {
+      file.path(source_dir, "vignettes", "getting-started.Rmd")
+    } else {
+      character()
+    },
     test_path("..", "..", "vignettes", "getting-started.Rmd"),
     test_path(
       "..", "..", "00_pkg_src", "commaKit",

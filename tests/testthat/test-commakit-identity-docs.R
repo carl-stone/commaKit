@@ -1,6 +1,8 @@
 .sourceDocPath <- function(...) {
   rel <- file.path(...)
+  source_dir <- Sys.getenv("COMMAKIT_SOURCE_DIR", unset = "")
   candidates <- c(
+    if (nzchar(source_dir)) file.path(source_dir, rel) else character(),
     testthat::test_path("..", "..", rel),
     testthat::test_path("..", "..", "00_pkg_src", "commaKit", rel),
     testthat::test_path("..", "..", "..", "00_pkg_src", "commaKit", rel)

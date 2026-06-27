@@ -22,22 +22,25 @@ repos:
         name: Block oversized repository files
         entry: Rscript inst/scripts/readiness-checks.R large-files
         language: system
-        pass_filenames: false
-        always_run: true
+        pass_filenames: true
 
       - id: readiness-debt-markers
         name: Require issue links for debt markers
         entry: Rscript inst/scripts/readiness-checks.R debt-markers
         language: system
-        pass_filenames: false
-        always_run: true
+        pass_filenames: true
 
       - id: readiness-agents-links
         name: Validate AGENTS.md local links
         entry: Rscript inst/scripts/readiness-checks.R agents-links
         language: system
-        pass_filenames: false
-        always_run: true
+        pass_filenames: true
+
+      - id: readiness-code-quality
+        name: Enforce repository code-quality budgets
+        entry: Rscript inst/scripts/readiness-checks.R code-quality
+        language: system
+        pass_filenames: true
 
       - id: r-tests
         name: Run package tests before push

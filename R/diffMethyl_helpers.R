@@ -86,8 +86,10 @@ NULL
   }
 
   if (!is.null(ref_level)) {
-    if (!is.character(ref_level) || length(ref_level) != 1L ||
-      is.na(ref_level)) {
+    if (
+      !is.character(ref_level) || length(ref_level) != 1L ||
+        is.na(ref_level)
+    ) {
       stop("'reference' must be a single non-NA character string or NULL.")
     }
     if (!ref_level %in% all_levels) {
@@ -149,6 +151,18 @@ NULL
   )
 }
 
+.assembleDiffMethylResult <- function(pvalue, group_stats, cond_levels) {
+  result <- data.frame(
+    pvalue = pvalue,
+    delta_beta = group_stats$delta_beta,
+    stringsAsFactors = FALSE
+  )
+  for (lv in cond_levels) {
+    result[[paste0("mean_beta_", lv)]] <- group_stats$group_means[, lv]
+  }
+  result
+}
+
 .optionalAssay <- function(object, assay_name) {
   if (assay_name %in% SummarizedExperiment::assayNames(object)) {
     SummarizedExperiment::assay(object, assay_name)
@@ -194,11 +208,11 @@ NULL
     add_other <- observed_canonical & observed_other
     n_unmod[add_other] <- n_unmod[add_other] + other_mod_counts_mat[add_other]
 
-    infer_canonical_from_observed_mod_other <- observed_mod &
+    infer_canonical <- observed_mod &
       !observed_canonical & observed_other & !is.na(coverage_mat)
-    n_unmod[infer_canonical_from_observed_mod_other] <-
-      coverage_mat[infer_canonical_from_observed_mod_other] -
-      n_mod[infer_canonical_from_observed_mod_other]
+    n_unmod[infer_canonical] <-
+      coverage_mat[infer_canonical] -
+      n_mod[infer_canonical]
   }
 
   if (!is.null(mod_counts_mat)) {
