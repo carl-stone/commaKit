@@ -24,10 +24,38 @@ test_that("large-file readiness check enforces byte limit", {
     readiness_env$readiness_check_large_files(
       files = "too-large.txt",
       root = root,
+      max_bytes = NA_real_
+    ),
+    "single positive numeric"
+  )
+
+  expect_error(
+    readiness_env$readiness_check_large_files(
+      files = "too-large.txt",
+      root = root,
       max_bytes = 10
     ),
     "Files exceed"
   )
+})
+
+test_that("readiness_run can limit checks to explicit files", {
+  root <- tempfile("readiness-root-")
+  dir.create(root)
+  marker <- paste0("TO", "DO")
+  writeLines(
+    paste(marker, "unrelated scratch", sep = ": "),
+    file.path(root, "scratch.R")
+  )
+  writeLines("ok <- TRUE", file.path(root, "staged.R"))
+  old <- setwd(root)
+  on.exit(setwd(old), add = TRUE)
+
+  expect_true(readiness_env$readiness_run(
+    "debt-markers",
+    files = "staged.R",
+    root = root
+  ))
 })
 
 test_that("debt-marker readiness check requires issue references", {

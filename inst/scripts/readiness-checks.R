@@ -68,6 +68,12 @@ readiness_check_large_files <- function(
     unset = 5 * 1024^2
   ))
 ) {
+  if (length(max_bytes) != 1L || is.na(max_bytes) || max_bytes <= 0) {
+    stop(
+      "'max_bytes' must be a single positive numeric file-size limit.",
+      call. = FALSE
+    )
+  }
   paths <- readiness_abs_path(root, files)
   sizes <- file.info(paths)$size
   too_large <- !is.na(sizes) & sizes > max_bytes
@@ -138,15 +144,12 @@ readiness_check_debt_markers <- function(
 
 readiness_markdown_links <- function(path) {
   text <- paste(readLines(path, warn = FALSE), collapse = "\n")
-  matches <- gregexec("\\[[^]]+\\]\\(([^)[:space:]]+)", text, perl = TRUE)
+  matches <- gregexpr("\\[[^]]+\\]\\([^)[:space:]]+\\)", text, perl = TRUE)
   captured <- regmatches(text, matches)[[1L]]
-  if (length(captured) == 0L) {
+  if (length(captured) == 0L || identical(captured, character(0))) {
     return(character())
   }
-  if (is.matrix(captured)) {
-    return(captured[2L, ])
-  }
-  sub("^\\[[^]]+\\]\\(([^)[:space:]]+).*$", "\\1", captured)
+  sub("^\\[[^]]+\\]\\(([^)[:space:]]+)\\)$", "\\1", captured)
 }
 
 readiness_is_local_link <- function(link) {
@@ -396,6 +399,7 @@ readiness_check_duplicate_code <- function(
   ))
 ) {
   files <- readiness_r_quality_files(files)
+  files <- files[grepl("^R/", files)]
   windows <- list()
   for (file in files) {
     path <- file.path(root, file)
@@ -456,7 +460,7 @@ readiness_check_code_quality <- function(
   invisible(TRUE)
 }
 
-readiness_run <- function(checks) {
+readiness_run <- function(checks, files = NULL, root = NULL) {
   available <- c(
     "large-files",
     "debt-markers",
@@ -473,16 +477,26 @@ readiness_run <- function(checks) {
   if (length(unknown) > 0L) {
     stop("Unknown readiness check: ", paste(unknown, collapse = ", "))
   }
+  if (is.null(files)) {
+    files_root <- if (is.null(root)) readiness_repo_root() else root
+    files <- readiness_git_files(root = files_root)
+  }
+  if (is.null(root)) {
+    root <- readiness_repo_root()
+  }
 
   for (check in checks) {
     switch(check,
-      "large-files" = readiness_check_large_files(),
-      "debt-markers" = readiness_check_debt_markers(),
-      "agents-links" = readiness_check_agents_links(),
-      "complexity" = readiness_check_complexity(),
-      "dead-code" = readiness_check_dead_code(),
-      "duplicate-code" = readiness_check_duplicate_code(),
-      "code-quality" = readiness_check_code_quality()
+      "large-files" = readiness_check_large_files(files = files, root = root),
+      "debt-markers" = readiness_check_debt_markers(files = files, root = root),
+      "agents-links" = readiness_check_agents_links(files = files, root = root),
+      "complexity" = readiness_check_complexity(files = files, root = root),
+      "dead-code" = readiness_check_dead_code(files = files, root = root),
+      "duplicate-code" = readiness_check_duplicate_code(
+        files = files,
+        root = root
+      ),
+      "code-quality" = readiness_check_code_quality(files = files, root = root)
     )
   }
   invisible(TRUE)
@@ -493,8 +507,13 @@ if (sys.nframe() == 0L) {
   if (length(args) == 0L) {
     args <- "all"
   }
+  checks <- args[[1L]]
+  files <- args[-1L]
+  if (length(files) == 0L) {
+    files <- NULL
+  }
   tryCatch(
-    readiness_run(args),
+    readiness_run(checks, files = files),
     error = function(error) {
       message(conditionMessage(error))
       quit(status = 1L, save = "no")
