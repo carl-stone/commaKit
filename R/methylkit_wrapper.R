@@ -38,9 +38,10 @@ NULL
 #'   RHS variable in \code{formula}.
 #' @param formula One-sided formula (e.g., \code{~ condition}).
 #'
-#' @return A \code{data.frame} with the same columns as \code{.betaBinomialTest()}:
-#'   \code{pvalue}, \code{delta_beta}, and one \code{mean_beta_<level>} column
-#'   per condition level. Row names are site keys.
+#' @return A \code{data.frame} with the same columns as
+#'   \code{.betaBinomialTest()}: \code{pvalue}, \code{delta_beta}, and one
+#'   \code{mean_beta_<level>} column per condition level. Row names are site
+#'   keys.
 #'
 #' @keywords internal
 .runMethylKit <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
@@ -120,15 +121,11 @@ NULL
   # If all sites are zero-variance, return early with p = NA
   if (length(keep_idx) == 0L) {
     group_stats <- .computeDiffMethylGroupStats(methyl_mat, design_info)
-    result <- data.frame(
-      pvalue = rep(NA_real_, n_sites),
-      delta_beta = group_stats$delta_beta,
-      stringsAsFactors = FALSE
-    )
-    for (lv in cond_levels) {
-      result[[paste0("mean_beta_", lv)]] <- group_stats$group_means[, lv]
-    }
-    return(result)
+    return(.assembleDiffMethylResult(
+      rep(NA_real_, n_sites),
+      group_stats,
+      cond_levels
+    ))
   }
 
   # ── Build methylKit objects per sample ─────────────────────────────────────
@@ -235,8 +232,6 @@ NULL
 
   # Pre-compute group means from our matrices (mirroring quasi_f/limma wrappers)
   group_stats <- .computeDiffMethylGroupStats(methyl_mat, design_info)
-  group_means <- group_stats$group_means
-  delta_beta_vec <- group_stats$delta_beta
   # Initialise p = NA for all sites; untestable sites stay NA and are excluded
   # from multiple-testing correction, matching the limma and quasi_f backends.
   pvalue_vec <- rep(NA_real_, n_sites)
@@ -250,16 +245,7 @@ NULL
   }
 
   # ── Assemble result ───────────────────────────────────────────────────────
-  result <- data.frame(
-    pvalue = pvalue_vec,
-    delta_beta = delta_beta_vec,
-    stringsAsFactors = FALSE
-  )
-  for (lv in cond_levels) {
-    result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
-  }
-
-  result
+  .assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels)
 }
 
 # ─── Warning translation helper ───────────────────────────────────────────────

@@ -108,8 +108,6 @@ NULL
   n_sites <- nrow(methyl_mat)
 
   group_stats <- .computeDiffMethylGroupStats(methyl_mat, design_info)
-  group_means <- group_stats$group_means
-  delta_beta_vec <- group_stats$delta_beta
   count_mats <- .resolveCountMatrices(
     methyl_mat,
     coverage_mat,
@@ -174,14 +172,16 @@ NULL
 
     if (is.null(fit) || fit$df.residual < 1L) next
 
-    # summary(fit) computes the Pearson dispersion estimate for quasibinomial;
-    # fit$dispersion is NULL for quasi families — must use summary(fit)$dispersion
+    # summary(fit) computes the Pearson dispersion estimate for quasibinomial.
+    # fit$dispersion is NULL for quasi families, so use summary(fit)$dispersion.
     sm <- tryCatch(summary(fit), error = function(e) NULL)
     if (is.null(sm)) next
 
     phi_hat <- sm$dispersion
-    if (is.null(phi_hat) || length(phi_hat) != 1L ||
-      is.na(phi_hat) || phi_hat <= 0) {
+    if (
+      is.null(phi_hat) || length(phi_hat) != 1L ||
+        is.na(phi_hat) || phi_hat <= 0
+    ) {
       next
     }
 
@@ -224,15 +224,7 @@ NULL
 
   if (sum(testable) < 2L) {
     # Not enough sites to estimate the EB prior; return all NA
-    result <- data.frame(
-      pvalue = pvalue_vec,
-      delta_beta = delta_beta_vec,
-      stringsAsFactors = FALSE
-    )
-    for (lv in cond_levels) {
-      result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
-    }
-    return(result)
+    return(.assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels))
   }
 
   squeezed <- limma::squeezeVar(phi_vec[testable], df_vec[testable])
@@ -240,7 +232,8 @@ NULL
   phi_post <- squeezed$var.post
   df_prior <- squeezed$df.prior # scalar: estimated prior degrees of freedom
 
-  # Guard against non-finite df_prior (degenerate case: all dispersions identical)
+  # Guard against non-finite df_prior.
+  # This can happen when all dispersions are identical.
   if (is.na(df_prior) || !is.finite(df_prior)) {
     df_prior <- 0
   }
@@ -253,14 +246,5 @@ NULL
   pvalue_vec[testable] <- p_post
 
   # ── Assemble result ───────────────────────────────────────────────────────
-  result <- data.frame(
-    pvalue = pvalue_vec,
-    delta_beta = delta_beta_vec,
-    stringsAsFactors = FALSE
-  )
-  for (lv in cond_levels) {
-    result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
-  }
-
-  result
+  .assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels)
 }
