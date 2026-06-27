@@ -1,4 +1,4 @@
-name: Droid Wiki Refresh
+name: Droid AutoWiki Refresh
 
 on:
   push:
@@ -11,23 +11,12 @@ jobs:
   wiki-refresh:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-        with:
-          persist-credentials: false
+      - uses: actions/checkout@v4
 
       - name: Install Factory Droid
         run: curl -fsSL https://app.factory.ai/cli | sh
 
-      - name: Configure wiki push credentials
-        run: |
-          git config --global user.name "factory-droid[bot]"
-          git config --global user.email "138933559+factory-droid[bot]@users.noreply.github.com"
-          git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate wiki
+      - name: Generate Wiki
         run: droid exec --auto high "/wiki"
         env:
           FACTORY_API_KEY: ${{ secrets.FACTORY_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
