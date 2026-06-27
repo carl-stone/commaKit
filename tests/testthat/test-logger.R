@@ -362,6 +362,7 @@ test_that("sensitive logging context is redacted recursively", {
   context <- commaKit:::.comma_sanitize_context(list(
     sample_name = "s1",
     api_token = "redact-me-1",
+    empty_secret = "",
     sentry_dsn = "https://public@example.test/1",
     nested = list(
       password = "redact-me-2",
@@ -372,10 +373,50 @@ test_that("sensitive logging context is redacted recursively", {
 
   expect_equal(context$sample_name, "s1")
   expect_equal(context$api_token, "[REDACTED]")
+  expect_null(context$empty_secret)
   expect_equal(context$sentry_dsn, "[REDACTED]")
   expect_equal(context$nested$password, "[REDACTED]")
   expect_equal(context$nested$user_email, "[REDACTED]")
   expect_equal(context$nested$caller, "modkit")
+})
+
+test_that("user context drops blank sensitive fields", {
+  old <- options(commaKit.error_tracking.user = NULL)
+  old_env <- Sys.getenv(c(
+    "COMMAKIT_USER_ID",
+    "COMMAKIT_USER_EMAIL",
+    "COMMAKIT_USER_NAME"
+  ), unset = NA_character_)
+  on.exit({
+    options(old)
+    for (name in names(old_env)) {
+      if (is.na(old_env[[name]])) {
+        Sys.unsetenv(name)
+      } else {
+        do.call(Sys.setenv, setNames(list(old_env[[name]]), name))
+      }
+    }
+  })
+  Sys.unsetenv(c(
+    "COMMAKIT_USER_ID",
+    "COMMAKIT_USER_EMAIL",
+    "COMMAKIT_USER_NAME"
+  ))
+
+  expect_length(commaKit:::.comma_user_context(), 0L)
+})
+
+test_that("structured field redaction handles named atomic values", {
+  fields <- commaKit:::.comma_redact_fields(list(
+    headers = c(
+      authorization = "Bearer redact-me",
+      accept = "application/json"
+    )
+  ))
+
+  expect_equal(fields$headers[["authorization"]], "[REDACTED]")
+  expect_equal(fields$headers[["accept"]], "application/json")
+  expect_false(grepl("redact-me", commaKit:::.comma_json_object(fields)))
 })
 
 test_that("event IDs do not advance the user's RNG state", {

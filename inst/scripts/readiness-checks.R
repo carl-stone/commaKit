@@ -143,6 +143,9 @@ readiness_markdown_links <- function(path) {
   if (length(captured) == 0L) {
     return(character())
   }
+  if (is.matrix(captured)) {
+    return(captured[2L, ])
+  }
   sub("^\\[[^]]+\\]\\(([^)[:space:]]+).*$", "\\1", captured)
 }
 

@@ -433,11 +433,11 @@
     field_names <- rep("", length(context))
   }
   cleaned <- Map(function(value, name) {
+    if (.comma_empty_value(value)) {
+      return(NULL)
+    }
     if (.comma_sensitive_field(name)) {
       return("[REDACTED]")
-    }
-    if (is.null(value) || length(value) == 0L || all(is.na(value))) {
-      return(NULL)
     }
     if (is.list(value)) {
       return(.comma_sanitize_context(value))
@@ -453,9 +453,23 @@
   cleaned[!vapply(cleaned, is.null, logical(1))]
 }
 
+.comma_empty_value <- function(value) {
+  if (is.null(value) || length(value) == 0L) {
+    return(TRUE)
+  }
+  if (!is.atomic(value)) {
+    return(FALSE)
+  }
+  missing <- is.na(value)
+  if (is.character(value)) {
+    missing <- missing | !nzchar(value)
+  }
+  all(missing)
+}
+
 .comma_redact_fields <- function(fields) {
   if (!is.list(fields)) {
-    return(fields)
+    return(.comma_redact_atomic_names(fields))
   }
   field_names <- names(fields)
   if (is.null(field_names)) {
@@ -468,12 +482,27 @@
     if (is.list(value)) {
       return(.comma_redact_fields(value))
     }
-    value
+    .comma_redact_atomic_names(value)
   }, fields, field_names)
   if (!is.null(names(fields))) {
     names(redacted) <- names(fields)
   }
   redacted
+}
+
+.comma_redact_atomic_names <- function(value) {
+  value_names <- names(value)
+  if (is.null(value_names) || length(value_names) == 0L) {
+    return(value)
+  }
+  sensitive <- vapply(value_names, .comma_sensitive_field, logical(1))
+  if (!any(sensitive)) {
+    return(value)
+  }
+  value <- as.character(value)
+  names(value) <- value_names
+  value[sensitive] <- "[REDACTED]"
+  value
 }
 
 .comma_sensitive_field <- function(name) {
