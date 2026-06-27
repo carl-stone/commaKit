@@ -39,6 +39,13 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: readiness-code-quality
+        name: Enforce repository code-quality budgets
+        entry: Rscript inst/scripts/readiness-checks.R code-quality
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: r-tests
         name: Run package tests before push
         entry: Rscript dev/precommit.R test

@@ -14,7 +14,9 @@ NULL
 #'
 #' @details
 #' Beta values are first transformed to M-values:
-#' \deqn{M = \log_2\!\left(\frac{n_{\mathrm{mod}} + \alpha}{n_{\mathrm{unmod}} + \alpha}\right)}
+#' \deqn{M = \log_2\!\left(
+#'   \frac{n_{\mathrm{mod}} + \alpha}{n_{\mathrm{unmod}} + \alpha}
+#' \right)}
 #' where \eqn{\alpha} is a pseudocount (default 0.5). M-values are
 #' approximately normally distributed and homoscedastic, making OLS
 #' appropriate.
@@ -89,8 +91,10 @@ NULL
   }
 
   # ── Validate alpha ────────────────────────────────────────────────────────
-  if (!is.numeric(alpha) || length(alpha) != 1L ||
-    !is.finite(alpha) || alpha <= 0) {
+  if (
+    !is.numeric(alpha) || length(alpha) != 1L ||
+      !is.finite(alpha) || alpha <= 0
+  ) {
     stop("'alpha' must be a single positive finite number.")
   }
 
@@ -111,8 +115,6 @@ NULL
   n_sites <- nrow(methyl_mat)
 
   group_stats <- .computeDiffMethylGroupStats(methyl_mat, design_info)
-  group_means <- group_stats$group_means
-  delta_beta_vec <- group_stats$delta_beta
   count_mats <- .resolveCountMatrices(
     methyl_mat,
     coverage_mat,
@@ -127,32 +129,24 @@ NULL
   # Clamp to [0, coverage] to guard against floating-point edge cases
   n_mod <- pmax(0, pmin(n_mod, coverage_mat))
   n_unmod <- pmax(0, n_unmod)
-  M_mat <- log2((n_mod + alpha) / (n_unmod + alpha))
-  dim(M_mat) <- dim(coverage_mat)
-  dimnames(M_mat) <- dimnames(coverage_mat)
+  m_mat <- log2((n_mod + alpha) / (n_unmod + alpha))
+  dim(m_mat) <- dim(coverage_mat)
+  dimnames(m_mat) <- dimnames(coverage_mat)
   # Sites with zero or NA coverage → NA
-  M_mat[
+  m_mat[
     is.na(methyl_mat) | is.na(coverage_mat) | coverage_mat == 0L
   ] <- NA_real_
 
   # ── Identify complete-case sites ──────────────────────────────────────────
-  complete_sites <- which(apply(!is.na(M_mat), 1L, all))
+  complete_sites <- which(apply(!is.na(m_mat), 1L, all))
   pvalue_vec <- rep(NA_real_, n_sites)
 
   if (length(complete_sites) < 2L) {
     # Not enough sites with complete data to estimate the eBayes prior
-    result <- data.frame(
-      pvalue = pvalue_vec,
-      delta_beta = delta_beta_vec,
-      stringsAsFactors = FALSE
-    )
-    for (lv in cond_levels) {
-      result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
-    }
-    return(result)
+    return(.assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels))
   }
 
-  M_complete <- M_mat[complete_sites, , drop = FALSE]
+  m_complete <- m_mat[complete_sites, , drop = FALSE]
 
   # ── Build design matrix ───────────────────────────────────────────────────
   # Relevel the primary variable so model.matrix() encodes contrasts against
@@ -164,7 +158,7 @@ NULL
   design <- stats::model.matrix(formula, data = coldata)
 
   # ── Fit linear model + eBayes ─────────────────────────────────────────────
-  fit <- limma::lmFit(M_complete, design)
+  fit <- limma::lmFit(m_complete, design)
   fit <- limma::eBayes(fit)
 
   # ── Extract p-values for the contrast coefficient ─────────────────────────
@@ -184,14 +178,5 @@ NULL
   pvalue_vec[complete_sites] <- fit$p.value[, contrast_col]
 
   # ── Assemble result ───────────────────────────────────────────────────────
-  result <- data.frame(
-    pvalue = pvalue_vec,
-    delta_beta = delta_beta_vec,
-    stringsAsFactors = FALSE
-  )
-  for (lv in cond_levels) {
-    result[[paste0("mean_beta_", lv)]] <- group_means[, lv]
-  }
-
-  result
+  .assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels)
 }

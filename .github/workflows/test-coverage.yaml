@@ -1,0 +1,60 @@
+name: Test coverage threshold
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    container: bioconductor/bioconductor_docker:RELEASE_3_22
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
+      COMMAKIT_MIN_COVERAGE: "50"
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Configure git safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::sessioninfo
+          extra-packages: local::., any::covr
+          needs: check
+
+      - name: Enforce coverage threshold
+        shell: Rscript {0}
+        run: |
+          coverage <- covr::package_coverage(type = "tests")
+          percent <- covr::percent_coverage(coverage)
+          threshold <- as.numeric(Sys.getenv("COMMAKIT_MIN_COVERAGE", "50"))
+          message(sprintf("Coverage: %.2f%%, threshold: %.2f%%", percent, threshold))
+          if (percent < threshold) {
+            stop(sprintf(
+              "Coverage %.2f%% is below required threshold %.2f%%",
+              percent,
+              threshold
+            ))
+          }
+          covr::to_cobertura(coverage, filename = "coverage.xml")
+
+      - name: Add coverage summary
+        if: always()
+        run: |
+          echo "## Test Coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Coverage threshold: ${COMMAKIT_MIN_COVERAGE}%" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 30

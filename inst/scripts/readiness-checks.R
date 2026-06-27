@@ -187,10 +187,287 @@ readiness_check_agents_links <- function(
   invisible(TRUE)
 }
 
+readiness_r_quality_files <- function(files) {
+  files[
+    grepl("\\.[Rr]$", files) &
+      grepl("^(R|inst/scripts)/", files) &
+      !grepl("^(renv|docs|man|droid-wiki|\\.git)/", files)
+  ]
+}
+
+readiness_descendant_ids <- function(parse_data, parent_id) {
+  ids <- parent_id
+  current <- parent_id
+  repeat {
+    children <- parse_data$id[parse_data$parent %in% current]
+    children <- setdiff(children, ids)
+    if (length(children) == 0L) {
+      break
+    }
+    ids <- c(ids, children)
+    current <- children
+  }
+  ids
+}
+
+readiness_function_name <- function(parse_data, function_row) {
+  siblings <- parse_data[
+    parse_data$parent == function_row$parent &
+      parse_data$line1 <= function_row$line1, ,
+    drop = FALSE
+  ]
+  symbols <- siblings[siblings$token == "SYMBOL", , drop = FALSE]
+  if (nrow(symbols) > 0L) {
+    return(utils::tail(symbols$text, 1L))
+  }
+  paste0("<anonymous>:", function_row$line1)
+}
+
+readiness_function_complexity <- function(parse_data, function_row) {
+  ids <- readiness_descendant_ids(parse_data, function_row$parent)
+  body <- parse_data[parse_data$id %in% ids, , drop = FALSE]
+  branch_tokens <- c("IF", "FOR", "WHILE", "REPEAT", "AND", "OR")
+  branch_calls <- c("ifelse", "tryCatch", "withCallingHandlers")
+  1L +
+    sum(body$token %in% branch_tokens) +
+    sum(body$token == "SYMBOL_FUNCTION_CALL" & body$text %in% branch_calls)
+}
+
+readiness_check_complexity <- function(
+  files = readiness_git_files(),
+  root = readiness_repo_root(),
+  max_complexity = as.integer(Sys.getenv(
+    "COMMAKIT_MAX_CYCLOMATIC_COMPLEXITY",
+    unset = "50"
+  ))
+) {
+  files <- readiness_r_quality_files(files)
+  violations <- character()
+  max_seen <- 0L
+  for (file in files) {
+    path <- file.path(root, file)
+    if (!file.exists(path)) next
+    parsed <- tryCatch(parse(path, keep.source = TRUE), error = identity)
+    if (inherits(parsed, "error")) {
+      stop("Could not parse ", file, ": ", conditionMessage(parsed),
+        call. = FALSE
+      )
+    }
+    parse_data <- utils::getParseData(parsed)
+    if (is.null(parse_data)) next
+    functions <- parse_data[parse_data$token == "FUNCTION", , drop = FALSE]
+    for (i in seq_len(nrow(functions))) {
+      complexity <- readiness_function_complexity(parse_data, functions[i, ])
+      max_seen <- max(max_seen, complexity)
+      if (complexity > max_complexity) {
+        violations <- c(
+          violations,
+          paste0(
+            file,
+            ":",
+            functions$line1[[i]],
+            " ",
+            readiness_function_name(parse_data, functions[i, ]),
+            " complexity ",
+            complexity
+          )
+        )
+      }
+    }
+  }
+  if (length(violations) > 0L) {
+    stop(
+      "Functions exceed cyclomatic complexity limit ",
+      max_complexity,
+      ":\n- ",
+      paste(violations, collapse = "\n- "),
+      call. = FALSE
+    )
+  }
+  message(
+    "Complexity check passed for ",
+    length(files),
+    " R files; maximum observed complexity was ",
+    max_seen,
+    "."
+  )
+  invisible(TRUE)
+}
+
+readiness_internal_definitions <- function(files, root) {
+  defs <- data.frame(
+    name = character(),
+    file = character(),
+    line = integer(),
+    stringsAsFactors = FALSE
+  )
+  definition_re <- paste0(
+    "^\\s*(\\.[A-Za-z][A-Za-z0-9._]*)\\s*",
+    "(<-|=)\\s*function\\s*\\(.*$"
+  )
+  for (file in files) {
+    path <- file.path(root, file)
+    if (!file.exists(path) || !readiness_is_text_file(path)) next
+    lines <- readLines(path, warn = FALSE)
+    hits <- grep(definition_re, lines, perl = TRUE)
+    if (length(hits) == 0L) next
+    defs <- rbind(
+      defs,
+      data.frame(
+        name = sub(definition_re, "\\1", lines[hits], perl = TRUE),
+        file = file,
+        line = hits,
+        stringsAsFactors = FALSE
+      )
+    )
+  }
+  defs
+}
+
+readiness_check_dead_code <- function(
+  files = readiness_git_files(),
+  root = readiness_repo_root()
+) {
+  r_files <- readiness_r_quality_files(files)
+  searchable <- files[readiness_text_candidates(files)]
+  defs <- readiness_internal_definitions(r_files, root)
+  unused <- character()
+  for (i in seq_len(nrow(defs))) {
+    reference_count <- 0L
+    name_re <- paste0(
+      "(?<![A-Za-z0-9._])", gsub("\\.", "\\\\.", defs$name[[i]]),
+      "(?![A-Za-z0-9._])"
+    )
+    for (file in searchable) {
+      path <- file.path(root, file)
+      if (!file.exists(path) || !readiness_is_text_file(path)) next
+      lines <- readLines(path, warn = FALSE)
+      reference_count <- reference_count +
+        sum(grepl(name_re, lines, perl = TRUE))
+    }
+    if (reference_count <= 1L) {
+      unused <- c(
+        unused,
+        paste0(defs$file[[i]], ":", defs$line[[i]], " ", defs$name[[i]])
+      )
+    }
+  }
+  if (length(unused) > 0L) {
+    stop(
+      "Internal helper definitions appear unused:\n- ",
+      paste(unused, collapse = "\n- "),
+      call. = FALSE
+    )
+  }
+  message(
+    "Dead internal-code check passed for ",
+    nrow(defs),
+    " internal helpers."
+  )
+  invisible(TRUE)
+}
+
+readiness_normalize_code_line <- function(line) {
+  line <- trimws(line)
+  line <- sub("\\s+#.*$", "", line)
+  line <- gsub("\"([^\"\\\\]|\\\\.)*\"", "\"\"", line, perl = TRUE)
+  line <- gsub("'([^'\\\\]|\\\\.)*'", "''", line, perl = TRUE)
+  line <- gsub("[[:space:]]+", " ", line)
+  trimws(line)
+}
+
+readiness_duplicate_windows <- function(lines, window_size) {
+  if (length(lines) < window_size) {
+    return(character())
+  }
+  vapply(
+    seq_len(length(lines) - window_size + 1L),
+    function(i) paste(lines[seq.int(i, i + window_size - 1L)], collapse = "\n"),
+    character(1)
+  )
+}
+
+readiness_check_duplicate_code <- function(
+  files = readiness_git_files(),
+  root = readiness_repo_root(),
+  window_size = as.integer(Sys.getenv(
+    "COMMAKIT_DUPLICATE_CODE_WINDOW",
+    unset = "30"
+  ))
+) {
+  files <- readiness_r_quality_files(files)
+  windows <- list()
+  for (file in files) {
+    path <- file.path(root, file)
+    if (!file.exists(path) || !readiness_is_text_file(path)) next
+    lines <- readLines(path, warn = FALSE)
+    lines <- vapply(lines, readiness_normalize_code_line, character(1))
+    lines <- lines[nzchar(lines) & !lines %in% c("{", "}", "},", ")", "),")]
+    chunks <- readiness_duplicate_windows(lines, window_size)
+    if (length(chunks) == 0L) next
+    windows <- c(
+      windows,
+      stats::setNames(
+        as.list(seq_along(chunks)),
+        paste(file, seq_along(chunks), chunks, sep = "\001")
+      )
+    )
+  }
+  if (length(windows) == 0L) {
+    message("Duplicate-code check passed; no windows to compare.")
+    return(invisible(TRUE))
+  }
+  keys <- sub("^[^\001]+\001[^\001]+\001", "", names(windows))
+  duplicates <- names(which(table(keys) > 1L))
+  if (length(duplicates) > 0L) {
+    locations <- vapply(
+      utils::head(duplicates, 20L),
+      function(key) {
+        hits <- names(windows)[keys == key]
+        paste(sub("\001.*$", "", hits), collapse = ", ")
+      },
+      character(1)
+    )
+    stop(
+      "Duplicate code windows of ",
+      window_size,
+      " normalized lines found:\n- ",
+      paste(locations, collapse = "\n- "),
+      call. = FALSE
+    )
+  }
+  message(
+    "Duplicate-code check passed across ",
+    length(files),
+    " R files with ",
+    window_size,
+    "-line windows."
+  )
+  invisible(TRUE)
+}
+
+readiness_check_code_quality <- function(
+  files = readiness_git_files(),
+  root = readiness_repo_root()
+) {
+  readiness_check_complexity(files = files, root = root)
+  readiness_check_dead_code(files = files, root = root)
+  readiness_check_duplicate_code(files = files, root = root)
+  invisible(TRUE)
+}
+
 readiness_run <- function(checks) {
-  available <- c("large-files", "debt-markers", "agents-links")
+  available <- c(
+    "large-files",
+    "debt-markers",
+    "agents-links",
+    "complexity",
+    "dead-code",
+    "duplicate-code",
+    "code-quality"
+  )
   if (identical(checks, "all")) {
-    checks <- available
+    checks <- c("large-files", "debt-markers", "agents-links", "code-quality")
   }
   unknown <- setdiff(checks, available)
   if (length(unknown) > 0L) {
@@ -201,7 +478,11 @@ readiness_run <- function(checks) {
     switch(check,
       "large-files" = readiness_check_large_files(),
       "debt-markers" = readiness_check_debt_markers(),
-      "agents-links" = readiness_check_agents_links()
+      "agents-links" = readiness_check_agents_links(),
+      "complexity" = readiness_check_complexity(),
+      "dead-code" = readiness_check_dead_code(),
+      "duplicate-code" = readiness_check_duplicate_code(),
+      "code-quality" = readiness_check_code_quality()
     )
   }
   invisible(TRUE)

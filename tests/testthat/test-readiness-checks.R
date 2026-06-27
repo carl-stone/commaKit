@@ -77,3 +77,88 @@ test_that("AGENTS link readiness check validates local links", {
     "missing local links"
   )
 })
+
+test_that("complexity readiness check enforces branch thresholds", {
+  root <- tempfile("readiness-root-")
+  dir.create(file.path(root, "R"), recursive = TRUE)
+  writeLines(
+    c(
+      "simple <- function(x) {",
+      "  if (x > 1) x else 0",
+      "}",
+      "complex <- function(x) {",
+      "  if (x > 1) x <- x + 1",
+      "  if (x > 2) x <- x + 1",
+      "  if (x > 3) x <- x + 1",
+      "  x",
+      "}"
+    ),
+    file.path(root, "R", "quality.R")
+  )
+
+  expect_true(readiness_env$readiness_check_complexity(
+    files = "R/quality.R",
+    root = root,
+    max_complexity = 4L
+  ))
+  expect_error(
+    readiness_env$readiness_check_complexity(
+      files = "R/quality.R",
+      root = root,
+      max_complexity = 3L
+    ),
+    "cyclomatic complexity"
+  )
+})
+
+test_that("dead-code readiness check flags unused internal helpers", {
+  root <- tempfile("readiness-root-")
+  dir.create(file.path(root, "R"), recursive = TRUE)
+  writeLines(
+    c(
+      ".used_helper <- function(x) x + 1",
+      ".unused_helper <- function(x) x - 1",
+      "public <- function(x) .used_helper(x)"
+    ),
+    file.path(root, "R", "helpers.R")
+  )
+
+  expect_error(
+    readiness_env$readiness_check_dead_code(
+      files = "R/helpers.R",
+      root = root
+    ),
+    ".unused_helper",
+    fixed = TRUE
+  )
+})
+
+test_that("duplicate-code readiness check compares normalized windows", {
+  root <- tempfile("readiness-root-")
+  dir.create(file.path(root, "R"), recursive = TRUE)
+  repeated <- c(
+    "alpha <- 1",
+    "beta <- 2",
+    "gamma <- alpha + beta"
+  )
+  writeLines(
+    c(
+      "one <- function() {",
+      repeated,
+      "}",
+      "two <- function() {",
+      repeated,
+      "}"
+    ),
+    file.path(root, "R", "duplicate.R")
+  )
+
+  expect_error(
+    readiness_env$readiness_check_duplicate_code(
+      files = "R/duplicate.R",
+      root = root,
+      window_size = 3L
+    ),
+    "Duplicate code windows"
+  )
+})

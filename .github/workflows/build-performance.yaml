@@ -1,0 +1,74 @@
+name: Build performance tracking
+
+on:
+  schedule:
+    - cron: "17 10 * * 1"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  build-performance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Collect recent workflow durations
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh run list \
+            --repo "$REPOSITORY" \
+            --limit 100 \
+            --json workflowName,conclusion,createdAt,updatedAt,event \
+            > runs.json
+
+          ruby <<'RUBY' > build-performance.md
+          require "json"
+          require "time"
+
+          tracked = [
+            "R-CMD-check.yaml",
+            "pkgdown.yaml",
+            "test-timing.yaml",
+            "Repository hygiene checks",
+            "Automated security review"
+          ]
+          runs = JSON.parse(File.read("runs.json"))
+          rows = tracked.filter_map do |workflow|
+            samples = runs.select do |run|
+              run["workflowName"] == workflow &&
+                run["conclusion"] == "success" &&
+                run["createdAt"] &&
+                run["updatedAt"]
+            end.first(10)
+            next if samples.empty?
+
+            durations = samples.map do |run|
+              Time.parse(run["updatedAt"]) - Time.parse(run["createdAt"])
+            end
+            avg = durations.sum / durations.length
+            [workflow, durations.length, avg.round(1), durations.max.round(1)]
+          end
+
+          puts "## Build Performance Report"
+          puts
+          puts "| Workflow | Successful runs sampled | Avg seconds | Max seconds |"
+          puts "|---|---:|---:|---:|"
+          rows.each do |workflow, count, avg, max|
+            puts "| #{workflow} | #{count} | #{avg} | #{max} |"
+          end
+          RUBY
+
+          cat build-performance.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload build performance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-performance-report
+          path: |
+            runs.json
+            build-performance.md
+          retention-days: 30

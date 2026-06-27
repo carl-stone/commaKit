@@ -1,0 +1,50 @@
+name-template: "commaKit $RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+
+categories:
+  - title: "Breaking changes"
+    labels:
+      - "type:api"
+  - title: "Features"
+    labels:
+      - "type:feature"
+  - title: "Bug fixes"
+    labels:
+      - "type:bug"
+  - title: "Documentation"
+    labels:
+      - "type:docs"
+  - title: "Tests and quality"
+    labels:
+      - "type:test"
+      - "type:audit"
+      - "type:cleanup"
+  - title: "Maintenance"
+    labels:
+      - "type:admin"
+
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
+change-title-escapes: '\<*_&'
+template: |
+  ## Changes
+
+  $CHANGES
+
+version-resolver:
+  major:
+    labels:
+      - "release:major"
+  minor:
+    labels:
+      - "release:minor"
+      - "type:feature"
+  patch:
+    labels:
+      - "release:patch"
+      - "type:bug"
+      - "type:docs"
+      - "type:test"
+      - "type:audit"
+      - "type:cleanup"
+      - "type:admin"
+  default: patch
