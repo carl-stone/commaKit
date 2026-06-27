@@ -66,6 +66,8 @@ test_that("structured logger emits machine-readable JSON fields", {
     site_count = 2L,
     labels = c("6mA", "5mC"),
     note = "quoted \"value\"",
+    api_token = "redact-me-1",
+    nested = list(password = "redact-me-2", caller = "modkit"),
     ok = TRUE,
     .time = as.POSIXct("2026-01-02 03:04:05", tz = "UTC")
   )
@@ -82,6 +84,10 @@ test_that("structured logger emits machine-readable JSON fields", {
   expect_match(out, '"site_count":2', fixed = TRUE)
   expect_match(out, '"labels":["6mA","5mC"]', fixed = TRUE)
   expect_match(out, '"note":"quoted \\"value\\""', fixed = TRUE)
+  expect_match(out, '"api_token":"[REDACTED]"', fixed = TRUE)
+  expect_match(out, '"password":"[REDACTED]"', fixed = TRUE)
+  expect_no_match(out, "redact-me-1", fixed = TRUE)
+  expect_no_match(out, "redact-me-2", fixed = TRUE)
   expect_match(out, '"ok":true', fixed = TRUE)
 })
 
@@ -345,11 +351,78 @@ test_that("error tracking options tolerate missing and malformed values", {
   expect_true(commaKit:::.comma_add_breadcrumb("option_check"))
   expect_length(getOption("commaKit.error_tracking.breadcrumbs"), 1L)
   expect_equal(commaKit:::.comma_error_tracking_timeout(), 2)
-  expect_equal(commaKit:::.comma_error_tracking_connect_timeout(), 1)
+  expect_equal(commaKit:::.comma_connect_timeout(), 1)
   expect_equal(commaKit:::.comma_environment(), "production")
   expect_match(commaKit:::.comma_release(), "^commaKit@")
   expect_true(commaKit:::.comma_store_error_event(list(event_id = "1")))
   expect_type(getOption("commaKit.error_tracking.events"), "list")
+})
+
+test_that("sensitive logging context is redacted recursively", {
+  context <- commaKit:::.comma_sanitize_context(list(
+    sample_name = "s1",
+    api_token = "redact-me-1",
+    empty_secret = "",
+    sentry_dsn = "https://public@example.test/1",
+    nested = list(
+      password = "redact-me-2",
+      user_email = "agent@example.test",
+      caller = "modkit"
+    ),
+    headers = c(
+      authorization = "Bearer redact-me-3",
+      accept = "application/json"
+    )
+  ))
+
+  expect_equal(context$sample_name, "s1")
+  expect_equal(context$api_token, "[REDACTED]")
+  expect_null(context$empty_secret)
+  expect_equal(context$sentry_dsn, "[REDACTED]")
+  expect_equal(context$nested$password, "[REDACTED]")
+  expect_equal(context$nested$user_email, "[REDACTED]")
+  expect_equal(context$nested$caller, "modkit")
+  expect_equal(context$headers[["authorization"]], "[REDACTED]")
+  expect_equal(context$headers[["accept"]], "application/json")
+})
+
+test_that("user context drops blank sensitive fields", {
+  old <- options(commaKit.error_tracking.user = NULL)
+  old_env <- Sys.getenv(c(
+    "COMMAKIT_USER_ID",
+    "COMMAKIT_USER_EMAIL",
+    "COMMAKIT_USER_NAME"
+  ), unset = NA_character_)
+  on.exit({
+    options(old)
+    for (name in names(old_env)) {
+      if (is.na(old_env[[name]])) {
+        Sys.unsetenv(name)
+      } else {
+        do.call(Sys.setenv, setNames(list(old_env[[name]]), name))
+      }
+    }
+  })
+  Sys.unsetenv(c(
+    "COMMAKIT_USER_ID",
+    "COMMAKIT_USER_EMAIL",
+    "COMMAKIT_USER_NAME"
+  ))
+
+  expect_length(commaKit:::.comma_user_context(), 0L)
+})
+
+test_that("structured field redaction handles named atomic values", {
+  fields <- commaKit:::.comma_redact_fields(list(
+    headers = c(
+      authorization = "Bearer redact-me",
+      accept = "application/json"
+    )
+  ))
+
+  expect_equal(fields$headers[["authorization"]], "[REDACTED]")
+  expect_equal(fields$headers[["accept"]], "application/json")
+  expect_false(grepl("redact-me", commaKit:::.comma_json_object(fields)))
 })
 
 test_that("event IDs do not advance the user's RNG state", {
