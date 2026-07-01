@@ -395,13 +395,13 @@ resultLayers(cd_dm)
 #> 1  diffMethyl  diffMethyl differential_methyla..  diffMethyl       TRUE
 #>        method     formula   reference   treatment     mod_context
 #>   <character> <character> <character> <character> <CharacterList>
-#> 1   methylkit  ~condition     control   treatment
+#> 1   methylkit  ~condition     control   treatment                
 #>          mod_type           motif p_adjust_method min_coverage     alpha
 #>   <CharacterList> <CharacterList>     <character>    <integer> <numeric>
 #> 1             6mA                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-01 01:11:13 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-01 06:14:01 ..           0.2.0
 ```
 
 Raw evidence assays are treated as canonical input evidence.
@@ -461,26 +461,26 @@ Vignettes:
 
 ## Current status and limitations
 
-| Area                     | Status                                                            |
-|--------------------------|-------------------------------------------------------------------|
-| Package version          | `0.2.0` development baseline                                      |
-| Distribution             | GitHub only; not yet submitted to Bioconductor                    |
-| Primary input            | modkit pileup bedMethyl                                           |
-| Optional inputs          | Dorado BAM with MM/ML tags; Megalodon legacy output               |
-| Differential methylation | One two-level design variable for v1                              |
-| Example data             | Synthetic, deterministic, useful for tests and tutorials          |
-| Real-data validation     | Planned; depends on selecting a redistributable bacterial dataset |
-| Performance evidence     | Planned before broader release confidence                         |
+| Area | Status |
+|----|----|
+| Package version | `0.2.0` development baseline |
+| Distribution | GitHub only; not yet submitted to Bioconductor |
+| Primary input | modkit pileup bedMethyl |
+| Optional inputs | Dorado BAM with MM/ML tags; Megalodon legacy output |
+| Differential methylation | One two-level design variable for v1 |
+| Example data | Synthetic, deterministic, useful for tests and tutorials |
+| Real-data validation | Planned; depends on selecting a redistributable bacterial dataset |
+| Performance evidence | Planned before broader release confidence |
 
 Roadmap:
 
-| Version | Phase                                                              | Status      |
-|---------|--------------------------------------------------------------------|-------------|
-| 0.2.0   | Schema v2, commaKit rename, result layers, assay provenance        | Done        |
-| 0.2.x   | Test quality, parser hardening, docs synchronization               | In progress |
-| 0.x.y   | Real-data examples, performance benchmarks, Bioconductor hardening | Planned     |
-| 0.99.0  | Bioconductor submission version                                    | Future      |
-| 1.0.0   | Stable public release after external confidence                    | Future      |
+| Version | Phase | Status |
+|----|----|----|
+| 0.2.0 | Schema v2, commaKit rename, result layers, assay provenance | Done |
+| 0.2.x | Test quality, parser hardening, docs synchronization | In progress |
+| 0.x.y | Real-data examples, performance benchmarks, Bioconductor hardening | Planned |
+| 0.99.0 | Bioconductor submission version | Future |
+| 1.0.0 | Stable public release after external confidence | Future |
 
 ## Support
 
