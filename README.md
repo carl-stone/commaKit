@@ -236,8 +236,7 @@ deferred.
 cd_dm <- diffMethyl(
   comma_example_data,
   formula = ~condition,
-  mod_type = "6mA",
-  method = "quasi_f"
+  mod_type = "6mA"
 )
 
 res <- results(cd_dm)
@@ -246,19 +245,19 @@ sig <- filterResults(cd_dm, padj = 0.05, delta_beta = 0.2)
 cat("Total 6mA sites tested:", nrow(res), "\n")
 #> Total 6mA sites tested: 588
 cat("Significant sites:", nrow(sig), "\n")
-#> Significant sites: 30
+#> Significant sites: 31
 
 head(res[
   order(res$dm_padj),
   c("chrom", "position", "mod_context", "dm_delta_beta", "dm_padj")
 ])
 #>       chrom position mod_context dm_delta_beta      dm_padj
-#> 64  chr_sim    16504    6mA_GATC    -0.6142911 4.216853e-07
-#> 196 chr_sim    50176    6mA_GATC    -0.7336497 4.216853e-07
-#> 287 chr_sim    70003    6mA_GATC    -0.7050844 4.216853e-07
-#> 347 chr_sim    86016    6mA_GATC    -0.6743832 4.216853e-07
-#> 249 chr_sim    61440    6mA_GATC    -0.7090099 5.976969e-07
-#> 63  chr_sim    16384    6mA_GATC    -0.7178796 8.347795e-07
+#> 196 chr_sim    50176    6mA_GATC    -0.7336497 1.849154e-75
+#> 287 chr_sim    70003    6mA_GATC    -0.7050844 3.896483e-68
+#> 260 chr_sim    63550    6mA_GATC    -0.7799241 5.006897e-66
+#> 249 chr_sim    61440    6mA_GATC    -0.7090099 1.178364e-64
+#> 347 chr_sim    86016    6mA_GATC    -0.6743832 3.661541e-62
+#> 9   chr_sim     2180    6mA_GATC    -0.7543758 4.024452e-60
 ```
 
 Effect sizes are reported on the beta scale, and multiple-testing
@@ -396,13 +395,13 @@ resultLayers(cd_dm)
 #> 1  diffMethyl  diffMethyl differential_methyla..  diffMethyl       TRUE
 #>        method     formula   reference   treatment     mod_context
 #>   <character> <character> <character> <character> <CharacterList>
-#> 1     quasi_f  ~condition     control   treatment                
+#> 1   methylkit  ~condition     control   treatment
 #>          mod_type           motif p_adjust_method min_coverage     alpha
 #>   <CharacterList> <CharacterList>     <character>    <integer> <numeric>
 #> 1             6mA                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-01 06:01:07 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-01 01:11:13 ..           0.2.0
 ```
 
 Raw evidence assays are treated as canonical input evidence.
@@ -462,26 +461,26 @@ Vignettes:
 
 ## Current status and limitations
 
-| Area | Status |
-|----|----|
-| Package version | `0.2.0` development baseline |
-| Distribution | GitHub only; not yet submitted to Bioconductor |
-| Primary input | modkit pileup bedMethyl |
-| Optional inputs | Dorado BAM with MM/ML tags; Megalodon legacy output |
-| Differential methylation | One two-level design variable for v1 |
-| Example data | Synthetic, deterministic, useful for tests and tutorials |
-| Real-data validation | Planned; depends on selecting a redistributable bacterial dataset |
-| Performance evidence | Planned before broader release confidence |
+| Area                     | Status                                                            |
+|--------------------------|-------------------------------------------------------------------|
+| Package version          | `0.2.0` development baseline                                      |
+| Distribution             | GitHub only; not yet submitted to Bioconductor                    |
+| Primary input            | modkit pileup bedMethyl                                           |
+| Optional inputs          | Dorado BAM with MM/ML tags; Megalodon legacy output               |
+| Differential methylation | One two-level design variable for v1                              |
+| Example data             | Synthetic, deterministic, useful for tests and tutorials          |
+| Real-data validation     | Planned; depends on selecting a redistributable bacterial dataset |
+| Performance evidence     | Planned before broader release confidence                         |
 
 Roadmap:
 
-| Version | Phase | Status |
-|----|----|----|
-| 0.2.0 | Schema v2, commaKit rename, result layers, assay provenance | Done |
-| 0.2.x | Test quality, parser hardening, docs synchronization | In progress |
-| 0.x.y | Real-data examples, performance benchmarks, Bioconductor hardening | Planned |
-| 0.99.0 | Bioconductor submission version | Future |
-| 1.0.0 | Stable public release after external confidence | Future |
+| Version | Phase                                                              | Status      |
+|---------|--------------------------------------------------------------------|-------------|
+| 0.2.0   | Schema v2, commaKit rename, result layers, assay provenance        | Done        |
+| 0.2.x   | Test quality, parser hardening, docs synchronization               | In progress |
+| 0.x.y   | Real-data examples, performance benchmarks, Bioconductor hardening | Planned     |
+| 0.99.0  | Bioconductor submission version                                    | Future      |
+| 1.0.0   | Stable public release after external confidence                    | Future      |
 
 ## Support
 
