@@ -205,7 +205,8 @@ Multi-factor formulas are intentionally deferred.
 cd_dm <- diffMethyl(
   comma_example_data,
   formula = ~condition,
-  mod_type = "6mA"
+  mod_type = "6mA",
+  method = "quasi_f"
 )
 
 res <- results(cd_dm)
