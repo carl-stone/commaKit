@@ -138,7 +138,11 @@ plot_coverage <- function(object,
 
   p <- p +
     ggplot2::scale_x_log10(
-      labels = scales_comma_label()
+      labels = if (requireNamespace("scales", quietly = TRUE)) {
+        scales::comma
+      } else {
+        ggplot2::waiver()
+      }
     ) +
     ggplot2::labs(
       x = expression("Coverage depth (reads, " * log[10] * " scale)"),
@@ -148,14 +152,4 @@ plot_coverage <- function(object,
     ggplot2::theme_bw()
 
   p
-}
-
-## Internal helper: format axis labels with commas if scales is available,
-## otherwise fall back to default.
-scales_comma_label <- function() {
-  if (requireNamespace("scales", quietly = TRUE)) {
-    scales::comma
-  } else {
-    ggplot2::waiver()
-  }
 }

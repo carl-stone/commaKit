@@ -863,7 +863,13 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
 
   # -- Optionally translate KEGG IDs to gene symbols -------------------------
   if (!is.null(id_map)) {
-    .validateKEGGIDMap(id_map)
+    if (!is.data.frame(id_map) ||
+      !all(c("symbol", "kegg_id") %in% colnames(id_map))) {
+      stop(
+        "'id_map' must be a data.frame with columns 'symbol' and 'kegg_id'.\n",
+        "Use buildKEGGGeneIDMap() to create it."
+      )
+    }
     mapped <- id_map$symbol[match(term2gene$gene, id_map$kegg_id)]
     term2gene$gene <- ifelse(is.na(mapped), term2gene$gene, mapped)
   }
@@ -912,17 +918,6 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
 }
 
 # --- buildKEGGGeneIDMap() -----------------------------------------------------
-
-# Validate that id_map is a data.frame with columns 'symbol' and 'kegg_id'.
-.validateKEGGIDMap <- function(id_map) {
-  if (!is.data.frame(id_map) ||
-    !all(c("symbol", "kegg_id") %in% colnames(id_map))) {
-    stop(
-      "'id_map' must be a data.frame with columns 'symbol' and 'kegg_id'.\n",
-      "Use buildKEGGGeneIDMap() to create it."
-    )
-  }
-}
 
 #' Build a KEGG gene ID map for symbol translation
 #'

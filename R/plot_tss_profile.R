@@ -8,18 +8,6 @@
 #' @importFrom methods is
 NULL
 
-.lighten_color <- function(col, amount = 0.3) {
-  m <- grDevices::col2rgb(col) / 255
-  m <- m + (1 - m) * amount
-  grDevices::rgb(t(m))
-}
-
-.darken_color <- function(col, amount = 0.3) {
-  m <- grDevices::col2rgb(col) / 255
-  m <- m * (1 - amount)
-  grDevices::rgb(t(m))
-}
-
 #' TSS-centered methylation profile
 #'
 #' Plots individual methylation sites at their absolute base-pair position
@@ -363,7 +351,11 @@ plot_tss_profile <- function(object,
       mapping = if (!is.null(color_var)) {
         ggplot2::aes(color = ggplot2::stage(
           start       = .data[[color_var]],
-          after_scale = .lighten_color(color, 0.4)
+          after_scale = {
+            m <- grDevices::col2rgb(color) / 255
+            m <- m + (1 - m) * 0.4
+            grDevices::rgb(t(m))
+          }
         ))
       } else {
         NULL
@@ -543,7 +535,11 @@ plot_tss_profile <- function(object,
           y = .data[["beta_smooth"]],
           color = ggplot2::stage(
             start       = .data[[color_var]],
-            after_scale = .darken_color(color, 0.3)
+            after_scale = {
+              m <- grDevices::col2rgb(color) / 255
+              m <- m * (1 - 0.3)
+              grDevices::rgb(t(m))
+            }
           )
         )
         p <- p + ggplot2::geom_line(

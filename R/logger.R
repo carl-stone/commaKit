@@ -1,23 +1,9 @@
-.comma_log_enabled <- function() {
-  opt <- getOption("commaKit.log", FALSE)
-  env <- Sys.getenv("COMMAKIT_LOG", unset = "")
-  enabled_values <- c("1", "true", "yes", "json", "structured")
-
-  isTRUE(opt) ||
-    tolower(as.character(opt)[1L]) %in% enabled_values ||
-    tolower(env) %in% enabled_values
-}
-
-.comma_log_connection <- function() {
-  getOption("commaKit.log.connection", stdout())
-}
-
 .comma_log_event <- function(event,
                              level = "info",
                              component = NULL,
                              ...,
                              .time = Sys.time(),
-                             .stream = .comma_log_connection()) {
+                             .stream = getOption("commaKit.log.connection", stdout())) {
   fields <- list(
     timestamp = format(
       as.POSIXct(.time, tz = "UTC"),
@@ -43,7 +29,13 @@
     .time = .time
   )
 
-  if (!.comma_log_enabled()) {
+  log_opt <- getOption("commaKit.log", FALSE)
+  log_env <- Sys.getenv("COMMAKIT_LOG", unset = "")
+  log_enabled_values <- c("1", "true", "yes", "json", "structured")
+  log_enabled <- isTRUE(log_opt) ||
+    tolower(as.character(log_opt)[1L]) %in% log_enabled_values ||
+    tolower(log_env) %in% log_enabled_values
+  if (!log_enabled) {
     return(invisible(FALSE))
   }
 
@@ -307,8 +299,13 @@
   }
   calls <- utils::tail(calls, 40L)
   frames <- lapply(calls, function(call) {
+    call_function <- if (!is.call(call) || length(call) == 0L) {
+      "<unknown>"
+    } else {
+      paste(deparse(call[[1L]]), collapse = "::")
+    }
     frame <- list(
-      "function" = .comma_call_function(call),
+      "function" = call_function,
       context_line = paste(deparse(call), collapse = " ")
     )
     srcref <- attr(call, "srcref", exact = TRUE)
@@ -322,14 +319,6 @@
     frame[!vapply(frame, is.null, logical(1))]
   })
   frames
-}
-
-.comma_call_function <- function(call) {
-  if (!is.call(call) || length(call) == 0L) {
-    return("<unknown>")
-  }
-  fun <- call[[1L]]
-  paste(deparse(fun), collapse = "::")
 }
 
 .comma_user_context <- function() {
@@ -410,18 +399,17 @@
     },
     numeric(1)
   )
-  paste(vapply(hashes, .comma_hex8, character(1)), collapse = "")
-}
-
-.comma_hex8 <- function(value) {
-  digits <- strsplit("0123456789abcdef", "", fixed = TRUE)[[1L]]
-  value <- floor(as.numeric(value))
-  chars <- character(8L)
-  for (i in 8:1) {
-    chars[[i]] <- digits[[value %% 16L + 1L]]
-    value <- floor(value / 16L)
-  }
-  paste(chars, collapse = "")
+  hex_values <- vapply(hashes, function(value) {
+    digits <- strsplit("0123456789abcdef", "", fixed = TRUE)[[1L]]
+    value <- floor(as.numeric(value))
+    chars <- character(8L)
+    for (i in 8:1) {
+      chars[[i]] <- digits[[value %% 16L + 1L]]
+      value <- floor(value / 16L)
+    }
+    paste(chars, collapse = "")
+  }, character(1))
+  paste(hex_values, collapse = "")
 }
 
 .comma_sanitize_context <- function(context) {

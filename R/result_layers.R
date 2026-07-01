@@ -124,11 +124,6 @@ NULL
   names(.diffMethylResultRegistry(object))
 }
 
-.hasDiffMethylResults <- function(object) {
-  length(.diffMethylResultNames(object)) > 0L ||
-    !is.null(S4Vectors::metadata(object)$diffMethyl_result_cols)
-}
-
 .resolveDiffMethylResultName <- function(object, result_name = NULL) {
   if (is.null(result_name)) {
     result_name <- .diffMethylDefaultResultName(object)
