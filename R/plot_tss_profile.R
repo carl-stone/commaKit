@@ -350,7 +350,7 @@ plot_tss_profile <- function(object,
     ggplot2::geom_point(
       mapping = if (!is.null(color_var)) {
         ggplot2::aes(color = ggplot2::stage(
-          start       = .data[[color_var]],
+          start = .data[[color_var]],
           after_scale = {
             m <- grDevices::col2rgb(color) / 255
             m <- m + (1 - m) * 0.4
@@ -534,7 +534,7 @@ plot_tss_profile <- function(object,
           x = .data[["rel_pos"]],
           y = .data[["beta_smooth"]],
           color = ggplot2::stage(
-            start       = .data[[color_var]],
+            start = .data[[color_var]],
             after_scale = {
               m <- grDevices::col2rgb(color) / 255
               m <- m * (1 - 0.3)

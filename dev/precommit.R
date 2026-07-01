@@ -35,11 +35,29 @@ check_style <- function(files) {
   require_package("styler")
 
   files <- existing_r_files(files)
-  if (length(files) == 0) {
-    styler::style_pkg(dry = "fail")
-  } else {
-    styler::style_file(files, dry = "fail")
+  result <- tryCatch(
+    {
+      if (length(files) == 0) {
+        styler::style_pkg(dry = "fail")
+      } else {
+        styler::style_file(files, dry = "fail")
+      }
+      TRUE
+    },
+    error = function(e) e
+  )
+
+  if (inherits(result, "error")) {
+    message("R style check failed.")
+    message("Run this command, stage the formatting changes, and retry:")
+    message("  Rscript -e 'styler::style_pkg()'")
+    message("")
+    message("Original styler error:")
+    message(conditionMessage(result))
+    quit(status = 1, save = "no")
   }
+
+  invisible(TRUE)
 }
 
 check_lint <- function(files) {
