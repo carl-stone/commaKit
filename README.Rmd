@@ -107,8 +107,10 @@ files <- c(
 
 col_data <- data.frame(
   sample_name = names(files),
-  condition = c("control", "control", "control",
-                "treatment", "treatment", "treatment"),
+  condition = c(
+    "control", "control", "control",
+    "treatment", "treatment", "treatment"
+  ),
   replicate = c(1L, 2L, 3L, 1L, 2L, 3L)
 )
 
