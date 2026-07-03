@@ -42,17 +42,6 @@ NULL
   invisible(assay_name)
 }
 
-.inferAssayLayerRole <- function(assay_name, record = NULL) {
-  role <- record$role
-  if (is.null(role) || length(role) == 0L || is.na(role) || !nzchar(role)) {
-    role <- .ASSAY_LAYER_DEFAULT_ROLES[[assay_name]]
-  }
-  if (is.null(role) || length(role) == 0L || is.na(role) || !nzchar(role)) {
-    role <- "derived"
-  }
-  as.character(role[[1L]])
-}
-
 .makeAssayLayerRecord <- function(type,
                                   source,
                                   role = "derived",
@@ -117,7 +106,14 @@ NULL
     source <- "unknown"
   }
 
-  role <- .inferAssayLayerRole(assay_name, record)
+  role <- record$role
+  if (is.null(role) || length(role) == 0L || is.na(role) || !nzchar(role)) {
+    role <- .ASSAY_LAYER_DEFAULT_ROLES[[assay_name]]
+  }
+  if (is.null(role) || length(role) == 0L || is.na(role) || !nzchar(role)) {
+    role <- "derived"
+  }
+  role <- as.character(role[[1L]])
 
   default_for <- names(defaults)[defaults == assay_name]
 

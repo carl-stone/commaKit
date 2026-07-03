@@ -171,20 +171,15 @@ NULL
   }
 }
 
-.reconstructModifiedCounts <- function(methyl_mat, coverage_mat) {
+.resolveCountMatrices <- function(methyl_mat, coverage_mat,
+                                  mod_counts_mat = NULL,
+                                  canonical_counts_mat = NULL,
+                                  other_mod_counts_mat = NULL) {
   n_mod <- round(methyl_mat * coverage_mat)
   n_mod[is.na(methyl_mat) | is.na(coverage_mat)] <- NA_real_
   n_mod <- pmax(0, pmin(n_mod, coverage_mat))
   dim(n_mod) <- dim(coverage_mat)
   dimnames(n_mod) <- dimnames(coverage_mat)
-  n_mod
-}
-
-.resolveCountMatrices <- function(methyl_mat, coverage_mat,
-                                  mod_counts_mat = NULL,
-                                  canonical_counts_mat = NULL,
-                                  other_mod_counts_mat = NULL) {
-  n_mod <- .reconstructModifiedCounts(methyl_mat, coverage_mat)
   n_unmod <- coverage_mat - n_mod
 
   observed_mod <- matrix(FALSE,
