@@ -29,6 +29,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Configure git safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Check R and Bioconductor versions
         run: |
           Rscript -e 'cat("R ", as.character(getRversion()), "\n", sep = "")'
