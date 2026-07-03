@@ -343,7 +343,7 @@ resultLayers(cd_dm)
 #> 1             6mA                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-03 07:40:34 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-03 18:12:30 ..           0.2.0
 res <- results(cd_dm)
 # Top sites by adjusted p-value
 head(res[

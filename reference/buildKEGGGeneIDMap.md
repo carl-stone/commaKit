@@ -135,10 +135,10 @@ if (requireNamespace("KEGGREST", quietly = TRUE) &&
 }
 #> Fetching KEGG gene ID map for organism 'eco' ...
 #> 'select()' returned 1:1 mapping between keys and columns
-#> KEGG ID map cached to: /tmp/RtmpRS3aNN/eco_id_map.rds
+#> KEGG ID map cached to: /tmp/RtmpPFS19c/eco_id_map.rds
 #> Done. 4634 gene symbols mapped to KEGG IDs.
 #> Fetching KEGG pathway data for organism 'eco' ...
-#> KEGG data cached to: /tmp/RtmpRS3aNN/eco_kegg.rds
+#> KEGG data cached to: /tmp/RtmpPFS19c/eco_kegg.rds
 #> Done. 4984 gene-pathway associations across 138 pathways.
 
 # Manual table alternative:
