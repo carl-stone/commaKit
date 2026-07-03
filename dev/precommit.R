@@ -77,8 +77,9 @@ rendered_md_path <- function(rmd_file) {
 check_rmarkdown_rendered <- function(files) {
   require_package("rmarkdown")
 
+  requested_files <- files
   files <- existing_rmd_files(files)
-  if (length(files) == 0L) {
+  if (length(files) == 0L && length(requested_files) == 0L) {
     files <- existing_rmd_files(Sys.glob(c("*.Rmd", "vignettes/*.Rmd")))
   }
 
