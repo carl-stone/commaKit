@@ -60,48 +60,50 @@
 </h1></div>
 <!-- badges: start -->
 
-<p><strong>commaKit</strong> (<strong>Com</strong>parative <strong>M</strong>icrobial <strong>M</strong>ethylomics <strong>A</strong>nalysis <strong>Kit</strong>) is an R package for genome-wide analysis of bacterial DNA methylation from Oxford Nanopore sequencing data. It accepts output from <strong>modkit</strong>, <strong>Dorado</strong>, and <strong>Megalodon</strong>, supports <strong>6mA, 5mC, and 4mC</strong> in a single unified container, and covers the full analysis workflow from raw files through quality control, site annotation, differential methylation testing, and publication-quality visualization.</p>
+<p><strong>commaKit</strong> (<strong>Com</strong>parative <strong>M</strong>icrobial <strong>M</strong>ethylomics <strong>A</strong>nalysis <strong>Kit</strong>) is an R/Bioconductor-style package for comparative analysis of bacterial DNA methylation from Oxford Nanopore sequencing data.</p>
+<p>commaKit starts from per-sample methylation evidence - usually modkit pileup bedMethyl files - and builds a <code>commaData</code> object, an S4 class extending <code>RangedSummarizedExperiment</code>. From that shared container, the package supports quality control, genomic annotation, differential methylation testing, region-level summaries, enrichment analysis, export, and visualization for 6mA, 5mC, and 4mC methylation in monoploid microbial genomes.</p>
+<p>commaKit is under active development and is <strong>not yet on Bioconductor</strong>. Install from GitHub for now.</p>
 <div class="section level2">
-<h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
+<h2 id="why-commakit">Why commaKit?<a class="anchor" aria-label="anchor" href="#why-commakit"></a>
 </h2>
+<p>Nanopore methylation callers can report rich modified-base evidence, but most analysis workflows still leave users to reconcile caller-specific formats, coverage filters, genome coordinates, methylation contexts, sample metadata, and downstream statistics by hand. commaKit provides one R-native container and a coherent workflow for comparative microbial methylomics:</p>
 <ul>
-<li>
-<strong><code>commaData</code> S4 class</strong> — extends <code>RangedSummarizedExperiment</code>; stores beta values, coverage, sample metadata, genome info, and annotations together.</li>
-<li>
-<strong>Three input types</strong> — modkit pileup BED (primary), Dorado BAM (full MM/ML tag decoding), and Megalodon (legacy).</li>
-<li>
-<strong>Genome annotation</strong> via <code><a href="https://rdrr.io/pkg/IRanges/man/findOverlaps-methods.html" class="external-link">GenomicRanges::findOverlaps()</a></code>; three modes: overlap, proximity, and metagene (normalized position within feature bodies).</li>
-<li>
-<strong>Differential methylation</strong> — three statistical backends (<a href="https://doi.org/doi:10.18129/B9.bioc.methylKit" class="external-link"><code>methylKit</code></a>, <a href="https://doi.org/doi:10.18129/B9.bioc.limma" class="external-link"><code>limma</code></a>, and quasi-binomial F-test), with a DESeq2-style interface (<code><a href="reference/diffMethyl.html">diffMethyl()</a></code> → <code><a href="reference/results.html">results()</a></code> → <code><a href="reference/filterResults.html">filterResults()</a></code>).</li>
-<li>
-<strong>Enrichment analysis</strong> — GO and KEGG over-representation analysis (ORA) and gene set enrichment analysis (GSEA) via <a href="https://doi.org/doi:10.18129/B9.bioc.clusterProfiler" class="external-link"><code>clusterProfiler</code></a>, with offline KEGG support and gene role semantics (target/regulator).</li>
-<li>
-<strong>Eight <code>plot_*()</code> functions</strong> — coverage QC, beta distributions, PCA, genome tracks, metagene profiles, TSS profiles, volcano plots, and heatmaps; all return <code>ggplot</code> objects for further customization. PCA uses variance-stabilized M-values internally and supports <code>return_data = TRUE</code> for custom plotting.</li>
-<li>
-<strong><code><a href="reference/mValues.html">mValues()</a></code></strong> — converts beta values and read depths to M-values (<code>log2((M + a) / (U + a))</code>), useful for distance-based analyses and custom plots.</li>
-<li>
-<strong>Compatible with any monoploid genome</strong> — genome annotations can be loaded as GFF3 or BED files. Supports linear or circular chromosomes.</li>
-<li>
-<strong>Multi-modification-type</strong> — 6mA, 5mC, and 4mC coexist in one object; every function accepts a <code>mod_type</code> argument to work with individual types.</li>
+<li>import modkit, Dorado, or Megalodon output into a single <code>commaData</code> object;</li>
+<li>keep raw methylation and count evidence together with genomic ranges and sample metadata;</li>
+<li>analyze methylation by modification context, such as <code>6mA_GATC</code> or <code>5mC_CCWGG</code>;</li>
+<li>test for differential methylation with <code>methylKit</code>, <code>limma</code>, or a native quasi-binomial F-test backend;</li>
+<li>annotate methylation sites to genes or other genomic features;</li>
+<li>summarize sites over regions and export BED-compatible tracks;</li>
+<li>visualize coverage, beta distributions, PCA, genome tracks, metagene/TSS profiles, volcano plots, and heatmaps.</li>
 </ul>
+<p>The package is designed for bacterial and archaeal genomes where methylation is often motif-associated, strand-aware, and close to fully methylated or unmethylated at individual sites.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Development version from GitHub:</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"carl-stone/commaKit"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Not yet on Bioconductor; install from GitHub for now.</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Install the development version from GitHub.</span></span>
+<span><span class="co"># commaKit is not yet on Bioconductor.</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"devtools"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"carl-stone/commaKit"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="the-commadata-object">The <code>commaData</code> Object<a class="anchor" aria-label="anchor" href="#the-commadata-object"></a>
+<h2 id="input-contract">Input contract<a class="anchor" aria-label="anchor" href="#input-contract"></a>
 </h2>
-<p><code>commaData</code> extends <code>RangedSummarizedExperiment</code> and is constructed from per-sample methylation files:</p>
+<p>commaKit is intentionally strict about the evidence it imports. The most common path is modkit pileup bedMethyl:</p>
+<ul>
+<li>Use complete modkit pileup bedMethyl files, not generic BED-like tables.</li>
+<li>Preserve tab-delimited bedMethyl structure so blank required fields are not shifted into the wrong columns.</li>
+<li>For modkit input, <code>Nvalid_cov</code>, <code>Nmod</code>, <code>Ncanonical</code>, and <code>Nother_mod</code> are the authoritative count fields. Methylation beta values are computed from <code>Nmod / Nvalid_cov</code>, not from the derived <code>fraction_modified</code> percentage.</li>
+<li>Genome names must match imported methylation chromosomes. If the methylation files contain chromosomes absent from <code>genome</code>, construction stops with a clear error instead of guessing.</li>
+<li>Direct Dorado BAM parsing requires mapped BAM files with MM/ML tags preserved; in practice, many users will prefer to run modkit first and import the resulting bedMethyl files.</li>
+</ul>
+<p>A typical <code><a href="reference/commaData.html">commaData()</a></code> call needs a named vector of per-sample files, a sample metadata table, genome lengths or a FASTA/BSgenome, and optionally annotation and motif information:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/carl-stone/commaKit" class="external-link">commaKit</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Named vector: sample_name -&gt; path to modkit pileup BED</span></span>
 <span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  ctrl_1  <span class="op">=</span> <span class="st">"path/to/ctrl_rep1.bed"</span>,</span>
 <span>  ctrl_2  <span class="op">=</span> <span class="st">"path/to/ctrl_rep2.bed"</span>,</span>
@@ -112,21 +114,29 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">col_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  sample_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ctrl_1"</span>,    <span class="st">"ctrl_2"</span>,    <span class="st">"ctrl_3"</span>,    <span class="st">"treat_1"</span>,    <span class="st">"treat_2"</span>,   <span class="st">"treat_3"</span><span class="op">)</span>,</span>
-<span>  condition   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"control"</span>,   <span class="st">"control"</span>,   <span class="st">"control"</span>,   <span class="st">"treatment"</span>,  <span class="st">"treatment"</span>, <span class="st">"treatment"</span><span class="op">)</span>,</span>
-<span>  replicate   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>,          <span class="fl">2L</span>,          <span class="fl">3L</span>,          <span class="fl">1L</span>,           <span class="fl">2L</span>,          <span class="fl">3L</span><span class="op">)</span></span>
+<span>  sample_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">files</span><span class="op">)</span>,</span>
+<span>  condition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"control"</span>, <span class="st">"control"</span>, <span class="st">"control"</span>,</span>
+<span>    <span class="st">"treatment"</span>, <span class="st">"treatment"</span>, <span class="st">"treatment"</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  replicate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">2L</span>, <span class="fl">3L</span>, <span class="fl">1L</span>, <span class="fl">2L</span>, <span class="fl">3L</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/commaData.html">commaData</a></span><span class="op">(</span></span>
-<span>  files        <span class="op">=</span> <span class="va">files</span>,</span>
-<span>  colData      <span class="op">=</span> <span class="va">col_data</span>,</span>
-<span>  genome       <span class="op">=</span> <span class="st">"path/to/genome.fa"</span>,   <span class="co"># FASTA, BSgenome, or named integer vector</span></span>
-<span>  annotation   <span class="op">=</span> <span class="st">"path/to/genes.gff3"</span>,  <span class="co"># GFF3 or BED (optional)</span></span>
-<span>  motif        <span class="op">=</span> <span class="st">"GATC"</span>,                <span class="co"># regex motif (optional)</span></span>
+<span>  files <span class="op">=</span> <span class="va">files</span>,</span>
+<span>  colData <span class="op">=</span> <span class="va">col_data</span>,</span>
+<span>  genome <span class="op">=</span> <span class="st">"path/to/genome.fa"</span>,</span>
+<span>  annotation <span class="op">=</span> <span class="st">"path/to/genes.gff3"</span>,</span>
+<span>  motif <span class="op">=</span> <span class="st">"GATC"</span>,</span>
 <span>  min_coverage <span class="op">=</span> <span class="fl">5L</span>,</span>
-<span>  caller       <span class="op">=</span> <span class="st">"modkit"</span>               <span class="co"># "modkit", "dorado", or "megalodon"</span></span>
+<span>  caller <span class="op">=</span> <span class="st">"modkit"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>A built-in synthetic dataset (588 sites, 6 samples, 100 kb genome) is included for testing and demonstrations:</p>
+<p>For import details and common failure modes, see <code><a href="articles/import-troubleshooting.html">vignette("import-troubleshooting", package = "commaKit")</a></code>.</p>
+</div>
+<div class="section level2">
+<h2 id="quick-start-with-example-data">Quick start with example data<a class="anchor" aria-label="anchor" href="#quick-start-with-example-data"></a>
+</h2>
+<p>commaKit includes a small synthetic dataset for examples and tests. It contains 588 methylation sites across six samples on a 100 kb toy chromosome: 393 6mA/GATC sites and 195 5mC/CCWGG sites.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/carl-stone/commaKit" class="external-link">commaKit</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span>
@@ -142,18 +152,36 @@
 <span><span class="co">#&gt; motif sites: none</span></span>
 <span><span class="co">#&gt; caller: modkit</span></span>
 <span><span class="co">#&gt; min_coverage: 5</span></span></code></pre></div>
+<p>The core accessors expose sample metadata, genomic site metadata, modification contexts, beta values, coverage, and raw count assays:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/modContexts.html">modContexts</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "5mC_CCWGG" "6mA_GATC"</span></span>
+<span><span class="fu"><a href="reference/sampleInfo.html">sampleInfo</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sample_name"</span>, <span class="st">"condition"</span>, <span class="st">"replicate"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt;         sample_name condition replicate</span></span>
+<span><span class="co">#&gt; ctrl_1       ctrl_1   control         1</span></span>
+<span><span class="co">#&gt; ctrl_2       ctrl_2   control         2</span></span>
+<span><span class="co">#&gt; ctrl_3       ctrl_3   control         3</span></span>
+<span><span class="co">#&gt; treat_1     treat_1 treatment         1</span></span>
+<span><span class="co">#&gt; treat_2     treat_2 treatment         2</span></span>
+<span><span class="co">#&gt; treat_3     treat_3 treatment         3</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="fu"><a href="reference/methylation.html">methylation</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 588   6</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="fu"><a href="reference/siteCoverage.html">siteCoverage</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 588   6</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="workflow">Workflow<a class="anchor" aria-label="anchor" href="#workflow"></a>
+<h2 id="standard-workflow">Standard workflow<a class="anchor" aria-label="anchor" href="#standard-workflow"></a>
 </h2>
 <div class="section level3">
-<h3 id="step-1--quality-control">Step 1 — Quality Control<a class="anchor" aria-label="anchor" href="#step-1--quality-control"></a>
+<h3 id="id_1-quality-control">1. Quality control<a class="anchor" aria-label="anchor" href="#id_1-quality-control"></a>
 </h3>
-<p><code><a href="reference/methylomeSummary.html">methylomeSummary()</a></code> returns per-sample distribution statistics:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<p>Start by checking per-sample methylation distributions and coverage.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ms</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/methylomeSummary.html">methylomeSummary</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span>
-<span><span class="va">ms</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sample_name"</span>, <span class="st">"condition"</span>, <span class="st">"mean_beta"</span>, <span class="st">"median_beta"</span>,</span>
-<span>       <span class="st">"frac_methylated"</span>, <span class="st">"n_covered"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">ms</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"sample_name"</span>, <span class="st">"condition"</span>, <span class="st">"mean_beta"</span>, <span class="st">"median_beta"</span>,</span>
+<span>  <span class="st">"frac_methylated"</span>, <span class="st">"n_covered"</span></span>
+<span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   sample_name condition mean_beta median_beta frac_methylated n_covered</span></span>
 <span><span class="co">#&gt; 1      ctrl_1   control 0.8654839   0.8929141       0.9897959       588</span></span>
 <span><span class="co">#&gt; 2      ctrl_2   control 0.8705692   0.8959600       0.9948980       588</span></span>
@@ -161,136 +189,195 @@
 <span><span class="co">#&gt; 4     treat_1 treatment 0.8357998   0.8864176       0.9421769       588</span></span>
 <span><span class="co">#&gt; 5     treat_2 treatment 0.8369054   0.8893089       0.9404762       588</span></span>
 <span><span class="co">#&gt; 6     treat_3 treatment 0.8388398   0.8866568       0.9455782       588</span></span></code></pre></div>
-<p><code><a href="reference/plot_coverage.html">plot_coverage()</a></code> shows the sequencing depth distribution per sample:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_coverage.html">plot_coverage</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-plot-coverage-1.png" alt="Coverage depth distribution per sample." width="100%"></p>
-<p><code><a href="reference/plot_methylation_distribution.html">plot_methylation_distribution()</a></code> plots the density of beta values, faceted by modification type. Bacterial methylomes often show a bimodal distribution (sites are either fully methylated or unmethylated):</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_methylation_distribution.html">plot_methylation_distribution</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-plot-dist-1.png" alt="Beta value density per sample, faceted by modification type." width="100%"></p>
-<p><code><a href="reference/plot_pca.html">plot_pca()</a></code> runs PCA on per-sample methylation profiles for sample-level QC. Beta values are converted to M-values before PCA for better variance stabilization. Use <code>return_data = TRUE</code> to retrieve the scores data frame for custom plotting:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p><code><a href="reference/plot_pca.html">plot_pca()</a></code> uses M-values internally rather than raw beta values, which is more stable for distance-based analyses when many sites are near 0 or 1.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_pca.html">plot_pca</a></span><span class="op">(</span><span class="va">comma_example_data</span>, color_by <span class="op">=</span> <span class="st">"condition"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-plot-pca-1.png" alt="PCA of methylation profiles colored by condition." width="100%"></p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pca_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/plot_pca.html">plot_pca</a></span><span class="op">(</span><span class="va">comma_example_data</span>, return_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">pca_df</span>, <span class="st">"percentVar"</span><span class="op">)</span>  <span class="co"># variance explained by PC1, PC2</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="step-2--annotate-sites">Step 2 — Annotate Sites<a class="anchor" aria-label="anchor" href="#step-2--annotate-sites"></a>
+<h3 id="id_2-annotate-methylation-sites">2. Annotate methylation sites<a class="anchor" aria-label="anchor" href="#id_2-annotate-methylation-sites"></a>
 </h3>
-<p><code><a href="reference/annotateSites.html">annotateSites()</a></code> maps sites to genomic features using <code><a href="https://rdrr.io/pkg/IRanges/man/findOverlaps-methods.html" class="external-link">GenomicRanges::findOverlaps()</a></code> — vectorized, no nested loops:</p>
+<p><code><a href="reference/annotateSites.html">annotateSites()</a></code> maps 1-bp methylation sites to genomic features with <code><a href="https://rdrr.io/pkg/IRanges/man/findOverlaps-methods.html" class="external-link">GenomicRanges::findOverlaps()</a></code>. It keeps all associations in list-columns rather than collapsing each site to a single closest feature.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">annotated</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/annotateSites.html">annotateSites</a></span><span class="op">(</span><span class="va">comma_example_data</span>, keep <span class="op">=</span> <span class="st">"overlap"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Fraction of sites overlapping at least one annotated feature</span></span>
 <span><span class="va">si</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/siteInfo.html">siteInfo</a></span><span class="op">(</span><span class="va">annotated</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lengths.html" class="external-link">lengths</a></span><span class="op">(</span><span class="va">si</span><span class="op">$</span><span class="va">feature_names</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.02891156</span></span></code></pre></div>
-<p>Three annotation modes are available: <code>"overlap"</code>, <code>"proximity"</code> (nearest feature with signed distance), and <code>"metagene"</code> (normalized position 0–1 within feature bodies).</p>
-<p><code><a href="reference/plot_metagene.html">plot_metagene()</a></code> shows the average methylation profile across gene bodies:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_metagene.html">plot_metagene</a></span><span class="op">(</span><span class="va">comma_example_data</span>, feature <span class="op">=</span> <span class="st">"gene"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-plot-metagene-1.png" alt="Mean methylation across gene bodies (TSS = 0 to TTS = 1)." width="100%"></p>
+<p><img src="reference/figures/README-plot-metagene-1.png" alt="Mean methylation across gene bodies." width="100%"></p>
 </div>
 <div class="section level3">
-<h3 id="step-3--genome-track-visualization">Step 3 — Genome Track Visualization<a class="anchor" aria-label="anchor" href="#step-3--genome-track-visualization"></a>
+<h3 id="id_3-test-differential-methylation">3. Test differential methylation<a class="anchor" aria-label="anchor" href="#id_3-test-differential-methylation"></a>
 </h3>
-<p><code><a href="reference/plot_genome_track.html">plot_genome_track()</a></code> produces a genome browser-style scatter plot of methylation along a chromosomal region:</p>
+<p><code><a href="reference/diffMethyl.html">diffMethyl()</a></code> follows the familiar pattern used by many Bioconductor workflows: fit the model, then extract and filter a results table. For the current v1 API, formulas must name one two-level comparison variable, such as <code>~ condition</code>. Multi-factor formulas are intentionally deferred.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_genome_track.html">plot_genome_track</a></span><span class="op">(</span><span class="va">comma_example_data</span>, chromosome <span class="op">=</span> <span class="st">"chr_sim"</span>,</span>
-<span>                  start <span class="op">=</span> <span class="fl">1L</span>, end <span class="op">=</span> <span class="fl">10000L</span>, mod_type <span class="op">=</span> <span class="st">"6mA"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-plot-track-1.png" alt="Genome track for the first 10 kb of chr_sim" width="100%"></p>
-</div>
-<div class="section level3">
-<h3 id="step-4--differential-methylation">Step 4 — Differential Methylation<a class="anchor" aria-label="anchor" href="#step-4--differential-methylation"></a>
-</h3>
-<p><code><a href="reference/diffMethyl.html">diffMethyl()</a></code> tests each site for differential methylation between conditions. For v1, the formula must name one two-level comparison variable (e.g. <code>~ condition</code>); multi-factor formulas such as <code>~ condition + batch</code> are not interpreted yet. The result is the same object with per-site statistics in an active result layer mirrored to <code>rowData</code>:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cd_dm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/diffMethyl.html">diffMethyl</a></span><span class="op">(</span><span class="va">comma_example_data</span>, formula <span class="op">=</span> <span class="op">~</span> <span class="va">condition</span>,</span>
-<span>                    mod_type <span class="op">=</span> <span class="st">"6mA"</span><span class="op">)</span></span></code></pre></div>
-<p>Extract results as a tidy data frame and filter to significant sites:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/resultLayers.html">resultLayers</a></span><span class="op">(</span><span class="va">cd_dm</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">cd_dm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/diffMethyl.html">diffMethyl</a></span><span class="op">(</span></span>
+<span>  <span class="va">comma_example_data</span>,</span>
+<span>  formula <span class="op">=</span> <span class="op">~</span><span class="va">condition</span>,</span>
+<span>  mod_type <span class="op">=</span> <span class="st">"6mA"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/results.html">results</a></span><span class="op">(</span><span class="va">cd_dm</span><span class="op">)</span></span>
 <span><span class="va">sig</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/filterResults.html">filterResults</a></span><span class="op">(</span><span class="va">cd_dm</span>, padj <span class="op">=</span> <span class="fl">0.05</span>, delta_beta <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Total 6mA sites tested:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Total 6mA sites tested: 588</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Significant sites (padj &lt; 0.05, |delta_beta| &gt;= 0.2):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">sig</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Significant sites (padj &lt; 0.05, |delta_beta| &gt;= 0.2): 31</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Significant sites:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">sig</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Significant sites: 31</span></span>
 <span></span>
-<span><span class="co"># Top hits</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">res</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">dm_padj</span><span class="op">)</span>,</span>
-<span>         <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"chrom"</span>, <span class="st">"position"</span>, <span class="st">"dm_delta_beta"</span>, <span class="st">"dm_padj"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt;       chrom position dm_delta_beta      dm_padj</span></span>
-<span><span class="co">#&gt; 196 chr_sim    50176    -0.7336497 1.849154e-75</span></span>
-<span><span class="co">#&gt; 287 chr_sim    70003    -0.7050844 3.896483e-68</span></span>
-<span><span class="co">#&gt; 260 chr_sim    63550    -0.7799241 5.006897e-66</span></span>
-<span><span class="co">#&gt; 249 chr_sim    61440    -0.7090099 1.178364e-64</span></span>
-<span><span class="co">#&gt; 347 chr_sim    86016    -0.6743832 3.661541e-62</span></span>
-<span><span class="co">#&gt; 9   chr_sim     2180    -0.7543758 4.024452e-60</span></span></code></pre></div>
-<p><code><a href="reference/plot_volcano.html">plot_volcano()</a></code> displays the differential methylation landscape — effect size (delta methylation) versus significance (-log10 padj):</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">res</span><span class="op">[</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">dm_padj</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"chrom"</span>, <span class="st">"position"</span>, <span class="st">"mod_context"</span>, <span class="st">"dm_delta_beta"</span>, <span class="st">"dm_padj"</span><span class="op">)</span></span>
+<span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt;       chrom position mod_context dm_delta_beta      dm_padj</span></span>
+<span><span class="co">#&gt; 196 chr_sim    50176    6mA_GATC    -0.7336497 1.849154e-75</span></span>
+<span><span class="co">#&gt; 287 chr_sim    70003    6mA_GATC    -0.7050844 3.896483e-68</span></span>
+<span><span class="co">#&gt; 260 chr_sim    63550    6mA_GATC    -0.7799241 5.006897e-66</span></span>
+<span><span class="co">#&gt; 249 chr_sim    61440    6mA_GATC    -0.7090099 1.178364e-64</span></span>
+<span><span class="co">#&gt; 347 chr_sim    86016    6mA_GATC    -0.6743832 3.661541e-62</span></span>
+<span><span class="co">#&gt; 9   chr_sim     2180    6mA_GATC    -0.7543758 4.024452e-60</span></span></code></pre></div>
+<p>Effect sizes are reported on the beta scale, and multiple-testing correction is applied genome-wide across all tested modification contexts in the call.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_volcano.html">plot_volcano</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-plot-volcano-1.png" alt="Volcano plot of differential 6mA methylation." width="100%"></p>
-<p><code><a href="reference/plot_heatmap.html">plot_heatmap()</a></code> shows per-sample beta values for the top differentially methylated sites:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_heatmap.html">plot_heatmap</a></span><span class="op">(</span><span class="va">res</span>, <span class="va">cd_dm</span>, n_sites <span class="op">=</span> <span class="fl">30L</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-plot-heatmap-1.png" alt="Heatmap of top 30 differentially methylated 6mA sites." width="100%"></p>
+<p><img src="reference/figures/README-plot-heatmap-1.png" alt="Heatmap of top differentially methylated 6mA sites." width="100%"></p>
 </div>
 <div class="section level3">
-<h3 id="step-5--enrichment-analysis">Step 5 — Enrichment Analysis<a class="anchor" aria-label="anchor" href="#step-5--enrichment-analysis"></a>
+<h3 id="id_4-summarize-regions-and-export">4. Summarize regions and export<a class="anchor" aria-label="anchor" href="#id_4-summarize-regions-and-export"></a>
 </h3>
-<p><code><a href="reference/enrichMethylation.html">enrichMethylation()</a></code> performs gene set enrichment on differentially methylated genes. It supports GO and KEGG ontologies, ORA and GSEA methods, and distinguishes target genes (where DM sites overlap) from regulator genes (whose products bind near DM sites):</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Annotate sites first (required for enrichment)</span></span>
-<span><span class="va">cd_dm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/annotateSites.html">annotateSites</a></span><span class="op">(</span><span class="va">cd_dm</span>, keep <span class="op">=</span> <span class="st">"overlap"</span><span class="op">)</span></span>
+<p>Use <code><a href="reference/summarizeRegions.html">summarizeRegions()</a></code> when site-level methylation should be aggregated over features, windows, or other genomic intervals.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">regions</span> <span class="op">&lt;-</span> <span class="fu">GenomicRanges</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/GenomicRanges/man/GRanges-class.html" class="external-link">GRanges</a></span><span class="op">(</span></span>
+<span>  seqnames <span class="op">=</span> <span class="st">"chr_sim"</span>,</span>
+<span>  ranges <span class="op">=</span> <span class="fu">IRanges</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/IRanges/man/IRanges-constructor.html" class="external-link">IRanges</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">50001</span><span class="op">)</span>, end <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50000</span>, <span class="fl">100000</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  region_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"left_half"</span>, <span class="st">"right_half"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># GO enrichment on target genes</span></span>
-<span><span class="va">enr</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/enrichMethylation.html">enrichMethylation</a></span><span class="op">(</span><span class="va">cd_dm</span>, ont <span class="op">=</span> <span class="st">"BP"</span>, gene_role <span class="op">=</span> <span class="st">"target"</span><span class="op">)</span></span></code></pre></div>
-<p>For KEGG enrichment, use the offline path to avoid API rate limits:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Build KEGG term2gene mapping (2 API calls, cache to RDS)</span></span>
-<span><span class="va">kegg_t2g</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/buildKEGGTermGene.html">buildKEGGTermGene</a></span><span class="op">(</span><span class="st">"eco"</span>, file <span class="op">=</span> <span class="st">"kegg_eco.rds"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Build gene ID map (symbol &lt;-&gt; KEGG ID)</span></span>
-<span><span class="va">id_map</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/buildKEGGGeneIDMap.html">buildKEGGGeneIDMap</a></span><span class="op">(</span><span class="st">"eco"</span>, OrgDb <span class="op">=</span> <span class="fu">org.EcK12.eg.db</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/org.EcK12.eg.db/man/org.EcK12.egBASE.html" class="external-link">org.EcK12.eg.db</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Run KEGG enrichment with offline mapping</span></span>
-<span><span class="va">enr_kegg</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/enrichMethylation.html">enrichMethylation</a></span><span class="op">(</span><span class="va">cd_dm</span>, kegg_term2gene <span class="op">=</span> <span class="va">kegg_t2g</span><span class="op">$</span><span class="va">term2gene</span>,</span>
-<span>                              kegg_term2name <span class="op">=</span> <span class="va">kegg_t2g</span><span class="op">$</span><span class="va">term2name</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="step-6--tss-profiles">Step 6 — TSS Profiles<a class="anchor" aria-label="anchor" href="#step-6--tss-profiles"></a>
-</h3>
-<p><code><a href="reference/plot_tss_profile.html">plot_tss_profile()</a></code> shows methylation centered on transcription start sites, with optional regulatory element coloring:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_tss_profile.html">plot_tss_profile</a></span><span class="op">(</span><span class="va">comma_example_data</span>, feature_type <span class="op">=</span> <span class="st">"gene"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-plot-tss-1.png" alt="TSS-centered methylation profile." width="100%"></p>
-</div>
-<div class="section level3">
-<h3 id="step-7--export-to-bed">Step 7 — Export to BED<a class="anchor" aria-label="anchor" href="#step-7--export-to-bed"></a>
-</h3>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<span><span class="va">region_summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/summarizeRegions.html">summarizeRegions</a></span><span class="op">(</span><span class="va">comma_example_data</span>, <span class="va">regions</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">region_summary</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   region_id seqnames start   end width strand region_region_id sample_name</span></span>
+<span><span class="co">#&gt; 1  region_1  chr_sim     1 50000 50000      *        left_half      ctrl_1</span></span>
+<span><span class="co">#&gt; 2  region_1  chr_sim     1 50000 50000      *        left_half      ctrl_2</span></span>
+<span><span class="co">#&gt; 3  region_1  chr_sim     1 50000 50000      *        left_half      ctrl_3</span></span>
+<span><span class="co">#&gt; 4  region_1  chr_sim     1 50000 50000      *        left_half     treat_1</span></span>
+<span><span class="co">#&gt; 5  region_1  chr_sim     1 50000 50000      *        left_half     treat_2</span></span>
+<span><span class="co">#&gt; 6  region_1  chr_sim     1 50000 50000      *        left_half     treat_3</span></span>
+<span><span class="co">#&gt;   n_sites total_mod_counts total_valid_coverage region_methylation</span></span>
+<span><span class="co">#&gt; 1     284            19162                22221          0.8623374</span></span>
+<span><span class="co">#&gt; 2     284            19307                22109          0.8732643</span></span>
+<span><span class="co">#&gt; 3     284            20394                23791          0.8572149</span></span>
+<span><span class="co">#&gt; 4     284            19479                22904          0.8504628</span></span>
+<span><span class="co">#&gt; 5     284            18494                21858          0.8460975</span></span>
+<span><span class="co">#&gt; 6     284            18864                22536          0.8370607</span></span>
+<span><span class="co">#&gt;   total_canonical_counts</span></span>
+<span><span class="co">#&gt; 1                   3059</span></span>
+<span><span class="co">#&gt; 2                   2802</span></span>
+<span><span class="co">#&gt; 3                   3397</span></span>
+<span><span class="co">#&gt; 4                   3425</span></span>
+<span><span class="co">#&gt; 5                   3364</span></span>
+<span><span class="co">#&gt; 6                   3672</span></span></code></pre></div>
+<p>Export browser-compatible methylation tracks with <code><a href="reference/writeBED.html">writeBED()</a></code>:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/writeBED.html">writeBED</a></span><span class="op">(</span><span class="va">cd_dm</span>, file <span class="op">=</span> <span class="st">"results_6mA.bed"</span>, sample <span class="op">=</span> <span class="st">"ctrl_1"</span>, mod_type <span class="op">=</span> <span class="st">"6mA"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_5-enrich-annotated-differential-methylation-results">5. Enrich annotated differential methylation results<a class="anchor" aria-label="anchor" href="#id_5-enrich-annotated-differential-methylation-results"></a>
+</h3>
+<p><code><a href="reference/enrichMethylation.html">enrichMethylation()</a></code> runs GO or KEGG enrichment on genes associated with differentially methylated sites. The bundled example data use synthetic gene IDs, so real biological enrichment examples require real bacterial annotations and identifier mappings.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cd_dm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/annotateSites.html">annotateSites</a></span><span class="op">(</span><span class="va">cd_dm</span>, keep <span class="op">=</span> <span class="st">"overlap"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">enr</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/enrichMethylation.html">enrichMethylation</a></span><span class="op">(</span></span>
+<span>  <span class="va">cd_dm</span>,</span>
+<span>  ont <span class="op">=</span> <span class="st">"BP"</span>,</span>
+<span>  gene_role <span class="op">=</span> <span class="st">"target"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For KEGG workflows, prefer the offline mapping path so routine analyses do not depend on live API calls:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">id_map</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/buildKEGGGeneIDMap.html">buildKEGGGeneIDMap</a></span><span class="op">(</span></span>
+<span>  <span class="st">"eco"</span>,</span>
+<span>  OrgDb <span class="op">=</span> <span class="fu">org.EcK12.eg.db</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/org.EcK12.eg.db/man/org.EcK12.egBASE.html" class="external-link">org.EcK12.eg.db</a></span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">kegg_t2g</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/buildKEGGTermGene.html">buildKEGGTermGene</a></span><span class="op">(</span><span class="st">"eco"</span>, file <span class="op">=</span> <span class="st">"kegg_eco.rds"</span>, id_map <span class="op">=</span> <span class="va">id_map</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">enr_kegg</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/enrichMethylation.html">enrichMethylation</a></span><span class="op">(</span></span>
+<span>  <span class="va">cd_dm</span>,</span>
+<span>  kegg_term2gene <span class="op">=</span> <span class="va">kegg_t2g</span><span class="op">$</span><span class="va">term2gene</span>,</span>
+<span>  kegg_term2name <span class="op">=</span> <span class="va">kegg_t2g</span><span class="op">$</span><span class="va">term2name</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="multi-modification-type-support">Multi-Modification-Type Support<a class="anchor" aria-label="anchor" href="#multi-modification-type-support"></a>
+<h2 id="the-commadata-object">The <code>commaData</code> object<a class="anchor" aria-label="anchor" href="#the-commadata-object"></a>
 </h2>
-<p>A single <code>commaData</code> object can hold 6mA, 5mC, and 4mC sites simultaneously. The <code>mod_type</code> argument is available on every analysis function:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Modification types present in the example data</span></span>
-<span><span class="fu"><a href="reference/modTypes.html">modTypes</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span>
+<p><code>commaData</code> extends <code>RangedSummarizedExperiment</code>:</p>
+<ul>
+<li>rows are 1-bp genomic methylation sites stored in <code>rowRanges()</code>;</li>
+<li>columns are samples stored in <code>colData()</code>;</li>
+<li>assays store methylation beta values, coverage, and count evidence;</li>
+<li>site metadata include <code>mod_type</code> and <code>motif</code>;</li>
+<li>
+<code>mod_context</code> is computed from <code>mod_type</code> and <code>motif</code>, for example <code>6mA_GATC</code>; when motif is unavailable, the modification type is used alone;</li>
+<li>named assay and result layers preserve derived transformations and differential methylation runs without overwriting raw evidence.</li>
+</ul>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/assayLayers.html">assayLayers</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span>
+<span><span class="co">#&gt; DataFrame with 4 rows and 10 columns</span></span>
+<span><span class="co">#&gt;              assay             role                   type            source</span></span>
+<span><span class="co">#&gt;        &lt;character&gt;      &lt;character&gt;            &lt;character&gt;       &lt;character&gt;</span></span>
+<span><span class="co">#&gt; 1      methylation      methylation          filtered_beta synthetic_example</span></span>
+<span><span class="co">#&gt; 2         coverage         coverage observed_total_cover.. synthetic_example</span></span>
+<span><span class="co">#&gt; 3       mod_counts       mod_counts   reconstructed_counts synthetic_example</span></span>
+<span><span class="co">#&gt; 4 canonical_counts canonical_counts   reconstructed_counts synthetic_example</span></span>
+<span><span class="co">#&gt;   is_default      default_for        parent_assays                 method</span></span>
+<span><span class="co">#&gt;    &lt;logical&gt;  &lt;CharacterList&gt;      &lt;CharacterList&gt;            &lt;character&gt;</span></span>
+<span><span class="co">#&gt; 1       TRUE      methylation             coverage             simulation</span></span>
+<span><span class="co">#&gt; 2       TRUE         coverage                                  simulation</span></span>
+<span><span class="co">#&gt; 3       TRUE       mod_counts methylation,coverage round_beta_times_cov..</span></span>
+<span><span class="co">#&gt; 4       TRUE canonical_counts  coverage,mod_counts coverage_minus_mod_c..</span></span>
+<span><span class="co">#&gt;     timestamp package_version</span></span>
+<span><span class="co">#&gt;   &lt;character&gt;     &lt;character&gt;</span></span>
+<span><span class="co">#&gt; 1          NA           0.2.0</span></span>
+<span><span class="co">#&gt; 2          NA           0.2.0</span></span>
+<span><span class="co">#&gt; 3          NA           0.2.0</span></span>
+<span><span class="co">#&gt; 4          NA           0.2.0</span></span>
+<span><span class="fu"><a href="reference/resultLayers.html">resultLayers</a></span><span class="op">(</span><span class="va">cd_dm</span><span class="op">)</span></span>
+<span><span class="co">#&gt; DataFrame with 1 row and 18 columns</span></span>
+<span><span class="co">#&gt;          name        role                   type      source is_default</span></span>
+<span><span class="co">#&gt;   &lt;character&gt; &lt;character&gt;            &lt;character&gt; &lt;character&gt;  &lt;logical&gt;</span></span>
+<span><span class="co">#&gt; 1  diffMethyl  diffMethyl differential_methyla..  diffMethyl       TRUE</span></span>
+<span><span class="co">#&gt;        method     formula   reference   treatment     mod_context</span></span>
+<span><span class="co">#&gt;   &lt;character&gt; &lt;character&gt; &lt;character&gt; &lt;character&gt; &lt;CharacterList&gt;</span></span>
+<span><span class="co">#&gt; 1   methylkit  ~condition     control   treatment                </span></span>
+<span><span class="co">#&gt;          mod_type           motif p_adjust_method min_coverage     alpha</span></span>
+<span><span class="co">#&gt;   &lt;CharacterList&gt; &lt;CharacterList&gt;     &lt;character&gt;    &lt;integer&gt; &lt;numeric&gt;</span></span>
+<span><span class="co">#&gt; 1             6mA                              BH            5       0.5</span></span>
+<span><span class="co">#&gt;                           result_cols              timestamp package_version</span></span>
+<span><span class="co">#&gt;                       &lt;CharacterList&gt;            &lt;character&gt;     &lt;character&gt;</span></span>
+<span><span class="co">#&gt; 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-03 07:08:14 ..           0.2.0</span></span></code></pre></div>
+<p>Raw evidence assays are treated as canonical input evidence. Transformations, when created, should live as named derived assay layers. Filtering returns subset <code>commaData</code> objects rather than hidden lazy views.</p>
+</div>
+<div class="section level2">
+<h2 id="multi-modification-analyses">Multi-modification analyses<a class="anchor" aria-label="anchor" href="#multi-modification-analyses"></a>
+</h2>
+<p>A single object can hold multiple modification types and motifs. Most analysis and plotting functions accept <code>mod_type</code>, <code>motif</code>, or <code>mod_context</code> filters.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/modTypes.html">modTypes</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "5mC" "6mA"</span></span>
-<span></span>
-<span><span class="co"># Modification contexts (combines mod_type and motif)</span></span>
 <span><span class="fu"><a href="reference/modContexts.html">modContexts</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "5mC_CCWGG" "6mA_GATC"</span></span>
 <span></span>
-<span><span class="co"># Subset to a single type</span></span>
-<span><span class="va">obj_6mA</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/filterSites.html">filterSites</a></span><span class="op">(</span><span class="va">comma_example_data</span>, mod_type <span class="op">=</span> <span class="st">"6mA"</span><span class="op">)</span></span>
+<span><span class="va">obj_6mA</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/filterSites.html">filterSites</a></span><span class="op">(</span><span class="va">comma_example_data</span>, mod_context <span class="op">=</span> <span class="st">"6mA_GATC"</span><span class="op">)</span></span>
 <span><span class="va">obj_6mA</span></span>
 <span><span class="co">#&gt; class: commaData</span></span>
 <span><span class="co">#&gt; sites: 393 | samples: 6</span></span>
@@ -303,30 +390,77 @@
 <span><span class="co">#&gt; motif sites: none</span></span>
 <span><span class="co">#&gt; caller: modkit</span></span>
 <span><span class="co">#&gt; min_coverage: 5</span></span></code></pre></div>
-<p>For a complete joint 6mA + 5mC analysis, see the <strong>Multiple Modification Types</strong> vignette (<code><a href="articles/multiple-modification-types.html">vignette("multiple-modification-types", package = "commaKit")</a></code>).</p>
+<p>For a complete joint 6mA + 5mC workflow, see <code><a href="articles/multiple-modification-types.html">vignette("multiple-modification-types", package = "commaKit")</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="op">?</span><span class="va">commaKit</span>     <span class="co"># Package overview and workflow</span></span>
-<span><span class="op">?</span><span class="va">commaData</span>    <span class="co"># Constructor and commaData class</span></span>
-<span><span class="op">?</span><span class="va">diffMethyl</span>   <span class="co"># Differential methylation testing</span></span></code></pre></div>
-<p>Four vignettes are included:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="op">?</span><span class="va">commaKit</span></span>
+<span><span class="op">?</span><span class="va">commaData</span></span>
+<span><span class="op">?</span><span class="va">diffMethyl</span></span>
+<span><span class="op">?</span><span class="va">results</span></span></code></pre></div>
+<p>Vignettes:</p>
 <ul>
 <li>
-<strong>Getting Started</strong> (<code><a href="articles/getting-started.html">vignette("getting-started", package = "commaKit")</a></code>) — end-to-end workflow: load -&gt; QC -&gt; annotate -&gt; differential methylation -&gt; visualize.</li>
+<code><a href="articles/getting-started.html">vignette("getting-started", package = "commaKit")</a></code> - end-to-end analysis from example data.</li>
 <li>
-<strong>Understanding commaData</strong> (<code><a href="articles/understanding-commaData.html">vignette("understanding-commaData", package = "commaKit")</a></code>) — the <code>RangedSummarizedExperiment</code> container, assays, site metadata, and result layers.</li>
+<code><a href="articles/understanding-commaData.html">vignette("understanding-commaData", package = "commaKit")</a></code> - object model, assays, provenance, and result layers.</li>
 <li>
-<strong>Import Troubleshooting</strong> (<code><a href="articles/import-troubleshooting.html">vignette("import-troubleshooting", package = "commaKit")</a></code>) — practical guidance for modkit, Dorado, Megalodon, genome, and annotation inputs.</li>
+<code><a href="articles/import-troubleshooting.html">vignette("import-troubleshooting", package = "commaKit")</a></code> - modkit, Dorado, Megalodon, genome, and annotation input issues.</li>
 <li>
-<strong>Multiple Modification Types</strong> (<code><a href="articles/multiple-modification-types.html">vignette("multiple-modification-types", package = "commaKit")</a></code>) — joint 6mA and 5mC analysis in a single <code>commaData</code> object.</li>
+<code><a href="articles/multiple-modification-types.html">vignette("multiple-modification-types", package = "commaKit")</a></code> - joint analysis of multiple modification contexts.</li>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="roadmap">Roadmap<a class="anchor" aria-label="anchor" href="#roadmap"></a>
+<h2 id="current-status-and-limitations">Current status and limitations<a class="anchor" aria-label="anchor" href="#current-status-and-limitations"></a>
 </h2>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Area</th>
+<th>Status</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Package version</td>
+<td>
+<code>0.2.0</code> development baseline</td>
+</tr>
+<tr>
+<td>Distribution</td>
+<td>GitHub only; not yet submitted to Bioconductor</td>
+</tr>
+<tr>
+<td>Primary input</td>
+<td>modkit pileup bedMethyl</td>
+</tr>
+<tr>
+<td>Optional inputs</td>
+<td>Dorado BAM with MM/ML tags; Megalodon legacy output</td>
+</tr>
+<tr>
+<td>Differential methylation</td>
+<td>One two-level design variable for v1</td>
+</tr>
+<tr>
+<td>Example data</td>
+<td>Synthetic, deterministic, useful for tests and tutorials</td>
+</tr>
+<tr>
+<td>Real-data validation</td>
+<td>Planned; depends on selecting a redistributable bacterial dataset</td>
+</tr>
+<tr>
+<td>Performance evidence</td>
+<td>Planned before broader release confidence</td>
+</tr>
+</tbody>
+</table>
+<p>Roadmap:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -368,8 +502,16 @@
 </table>
 </div>
 <div class="section level2">
+<h2 id="support">Support<a class="anchor" aria-label="anchor" href="#support"></a>
+</h2>
+<p>Use GitHub Issues for bug reports, feature requests, and documentation problems:</p>
+<p><a href="https://github.com/carl-stone/commaKit/issues" class="external-link uri">https://github.com/carl-stone/commaKit/issues</a></p>
+<p>For import problems, include the caller (<code>modkit</code>, <code>dorado</code>, or <code>megalodon</code>), the relevant command used upstream, a small excerpt of input if possible, and the full error message.</p>
+</div>
+<div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
+<p>If you use commaKit in published work, please cite the repository for now and the related methylation study:</p>
 <p>Stone CJ et al. (2022). Genome-wide adenine methylation in <em>Escherichia coli</em> K-12 reveals methylation patterns associated with gene regulation. <em>bioRxiv</em>.</p>
 </div>
 </div>
