@@ -274,11 +274,11 @@ For KEGG workflows, prefer the offline mapping path so routine analyses do not
 depend on live API calls:
 
 ```{r kegg-offline, eval = FALSE}
-kegg_t2g <- buildKEGGTermGene("eco", file = "kegg_eco.rds")
 id_map <- buildKEGGGeneIDMap(
   "eco",
   OrgDb = org.EcK12.eg.db::org.EcK12.eg.db
 )
+kegg_t2g <- buildKEGGTermGene("eco", file = "kegg_eco.rds", id_map = id_map)
 
 enr_kegg <- enrichMethylation(
   cd_dm,
