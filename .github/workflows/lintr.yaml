@@ -1,0 +1,52 @@
+name: lintr.yaml
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions: read-all
+
+jobs:
+  lintr:
+    runs-on: ubuntu-latest
+    container: bioconductor/bioconductor_docker:RELEASE_3_22
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::sessioninfo
+          extra-packages: any::lintr
+          needs: check
+
+      - name: Determine changed files
+        id: changed-files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+          else
+            base="${{ github.event.before }}"
+            head="${{ github.sha }}"
+          fi
+
+          if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            base="$(git merge-base "origin/${{ github.event.repository.default_branch }}" "$head")"
+          fi
+
+          git diff --name-only "$base" "$head" > changed-files.txt
+          cat changed-files.txt
+
+      - name: Lint changed R files
+        shell: bash
+        run: |
+          mapfile -t files < changed-files.txt
+          Rscript dev/precommit.R lint "${files[@]}"

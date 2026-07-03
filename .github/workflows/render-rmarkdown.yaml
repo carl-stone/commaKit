@@ -1,9 +1,15 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+# Check that committed Markdown outputs match changed R Markdown sources.
 on:
   push:
+    branches: [main, master]
     paths:
       - '**.Rmd'
+      - '**.md'
+      - '.github/workflows/render-rmarkdown.yaml'
+  pull_request:
+    paths:
+      - '**.Rmd'
+      - '**.md'
       - '.github/workflows/render-rmarkdown.yaml'
 
 name: render-rmarkdown.yaml
@@ -17,11 +23,9 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
-    permissions:
-      contents: write
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -35,47 +39,31 @@ jobs:
           packages: any::sessioninfo
           extra-packages: local::., any::rmarkdown
 
-      - name: Render Rmarkdown files and Commit Results
+      - name: Determine changed R Markdown files
         shell: bash
         run: |
           set -euo pipefail
-
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-          before="${{ github.event.before }}"
-          after="${{ github.sha }}"
-          default_branch="${{ github.event.repository.default_branch }}"
-
-          if git cat-file -e "${before}^{commit}" 2>/dev/null; then
-            diff_base="$before"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
           else
-            git fetch --no-tags --prune origin "$default_branch"
-            diff_base="$(git merge-base "origin/$default_branch" "$after")"
+            base="${{ github.event.before }}"
+            head="${{ github.sha }}"
           fi
 
-          mapfile -t RMD_PATH < <(git diff --name-only "$diff_base" "$after" -- '*.Rmd')
-          if [ "${#RMD_PATH[@]}" -eq 0 ]; then
-            echo "No R Markdown files changed."
+          if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            base="$(git merge-base "origin/${{ github.event.repository.default_branch }}" "$head")"
+          fi
+
+          git diff --name-only "$base" "$head" -- '*.Rmd' '*.md' > changed-rmd-files.txt
+          cat changed-rmd-files.txt
+
+      - name: Check rendered R Markdown outputs
+        shell: bash
+        run: |
+          mapfile -t files < changed-rmd-files.txt
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No changed R Markdown files to check."
             exit 0
           fi
-
-          Rscript -e 'for (f in commandArgs(TRUE)) if (file.exists(f)) rmarkdown::render(f)' "${RMD_PATH[@]}"
-          git config --local user.name "$GITHUB_ACTOR"
-          git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-          rendered_paths=()
-          for file in "${RMD_PATH[@]}"; do
-            rendered="${file%.Rmd}.md"
-            if [ -e "$rendered" ]; then
-              rendered_paths+=("$rendered")
-            fi
-          done
-
-          if [ "${#rendered_paths[@]}" -eq 0 ]; then
-            echo "No Markdown outputs to commit."
-            exit 0
-          fi
-
-          git add "${rendered_paths[@]}"
-          git commit -m 'Re-build Rmarkdown files' || echo "No changes to commit"
-          git push origin || echo "No changes to commit"
+          Rscript dev/precommit.R rmarkdown "${files[@]}"
