@@ -125,7 +125,8 @@ setMethod("results", "commaData", function(object,
                                            ...) {
   as <- match.arg(as)
   # ── Check diffMethyl has been run ─────────────────────────────────────────
-  if (!.hasDiffMethylResults(object)) {
+  if (length(.diffMethylResultNames(object)) == 0L &&
+    is.null(S4Vectors::metadata(object)$diffMethyl_result_cols)) {
     stop(
       "No differential methylation results found in this commaData object.\n",
       "run diffMethyl() first:\n",
