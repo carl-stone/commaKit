@@ -112,7 +112,11 @@ check_rmarkdown_rendered <- function(files) {
 
   if (length(stale) > 0L) {
     message("R Markdown outputs are stale.")
-    message("Run this command, stage the rendered Markdown changes, and retry:")
+    message(
+      "Render the stale source file(s), stage the generated output, ",
+      "and retry."
+    )
+    message("For README changes, run:")
     message("  Rscript -e 'rmarkdown::render(\"README.Rmd\")'")
     message("")
     message("Stale pairs:")
