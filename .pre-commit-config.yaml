@@ -18,6 +18,13 @@ repos:
         pass_filenames: true
         files: ^(R|tests|vignettes|data-raw|dev)/.*\.[Rr](md)?$|^README\.Rmd$|^\.Rprofile$|^\.lintr$
 
+      - id: rmarkdown-rendered
+        name: Check R Markdown outputs are rendered
+        entry: Rscript dev/precommit.R rmarkdown
+        language: system
+        pass_filenames: true
+        files: ^README\.(Rmd|md)$
+
       - id: readiness-large-files
         name: Block oversized repository files
         entry: Rscript inst/scripts/readiness-checks.R large-files

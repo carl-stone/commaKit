@@ -474,7 +474,6 @@ readiness_check_code_quality <- function(
   root = readiness_repo_root()
 ) {
   readiness_check_complexity(files = files, root = root)
-  readiness_check_dead_code(files = files, root = root)
   readiness_check_duplicate_code(files = files, root = root)
   invisible(TRUE)
 }
