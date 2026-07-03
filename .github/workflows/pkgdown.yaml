@@ -53,7 +53,7 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     concurrency:
-      group: pkgdown-deploy-${{ github.ref }}
+      group: pkgdown-deploy
       cancel-in-progress: true
     container: bioconductor/bioconductor_docker:RELEASE_3_22
     permissions:

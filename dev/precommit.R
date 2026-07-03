@@ -83,13 +83,19 @@ check_rmarkdown_rendered <- function(files) {
     files <- existing_rmd_files(Sys.glob(c("*.Rmd", "vignettes/*.Rmd")))
   }
 
-  files <- files[file.exists(vapply(files, rendered_md_path, character(1)))]
-  if (length(files) == 0L) {
+  output_files <- vapply(files, rendered_md_path, character(1))
+  missing <- files[!file.exists(output_files)]
+  files <- files[file.exists(output_files)]
+  if (length(files) == 0L && length(missing) == 0L) {
     message("No R Markdown files with Markdown outputs to check.")
     return(invisible(TRUE))
   }
 
-  stale <- character()
+  stale <- if (length(missing) > 0L) {
+    paste0(missing, " -> ", rendered_md_path(missing), " (missing)")
+  } else {
+    character()
+  }
   for (file in files) {
     output_file <- rendered_md_path(file)
     output_dir <- tempfile("rmd-render-")
