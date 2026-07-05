@@ -198,11 +198,14 @@ For R code changes:
 Rscript -e "devtools::test()"
 ```
 
-For documentation changes that affect roxygen output:
+For any change to roxygen comments in `R/*.R`:
 
 ```bash
 Rscript -e "devtools::document()"
 ```
+
+Roxygen edits are not complete until the generated `man/*.Rd` changes have
+been regenerated and reviewed in the same change.
 
 For README changes:
 
@@ -222,7 +225,7 @@ If tests are not run, say so explicitly in the final summary.
 
 ### 7. Generated files move with their sources
 
-If editing roxygen comments in `R/*.R`, commit the generated `man/*.Rd` changes in the same commit.
+If editing roxygen comments in `R/*.R`, commit the generated `man/*.Rd` changes in the same commit. Do not leave roxygen and installed help out of sync.
 
 If editing `README.Rmd`, commit the generated `README.md` and `man/figures/*` changes in the same commit.
 
