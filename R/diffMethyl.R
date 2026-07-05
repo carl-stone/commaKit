@@ -16,8 +16,11 @@ NULL
 #' @details
 #' \strong{Default method (\code{method = "methylkit"}):}
 #' Wraps \code{methylKit::calculateDiffMeth()}, which uses logistic regression
-#' with SLIM p-value correction. Robust for small n, produces calibrated
-#' relative p-values suitable for downstream filtering. Requires \pkg{methylKit}
+#' and returns raw p-values plus methylKit-specific q-values. commaKit stores
+#' the raw methylKit p-value as \code{dm_pvalue}, computes \code{dm_padj} with
+#' the selected \code{p_adjust_method} across the full \code{diffMethyl()}
+#' testing family, and preserves methylKit q-values separately as
+#' \code{dm_methylkit_qvalue}. Requires \pkg{methylKit}
 #' (\code{BiocManager::install("methylKit")}).
 #'
 #' \strong{Alternative model (\code{method = "quasi_f"}):}
@@ -70,6 +73,8 @@ NULL
 #' \describe{
 #'   \item{\code{dm_pvalue}}{Raw p-value from the GLM Wald test.}
 #'   \item{\code{dm_padj}}{Adjusted p-value (Benjamini-Hochberg by default).}
+#'   \item{\code{dm_methylkit_qvalue}}{methylKit q-value, present only for
+#'     result layers produced with \code{method = "methylkit"}.}
 #'   \item{\code{dm_delta_beta}}{Effect size: mean methylation in the treatment
 #'     group minus mean methylation in the reference (control) group. Positive
 #'     values indicate hypermethylation in treatment.}
@@ -97,9 +102,10 @@ NULL
 #'   \code{~ condition}.
 #' @param method Character string selecting the statistical backend.
 #'   \code{"methylkit"} (default) wraps \code{methylKit::calculateDiffMeth()}
-#'   with logistic regression and SLIM p-value correction; robust for small n
-#'   and produces calibrated relative p-values suitable for downstream
-#'   filtering. Requires \pkg{methylKit} (Bioconductor).
+#'   with logistic regression. The raw methylKit p-value feeds
+#'   \code{dm_pvalue}; \code{dm_padj} is computed by commaKit using
+#'   \code{p_adjust_method}; methylKit q-values are preserved separately as
+#'   \code{dm_methylkit_qvalue}. Requires \pkg{methylKit} (Bioconductor).
 #'   \code{"quasi_f"} applies empirical Bayes shrinkage of quasibinomial
 #'   dispersions via \code{\link[limma]{squeezeVar}} (quasi-likelihood F-test;
 #'   count-data EB), making it a good general-purpose alternative for bacterial
@@ -160,6 +166,7 @@ NULL
 #' @return The input \code{commaData} object with additional columns in
 #'   \code{rowData}: \code{dm_pvalue}, \code{dm_padj}, \code{dm_delta_beta},
 #'   and one \code{dm_mean_beta_<condition>} column per condition level. The
+#'   methylKit backend also adds \code{dm_methylkit_qvalue}. The
 #'   \code{metadata} slot is updated with analysis parameters, result column
 #'   names, and a named result layer registry.
 #'
@@ -347,6 +354,11 @@ diffMethyl <- function(
 
   # -- Initialise result columns (all NA) ------------------------------------
   pvalue_all <- rep(NA_real_, n_sites_all)
+  methylkit_qvalue_all <- if (method == "methylkit") {
+    rep(NA_real_, n_sites_all)
+  } else {
+    NULL
+  }
   delta_beta_all <- rep(NA_real_, n_sites_all)
   mean_beta_cols <- lapply(cond_levels, function(lv) rep(NA_real_, n_sites_all))
   names(mean_beta_cols) <- paste0("dm_mean_beta_", cond_levels)
@@ -425,6 +437,10 @@ diffMethyl <- function(
 
     # Write back to full-object vectors
     pvalue_all[site_idx] <- res_sub$pvalue
+    if (!is.null(methylkit_qvalue_all) &&
+      "qvalue" %in% colnames(res_sub)) {
+      methylkit_qvalue_all[site_idx] <- res_sub$qvalue
+    }
     delta_beta_all[site_idx] <- res_sub$delta_beta
 
     for (lv in cond_levels) {
@@ -443,11 +459,21 @@ diffMethyl <- function(
     "dm_pvalue", "dm_padj", "dm_delta_beta",
     names(mean_beta_cols)
   )
+  if (!is.null(methylkit_qvalue_all)) {
+    result_cols <- append(
+      result_cols,
+      "dm_methylkit_qvalue",
+      after = match("dm_padj", result_cols)
+    )
+  }
   result_data <- S4Vectors::DataFrame(
     dm_pvalue = pvalue_all,
     dm_padj = padj_all,
     dm_delta_beta = delta_beta_all
   )
+  if (!is.null(methylkit_qvalue_all)) {
+    result_data$dm_methylkit_qvalue <- methylkit_qvalue_all
+  }
   for (col_nm in names(mean_beta_cols)) {
     result_data[[col_nm]] <- mean_beta_cols[[col_nm]]
   }

@@ -37,11 +37,16 @@ NULL
 #' @param coldata \code{data.frame} with at least one column matching the
 #'   RHS variable in \code{formula}.
 #' @param formula One-sided formula (e.g., \code{~ condition}).
+#' @param ref_level Optional reference level for the two-level contrast.
+#' @param design_info Optional precomputed design information from
+#'   \code{.resolveDiffMethylDesign()}.
 #'
 #' @return A \code{data.frame} with the same columns as
-#'   \code{.betaBinomialTest()}: \code{pvalue}, \code{delta_beta}, and one
-#'   \code{mean_beta_<level>} column per condition level. Row names are site
-#'   keys.
+#'   other differential methylation backends: \code{pvalue},
+#'   \code{delta_beta}, and one \code{mean_beta_<level>} column per condition
+#'   level. The methylKit-specific \code{qvalue} column is preserved for callers
+#'   that want backend-specific evidence in addition to commaKit's adjusted
+#'   p-values. Row names are site keys.
 #'
 #' @keywords internal
 .runMethylKit <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
@@ -235,6 +240,7 @@ NULL
   # Initialise p = NA for all sites; untestable sites stay NA and are excluded
   # from multiple-testing correction, matching the limma and quasi_f backends.
   pvalue_vec <- rep(NA_real_, n_sites)
+  qvalue_vec <- rep(NA_real_, n_sites)
 
   # Match methylKit results back to original site order by key
   our_key_for_match <- paste0(chroms, ":", positions, ":", strands)
@@ -242,10 +248,15 @@ NULL
   found <- !is.na(mk_match)
   if (any(found)) {
     pvalue_vec[found] <- diff_df$pvalue[mk_match[found]]
+    if ("qvalue" %in% colnames(diff_df)) {
+      qvalue_vec[found] <- diff_df$qvalue[mk_match[found]]
+    }
   }
 
   # ── Assemble result ───────────────────────────────────────────────────────
-  .assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels)
+  result <- .assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels)
+  result$qvalue <- qvalue_vec
+  result
 }
 
 # ─── Warning translation helper ───────────────────────────────────────────────

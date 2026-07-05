@@ -44,9 +44,10 @@ minus the reference level.}
 
 \item{method}{Character string selecting the statistical backend.
 \code{"methylkit"} (default) wraps \code{methylKit::calculateDiffMeth()}
-with logistic regression and SLIM p-value correction; robust for small n
-and produces calibrated relative p-values suitable for downstream
-filtering. Requires \pkg{methylKit} (Bioconductor).
+with logistic regression. The raw methylKit p-value feeds
+\code{dm_pvalue}; \code{dm_padj} is computed by commaKit using
+\code{p_adjust_method}; methylKit q-values are preserved separately as
+\code{dm_methylkit_qvalue}. Requires \pkg{methylKit} (Bioconductor).
 \code{"quasi_f"} applies empirical Bayes shrinkage of quasibinomial
 dispersions via \code{\link[limma]{squeezeVar}} (quasi-likelihood F-test;
 count-data EB), making it a good general-purpose alternative for bacterial
@@ -110,6 +111,7 @@ becomes the default used by \code{\link{results}()} and is mirrored into
 The input \code{commaData} object with additional columns in
 \code{rowData}: \code{dm_pvalue}, \code{dm_padj}, \code{dm_delta_beta},
 and one \code{dm_mean_beta_<condition>} column per condition level. The
+methylKit backend also adds \code{dm_methylkit_qvalue}. The
 \code{metadata} slot is updated with analysis parameters, result column
 names, and a named result layer registry.
 }
@@ -123,8 +125,11 @@ as new columns in \code{rowData}.
 \details{
 \strong{Default method (\code{method = "methylkit"}):}
 Wraps \code{methylKit::calculateDiffMeth()}, which uses logistic regression
-with SLIM p-value correction. Robust for small n, produces calibrated
-relative p-values suitable for downstream filtering. Requires \pkg{methylKit}
+and returns raw p-values plus methylKit-specific q-values. commaKit stores
+the raw methylKit p-value as \code{dm_pvalue}, computes \code{dm_padj} with
+the selected \code{p_adjust_method} across the full \code{diffMethyl()}
+testing family, and preserves methylKit q-values separately as
+\code{dm_methylkit_qvalue}. Requires \pkg{methylKit}
 (\code{BiocManager::install("methylKit")}).
 
 \strong{Alternative model (\code{method = "quasi_f"}):}
@@ -177,6 +182,8 @@ extremely low statistical power. Treat such results as exploratory only.
 \describe{
 \item{\code{dm_pvalue}}{Raw p-value from the GLM Wald test.}
 \item{\code{dm_padj}}{Adjusted p-value (Benjamini-Hochberg by default).}
+\item{\code{dm_methylkit_qvalue}}{methylKit q-value, present only for
+result layers produced with \code{method = "methylkit"}.}
 \item{\code{dm_delta_beta}}{Effect size: mean methylation in the treatment
 group minus mean methylation in the reference (control) group. Positive
 values indicate hypermethylation in treatment.}
@@ -196,7 +203,7 @@ mirrored into the legacy \code{dm_*} columns in \code{rowData} so existing
 \examples{
 data(comma_example_data)
 # Test for differential 6mA methylation between conditions
-dm <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
 
 # How many sites are significant?
 rd <- as.data.frame(SummarizedExperiment::rowData(dm))

@@ -94,6 +94,8 @@ NULL
 #'     \item{\code{mod_type}}{Modification type (e.g., \code{"6mA"}).}
 #'     \item{\code{dm_pvalue}}{Raw p-value from the statistical test.}
 #'     \item{\code{dm_padj}}{Adjusted p-value (Benjamini-Hochberg by default).}
+#'     \item{\code{dm_methylkit_qvalue}}{methylKit q-value, present only when
+#'       extracting a result layer produced by \code{method = "methylkit"}.}
 #'     \item{\code{dm_delta_beta}}{Effect size: mean methylation in the
 #'       treatment group minus mean methylation in the reference group.}
 #'     \item{\code{dm_mean_beta_<condition>}}{One column per condition level

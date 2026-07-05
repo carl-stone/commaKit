@@ -48,6 +48,18 @@ test_that("diffMethyl: rowData gains dm_ result columns", {
   expect_true("dm_delta_beta" %in% colnames(rd))
 })
 
+test_that("diffMethyl: non-methylKit results omit methylKit q-values", {
+  skip_if_not_installed("limma")
+  obj <- .make_dm_data(n_ctrl = 2L, n_treat = 2L)
+  dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
+
+  rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+  res <- results(dm)
+
+  expect_false("dm_methylkit_qvalue" %in% colnames(rd))
+  expect_false("dm_methylkit_qvalue" %in% colnames(res))
+})
+
 test_that("diffMethyl: per-condition mean_beta columns added", {
   obj <- .make_dm_data()
   dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
@@ -395,6 +407,32 @@ test_that("diffMethyl: method='methylkit' message uses actual level names", {
   # The generic methylKit "group: 0" / "group: 1" message must NOT appear
   expect_false(any(grepl("group: 0", msgs, fixed = TRUE)))
   expect_false(any(grepl("group: 1", msgs, fixed = TRUE)))
+})
+
+test_that("diffMethyl: methylKit q-values stay separate from dm_padj", {
+  skip_if_not(
+    requireNamespace("methylKit", quietly = TRUE),
+    "methylKit not installed"
+  )
+  obj <- .make_dm_data(n_sites = 12L, n_ctrl = 2L, n_treat = 2L)
+  dm <- suppressWarnings(
+    diffMethyl(obj, formula = ~condition, method = "methylkit")
+  )
+
+  rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+  res <- results(dm)
+
+  expect_true("dm_methylkit_qvalue" %in% colnames(rd))
+  expect_true("dm_methylkit_qvalue" %in% colnames(res))
+  expect_equal(res$dm_methylkit_qvalue, rd$dm_methylkit_qvalue)
+
+  ok <- !is.na(rd$dm_pvalue)
+  expect_true(any(ok))
+  expected_padj <- stats::p.adjust(
+    rd$dm_pvalue,
+    method = S4Vectors::metadata(dm)$diffMethyl_params$p_adjust_method
+  )
+  expect_equal(rd$dm_padj[ok], expected_padj[ok], tolerance = 1e-12)
 })
 
 # ─── limma method ─────────────────────────────────────────────────────────────
