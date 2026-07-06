@@ -171,7 +171,11 @@ NULL
                                         min = -Inf,
                                         max = Inf) {
   values_chr <- trimws(as.character(values))
-  value_is_nan <- is.nan(values)
+  value_is_nan <- if (is.numeric(values)) {
+    is.nan(values)
+  } else {
+    rep(FALSE, length(values_chr))
+  }
   missing <- (is.na(values) & !value_is_nan) | is.na(values_chr) |
     !nzchar(values_chr)
 
@@ -204,11 +208,21 @@ NULL
         "'. Expected an integer value."
       )
     }
-    parsed <- as.integer(parsed)
+    parsed_integer <- suppressWarnings(as.integer(parsed))
+    overflow <- is.na(parsed_integer) & !is.na(parsed)
+    if (any(overflow)) {
+      row_idx <- which(overflow)[[1L]]
+      stop(
+        "Megalodon file '", file, "' has out-of-range ", field,
+        " in row ", row_idx, ": '", values_chr[[row_idx]],
+        "'. Expected a value between ", min, " and ", max, "."
+      )
+    }
+    parsed <- parsed_integer
   }
 
   out_of_range <- parsed < min | parsed > max
-  if (any(out_of_range)) {
+  if (any(out_of_range, na.rm = TRUE)) {
     row_idx <- which(out_of_range)[[1L]]
     stop(
       "Megalodon file '", file, "' has out-of-range ", field,

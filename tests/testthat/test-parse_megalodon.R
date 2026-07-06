@@ -279,6 +279,32 @@ test_that(".parseMegalodon() errors on non-numeric coordinates", {
   )
 })
 
+test_that(".parseMegalodon() diagnoses missing character coordinates", {
+  rows <- data.frame(
+    "chr1", NA_character_, 100L, "read1", 255L, "+", 0.8,
+    stringsAsFactors = FALSE
+  )
+  f <- .write_tmp_megalodon(rows)
+
+  expect_error(
+    commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA"),
+    regexp = "missing start coordinate"
+  )
+})
+
+test_that(".parseMegalodon() diagnoses integer coordinate overflow", {
+  rows <- data.frame(
+    "chr1", "999999999999999999999", 100L, "read1", 255L, "+", 0.8,
+    stringsAsFactors = FALSE
+  )
+  f <- .write_tmp_megalodon(rows)
+
+  expect_error(
+    commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA"),
+    regexp = "out-of-range start coordinate"
+  )
+})
+
 test_that(".parseMegalodon() errors on missing mod_prob values", {
   rows <- data.frame(
     "chr1", 99L, 100L, "read1", 255L, "+", NA_character_,

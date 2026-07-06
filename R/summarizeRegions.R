@@ -54,9 +54,13 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
   if (!is(regions, "GRanges")) {
     stop("'regions' must be a GRanges object.")
   }
-  if (!is.numeric(min_sites) || length(min_sites) != 1L ||
-        is.na(min_sites) || min_sites < 0 ||
-        abs(min_sites - round(min_sites)) > sqrt(.Machine$double.eps)) {
+  invalid_min_sites <- !is.numeric(min_sites) || length(min_sites) != 1L ||
+    is.na(min_sites) || min_sites < 0
+  if (!invalid_min_sites) {
+    invalid_min_sites <- abs(min_sites - round(min_sites)) >
+      sqrt(.Machine$double.eps)
+  }
+  if (invalid_min_sites) {
     stop("'min_sites' must be a single non-negative integer.")
   }
   min_sites <- as.integer(min_sites)
@@ -91,9 +95,11 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
   has_count_evidence <- if (length(site_idx) == 0L) {
     FALSE
   } else {
-    any(!is.na(mod_counts[site_idx, , drop = FALSE]) &
-          !is.na(valid_coverage[site_idx, , drop = FALSE]) &
-          valid_coverage[site_idx, , drop = FALSE] > 0)
+    selected_mod_counts <- mod_counts[site_idx, , drop = FALSE]
+    selected_coverage <- valid_coverage[site_idx, , drop = FALSE]
+    usable_counts <- !is.na(selected_mod_counts) & !is.na(selected_coverage) &
+      selected_coverage > 0
+    any(usable_counts)
   }
   if (!has_count_evidence) {
     stop(
