@@ -10,48 +10,16 @@ NULL
     stop("'object' must be a commaData object.")
   }
 
-  current <- object
-  idx <- seq_len(nrow(object))
-  filters <- character(0)
+  plan <- .planSiteFilters(
+    object,
+    mod_type = mod_type,
+    motif = motif,
+    mod_context = mod_context,
+    stop_on_empty = stop_on_empty,
+    caller = caller
+  )
 
-  if (!is.null(mod_type)) {
-    .validateModType(mod_type, current)
-    rd <- rowData(current)
-    keep <- rd$mod_type %in% mod_type
-    current <- current[keep, ]
-    idx <- idx[keep]
-    filters <- c(filters, .siteFilterLabel("mod_type", mod_type))
-    if (stop_on_empty && nrow(current) == 0L) {
-      .stopEmptySiteFilter(filters, caller = caller)
-    }
-  }
-
-  if (!is.null(motif)) {
-    .validateSiteFilterValues("motif", motif, motifs(current))
-    rd <- rowData(current)
-    keep <- !is.na(rd$motif) & rd$motif %in% motif
-    current <- current[keep, ]
-    idx <- idx[keep]
-    filters <- c(filters, .siteFilterLabel("motif", motif))
-    if (stop_on_empty && nrow(current) == 0L) {
-      .stopEmptySiteFilter(filters, caller = caller)
-    }
-  }
-
-  if (!is.null(mod_context)) {
-    .validateSiteFilterValues("mod_context", mod_context, modContexts(current))
-    rd <- rowData(current)
-    computed_ctx <- .computeModContext(rd$mod_type, rd$motif)
-    keep <- computed_ctx %in% mod_context
-    current <- current[keep, ]
-    idx <- idx[keep]
-    filters <- c(filters, .siteFilterLabel("mod_context", mod_context))
-    if (stop_on_empty && nrow(current) == 0L) {
-      .stopEmptySiteFilter(filters, caller = caller)
-    }
-  }
-
-  idx
+  plan$row_index
 }
 
 # ─── results() ────────────────────────────────────────────────────────────────
