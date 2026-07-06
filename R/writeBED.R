@@ -94,51 +94,47 @@ writeBED <- function(object,
   rd <- rd[keep, , drop = FALSE]
   betas <- betas[keep]
 
+  track_line <- paste0(
+    'track name="', track_name, '" description="',
+    track_description, '" itemRgb="On"'
+  )
+  bed_df <- NULL
+
   if (nrow(rd) == 0) {
     warning(
       "No sites with non-NA methylation for sample '", sample, "'. ",
       "Writing empty BED file."
     )
-    track_line <- paste0(
-      'track name="', track_name, '" description="',
-      track_description, '" itemRgb="On"'
-    )
-    .writeBEDAtomic(file = file, track_line = track_line)
-    return(invisible(file))
-  }
-
-  # ── Build BED rows ────────────────────────────────────────────────────────
-  # BED is 0-based; our positions are 1-based
-  score <- as.integer(round(betas * 1000))
-
-  if (rgb_scale) {
-    rgb <- rep("250,0,0", length(score))
-    rgb[score <= 800] <- "222,0,28"
-    rgb[score <= 600] <- "167,0,85"
-    rgb[score <= 400] <- "83,0,172"
-    rgb[score <= 200] <- "0,0,255"
   } else {
-    rgb <- rep("0,0,0", length(score))
-  }
+    # ── Build BED rows ──────────────────────────────────────────────────────
+    # BED is 0-based; our positions are 1-based
+    score <- as.integer(round(betas * 1000))
 
-  bed_df <- data.frame(
-    chrom = rd$chrom,
-    chromStart = rd$position - 1L, # 0-based
-    chromEnd = rd$position, # half-open
-    name = rd$position,
-    score = score,
-    strand = rd$strand,
-    thickStart = rd$position - 1L,
-    thickEnd = rd$position,
-    itemRGB = rgb,
-    stringsAsFactors = FALSE
-  )
+    if (rgb_scale) {
+      rgb <- rep("250,0,0", length(score))
+      rgb[score <= 800] <- "222,0,28"
+      rgb[score <= 600] <- "167,0,85"
+      rgb[score <= 400] <- "83,0,172"
+      rgb[score <= 200] <- "0,0,255"
+    } else {
+      rgb <- rep("0,0,0", length(score))
+    }
+
+    bed_df <- data.frame(
+      chrom = rd$chrom,
+      chromStart = rd$position - 1L, # 0-based
+      chromEnd = rd$position, # half-open
+      name = rd$position,
+      score = score,
+      strand = rd$strand,
+      thickStart = rd$position - 1L,
+      thickEnd = rd$position,
+      itemRGB = rgb,
+      stringsAsFactors = FALSE
+    )
+  }
 
   # ── Write output ──────────────────────────────────────────────────────────
-  track_line <- paste0(
-    'track name="', track_name, '" description="',
-    track_description, '" itemRgb="On"'
-  )
   .writeBEDAtomic(file = file, track_line = track_line, bed_df = bed_df)
 
   invisible(file)
