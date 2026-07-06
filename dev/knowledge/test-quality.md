@@ -270,7 +270,7 @@ All 42 keep. Excellent coverage of KEGG API, caching, ID mapping, and integratio
 
 ### test-genome_utils.R (24 tests: 15 contract, 8 edge-case)
 
-All 24 keep. Strong coverage of .validateGenomeInfo, .circularIndex, and .makeSeqinfo.
+All 24 keep. Strong coverage of .validateGenomeInfo, .loadGenomeSequences, and .makeSeqinfo.
 
 ---
 

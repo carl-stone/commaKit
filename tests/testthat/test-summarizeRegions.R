@@ -105,6 +105,8 @@ test_that("summarizeRegions() applies min_sites and keeps empty regions", {
   empty_a <- out[out$region_id == "region_3" & out$sample_name == "s1", ]
   expect_equal(empty_a$n_sites, 0L)
   expect_equal(empty_a$total_mod_counts, 0)
+  expect_equal(empty_a$total_canonical_counts, 0)
+  expect_equal(empty_a$total_other_mod_counts, 0)
   expect_equal(empty_a$total_valid_coverage, 0)
   expect_true(is.na(empty_a$region_methylation))
 })
@@ -121,8 +123,9 @@ test_that("summarizeRegions() respects modification site filters", {
   expect_equal(first_a$total_valid_coverage, 20)
 
   out_context <- summarizeRegions(obj, regions, mod_context = "5mC_CCWGG")
-  first_b <- out_context[out_context$region_id == "region_1" &
-    out_context$sample_name == "s2", ]
+  first_b_idx <- out_context$region_id == "region_1" &
+    out_context$sample_name == "s2"
+  first_b <- out_context[first_b_idx, ]
   expect_equal(first_b$n_sites, 1L)
   expect_equal(first_b$total_mod_counts, 14)
   expect_equal(first_b$total_valid_coverage, 20)
