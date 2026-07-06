@@ -19,6 +19,16 @@ knitr::opts_chunk$set(
   warning    = FALSE,
   message    = FALSE
 )
+is_github_markdown_output <- function() {
+  pandoc_to <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+  if (is.null(pandoc_to)) {
+    return(FALSE)
+  }
+  any(grepl("gfm|markdown", pandoc_to))
+}
+if (is_github_markdown_output()) {
+  knitr::opts_chunk$set(fig.path = "getting-started_files/figure-gfm/")
+}
 ```
 
 # Introduction
@@ -239,7 +249,8 @@ differ.
 Extract the results as a tidy data frame:
 
 ```{r results}
-resultLayers(cd_dm)
+layers <- resultLayers(cd_dm)
+layers[, setdiff(colnames(layers), "timestamp")]
 res <- results(cd_dm)
 # Top sites by adjusted p-value
 head(res[
@@ -346,6 +357,6 @@ enr_gsea <- enrichMethylation(cd_dm,
 
 # Session Information
 
-```{r session-info}
+```{r session-info, eval = !is_github_markdown_output()}
 sessionInfo()
 ```

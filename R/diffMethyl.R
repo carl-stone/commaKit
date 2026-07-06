@@ -34,7 +34,8 @@ NULL
 #'
 #' \strong{Alternative model (\code{method = "limma"}):}
 #' Beta values are transformed to M-values via
-#' \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))},
+#' \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) /
+#'   (n_{\mathrm{unmod}} + \alpha))},
 #' then \code{\link[limma]{lmFit}} fits an OLS model per site and
 #' \code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage,
 #' borrowing information across all sites to stabilize the per-site variance
@@ -48,10 +49,11 @@ NULL
 #' methylKit's logistic-regression conventions. Use \code{"quasi_f"} as a
 #' good general-purpose alternative for bacterial methylomes when you want a
 #' count-aware model with empirical Bayes dispersion shrinkage and genome-wide
-#' multiple-testing correction handled entirely inside \pkg{commaKit}. It is often
-#' a good first alternative if methylKit convergence warnings, zero-variance
-#' sites, or runtime become distracting. Use \code{"limma"} when you want the
-#' familiar \pkg{limma} empirical-Bayes linear-model workflow on M-values,
+#' multiple-testing correction handled entirely inside \pkg{commaKit}. It is
+#' often a good first alternative if methylKit convergence warnings,
+#' zero-variance sites, or runtime become distracting. Use \code{"limma"} when
+#' you want the familiar \pkg{limma} empirical-Bayes linear-model workflow on
+#' M-values,
 #' especially for complete datasets with few replicates per group. All three
 #' backends report \code{dm_delta_beta} on the original beta scale, so effect
 #' sizes remain comparable even when p-values differ.
@@ -115,7 +117,8 @@ NULL
 #'   replicates are few (n < 3 per group). Requires \pkg{limma}.
 #' @param alpha Positive numeric pseudocount used to compute M-values when
 #'   \code{method = "limma"}:
-#'   \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))}.
+#'   \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) /
+#'   (n_{\mathrm{unmod}} + \alpha))}.
 #'   Default \code{0.5} (a Beta(0.5, 0.5) prior). Ignored for other methods.
 #' @param mod_context Character vector or \code{NULL}. Modification context(s)
 #'   to test (e.g., \code{"6mA_GATC"}, \code{c("6mA_GATC", "5mC_CCWGG")}).
@@ -220,8 +223,10 @@ diffMethyl <- function(
   if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) {
     stop("'overwrite' must be TRUE, FALSE, or NULL.")
   }
-  if (!is.logical(make_default) || length(make_default) != 1L ||
-    is.na(make_default)) {
+  invalid_make_default <- !is.logical(make_default) ||
+    length(make_default) != 1L ||
+    is.na(make_default)
+  if (invalid_make_default) {
     stop("'make_default' must be TRUE or FALSE.")
   }
   if (!isTRUE(overwrite) && result_name %in% .diffMethylResultNames(object)) {
@@ -230,8 +235,11 @@ diffMethyl <- function(
       "' already exists. Use a new 'result_name' or set overwrite = TRUE."
     )
   }
-  if (isTRUE(overwrite) && !isTRUE(make_default) &&
-    identical(result_name, .diffMethylDefaultResultName(object))) {
+  overwrites_active_result <- identical(
+    result_name,
+    .diffMethylDefaultResultName(object)
+  )
+  if (isTRUE(overwrite) && !isTRUE(make_default) && overwrites_active_result) {
     stop(
       "Cannot overwrite the active differential methylation result layer ",
       "with make_default = FALSE because the rowData dm_* mirror would ",
@@ -240,14 +248,19 @@ diffMethyl <- function(
     )
   }
 
-  if (!is.numeric(min_coverage) || length(min_coverage) != 1L ||
-    is.na(min_coverage) || min_coverage < 0L) {
+  invalid_min_coverage <- !is.numeric(min_coverage) ||
+    length(min_coverage) != 1L ||
+    is.na(min_coverage) ||
+    min_coverage < 0L
+  if (invalid_min_coverage) {
     stop("'min_coverage' must be a single non-negative integer.")
   }
   min_coverage <- as.integer(min_coverage)
-  if (!is.character(p_adjust_method) || length(p_adjust_method) != 1L ||
+  invalid_adjust_method <- !is.character(p_adjust_method) ||
+    length(p_adjust_method) != 1L ||
     is.na(p_adjust_method) ||
-    !p_adjust_method %in% stats::p.adjust.methods) {
+    !p_adjust_method %in% stats::p.adjust.methods
+  if (invalid_adjust_method) {
     stop(
       "'p_adjust_method' must be one of: ",
       paste(stats::p.adjust.methods, collapse = ", ")
@@ -261,8 +274,8 @@ diffMethyl <- function(
     )
   }
 
-  if (method %in% c("limma", "quasi_f") &&
-    !requireNamespace("limma", quietly = TRUE)) {
+  needs_limma <- method %in% c("limma", "quasi_f")
+  if (needs_limma && !requireNamespace("limma", quietly = TRUE)) {
     stop(
       "Package 'limma' is required for method = \"", method, "\".\n",
       "Install it with: BiocManager::install(\"limma\")"
@@ -270,8 +283,11 @@ diffMethyl <- function(
   }
 
   if (method == "limma") {
-    if (!is.numeric(alpha) || length(alpha) != 1L ||
-      !is.finite(alpha) || alpha <= 0) {
+    invalid_alpha <- !is.numeric(alpha) ||
+      length(alpha) != 1L ||
+      !is.finite(alpha) ||
+      alpha <= 0
+    if (invalid_alpha) {
       stop("'alpha' must be a single positive finite number.")
     }
   }
@@ -437,8 +453,9 @@ diffMethyl <- function(
 
     # Write back to full-object vectors
     pvalue_all[site_idx] <- res_sub$pvalue
-    if (!is.null(methylkit_qvalue_all) &&
-      "qvalue" %in% colnames(res_sub)) {
+    has_methylkit_qvalue <- !is.null(methylkit_qvalue_all) &&
+      "qvalue" %in% colnames(res_sub)
+    if (has_methylkit_qvalue) {
       methylkit_qvalue_all[site_idx] <- res_sub$qvalue
     }
     delta_beta_all[site_idx] <- res_sub$delta_beta

@@ -261,10 +261,8 @@ test_that("results() can return selected result layers as GRanges", {
 
   expect_s4_class(gr, "GRanges")
   expect_equal(length(gr), nrow(df))
-  expect_true(
-    all(c("dm_pvalue", "dm_padj", "dm_delta_beta") %in%
-      colnames(GenomicRanges::mcols(gr)))
-  )
+  gr_cols <- colnames(GenomicRanges::mcols(gr))
+  expect_true(all(c("dm_pvalue", "dm_padj", "dm_delta_beta") %in% gr_cols))
   expect_equal(GenomicRanges::mcols(gr)$dm_pvalue, df$dm_pvalue)
 
   gr_empty <- results(dm, name = "quasi_f.empty", as = "GRanges")

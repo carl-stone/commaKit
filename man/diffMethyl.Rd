@@ -82,7 +82,8 @@ this threshold are treated as \code{NA} in that sample. Default \code{5L}.}
 
 \item{alpha}{Positive numeric pseudocount used to compute M-values when
 \code{method = "limma"}:
-\eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))}.
+\eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) /
+(n_{\mathrm{unmod}} + \alpha))}.
 Default \code{0.5} (a Beta(0.5, 0.5) prior). Ignored for other methods.}
 
 \item{p_adjust_method}{Character string. Multiple testing correction method,
@@ -143,7 +144,8 @@ freedom. Requires \pkg{limma}.
 
 \strong{Alternative model (\code{method = "limma"}):}
 Beta values are transformed to M-values via
-\eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))},
+\eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) /
+  (n_{\mathrm{unmod}} + \alpha))},
 then \code{\link[limma]{lmFit}} fits an OLS model per site and
 \code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage,
 borrowing information across all sites to stabilize the per-site variance
@@ -157,10 +159,11 @@ established \pkg{methylKit} workflows or need results that closely follow
 methylKit's logistic-regression conventions. Use \code{"quasi_f"} as a
 good general-purpose alternative for bacterial methylomes when you want a
 count-aware model with empirical Bayes dispersion shrinkage and genome-wide
-multiple-testing correction handled entirely inside \pkg{commaKit}. It is often
-a good first alternative if methylKit convergence warnings, zero-variance
-sites, or runtime become distracting. Use \code{"limma"} when you want the
-familiar \pkg{limma} empirical-Bayes linear-model workflow on M-values,
+multiple-testing correction handled entirely inside \pkg{commaKit}. It is
+often a good first alternative if methylKit convergence warnings,
+zero-variance sites, or runtime become distracting. Use \code{"limma"} when
+you want the familiar \pkg{limma} empirical-Bayes linear-model workflow on
+M-values,
 especially for complete datasets with few replicates per group. All three
 backends report \code{dm_delta_beta} on the original beta scale, so effect
 sizes remain comparable even when p-values differ.

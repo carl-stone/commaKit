@@ -103,7 +103,8 @@ NULL
   # methylKit's reshape logic hardcodes ncol = 4 (2-sample assumption),
   # producing garbage that cascades into a split() error. Filter these sites
   # out before building methylRaw objects. These sites are untestable, so
-  # they retain p = NA and are excluded from multiple-testing correction.
+  # they retain p = NA. stats::p.adjust() preserves those NA entries while
+  # still using the full p-value vector length as the adjustment family size.
   all_meth <- apply(methyl_mat, 1L, function(x) all(x == 1, na.rm = TRUE))
   all_unmeth <- apply(methyl_mat, 1L, function(x) all(x == 0, na.rm = TRUE))
   skip_idx <- which(all_meth | all_unmeth)
@@ -237,8 +238,9 @@ NULL
 
   # Pre-compute group means from our matrices (mirroring quasi_f/limma wrappers)
   group_stats <- .computeDiffMethylGroupStats(methyl_mat, design_info)
-  # Initialise p = NA for all sites; untestable sites stay NA and are excluded
-  # from multiple-testing correction, matching the limma and quasi_f backends.
+  # Initialise p = NA for all sites; untestable sites keep NA adjusted
+  # p-values, while stats::p.adjust() still uses the full vector length as the
+  # adjustment family size, matching the limma and quasi_f backends.
   pvalue_vec <- rep(NA_real_, n_sites)
   qvalue_vec <- rep(NA_real_, n_sites)
 
