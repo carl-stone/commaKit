@@ -15,8 +15,14 @@ fi
 
 export RENV_CONFIG_AUTOLOADER_ENABLED="${RENV_CONFIG_AUTOLOADER_ENABLED:-FALSE}"
 
+echo "Running commaKit style dry-run check..."
+Rscript --vanilla dev/precommit.R style "${staged_files[@]}"
+
 echo "Running commaKit lint pre-commit check..."
-Rscript dev/precommit.R lint "${staged_files[@]}"
+Rscript --vanilla dev/precommit.R lint "${staged_files[@]}"
+
+echo "Running commaKit roxygen documentation freshness check..."
+Rscript --vanilla dev/precommit.R roxygen "${staged_files[@]}"
 
 echo "Running commaKit R Markdown render freshness check..."
-Rscript dev/precommit.R rmarkdown "${staged_files[@]}"
+Rscript --vanilla dev/precommit.R rmarkdown "${staged_files[@]}"

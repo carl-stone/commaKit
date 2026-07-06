@@ -114,12 +114,16 @@ data(comma_example_data)
 plot_tss_profile(comma_example_data, feature_type = "gene", window = 500L)
 
 # Colour by modification type, facet by sample
-plot_tss_profile(comma_example_data, feature_type = "gene",
-                 color_by = "mod_type", facet_by = "sample")
+plot_tss_profile(comma_example_data,
+  feature_type = "gene",
+  color_by = "mod_type", facet_by = "sample"
+)
 
 # Overlay loess smooth
-plot_tss_profile(comma_example_data, feature_type = "gene",
-                 show_smooth = TRUE)
+plot_tss_profile(comma_example_data,
+  feature_type = "gene",
+  show_smooth = TRUE
+)
 
 }
 \seealso{

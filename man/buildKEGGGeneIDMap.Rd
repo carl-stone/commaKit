@@ -93,11 +93,12 @@ when you have downloaded a mapping from NCBI's \code{gene_info} file.}
 \examples{
 \donttest{
 if (requireNamespace("KEGGREST", quietly = TRUE) &&
-    requireNamespace("org.EcK12.eg.db", quietly = TRUE)) {
-  id_file  <- file.path(tempdir(), "eco_id_map.rds")
+  requireNamespace("org.EcK12.eg.db", quietly = TRUE)) {
+  id_file <- file.path(tempdir(), "eco_id_map.rds")
   id_map <- buildKEGGGeneIDMap("eco",
-                               OrgDb = org.EcK12.eg.db::org.EcK12.eg.db,
-                               file  = id_file)
+    OrgDb = org.EcK12.eg.db::org.EcK12.eg.db,
+    file  = id_file
+  )
 
   # Apply when building pathway map:
   kegg_file <- file.path(tempdir(), "eco_kegg.rds")
@@ -109,7 +110,7 @@ if (requireNamespace("KEGGREST", quietly = TRUE) &&
 if (requireNamespace("KEGGREST", quietly = TRUE)) {
   ent2sym <- data.frame(
     entrez_id = c("945076", "945803"),
-    symbol    = c("lacZ",   "lacY"),
+    symbol = c("lacZ", "lacY"),
     stringsAsFactors = FALSE
   )
   id_map <- buildKEGGGeneIDMap("eco", entrez2symbol = ent2sym)

@@ -17,7 +17,7 @@ An integer matrix with rows corresponding to methylation sites and
 columns corresponding to samples.
 }
 \description{
-Retrieves the sites x samples matrix of observed reads called as the target
+Retrieves the sites × samples matrix of observed reads called as the target
 modification. This assay is available for callers that report count-like
 methylation evidence directly, such as modkit pileup. Older objects or
 probability-only callers may contain \code{NA} values.
@@ -29,6 +29,6 @@ dim(mod)
 
 }
 \seealso{
-\code{\link{canonicalCounts}}, \code{\link{otherModCounts}},
-\code{\link{siteCoverage}}, \code{\link{methylation}}
+\code{\link{canonicalCounts}}, \code{\link{siteCoverage}},
+\code{\link{methylation}}
 }

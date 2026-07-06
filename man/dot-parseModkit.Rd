@@ -31,14 +31,16 @@ or \code{"4mC"} (character).}
 \code{mod_code} field (e.g., \code{"GATC"}, \code{"CCWGG"}).
 \code{NA} if the \code{mod_code} field does not contain motif
 information (older modkit formats).}
-\item{\code{beta}}{Proportion of reads called methylated, range 0–1
-(numeric).}
+\item{\code{beta}}{Proportion of reads called methylated, computed as
+\code{Nmod / Nvalid_cov} from authoritative count fields. Range 0-1
+for positive-coverage rows; 0 for zero-coverage rows.}
 \item{\code{coverage}}{Total read depth at this site (integer).}
 \item{\code{mod_counts}}{Observed reads called as this modification.}
-\item{\code{canonical_counts}}{Observed reads called canonical/unmodified.}
+\item{\code{canonical_counts}}{Observed reads called
+canonical/unmodified.}
 \item{\code{other_mod_counts}}{Observed reads called as a non-target
 modification. Together, \code{mod_counts + canonical_counts +
-other_mod_counts} is the modkit \code{Nvalid_cov} denominator used for
+      other_mod_counts} is the modkit \code{Nvalid_cov} denominator used for
 \code{coverage}.}
 }
 }

@@ -6,21 +6,28 @@ repos:
     hooks:
       - id: r-style
         name: Check R formatting with styler
-        entry: Rscript dev/precommit.R style
+        entry: env RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/precommit.R style
         language: system
         pass_filenames: true
         files: ^(R|tests|vignettes|data-raw|dev)/.*\.[Rr](md)?$|^README\.Rmd$|^\.Rprofile$
 
       - id: r-lint
         name: Lint changed R files with lintr
-        entry: Rscript dev/precommit.R lint
+        entry: env RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/precommit.R lint
         language: system
         pass_filenames: true
         files: ^(R|tests|vignettes|data-raw|dev)/.*\.[Rr](md)?$|^README\.Rmd$|^\.Rprofile$|^\.lintr$
 
+      - id: roxygen-generated-docs
+        name: Check roxygen-generated docs are current
+        entry: env RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/precommit.R roxygen
+        language: system
+        pass_filenames: true
+        files: ^R/.*\.[Rr]$|^man/.*\.Rd$|^NAMESPACE$|^DESCRIPTION$
+
       - id: rmarkdown-rendered
         name: Check R Markdown outputs are rendered
-        entry: Rscript dev/precommit.R rmarkdown
+        entry: env RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/precommit.R rmarkdown
         language: system
         pass_filenames: true
         files: ^README\.(Rmd|md)$
@@ -51,7 +58,7 @@ repos:
 
       - id: r-tests
         name: Run package tests before push
-        entry: Rscript dev/precommit.R test
+        entry: env RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/precommit.R test
         language: system
         pass_filenames: false
         always_run: true

@@ -60,7 +60,7 @@ plotted coordinates instead of producing infinite values.
 }
 \examples{
 data(comma_example_data)
-cd_dm <- diffMethyl(comma_example_data, ~ condition)
+cd_dm <- diffMethyl(comma_example_data, ~condition)
 res <- results(cd_dm)
 plot_volcano(res)
 

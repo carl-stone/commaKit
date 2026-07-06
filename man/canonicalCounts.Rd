@@ -17,7 +17,7 @@ An integer matrix with rows corresponding to methylation sites and
 columns corresponding to samples.
 }
 \description{
-Retrieves the sites x samples matrix of observed reads called as canonical
+Retrieves the sites × samples matrix of observed reads called as canonical
 or unmodified for the site. For callers that cannot provide a true
 canonical-count decomposition, values may be \code{NA}; consult
 \code{\link{assayProvenance}} for source details.
