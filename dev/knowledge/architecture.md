@@ -92,6 +92,9 @@ Metadata passthrough columns become `{column}_values` list-columns. Intergenic/n
 - Loop by `mod_context`, not `mod_type`.
 - Report effect sizes on the beta scale.
 - Adjust p-values genome-wide across all contexts tested in that call.
+- Keep `dm_padj` as commaKit's backend-independent adjusted p-value. methylKit
+  q-values are backend-specific evidence and, when present, live in
+  `dm_methylkit_qvalue` only on methylKit result layers.
 - The default backend is `methylkit` for compatibility with established methylKit workflows. `quasi_f` is the preferred package-native alternative when users want count-aware empirical-Bayes shrinkage and genome-wide multiple-testing correction handled inside commaKit.
 - Formula support is one-sided with 2+ levels; multi-level formulas must fail clearly.
 

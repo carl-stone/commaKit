@@ -53,6 +53,12 @@
 
 ## Bug fixes
 
+* `diffMethyl(method = "methylkit")` now keeps commaKit's `dm_padj` semantics
+  backend-independent. methylKit raw p-values feed `dm_pvalue`, commaKit
+  computes `dm_padj` with the requested genome-wide adjustment method, and
+  methylKit q-values are preserved separately as `dm_methylkit_qvalue` only on
+  methylKit result layers.
+
 * `diffMethyl(method = "methylkit")` no longer crashes with
   "object of type 'closure' is not subsettable" when a modification context
   contains sites where all samples have zero coverage after filtering.

@@ -26,8 +26,8 @@ results(object, ...)
 \item{...}{Ignored (for S4 generic compatibility).}
 
 \item{mod_type}{Character vector or \code{NULL}. If provided, only sites
-of the specified modification type(s) are returned. If \code{NULL} (default),
-results for all modification types are returned.}
+of the specified modification type(s) are returned. If \code{NULL}
+(default), results for all modification types are returned.}
 
 \item{motif}{Character vector or \code{NULL}. If provided, only sites with
 matching sequence context motif(s) are returned. If \code{NULL} (default),
@@ -61,6 +61,8 @@ A \code{data.frame} with one row per methylation site, containing:
 \item{\code{mod_type}}{Modification type (e.g., \code{"6mA"}).}
 \item{\code{dm_pvalue}}{Raw p-value from the statistical test.}
 \item{\code{dm_padj}}{Adjusted p-value (Benjamini-Hochberg by default).}
+\item{\code{dm_methylkit_qvalue}}{methylKit q-value, present only when
+extracting a result layer produced by \code{method = "methylkit"}.}
 \item{\code{dm_delta_beta}}{Effect size: mean methylation in the
 treatment group minus mean methylation in the reference group.}
 \item{\code{dm_mean_beta_<condition>}}{One column per condition level
@@ -76,7 +78,7 @@ suitable for downstream analysis and plotting.
 }
 \examples{
 data(comma_example_data)
-dm <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
 res <- results(dm)
 head(res[order(res$dm_padj), ])
 

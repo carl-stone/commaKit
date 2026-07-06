@@ -44,9 +44,10 @@ minus the reference level.}
 
 \item{method}{Character string selecting the statistical backend.
 \code{"methylkit"} (default) wraps \code{methylKit::calculateDiffMeth()}
-with logistic regression and SLIM p-value correction; robust for small n
-and produces calibrated relative p-values suitable for downstream
-filtering. Requires \pkg{methylKit} (Bioconductor).
+with logistic regression. The raw methylKit p-value feeds
+\code{dm_pvalue}; \code{dm_padj} is computed by commaKit using
+\code{p_adjust_method}; methylKit q-values are preserved separately as
+\code{dm_methylkit_qvalue}. Requires \pkg{methylKit} (Bioconductor).
 \code{"quasi_f"} applies empirical Bayes shrinkage of quasibinomial
 dispersions via \code{\link[limma]{squeezeVar}} (quasi-likelihood F-test;
 count-data EB), making it a good general-purpose alternative for bacterial
@@ -81,7 +82,8 @@ this threshold are treated as \code{NA} in that sample. Default \code{5L}.}
 
 \item{alpha}{Positive numeric pseudocount used to compute M-values when
 \code{method = "limma"}:
-\eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))}.
+\eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) /
+(n_{\mathrm{unmod}} + \alpha))}.
 Default \code{0.5} (a Beta(0.5, 0.5) prior). Ignored for other methods.}
 
 \item{p_adjust_method}{Character string. Multiple testing correction method,
@@ -110,6 +112,7 @@ becomes the default used by \code{\link{results}()} and is mirrored into
 The input \code{commaData} object with additional columns in
 \code{rowData}: \code{dm_pvalue}, \code{dm_padj}, \code{dm_delta_beta},
 and one \code{dm_mean_beta_<condition>} column per condition level. The
+methylKit backend also adds \code{dm_methylkit_qvalue}. The
 \code{metadata} slot is updated with analysis parameters, result column
 names, and a named result layer registry.
 }
@@ -123,8 +126,11 @@ as new columns in \code{rowData}.
 \details{
 \strong{Default method (\code{method = "methylkit"}):}
 Wraps \code{methylKit::calculateDiffMeth()}, which uses logistic regression
-with SLIM p-value correction. Robust for small n, produces calibrated
-relative p-values suitable for downstream filtering. Requires \pkg{methylKit}
+and returns raw p-values plus methylKit-specific q-values. commaKit stores
+the raw methylKit p-value as \code{dm_pvalue}, computes \code{dm_padj} with
+the selected \code{p_adjust_method} across the full \code{diffMethyl()}
+testing family, and preserves methylKit q-values separately as
+\code{dm_methylkit_qvalue}. Requires \pkg{methylKit}
 (\code{BiocManager::install("methylKit")}).
 
 \strong{Alternative model (\code{method = "quasi_f"}):}
@@ -138,7 +144,8 @@ freedom. Requires \pkg{limma}.
 
 \strong{Alternative model (\code{method = "limma"}):}
 Beta values are transformed to M-values via
-\eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))},
+\eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) /
+  (n_{\mathrm{unmod}} + \alpha))},
 then \code{\link[limma]{lmFit}} fits an OLS model per site and
 \code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage,
 borrowing information across all sites to stabilize the per-site variance
@@ -152,10 +159,11 @@ established \pkg{methylKit} workflows or need results that closely follow
 methylKit's logistic-regression conventions. Use \code{"quasi_f"} as a
 good general-purpose alternative for bacterial methylomes when you want a
 count-aware model with empirical Bayes dispersion shrinkage and genome-wide
-multiple-testing correction handled entirely inside \pkg{commaKit}. It is often
-a good first alternative if methylKit convergence warnings, zero-variance
-sites, or runtime become distracting. Use \code{"limma"} when you want the
-familiar \pkg{limma} empirical-Bayes linear-model workflow on M-values,
+multiple-testing correction handled entirely inside \pkg{commaKit}. It is
+often a good first alternative if methylKit convergence warnings,
+zero-variance sites, or runtime become distracting. Use \code{"limma"} when
+you want the familiar \pkg{limma} empirical-Bayes linear-model workflow on
+M-values,
 especially for complete datasets with few replicates per group. All three
 backends report \code{dm_delta_beta} on the original beta scale, so effect
 sizes remain comparable even when p-values differ.
@@ -177,6 +185,8 @@ extremely low statistical power. Treat such results as exploratory only.
 \describe{
 \item{\code{dm_pvalue}}{Raw p-value from the GLM Wald test.}
 \item{\code{dm_padj}}{Adjusted p-value (Benjamini-Hochberg by default).}
+\item{\code{dm_methylkit_qvalue}}{methylKit q-value, present only for
+result layers produced with \code{method = "methylkit"}.}
 \item{\code{dm_delta_beta}}{Effect size: mean methylation in the treatment
 group minus mean methylation in the reference (control) group. Positive
 values indicate hypermethylation in treatment.}
@@ -196,7 +206,7 @@ mirrored into the legacy \code{dm_*} columns in \code{rowData} so existing
 \examples{
 data(comma_example_data)
 # Test for differential 6mA methylation between conditions
-dm <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
 
 # How many sites are significant?
 rd <- as.data.frame(SummarizedExperiment::rowData(dm))

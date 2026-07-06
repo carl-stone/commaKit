@@ -65,8 +65,8 @@ NULL
 #' @param object A \code{\link{commaData}} object on which
 #'   \code{\link{diffMethyl}} has been run.
 #' @param mod_type Character vector or \code{NULL}. If provided, only sites
-#'   of the specified modification type(s) are returned. If \code{NULL} (default),
-#'   results for all modification types are returned.
+#'   of the specified modification type(s) are returned. If \code{NULL}
+#'   (default), results for all modification types are returned.
 #' @param motif Character vector or \code{NULL}. If provided, only sites with
 #'   matching sequence context motif(s) are returned. If \code{NULL} (default),
 #'   all motifs are returned.
@@ -94,6 +94,8 @@ NULL
 #'     \item{\code{mod_type}}{Modification type (e.g., \code{"6mA"}).}
 #'     \item{\code{dm_pvalue}}{Raw p-value from the statistical test.}
 #'     \item{\code{dm_padj}}{Adjusted p-value (Benjamini-Hochberg by default).}
+#'     \item{\code{dm_methylkit_qvalue}}{methylKit q-value, present only when
+#'       extracting a result layer produced by \code{method = "methylkit"}.}
 #'     \item{\code{dm_delta_beta}}{Effect size: mean methylation in the
 #'       treatment group minus mean methylation in the reference group.}
 #'     \item{\code{dm_mean_beta_<condition>}}{One column per condition level
@@ -125,8 +127,11 @@ setMethod("results", "commaData", function(object,
                                            ...) {
   as <- match.arg(as)
   # ── Check diffMethyl has been run ─────────────────────────────────────────
-  if (length(.diffMethylResultNames(object)) == 0L &&
-    is.null(S4Vectors::metadata(object)$diffMethyl_result_cols)) {
+  no_result_layers <- length(.diffMethylResultNames(object)) == 0L
+  no_legacy_results <- is.null(
+    S4Vectors::metadata(object)$diffMethyl_result_cols
+  )
+  if (no_result_layers && no_legacy_results) {
     stop(
       "No differential methylation results found in this commaData object.\n",
       "run diffMethyl() first:\n",
@@ -284,12 +289,20 @@ setMethod(
       )
     }
 
-    if (!is.numeric(padj) || length(padj) != 1L ||
-      is.na(padj) || !is.finite(padj) || padj < 0) {
+    invalid_padj <- !is.numeric(padj) ||
+      length(padj) != 1L ||
+      is.na(padj) ||
+      !is.finite(padj) ||
+      padj < 0
+    if (invalid_padj) {
       stop("'padj' must be a single non-NA, non-negative finite number.")
     }
-    if (!is.numeric(delta_beta) || length(delta_beta) != 1L ||
-      is.na(delta_beta) || !is.finite(delta_beta) || delta_beta < 0) {
+    invalid_delta_beta <- !is.numeric(delta_beta) ||
+      length(delta_beta) != 1L ||
+      is.na(delta_beta) ||
+      !is.finite(delta_beta) ||
+      delta_beta < 0
+    if (invalid_delta_beta) {
       stop("'delta_beta' must be a single non-NA, non-negative finite number.")
     }
 
