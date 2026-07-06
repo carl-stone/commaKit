@@ -1,4 +1,5 @@
-#' @importFrom ggplot2 ggplot aes geom_density scale_x_continuous facet_wrap labs theme_bw
+#' @importFrom ggplot2 ggplot aes geom_density scale_x_continuous
+#' @importFrom ggplot2 facet_wrap labs theme_bw
 NULL
 
 #' Plot methylation beta value distributions
@@ -53,9 +54,10 @@ plot_methylation_distribution <- function(object,
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
-  if (!is.logical(per_sample) ||
+  invalid_per_sample <- !is.logical(per_sample) ||
     length(per_sample) != 1L ||
-    is.na(per_sample)) {
+    is.na(per_sample)
+  if (invalid_per_sample) {
     stop("'per_sample' must be TRUE or FALSE.")
   }
 
@@ -70,35 +72,16 @@ plot_methylation_distribution <- function(object,
 
   ## --- Extract data -------------------------------------------------------
   methyl_mat <- methylation(object)
-  si <- sampleInfo(object)
-  site_info <- siteInfo(object)
-  sample_nms <- colnames(methyl_mat)
-  n_sites <- nrow(methyl_mat)
-  n_samples <- length(sample_nms)
-
-  ## Reshape to long data.frame (vectorized)
-  df <- data.frame(
-    beta = as.vector(methyl_mat),
-    sample_name = rep(sample_nms, each = n_sites),
-    mod_type = rep(site_info$mod_type, times = n_samples),
-    stringsAsFactors = FALSE
-  )
-
-  ## Drop NA beta values (sites below min_coverage)
-  df <- df[!is.na(df$beta), , drop = FALSE]
-
-  if (nrow(df) == 0L) {
-    stop(
+  df <- .simpleQcAssayLongData(
+    object,
+    assay_matrix = methyl_mat,
+    value_name = "beta",
+    site_columns = "mod_type",
+    empty_message = paste0(
       "No non-NA methylation values found after filtering. ",
       "Check coverage thresholds."
     )
-  }
-
-  ## Join optional condition from sampleInfo when present. condition is not a
-  ## commaData invariant; QC plots must still work for import/QC-only objects.
-  si_cols <- intersect(c("sample_name", "condition"), colnames(si))
-  si_sub <- si[, si_cols, drop = FALSE]
-  df <- merge(df, si_sub, by = "sample_name", all.x = TRUE)
+  )
 
   ## --- Build ggplot -------------------------------------------------------
   multi_mod <- length(unique(df$mod_type)) > 1L
