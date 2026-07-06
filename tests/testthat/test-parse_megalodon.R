@@ -1,6 +1,3 @@
-## Tests for the internal Megalodon parser:
-##   .parseMegalodon()
-
 library(testthat)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -8,7 +5,8 @@ library(testthat)
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Write a temporary Megalodon per-read BED file.
-# Minimum Megalodon format: chrom, start, end, read_id, score, strand, ..., mod_prob
+# Minimum Megalodon format:
+# chrom, start, end, read_id, score, strand, ..., mod_prob
 # The parser reads col1=chrom, col2=start, col6=strand, last_col=mod_prob.
 .write_tmp_megalodon <- function(rows, file = tempfile(fileext = ".bed")) {
   write.table(
@@ -87,6 +85,22 @@ test_that(".parseMegalodon() preserves chrom and strand", {
   expect_equal(result$strand, "-")
 })
 
+test_that(".parseMegalodon() accepts legacy rows with extra columns", {
+  rows <- data.frame(
+    "chr1", 99L, 100L, "read1", 255L, "+", "extra", "fields", 0.75,
+    stringsAsFactors = FALSE
+  )
+  f <- .write_tmp_megalodon(rows)
+  result <- commaKit:::.parseMegalodon(
+    f, "s1",
+    mod_type = "6mA",
+    min_coverage = 1L
+  )
+
+  expect_equal(result$position, 100L)
+  expect_equal(result$beta, 0.75)
+})
+
 # ─────────────────────────────────────────────────────────────────────────────
 # .parseMegalodon() — per-read → per-site aggregation
 # ─────────────────────────────────────────────────────────────────────────────
@@ -102,7 +116,6 @@ test_that(".parseMegalodon() computes beta as mean of per-read mod_prob", {
     mod_type = "6mA",
     min_coverage = 1L
   )
-  # mean(0.8, 0.6) = 0.7
   expect_equal(result$beta, 0.7, tolerance = 1e-6)
 })
 
@@ -141,8 +154,8 @@ test_that(".parseMegalodon() aggregates multiple sites independently", {
 
   expect_equal(nrow(result), 2L)
   expect_equal(result$position, c(100L, 200L))
-  expect_equal(result$beta[1], 0.5, tolerance = 1e-6) # (1.0 + 0.0) / 2
-  expect_equal(result$beta[2], 0.5, tolerance = 1e-6) # (0.6 + 0.4) / 2
+  expect_equal(result$beta[1], 0.5, tolerance = 1e-6)
+  expect_equal(result$beta[2], 0.5, tolerance = 1e-6)
   expect_equal(result$coverage, c(2L, 2L))
 })
 
@@ -250,6 +263,68 @@ test_that(".parseMegalodon() errors on file with fewer than 7 columns", {
   expect_error(
     commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA"),
     regexp = "7"
+  )
+})
+
+test_that(".parseMegalodon() errors on non-numeric coordinates", {
+  rows <- data.frame(
+    "chr1", "not-a-coordinate", 100L, "read1", 255L, "+", 0.8,
+    stringsAsFactors = FALSE
+  )
+  f <- .write_tmp_megalodon(rows)
+
+  expect_error(
+    commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA"),
+    regexp = "malformed start coordinate.*finite numeric"
+  )
+})
+
+test_that(".parseMegalodon() errors on missing mod_prob values", {
+  rows <- data.frame(
+    "chr1", 99L, 100L, "read1", 255L, "+", NA_character_,
+    stringsAsFactors = FALSE
+  )
+  f <- .write_tmp_megalodon(rows)
+
+  expect_error(
+    commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA"),
+    regexp = "missing mod_prob"
+  )
+})
+
+test_that(".parseMegalodon() errors on non-numeric mod_prob values", {
+  rows <- data.frame(
+    "chr1", 99L, 100L, "read1", 255L, "+", "not-a-probability",
+    stringsAsFactors = FALSE
+  )
+  f <- .write_tmp_megalodon(rows)
+
+  expect_error(
+    commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA"),
+    regexp = "malformed mod_prob.*finite numeric"
+  )
+})
+
+test_that(".parseMegalodon() errors on NaN mod_prob values", {
+  f <- tempfile(fileext = ".bed")
+  writeLines("chr1\t99\t100\tread1\t255\t+\tNaN", f)
+
+  expect_error(
+    commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA"),
+    regexp = "malformed mod_prob.*finite numeric"
+  )
+})
+
+test_that(".parseMegalodon() errors on out-of-range mod_prob values", {
+  rows <- data.frame(
+    "chr1", 99L, 100L, "read1", 255L, "+", 1.1,
+    stringsAsFactors = FALSE
+  )
+  f <- .write_tmp_megalodon(rows)
+
+  expect_error(
+    commaKit:::.parseMegalodon(f, "s1", mod_type = "6mA"),
+    regexp = "out-of-range mod_prob.*between 0 and 1"
   )
 })
 

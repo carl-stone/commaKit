@@ -52,7 +52,7 @@ NULL
   min_coverage <- as.integer(min_coverage)
 
   if (is.null(mod_type) || !is.character(mod_type) || length(mod_type) != 1L ||
-    is.na(mod_type)) {
+        is.na(mod_type)) {
     stop(
       "'mod_type' must be explicitly supplied as a single modification ",
       "type for Megalodon files. Megalodon output does not encode the ",
@@ -94,9 +94,28 @@ NULL
   # Standard Megalodon per-read BED columns (minimum 7)
   # Col 1=chrom, 2=start, 3=end, 4=read_id, 5=score, 6=strand, last=mod_prob
   chrom <- as.character(raw[[1]])
-  start <- as.integer(raw[[2]])
+  start <- .parseMegalodonNumericField(
+    raw[[2]],
+    file = file,
+    field = "start coordinate",
+    integer = TRUE,
+    min = 0
+  )
+  .parseMegalodonNumericField(
+    raw[[3]],
+    file = file,
+    field = "end coordinate",
+    integer = TRUE,
+    min = 0
+  )
   strand <- as.character(raw[[6]])
-  mod_prob <- as.numeric(raw[[ncol(raw)]])
+  mod_prob <- .parseMegalodonNumericField(
+    raw[[ncol(raw)]],
+    file = file,
+    field = "mod_prob",
+    min = 0,
+    max = 1
+  )
 
   # ── Aggregate per-read → per-site ───────────────────────────────────────
   # Group by genomic position (chrom, position, strand) and compute
@@ -140,4 +159,60 @@ NULL
   result <- result[result$coverage >= min_coverage, , drop = FALSE]
   rownames(result) <- NULL
   result
+}
+
+.parseMegalodonNumericField <- function(values,
+                                        file,
+                                        field,
+                                        integer = FALSE,
+                                        min = -Inf,
+                                        max = Inf) {
+  values_chr <- trimws(as.character(values))
+  value_is_nan <- is.nan(values)
+  missing <- (is.na(values) & !value_is_nan) | is.na(values_chr) |
+    !nzchar(values_chr)
+
+  if (any(missing)) {
+    row_idx <- which(missing)[[1L]]
+    stop(
+      "Megalodon file '", file, "' has missing ", field,
+      " in row ", row_idx, "."
+    )
+  }
+
+  parsed <- suppressWarnings(as.numeric(values_chr))
+  not_finite <- !is.finite(parsed)
+  if (any(not_finite)) {
+    row_idx <- which(not_finite)[[1L]]
+    stop(
+      "Megalodon file '", file, "' has malformed ", field,
+      " in row ", row_idx, ": '", values_chr[[row_idx]],
+      "'. Expected a finite numeric value."
+    )
+  }
+
+  if (integer) {
+    not_integer <- parsed != floor(parsed)
+    if (any(not_integer)) {
+      row_idx <- which(not_integer)[[1L]]
+      stop(
+        "Megalodon file '", file, "' has malformed ", field,
+        " in row ", row_idx, ": '", values_chr[[row_idx]],
+        "'. Expected an integer value."
+      )
+    }
+    parsed <- as.integer(parsed)
+  }
+
+  out_of_range <- parsed < min | parsed > max
+  if (any(out_of_range)) {
+    row_idx <- which(out_of_range)[[1L]]
+    stop(
+      "Megalodon file '", file, "' has out-of-range ", field,
+      " in row ", row_idx, ": '", values_chr[[row_idx]],
+      "'. Expected a value between ", min, " and ", max, "."
+    )
+  }
+
+  parsed
 }
