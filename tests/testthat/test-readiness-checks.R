@@ -1,16 +1,16 @@
 readiness_env <- new.env(parent = baseenv())
-readiness_script <- system.file(
+readiness_script <- testthat::test_path(
+  "..",
+  "..",
+  "inst",
   "scripts",
-  "readiness-checks.R",
-  package = "commaKit"
+  "readiness-checks.R"
 )
-if (!nzchar(readiness_script)) {
-  readiness_script <- testthat::test_path(
-    "..",
-    "..",
-    "inst",
+if (!file.exists(readiness_script)) {
+  readiness_script <- system.file(
     "scripts",
-    "readiness-checks.R"
+    "readiness-checks.R",
+    package = "commaKit"
   )
 }
 sys.source(readiness_script, envir = readiness_env)
@@ -56,6 +56,21 @@ test_that("readiness_run can limit checks to explicit files", {
     files = "staged.R",
     root = root
   ))
+})
+
+test_that("readiness_run all includes the repository-hygiene dead-code check", {
+  root <- tempfile("readiness-root-")
+  dir.create(file.path(root, "R"), recursive = TRUE)
+  writeLines(
+    ".unused_helper <- function(x) x - 1",
+    file.path(root, "R", "helpers.R")
+  )
+
+  expect_error(
+    readiness_env$readiness_run("all", files = "R/helpers.R", root = root),
+    ".unused_helper",
+    fixed = TRUE
+  )
 })
 
 test_that("debt-marker readiness check requires issue references", {
