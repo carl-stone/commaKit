@@ -99,6 +99,51 @@ test_that("results: error on invalid mod_type", {
   expect_error(results(dm, mod_type = "9mX"), "not found")
 })
 
+test_that("results: combined site filters keep original row alignment", {
+  skip_if_not_installed("limma")
+  obj <- .make_two_modtype_fixture(
+    n_6ma = 8L,
+    n_5mc = 6L,
+    sample_names = c("ctrl_1", "ctrl_2", "treat_1", "treat_2"),
+    conditions = c("control", "control", "treatment", "treatment")
+  )
+  dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
+  all_res <- results(dm)
+  info <- as.data.frame(siteInfo(dm))
+  expected <- which(
+    info$mod_type == "5mC" &
+      info$motif == "CCWGG" &
+      info$mod_context == "5mC_CCWGG"
+  )
+
+  res <- results(
+    dm,
+    mod_type = "5mC",
+    motif = "CCWGG",
+    mod_context = "5mC_CCWGG"
+  )
+
+  expect_equal(rownames(res), as.character(expected))
+  expect_equal(res$site_key, all_res$site_key[expected])
+  expect_equal(res$dm_pvalue, all_res$dm_pvalue[expected])
+})
+
+test_that("results: validates filters against the current site subset", {
+  skip_if_not_installed("limma")
+  obj <- .make_two_modtype_fixture(
+    n_6ma = 8L,
+    n_5mc = 6L,
+    sample_names = c("ctrl_1", "ctrl_2", "treat_1", "treat_2"),
+    conditions = c("control", "control", "treatment", "treatment")
+  )
+  dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
+
+  expect_error(
+    results(dm, mod_type = "6mA", motif = "CCWGG"),
+    "'motif' value\\(s\\) not found"
+  )
+})
+
 test_that("results: dm_pvalue in [0, 1] for non-NA sites", {
   dm <- .make_tested_object()
   res <- results(dm)

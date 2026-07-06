@@ -1,5 +1,6 @@
 #' @importFrom methods setGeneric setMethod callNextMethod
-#' @importFrom SummarizedExperiment assay assayNames rowData "rowData<-" colData rowRanges
+#' @importFrom SummarizedExperiment assay assayNames rowData "rowData<-"
+#' @importFrom SummarizedExperiment colData rowRanges
 #' @importFrom BiocGenerics annotation start strand
 #' @importFrom IRanges coverage
 #' @importFrom GenomeInfoDb genome seqnames seqlengths seqinfo
@@ -231,9 +232,9 @@ setMethod(
   function(x, shift = 0L, width = NULL, weight = 1L, ...) {
     dots <- list(...)
     if (!identical(shift, 0L) ||
-      !is.null(width) ||
-      !identical(weight, 1L) ||
-      length(dots) > 0L) {
+          !is.null(width) ||
+          !identical(weight, 1L) ||
+          length(dots) > 0L) {
       stop(
         "coverage() for commaData objects is deprecated and does not ",
         "support IRanges::coverage arguments such as 'shift', 'width', ",
@@ -287,7 +288,8 @@ setMethod("sampleInfo", "commaData", function(object) {
 #'
 #' @param object A \code{commaData} object.
 #'
-#' @return A \code{\link[S4Vectors]{DataFrame}} with one row per methylation site.
+#' @return A \code{\link[S4Vectors]{DataFrame}} with one row per methylation
+#'   site.
 #'   Always contains columns \code{chrom}, \code{position}, \code{strand},
 #'   \code{mod_type}, \code{motif} (the sequence context; \code{NA} for
 #'   Dorado/Megalodon callers), \code{mod_context} (the composite
@@ -321,7 +323,7 @@ setMethod("siteInfo", "commaData", function(object) {
   )
   # Add computed mod_context column if not already present
   if (!"mod_context" %in% colnames(df) &&
-    "mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
+        "mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
     df$mod_context <- .computeModContext(mc$mod_type, mc$motif)
   }
   # Add computed site_key column for human readability (not used for matching).
@@ -625,42 +627,18 @@ filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
     stop("'x' must be a commaData object.")
   }
 
-  rr <- rowRanges(x)
-  mc <- GenomicRanges::mcols(rr)
-  cd <- colData(x)
+  plan <- .planSiteFilters(
+    x,
+    mod_type = mod_type,
+    condition = condition,
+    chrom = chrom,
+    motif = motif,
+    mod_context = mod_context,
+    validate_site_values = FALSE,
+    stop_on_empty = FALSE
+  )
 
-  # Site filter
-  site_keep <- rep(TRUE, nrow(x))
-  if (!is.null(mod_type)) {
-    site_keep <- site_keep & (mc$mod_type %in% mod_type)
-  }
-  if (!is.null(chrom)) {
-    site_keep <- site_keep & (
-      as.character(GenomeInfoDb::seqnames(rr)) %in% chrom
-    )
-  }
-  if (!is.null(motif)) {
-    site_keep <- site_keep & (!is.na(mc$motif)) & (mc$motif %in% motif)
-  }
-  if (!is.null(mod_context)) {
-    # Compute mod_context on demand for filtering
-    computed_ctx <- .computeModContext(mc$mod_type, mc$motif)
-    site_keep <- site_keep & (computed_ctx %in% mod_context)
-  }
-
-  # Sample filter
-  samp_keep <- rep(TRUE, ncol(x))
-  if (!is.null(condition)) {
-    if (!"condition" %in% colnames(cd)) {
-      stop(
-        "Cannot filter by 'condition': sampleInfo(object) has no condition ",
-        "column."
-      )
-    }
-    samp_keep <- samp_keep & (cd$condition %in% condition)
-  }
-
-  x[site_keep, samp_keep]
+  x[plan$row_index, plan$sample_index]
 }
 
 #' Deprecated subset method for commaData objects
@@ -809,6 +787,94 @@ setMethod("minCoverage", "commaData", function(object) {
   )
 }
 
+.planSiteFilters <- function(object, mod_type = NULL, condition = NULL,
+                             chrom = NULL, motif = NULL,
+                             mod_context = NULL,
+                             validate_site_values = TRUE,
+                             stop_on_empty = TRUE, caller = NULL) {
+  if (!is(object, "commaData")) {
+    stop("'object' must be a commaData object.")
+  }
+
+  current <- object
+  row_index <- seq_len(nrow(object))
+  sample_index <- seq_len(ncol(object))
+  filters <- character(0)
+
+  if (!is.null(mod_type)) {
+    if (validate_site_values) {
+      .validateModType(mod_type, current)
+    }
+    rd <- rowData(current)
+    keep <- rd$mod_type %in% mod_type
+    current <- current[keep, ]
+    row_index <- row_index[keep]
+    filters <- c(filters, .siteFilterLabel("mod_type", mod_type))
+    if (stop_on_empty && nrow(current) == 0L) {
+      .stopEmptySiteFilter(filters, caller = caller)
+    }
+  }
+
+  if (!is.null(chrom)) {
+    rr <- rowRanges(current)
+    keep <- as.character(GenomeInfoDb::seqnames(rr)) %in% chrom
+    current <- current[keep, ]
+    row_index <- row_index[keep]
+    filters <- c(filters, .siteFilterLabel("chrom", chrom))
+    if (stop_on_empty && nrow(current) == 0L) {
+      .stopEmptySiteFilter(filters, caller = caller)
+    }
+  }
+
+  if (!is.null(motif)) {
+    if (validate_site_values) {
+      .validateSiteFilterValues("motif", motif, motifs(current))
+    }
+    rd <- rowData(current)
+    keep <- !is.na(rd$motif) & rd$motif %in% motif
+    current <- current[keep, ]
+    row_index <- row_index[keep]
+    filters <- c(filters, .siteFilterLabel("motif", motif))
+    if (stop_on_empty && nrow(current) == 0L) {
+      .stopEmptySiteFilter(filters, caller = caller)
+    }
+  }
+
+  if (!is.null(mod_context)) {
+    if (validate_site_values) {
+      .validateSiteFilterValues(
+        "mod_context", mod_context, modContexts(current)
+      )
+    }
+    rd <- rowData(current)
+    computed_ctx <- .computeModContext(rd$mod_type, rd$motif)
+    keep <- computed_ctx %in% mod_context
+    current <- current[keep, ]
+    row_index <- row_index[keep]
+    filters <- c(filters, .siteFilterLabel("mod_context", mod_context))
+    if (stop_on_empty && nrow(current) == 0L) {
+      .stopEmptySiteFilter(filters, caller = caller)
+    }
+  }
+
+  if (!is.null(condition)) {
+    cd <- colData(object)
+    if (!"condition" %in% colnames(cd)) {
+      stop(
+        "Cannot filter by 'condition': sampleInfo(object) has no condition ",
+        "column."
+      )
+    }
+    sample_index <- sample_index[cd$condition %in% condition]
+  }
+
+  list(
+    row_index = row_index,
+    sample_index = sample_index,
+    filters = filters
+  )
+}
+
 # Apply mod_type, motif, and mod_context filters with consistent validation and
 # empty-result handling. Filters are applied sequentially so motif/mod_context
 # values are validated against the sites that remain after earlier filters.
@@ -819,35 +885,20 @@ setMethod("minCoverage", "commaData", function(object) {
     stop("'object' must be a commaData object.")
   }
 
-  filters <- character(0)
-  if (!is.null(mod_type)) {
-    .validateModType(mod_type, object)
-    object <- filterSites(object, mod_type = mod_type)
-    filters <- c(filters, .siteFilterLabel("mod_type", mod_type))
-    if (stop_on_empty && nrow(object) == 0L) {
-      .stopEmptySiteFilter(filters, caller = caller)
-    }
+  plan <- .planSiteFilters(
+    object,
+    mod_type = mod_type,
+    motif = motif,
+    mod_context = mod_context,
+    stop_on_empty = stop_on_empty,
+    caller = caller
+  )
+
+  if (length(plan$filters) == 0L) {
+    return(object)
   }
 
-  if (!is.null(motif)) {
-    .validateSiteFilterValues("motif", motif, motifs(object))
-    object <- filterSites(object, motif = motif)
-    filters <- c(filters, .siteFilterLabel("motif", motif))
-    if (stop_on_empty && nrow(object) == 0L) {
-      .stopEmptySiteFilter(filters, caller = caller)
-    }
-  }
-
-  if (!is.null(mod_context)) {
-    .validateSiteFilterValues("mod_context", mod_context, modContexts(object))
-    object <- filterSites(object, mod_context = mod_context)
-    filters <- c(filters, .siteFilterLabel("mod_context", mod_context))
-    if (stop_on_empty && nrow(object) == 0L) {
-      .stopEmptySiteFilter(filters, caller = caller)
-    }
-  }
-
-  object
+  object[plan$row_index, ]
 }
 
 # ─── .checkModTypeValues() ────────────────────────────────────────────────
