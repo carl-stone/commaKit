@@ -1,4 +1,5 @@
-#' @importFrom ggplot2 ggplot aes geom_histogram geom_vline facet_wrap scale_x_log10 labs theme_bw waiver
+#' @importFrom ggplot2 ggplot aes geom_histogram geom_vline facet_wrap
+#' @importFrom ggplot2 scale_x_log10 labs theme_bw waiver
 NULL
 
 #' Plot coverage depth distribution
@@ -53,8 +54,8 @@ plot_coverage <- function(object,
     stop("'object' must be a commaData object.")
   }
   if (!is.logical(per_sample) ||
-    length(per_sample) != 1L ||
-    is.na(per_sample)) {
+        length(per_sample) != 1L ||
+        is.na(per_sample)) {
     stop("'per_sample' must be TRUE or FALSE.")
   }
 
@@ -69,30 +70,12 @@ plot_coverage <- function(object,
 
   ## --- Extract data -------------------------------------------------------
   cov_mat <- siteCoverage(object)
-  si <- sampleInfo(object)
-  sample_nms <- colnames(cov_mat)
-  n_sites <- nrow(cov_mat)
-  n_samples <- length(sample_nms)
-
-  ## Reshape to long data.frame
-  df <- data.frame(
-    depth = as.vector(cov_mat),
-    sample_name = rep(sample_nms, each = n_sites),
-    stringsAsFactors = FALSE
+  df <- .simpleQcAssayLongData(
+    object,
+    assay_matrix = cov_mat,
+    value_name = "depth",
+    empty_message = "No non-NA coverage values found after filtering."
   )
-
-  ## Drop NA coverage values
-  df <- df[!is.na(df$depth), , drop = FALSE]
-
-  if (nrow(df) == 0L) {
-    stop("No non-NA coverage values found after filtering.")
-  }
-
-  ## Join optional condition from sampleInfo when present. condition is not a
-  ## commaData invariant; QC plots must still work for import/QC-only objects.
-  si_cols <- intersect(c("sample_name", "condition"), colnames(si))
-  si_sub <- si[, si_cols, drop = FALSE]
-  df <- merge(df, si_sub, by = "sample_name", all.x = TRUE)
 
   ## Compute median coverage per sample for vlines
   med_per_samp <- tapply(df$depth, df$sample_name, stats::median)
