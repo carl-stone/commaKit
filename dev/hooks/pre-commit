@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+mapfile -t staged_files < <(
+  git diff --cached --name-only --diff-filter=ACMR
+)
+
+if [ "${#staged_files[@]}" -eq 0 ]; then
+  exit 0
+fi
+
+export RENV_CONFIG_AUTOLOADER_ENABLED="${RENV_CONFIG_AUTOLOADER_ENABLED:-FALSE}"
+
+echo "Running commaKit lint pre-commit check..."
+Rscript dev/precommit.R lint "${staged_files[@]}"
+
+echo "Running commaKit R Markdown render freshness check..."
+Rscript dev/precommit.R rmarkdown "${staged_files[@]}"

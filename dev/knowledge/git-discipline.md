@@ -219,6 +219,14 @@ Before PRs or release-like commits:
 Rscript -e "devtools::check()"
 ```
 
+This repo has a tracked pre-commit hook at `dev/hooks/pre-commit`. It runs
+the staged-file lint and R Markdown render-freshness checks through
+`dev/precommit.R`. Install it in a local checkout with:
+
+```bash
+git config core.hooksPath dev/hooks
+```
+
 If tests are not run, say so explicitly in the final summary.
 
 ---
