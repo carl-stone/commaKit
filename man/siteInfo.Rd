@@ -13,7 +13,8 @@ siteInfo(object)
 \item{object}{A \code{commaData} object.}
 }
 \value{
-A \code{\link[S4Vectors]{DataFrame}} with one row per methylation site.
+A \code{\link[S4Vectors]{DataFrame}} with one row per methylation
+site.
 Always contains columns \code{chrom}, \code{position}, \code{strand},
 \code{mod_type}, \code{motif} (the sequence context; \code{NA} for
 Dorado/Megalodon callers), \code{mod_context} (the composite

@@ -49,8 +49,8 @@ keys before calling this function.
 }
 \examples{
 data(comma_example_data)
-cd_dm <- diffMethyl(comma_example_data, ~ condition)
-res   <- results(cd_dm)
+cd_dm <- diffMethyl(comma_example_data, ~condition)
+res <- results(cd_dm)
 plot_heatmap(res, cd_dm)
 
 # Show only top 20 sites

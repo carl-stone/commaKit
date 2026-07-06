@@ -61,7 +61,7 @@ data(comma_example_data)
 
 # Compute M-values for all modification types
 m <- mValues(comma_example_data)
-dim(m)          # same as dim(methylation(comma_example_data))
+dim(m) # same as dim(methylation(comma_example_data))
 range(m, na.rm = TRUE)
 
 # Only 6mA sites

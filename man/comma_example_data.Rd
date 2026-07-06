@@ -21,7 +21,7 @@ A \code{commaData} object with:
 \item{\code{mod_counts}}{Integer modified-read counts reconstructed
 from the simulated beta and coverage values.}
 \item{\code{canonical_counts}}{Integer canonical-read counts
-reconstructed as \code{coverage - mod_counts}.}
+reconstructed from the simulated beta and coverage values.}
 \item{\code{other_mod_counts}}{Not present in this legacy simulated
 dataset; newly constructed modkit objects include this assay when
 \code{Nother_mod} is available.}

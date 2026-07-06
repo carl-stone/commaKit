@@ -9,7 +9,8 @@
 \value{
 A zero-row \code{data.frame} with columns \code{chrom},
 \code{position}, \code{strand}, \code{mod_type}, \code{motif},
-\code{beta}, \code{coverage}.
+\code{beta}, \code{coverage}, \code{mod_counts},
+\code{canonical_counts}, and \code{other_mod_counts}.
 }
 \description{
 Empty parser result (zero-row data frame with shared parse schema)

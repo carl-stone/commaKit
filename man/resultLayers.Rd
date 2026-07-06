@@ -25,8 +25,10 @@ the default layer remains available through \code{\link{results}}.
 }
 \examples{
 data(comma_example_data)
-dm <- diffMethyl(comma_example_data, formula = ~ condition,
-                 method = "quasi_f", result_name = "quasi_f.v1")
+dm <- diffMethyl(comma_example_data,
+  formula = ~condition,
+  method = "quasi_f", result_name = "quasi_f.v1"
+)
 resultLayers(dm)
 
 }

@@ -64,12 +64,16 @@ data(comma_example_data)
 plot_genome_track(comma_example_data, chromosome = "chr_sim")
 
 # Restrict to a region
-plot_genome_track(comma_example_data, chromosome = "chr_sim",
-                  start = 1000, end = 50000)
+plot_genome_track(comma_example_data,
+  chromosome = "chr_sim",
+  start = 1000, end = 50000
+)
 
 # One modification type, no annotation
-plot_genome_track(comma_example_data, chromosome = "chr_sim",
-                  mod_type = "6mA", annotation = FALSE)
+plot_genome_track(comma_example_data,
+  chromosome = "chr_sim",
+  mod_type = "6mA", annotation = FALSE
+)
 
 }
 \seealso{
