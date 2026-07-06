@@ -6,6 +6,18 @@
 #' @importFrom GenomeInfoDb Seqinfo seqinfo
 NULL
 
+.validateMinCoverage <- function(min_coverage) {
+  min_coverage_error <- "'min_coverage' must be a single positive integer."
+  if (!is.numeric(min_coverage)) stop(min_coverage_error)
+  if (length(min_coverage) != 1L) stop(min_coverage_error)
+  if (is.na(min_coverage)) stop(min_coverage_error)
+  if (!is.finite(min_coverage)) stop(min_coverage_error)
+  if (min_coverage < 1L) stop(min_coverage_error)
+  if (min_coverage != floor(min_coverage)) stop(min_coverage_error)
+  if (min_coverage > .Machine$integer.max) stop(min_coverage_error)
+  as.integer(min_coverage)
+}
+
 #' Create a commaData object from methylation calling output files
 #'
 #' Constructor for the \code{\link{commaData-class}} S4 class. Parses one or
@@ -139,15 +151,7 @@ commaData <- function(files,
                       expected_mod_contexts = NULL,
                       min_coverage = 5L,
                       caller = "modkit") {
-  min_coverage_error <- "'min_coverage' must be a single positive integer."
-  if (!is.numeric(min_coverage)) stop(min_coverage_error)
-  if (length(min_coverage) != 1L) stop(min_coverage_error)
-  if (is.na(min_coverage)) stop(min_coverage_error)
-  if (!is.finite(min_coverage)) stop(min_coverage_error)
-  if (min_coverage < 1L) stop(min_coverage_error)
-  if (min_coverage != floor(min_coverage)) stop(min_coverage_error)
-  if (min_coverage > .Machine$integer.max) stop(min_coverage_error)
-  min_coverage <- as.integer(min_coverage)
+  min_coverage <- .validateMinCoverage(min_coverage)
   caller <- match.arg(caller, c("modkit", "megalodon", "dorado"))
 
   # ── Validate expected_mod_contexts ───────────────────────────────────────
