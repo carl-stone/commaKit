@@ -139,14 +139,25 @@ commaData <- function(files,
                       expected_mod_contexts = NULL,
                       min_coverage = 5L,
                       caller = "modkit") {
+  min_coverage_error <- "'min_coverage' must be a single positive integer."
+  if (!is.numeric(min_coverage)) stop(min_coverage_error)
+  if (length(min_coverage) != 1L) stop(min_coverage_error)
+  if (is.na(min_coverage)) stop(min_coverage_error)
+  if (!is.finite(min_coverage)) stop(min_coverage_error)
+  if (min_coverage < 1L) stop(min_coverage_error)
+  if (min_coverage != floor(min_coverage)) stop(min_coverage_error)
+  if (min_coverage > .Machine$integer.max) stop(min_coverage_error)
   min_coverage <- as.integer(min_coverage)
   caller <- match.arg(caller, c("modkit", "megalodon", "dorado"))
 
   # ── Validate expected_mod_contexts ───────────────────────────────────────
   if (!is.null(expected_mod_contexts)) {
-    if (!is.list(expected_mod_contexts) ||
-      is.null(names(expected_mod_contexts)) ||
-      any(names(expected_mod_contexts) == "")) {
+    invalid_expected_mod_contexts <- !is.list(expected_mod_contexts)
+    invalid_expected_mod_contexts <- invalid_expected_mod_contexts ||
+      is.null(names(expected_mod_contexts))
+    invalid_expected_mod_contexts <- invalid_expected_mod_contexts ||
+      any(names(expected_mod_contexts) == "")
+    if (invalid_expected_mod_contexts) {
       stop(
         "'expected_mod_contexts' must be a named list mapping modification ",
         "type strings to character vectors of motif strings ",
@@ -377,7 +388,8 @@ commaData <- function(files,
     if (nrow(df) == 0L) next
 
     # Parsed rows must be unique for the site identity used by the merge.
-    # Otherwise later matrix assignment would silently let the last duplicate win.
+    # Otherwise later matrix assignment would silently let the last duplicate
+    # win.
     df_key <- paste(df$chrom, df$position, df$strand, df$mod_type,
       ifelse(is.na(df$motif), "<NA>", df$motif),
       sep = "
@@ -413,9 +425,11 @@ commaData <- function(files,
     mc_q <- GenomicRanges::mcols(df_gr)[qh, c("mod_type", "motif")]
     mc_s <- GenomicRanges::mcols(site_gr)[sh, c("mod_type", "motif")]
     type_match <- mc_q$mod_type == mc_s$mod_type
-    motif_match <- (is.na(mc_q$motif) & is.na(mc_s$motif)) |
-      (!is.na(mc_q$motif) & !is.na(mc_s$motif) &
-        mc_q$motif == mc_s$motif)
+    both_missing_motif <- is.na(mc_q$motif) & is.na(mc_s$motif)
+    both_known_matching_motif <- !is.na(mc_q$motif) &
+      !is.na(mc_s$motif) &
+      mc_q$motif == mc_s$motif
+    motif_match <- both_missing_motif | both_known_matching_motif
     valid <- type_match & motif_match
 
     if (anyDuplicated(qh[valid])) {
