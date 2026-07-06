@@ -65,7 +65,7 @@ adjusted p-value and absolute effect size.
 }
 \examples{
 data(comma_example_data)
-dm <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
 sig <- filterResults(dm, padj = 0.05, delta_beta = 0.2)
 nrow(sig)
 

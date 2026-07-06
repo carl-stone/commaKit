@@ -23,6 +23,15 @@
 
 \item{coverage_mat}{Integer matrix (sites × samples) of read depths.}
 
+\item{site_df}{Data frame with columns \code{chrom}, \code{position},
+\code{strand}, \code{mod_type}, \code{motif} — one row per site.}
+
+\item{coldata}{\code{data.frame} with at least one column matching the
+RHS variable in \code{formula} (typically \code{condition}).}
+
+\item{formula}{One-sided formula specifying the design (e.g.,
+\code{~ condition}).}
+
 \item{mod_counts_mat}{Optional integer matrix of observed modified-read
 counts. If supplied, these counts are preferred over reconstructing from
 beta values.}
@@ -33,20 +42,6 @@ canonical-read counts.}
 \item{other_mod_counts_mat}{Optional integer matrix of observed non-target
 modified-read counts. When present with \code{canonical_counts_mat}, these
 counts are included in the non-target denominator so it matches coverage.}
-
-\item{site_df}{Data frame with columns \code{chrom}, \code{position},
-\code{strand}, \code{mod_type}, \code{motif} — one row per site.}
-
-\item{coldata}{\code{data.frame} with at least one column matching the
-RHS variable in \code{formula} (typically \code{condition}).}
-
-\item{formula}{One-sided formula specifying the design (e.g.,
-\code{~ condition}).}
-
-\item{ref_level}{Optional reference level for the two-level contrast.}
-
-\item{design_info}{Optional precomputed design information from
-\code{.resolveDiffMethylDesign()}.}
 }
 \value{
 A \code{data.frame} with one row per site (same row order as

@@ -34,10 +34,13 @@ lint_files <- function(files) {
 check_style <- function(files) {
   require_package("styler")
 
+  requested_files <- files
   files <- existing_r_files(files)
   result <- tryCatch(
     {
-      if (length(files) == 0) {
+      if (length(files) == 0 && length(requested_files) > 0L) {
+        message("No changed R files to style.")
+      } else if (length(files) == 0) {
         styler::style_pkg(dry = "fail")
       } else {
         styler::style_file(files, dry = "fail")
@@ -57,6 +60,116 @@ check_style <- function(files) {
     quit(status = 1, save = "no")
   }
 
+  invisible(TRUE)
+}
+
+is_roxygen_relevant_file <- function(path) {
+  grepl("^R/.*\\.[Rr]$", path) ||
+    grepl("^man/.*\\.Rd$", path) ||
+    basename(path) %in% c("DESCRIPTION", "NAMESPACE")
+}
+
+package_files <- function() {
+  files <- system2("git", c("ls-files"), stdout = TRUE)
+  files[nzchar(files) & file.exists(files)]
+}
+
+copy_package_for_document <- function() {
+  source_files <- package_files()
+  document_outputs <- grepl("^man/.*\\.Rd$", source_files)
+  source_files <- source_files[!document_outputs]
+
+  pkg_dir <- file.path(tempdir(), paste0("commakit-document-", Sys.getpid()))
+  if (dir.exists(pkg_dir)) {
+    unlink(pkg_dir, recursive = TRUE)
+  }
+  dir.create(pkg_dir, recursive = TRUE)
+
+  for (file in source_files) {
+    dest <- file.path(pkg_dir, file)
+    dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
+    if (!file.copy(file, dest, overwrite = TRUE)) {
+      stop("Could not copy package file to temporary document check: ", file)
+    }
+  }
+
+  pkg_dir
+}
+
+read_file_raw <- function(path) {
+  if (!file.exists(path)) {
+    return(NULL)
+  }
+  readBin(path, what = "raw", n = file.info(path)$size)
+}
+
+generated_document_paths <- function(root) {
+  man_dir <- file.path(root, "man")
+  rd_files <- if (dir.exists(man_dir)) {
+    file.path("man", list.files(man_dir, pattern = "\\.Rd$"))
+  } else {
+    character()
+  }
+  c("NAMESPACE", rd_files)
+}
+
+check_roxygen_documented <- function(files) {
+  require_package("devtools")
+
+  requested_files <- files
+  has_requested_files <- length(requested_files) > 0L
+  has_roxygen_files <- any(vapply(
+    requested_files,
+    is_roxygen_relevant_file,
+    logical(1)
+  ))
+  if (has_requested_files && !has_roxygen_files) {
+    message("No roxygen source or generated documentation files to check.")
+    return(invisible(TRUE))
+  }
+
+  pkg_dir <- copy_package_for_document()
+  on.exit(unlink(pkg_dir, recursive = TRUE), add = TRUE)
+
+  result <- tryCatch(
+    {
+      devtools::document(pkg = pkg_dir, quiet = TRUE)
+      TRUE
+    },
+    error = function(e) e
+  )
+
+  if (inherits(result, "error")) {
+    message("Could not run devtools::document() in a temporary package copy.")
+    message("Original error:")
+    message(conditionMessage(result))
+    quit(status = 1, save = "no")
+  }
+
+  expected <- generated_document_paths(pkg_dir)
+  actual <- generated_document_paths(".")
+  paths <- sort(unique(c(expected, actual)))
+  stale <- character()
+
+  for (path in paths) {
+    expected_raw <- read_file_raw(file.path(pkg_dir, path))
+    actual_raw <- read_file_raw(path)
+    if (!identical(expected_raw, actual_raw)) {
+      stale <- c(stale, path)
+    }
+  }
+
+  if (length(stale) > 0L) {
+    message("Roxygen-generated documentation is stale.")
+    message("Run this command, stage the generated changes, and retry:")
+    message("  Rscript -e 'devtools::document()'")
+    message("")
+    message("Stale generated file(s):")
+    message("- ", paste(stale, collapse = "\n- "))
+    quit(status = 1, save = "no")
+  }
+
+  message("Roxygen-generated documentation is up to date.")
   invisible(TRUE)
 }
 
@@ -178,7 +291,7 @@ args <- commandArgs(trailingOnly = TRUE)
 if (length(args) < 1) {
   message(
     "Usage: Rscript dev/precommit.R ",
-    "<style|lint|rmarkdown|test> [files...]"
+    "<style|lint|roxygen|rmarkdown|test> [files...]"
   )
   quit(status = 1, save = "no")
 }
@@ -189,6 +302,7 @@ files <- args[-1]
 switch(command,
   style = check_style(files),
   lint = check_lint(files),
+  roxygen = check_roxygen_documented(files),
   rmarkdown = check_rmarkdown_rendered(files),
   test = check_tests(),
   {

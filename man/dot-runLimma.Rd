@@ -24,17 +24,6 @@
 
 \item{coverage_mat}{Integer matrix (sites × samples) of read depths.}
 
-\item{mod_counts_mat}{Optional integer matrix of observed modified-read
-counts. If supplied, these counts are preferred over reconstructing from
-beta values.}
-
-\item{canonical_counts_mat}{Optional integer matrix of observed
-canonical-read counts.}
-
-\item{other_mod_counts_mat}{Optional integer matrix of observed non-target
-modified-read counts. When present with \code{canonical_counts_mat}, these
-counts are included in the non-target denominator so it matches coverage.}
-
 \item{site_df}{Data frame with columns \code{chrom}, \code{position},
 \code{strand}, \code{mod_type}, \code{motif} — one row per site.}
 
@@ -47,10 +36,16 @@ RHS variable in \code{formula} (typically \code{condition}).}
 \item{alpha}{Positive numeric pseudocount added to modified and unmodified
 read counts before log-transformation. Default \code{0.5}.}
 
-\item{ref_level}{Optional reference level for the two-level contrast.}
+\item{mod_counts_mat}{Optional integer matrix of observed modified-read
+counts. If supplied, these counts are preferred over reconstructing from
+beta values.}
 
-\item{design_info}{Optional precomputed design information from
-\code{.resolveDiffMethylDesign()}.}
+\item{canonical_counts_mat}{Optional integer matrix of observed
+canonical-read counts.}
+
+\item{other_mod_counts_mat}{Optional integer matrix of observed non-target
+modified-read counts. When present with \code{canonical_counts_mat}, these
+counts are included in the non-target denominator so it matches coverage.}
 }
 \value{
 A \code{data.frame} with one row per site (same row order as
@@ -75,7 +70,9 @@ t-test to identify differentially methylated sites. Called by
 is not available, this function stops with an informative message.
 
 Beta values are first transformed to M-values:
-\deqn{M = \log_2\!\left(\frac{n_{\mathrm{mod}} + \alpha}{n_{\mathrm{unmod}} + \alpha}\right)}
+\deqn{M = \log_2\!\left(
+  \frac{n_{\mathrm{mod}} + \alpha}{n_{\mathrm{unmod}} + \alpha}
+\right)}
 where \eqn{\alpha} is a pseudocount (default 0.5). M-values are
 approximately normally distributed and homoscedastic, making OLS
 appropriate.

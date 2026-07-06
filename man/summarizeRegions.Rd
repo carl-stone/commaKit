@@ -47,8 +47,8 @@ or region-level statistical test.
 The primary regional methylation statistic is count-based:
 \deqn{region\_methylation = sum(mod\_counts) / sum(valid\_coverage)}
 where \code{valid_coverage} is the \code{coverage} assay for sites with
-non-missing modified counts and positive coverage. For modkit-style inputs this
-corresponds to \code{Nvalid_cov = Nmod + Nother_mod + Ncanonical}.
+non-missing modified counts and positive coverage. For modkit-style inputs
+this corresponds to \code{Nvalid_cov = Nmod + Nother_mod + Ncanonical}.
 
 \code{summarizeRegions()} intentionally does not average beta values by
 default. Beta-only/reconstructed-count import paths should record provenance
@@ -58,8 +58,8 @@ count assays present in the \code{commaData} object.
 \examples{
 data(comma_example_data)
 regions <- GenomicRanges::GRanges(
-    seqnames = "chr_sim",
-    ranges = IRanges::IRanges(start = 1, end = 5000)
+  seqnames = "chr_sim",
+  ranges = IRanges::IRanges(start = 1, end = 5000)
 )
 summarizeRegions(comma_example_data, regions, mod_type = "6mA")
 

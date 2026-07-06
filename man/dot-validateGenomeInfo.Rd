@@ -2,7 +2,7 @@
 % Please edit documentation in R/genome_utils.R
 \name{.validateGenomeInfo}
 \alias{.validateGenomeInfo}
-\title{Validate and coerce genome input to a named integer vector of chromosome sizes}
+\title{Validate and coerce genome input to a named integer vector}
 \usage{
 .validateGenomeInfo(genome)
 }
@@ -16,6 +16,6 @@ Named integer vector of chromosome sizes, or \code{NULL} if
 \code{genome} is \code{NULL}.
 }
 \description{
-Validate and coerce genome input to a named integer vector of chromosome sizes
+Validate and coerce genome input to a named integer vector
 }
 \keyword{internal}
