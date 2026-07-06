@@ -11,7 +11,7 @@ owner: Carl Stone
 
 # Design Decisions — Why We Made These Choices
 
-**Last updated:** 2026-05-30
+**Last updated:** 2026-07-05
 **Maintained by:** commaBot
 
 This document records significant architectural and API decisions. When you're tempted to change something, check here first to understand why it was designed this way.
@@ -230,6 +230,34 @@ downstream code keep working.
 
 **Do not change without:** Preserving backward compatibility for bare `dm_*`
 columns and preserving named multi-run access.
+
+---
+
+## D-015: dm_padj is commaKit's adjusted p-value, not a backend q-value
+
+**Decision:** `dm_padj` is the backend-independent adjusted p-value computed by
+commaKit for the full testing family in one `diffMethyl()` call. Backend
+adjusted statistics, such as methylKit q-values, may be preserved only under
+backend-specific result columns such as `dm_methylkit_qvalue`.
+
+**Rationale:** Users need `dm_padj` to mean the same statistical contract across
+backends and across all tested `mod_context`s. Reusing a backend q-value as
+`dm_padj` for only one backend would make result layers harder to compare and
+would obscure whether multiple-testing correction was applied over commaKit's
+full testing family.
+
+**Consequence:**
+- methylKit raw p-values feed `dm_pvalue`.
+- commaKit computes `dm_padj` from `dm_pvalue` with the requested
+  `p_adjust_method` over the whole `diffMethyl()` call.
+- methylKit q-values, when available, are stored as `dm_methylkit_qvalue` only
+  on methylKit result layers and are mirrored into `rowData` only when that
+  layer is active/default.
+- Non-methylKit result layers do not carry an all-`NA`
+  `dm_methylkit_qvalue` column.
+
+**Do not change without:** Statistical justification, user-facing documentation
+updates, and tests proving the public result-column contract.
 
 ---
 

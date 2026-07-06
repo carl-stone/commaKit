@@ -74,6 +74,10 @@ rendered_md_path <- function(rmd_file) {
   sub("\\.[Rr]md$", ".md", rmd_file)
 }
 
+trim_trailing_whitespace <- function(lines) {
+  sub("[[:space:]]+$", "", lines)
+}
+
 check_rmarkdown_rendered <- function(files) {
   require_package("rmarkdown")
 
@@ -98,19 +102,23 @@ check_rmarkdown_rendered <- function(files) {
   }
   for (file in files) {
     output_file <- rendered_md_path(file)
-    output_dir <- tempfile("rmd-render-")
-    dir.create(output_dir)
-    on.exit(unlink(output_dir, recursive = TRUE), add = TRUE)
+    render_dir <- tempfile("rmd-render-")
+    dir.create(render_dir)
+    on.exit(unlink(render_dir, recursive = TRUE), add = TRUE)
+    render_input <- file.path(render_dir, basename(file))
+    if (!file.copy(file, render_input, overwrite = TRUE)) {
+      stop("Could not copy R Markdown source to temporary render directory.")
+    }
 
     rendered <- rmarkdown::render(
-      file,
+      render_input,
       output_format = "github_document",
-      output_dir = output_dir,
+      knit_root_dir = normalizePath(dirname(file), mustWork = TRUE),
       quiet = TRUE,
       envir = new.env(parent = globalenv())
     )
-    expected <- readLines(output_file, warn = FALSE)
-    actual <- readLines(rendered, warn = FALSE)
+    expected <- trim_trailing_whitespace(readLines(output_file, warn = FALSE))
+    actual <- trim_trailing_whitespace(readLines(rendered, warn = FALSE))
     if (!identical(expected, actual)) {
       stale <- c(stale, paste0(file, " -> ", output_file))
     }

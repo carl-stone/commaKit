@@ -22,17 +22,6 @@
 
 \item{coverage_mat}{Integer matrix (sites × samples) of read depths.}
 
-\item{mod_counts_mat}{Optional integer matrix of observed modified-read
-counts. If supplied, these counts are preferred over reconstructing from
-beta values.}
-
-\item{canonical_counts_mat}{Optional integer matrix of observed
-canonical-read counts.}
-
-\item{other_mod_counts_mat}{Optional integer matrix of observed non-target
-modified-read counts. When present with \code{canonical_counts_mat}, these
-counts are included in the non-target denominator so it matches coverage.}
-
 \item{site_df}{Data frame with columns \code{chrom}, \code{position},
 \code{strand}, \code{mod_type}, \code{motif} — one row per site.}
 
@@ -45,11 +34,25 @@ RHS variable in \code{formula}.}
 
 \item{design_info}{Optional precomputed design information from
 \code{.resolveDiffMethylDesign()}.}
+
+\item{mod_counts_mat}{Optional integer matrix of observed modified-read
+counts. If supplied, these counts are preferred over reconstructing from
+beta values.}
+
+\item{canonical_counts_mat}{Optional integer matrix of observed
+canonical-read counts.}
+
+\item{other_mod_counts_mat}{Optional integer matrix of observed non-target
+modified-read counts. When present with \code{canonical_counts_mat}, these
+counts are included in the non-target denominator so it matches coverage.}
 }
 \value{
-A \code{data.frame} with the same columns as \code{.betaBinomialTest()}:
-\code{pvalue}, \code{delta_beta}, and one \code{mean_beta_<level>} column
-per condition level. Row names are site keys.
+A \code{data.frame} with the same columns as
+other differential methylation backends: \code{pvalue},
+\code{delta_beta}, and one \code{mean_beta_<level>} column per condition
+level. The methylKit-specific \code{qvalue} column is preserved for callers
+that want backend-specific evidence in addition to commaKit's adjusted
+p-values. Row names are site keys.
 }
 \description{
 An internal wrapper that uses \pkg{methylKit} to test for differential

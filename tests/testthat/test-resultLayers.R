@@ -12,6 +12,36 @@ test_that("resultLayers() lists the default diffMethyl result layer", {
   expect_true("dm_pvalue" %in% as.character(layers$result_cols[[1L]]))
 })
 
+test_that("resultLayers() tracks methylKit-only q-value result columns", {
+  skip_if_not_installed("limma")
+  skip_if_not(
+    requireNamespace("methylKit", quietly = TRUE),
+    "methylKit not installed"
+  )
+  obj <- .make_diff_methyl_fixture(n_sites = 12L, n_ctrl = 2L, n_treat = 2L)
+  dm <- suppressWarnings(diffMethyl(
+    obj,
+    formula = ~condition,
+    method = "methylkit",
+    result_name = "methylkit.v1"
+  ))
+  dm <- diffMethyl(
+    dm,
+    formula = ~condition,
+    method = "quasi_f",
+    result_name = "quasi_f.v1"
+  )
+
+  layers <- resultLayers(dm)
+  result_cols <- stats::setNames(
+    lapply(layers$result_cols, as.character),
+    layers$name
+  )
+
+  expect_true("dm_methylkit_qvalue" %in% result_cols[["methylkit.v1"]])
+  expect_false("dm_methylkit_qvalue" %in% result_cols[["quasi_f.v1"]])
+})
+
 test_that("diffMethyl() stores multiple named result layers", {
   skip_if_not_installed("limma")
   obj <- .make_diff_methyl_fixture(n_sites = 12L, n_ctrl = 2L, n_treat = 2L)
@@ -231,10 +261,8 @@ test_that("results() can return selected result layers as GRanges", {
 
   expect_s4_class(gr, "GRanges")
   expect_equal(length(gr), nrow(df))
-  expect_true(
-    all(c("dm_pvalue", "dm_padj", "dm_delta_beta") %in%
-      colnames(GenomicRanges::mcols(gr)))
-  )
+  gr_cols <- colnames(GenomicRanges::mcols(gr))
+  expect_true(all(c("dm_pvalue", "dm_padj", "dm_delta_beta") %in% gr_cols))
   expect_equal(GenomicRanges::mcols(gr)$dm_pvalue, df$dm_pvalue)
 
   gr_empty <- results(dm, name = "quasi_f.empty", as = "GRanges")

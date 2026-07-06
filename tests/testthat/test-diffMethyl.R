@@ -48,6 +48,18 @@ test_that("diffMethyl: rowData gains dm_ result columns", {
   expect_true("dm_delta_beta" %in% colnames(rd))
 })
 
+test_that("diffMethyl: non-methylKit results omit methylKit q-values", {
+  skip_if_not_installed("limma")
+  obj <- .make_dm_data(n_ctrl = 2L, n_treat = 2L)
+  dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
+
+  rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+  res <- results(dm)
+
+  expect_false("dm_methylkit_qvalue" %in% colnames(rd))
+  expect_false("dm_methylkit_qvalue" %in% colnames(res))
+})
+
 test_that("diffMethyl: per-condition mean_beta columns added", {
   obj <- .make_dm_data()
   dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
@@ -208,10 +220,10 @@ test_that("diffMethyl: mod_type = '6mA' tests only 6mA sites", {
   rd <- as.data.frame(SummarizedExperiment::rowData(dm))
 
   # 6mA sites should have non-NA p-values
-  has_6mA_pval <- !is.na(rd$dm_pvalue[rd$mod_type == "6mA"])
-  has_5mC_pval <- !is.na(rd$dm_pvalue[rd$mod_type == "5mC"])
-  expect_true(any(has_6mA_pval))
-  expect_true(!any(has_5mC_pval))
+  has_six_ma_pval <- !is.na(rd$dm_pvalue[rd$mod_type == "6mA"])
+  has_five_mc_pval <- !is.na(rd$dm_pvalue[rd$mod_type == "5mC"])
+  expect_true(any(has_six_ma_pval))
+  expect_true(!any(has_five_mc_pval))
 })
 
 test_that("diffMethyl: all mod types tested when mod_type = NULL", {
@@ -395,6 +407,32 @@ test_that("diffMethyl: method='methylkit' message uses actual level names", {
   # The generic methylKit "group: 0" / "group: 1" message must NOT appear
   expect_false(any(grepl("group: 0", msgs, fixed = TRUE)))
   expect_false(any(grepl("group: 1", msgs, fixed = TRUE)))
+})
+
+test_that("diffMethyl: methylKit q-values stay separate from dm_padj", {
+  skip_if_not(
+    requireNamespace("methylKit", quietly = TRUE),
+    "methylKit not installed"
+  )
+  obj <- .make_dm_data(n_sites = 12L, n_ctrl = 2L, n_treat = 2L)
+  dm <- suppressWarnings(
+    diffMethyl(obj, formula = ~condition, method = "methylkit")
+  )
+
+  rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+  res <- results(dm)
+
+  expect_true("dm_methylkit_qvalue" %in% colnames(rd))
+  expect_true("dm_methylkit_qvalue" %in% colnames(res))
+  expect_equal(res$dm_methylkit_qvalue, rd$dm_methylkit_qvalue)
+
+  ok <- !is.na(rd$dm_pvalue)
+  expect_true(any(ok))
+  expected_padj <- stats::p.adjust(
+    rd$dm_pvalue,
+    method = S4Vectors::metadata(dm)$diffMethyl_params$p_adjust_method
+  )
+  expect_equal(rd$dm_padj[ok], expected_padj[ok], tolerance = 1e-12)
 })
 
 # ─── limma method ─────────────────────────────────────────────────────────────
@@ -652,9 +690,10 @@ test_that(
     "6mA sites in comma_example_data"
   ),
   {
-    # The 30 is_diff 6mA sites have control ~0.90 and treatment ~0.25 (set.seed(42)),
-    # so dm_delta_beta (treatment - control) should be substantially negative.
-    # Non-diff sites have both conditions at ~0.90, so delta_beta should be near 0.
+    # The 30 is_diff 6mA sites have control ~0.90 and treatment ~0.25
+    # (set.seed(42)), so dm_delta_beta (treatment - control) should be
+    # substantially negative. Non-diff sites have both conditions at ~0.90,
+    # so delta_beta should be near 0.
     data(comma_example_data)
     dm <- diffMethyl(comma_example_data,
       formula = ~condition, mod_type = "6mA",
@@ -666,7 +705,8 @@ test_that(
     delta_diff <- rd6$dm_delta_beta[rd6$is_diff & !is.na(rd6$dm_delta_beta)]
     delta_nondiff <- rd6$dm_delta_beta[!rd6$is_diff & !is.na(rd6$dm_delta_beta)]
 
-    # Simulated differential sites: control ~0.90, treatment ~0.25 → delta < -0.3
+    # Simulated differential sites: control ~0.90, treatment ~0.25,
+    # so delta < -0.3.
     expect_lt(median(delta_diff), -0.3)
     # Non-differential sites: both conditions ~0.90 → |delta| near 0
     expect_lt(abs(median(delta_nondiff)), 0.1)
@@ -679,8 +719,9 @@ test_that(
     "< 0.2 in comma_example_data"
   ),
   {
-    # With a strong simulated signal (~0.65 delta_beta for 30 sites), diffMethyl()
-    # should detect at least half of the ground-truth differentially methylated sites.
+    # With a strong simulated signal (~0.65 delta_beta for 30 sites),
+    # diffMethyl() should detect at least half of the ground-truth
+    # differentially methylated sites.
     # Note: comma_example_data has 6 samples (3 control + 3 treatment), but this
     # small simulated fixture still makes FDR-corrected padj < 0.05 too strict
     # for a recovery smoke test. Use a lenient raw p-value threshold (0.2) to
@@ -709,8 +750,8 @@ test_that(
     "in comma_example_data"
   ),
   {
-    # Among sites called significant (padj < 0.05, |delta_beta| > 0.2), the majority
-    # should be ground-truth is_diff = TRUE — i.e., precision >= 50%.
+    # Among sites called significant (padj < 0.05, |delta_beta| > 0.2),
+    # the majority should be ground-truth is_diff = TRUE.
     data(comma_example_data)
     dm <- diffMethyl(comma_example_data,
       formula = ~condition, mod_type = "6mA",
@@ -733,11 +774,11 @@ test_that(
 
 test_that("diffMethyl: mod_context parameter filters to matching contexts", {
   data(comma_example_data)
-  dm_6mA <- diffMethyl(comma_example_data,
+  dm_six_ma <- diffMethyl(comma_example_data,
     formula = ~condition,
     mod_context = "6mA_GATC", method = "quasi_f"
   )
-  si <- siteInfo(dm_6mA)
+  si <- siteInfo(dm_six_ma)
   # Only 6mA_GATC sites in result
   expect_true(all(si$mod_context[!is.na(si$dm_pvalue)] == "6mA_GATC"))
 })
@@ -748,10 +789,10 @@ test_that("diffMethyl: loops separately over each mod_context", {
   dm <- diffMethyl(comma_example_data, formula = ~condition, method = "quasi_f")
   si <- siteInfo(dm)
   # Both contexts should have results (non-NA pvalues)
-  has_6mA <- any(!is.na(si$dm_pvalue[si$mod_context == "6mA_GATC"]))
-  has_5mC <- any(!is.na(si$dm_pvalue[si$mod_context == "5mC_CCWGG"]))
-  expect_true(has_6mA)
-  expect_true(has_5mC)
+  has_six_ma <- any(!is.na(si$dm_pvalue[si$mod_context == "6mA_GATC"]))
+  has_five_mc <- any(!is.na(si$dm_pvalue[si$mod_context == "5mC_CCWGG"]))
+  expect_true(has_six_ma)
+  expect_true(has_five_mc)
 })
 
 test_that("diffMethyl: mod_context stored in metadata params", {
@@ -893,8 +934,8 @@ test_that(
     )
     dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
     rd <- as.data.frame(SummarizedExperiment::rowData(dm))
-    # Factor reference is treatment, so delta is control - treatment; first sites
-    # have control high and treatment low.
+    # Factor reference is treatment, so delta is control - treatment; first
+    # sites have control high and treatment low.
     expect_true(all(rd$dm_delta_beta[1:5] > 0, na.rm = TRUE))
     expect_equal(
       S4Vectors::metadata(dm)$diffMethyl_params$reference,

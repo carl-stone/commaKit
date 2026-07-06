@@ -16,8 +16,11 @@ NULL
 #' @details
 #' \strong{Default method (\code{method = "methylkit"}):}
 #' Wraps \code{methylKit::calculateDiffMeth()}, which uses logistic regression
-#' with SLIM p-value correction. Robust for small n, produces calibrated
-#' relative p-values suitable for downstream filtering. Requires \pkg{methylKit}
+#' and returns raw p-values plus methylKit-specific q-values. commaKit stores
+#' the raw methylKit p-value as \code{dm_pvalue}, computes \code{dm_padj} with
+#' the selected \code{p_adjust_method} across the full \code{diffMethyl()}
+#' testing family, and preserves methylKit q-values separately as
+#' \code{dm_methylkit_qvalue}. Requires \pkg{methylKit}
 #' (\code{BiocManager::install("methylKit")}).
 #'
 #' \strong{Alternative model (\code{method = "quasi_f"}):}
@@ -31,7 +34,8 @@ NULL
 #'
 #' \strong{Alternative model (\code{method = "limma"}):}
 #' Beta values are transformed to M-values via
-#' \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))},
+#' \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) /
+#'   (n_{\mathrm{unmod}} + \alpha))},
 #' then \code{\link[limma]{lmFit}} fits an OLS model per site and
 #' \code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage,
 #' borrowing information across all sites to stabilize the per-site variance
@@ -45,10 +49,11 @@ NULL
 #' methylKit's logistic-regression conventions. Use \code{"quasi_f"} as a
 #' good general-purpose alternative for bacterial methylomes when you want a
 #' count-aware model with empirical Bayes dispersion shrinkage and genome-wide
-#' multiple-testing correction handled entirely inside \pkg{commaKit}. It is often
-#' a good first alternative if methylKit convergence warnings, zero-variance
-#' sites, or runtime become distracting. Use \code{"limma"} when you want the
-#' familiar \pkg{limma} empirical-Bayes linear-model workflow on M-values,
+#' multiple-testing correction handled entirely inside \pkg{commaKit}. It is
+#' often a good first alternative if methylKit convergence warnings,
+#' zero-variance sites, or runtime become distracting. Use \code{"limma"} when
+#' you want the familiar \pkg{limma} empirical-Bayes linear-model workflow on
+#' M-values,
 #' especially for complete datasets with few replicates per group. All three
 #' backends report \code{dm_delta_beta} on the original beta scale, so effect
 #' sizes remain comparable even when p-values differ.
@@ -70,6 +75,8 @@ NULL
 #' \describe{
 #'   \item{\code{dm_pvalue}}{Raw p-value from the GLM Wald test.}
 #'   \item{\code{dm_padj}}{Adjusted p-value (Benjamini-Hochberg by default).}
+#'   \item{\code{dm_methylkit_qvalue}}{methylKit q-value, present only for
+#'     result layers produced with \code{method = "methylkit"}.}
 #'   \item{\code{dm_delta_beta}}{Effect size: mean methylation in the treatment
 #'     group minus mean methylation in the reference (control) group. Positive
 #'     values indicate hypermethylation in treatment.}
@@ -97,9 +104,10 @@ NULL
 #'   \code{~ condition}.
 #' @param method Character string selecting the statistical backend.
 #'   \code{"methylkit"} (default) wraps \code{methylKit::calculateDiffMeth()}
-#'   with logistic regression and SLIM p-value correction; robust for small n
-#'   and produces calibrated relative p-values suitable for downstream
-#'   filtering. Requires \pkg{methylKit} (Bioconductor).
+#'   with logistic regression. The raw methylKit p-value feeds
+#'   \code{dm_pvalue}; \code{dm_padj} is computed by commaKit using
+#'   \code{p_adjust_method}; methylKit q-values are preserved separately as
+#'   \code{dm_methylkit_qvalue}. Requires \pkg{methylKit} (Bioconductor).
 #'   \code{"quasi_f"} applies empirical Bayes shrinkage of quasibinomial
 #'   dispersions via \code{\link[limma]{squeezeVar}} (quasi-likelihood F-test;
 #'   count-data EB), making it a good general-purpose alternative for bacterial
@@ -109,7 +117,8 @@ NULL
 #'   replicates are few (n < 3 per group). Requires \pkg{limma}.
 #' @param alpha Positive numeric pseudocount used to compute M-values when
 #'   \code{method = "limma"}:
-#'   \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))}.
+#'   \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) /
+#'   (n_{\mathrm{unmod}} + \alpha))}.
 #'   Default \code{0.5} (a Beta(0.5, 0.5) prior). Ignored for other methods.
 #' @param mod_context Character vector or \code{NULL}. Modification context(s)
 #'   to test (e.g., \code{"6mA_GATC"}, \code{c("6mA_GATC", "5mC_CCWGG")}).
@@ -160,6 +169,7 @@ NULL
 #' @return The input \code{commaData} object with additional columns in
 #'   \code{rowData}: \code{dm_pvalue}, \code{dm_padj}, \code{dm_delta_beta},
 #'   and one \code{dm_mean_beta_<condition>} column per condition level. The
+#'   methylKit backend also adds \code{dm_methylkit_qvalue}. The
 #'   \code{metadata} slot is updated with analysis parameters, result column
 #'   names, and a named result layer registry.
 #'
@@ -213,8 +223,10 @@ diffMethyl <- function(
   if (!is.logical(overwrite) || length(overwrite) != 1L || is.na(overwrite)) {
     stop("'overwrite' must be TRUE, FALSE, or NULL.")
   }
-  if (!is.logical(make_default) || length(make_default) != 1L ||
-    is.na(make_default)) {
+  invalid_make_default <- !is.logical(make_default) ||
+    length(make_default) != 1L ||
+    is.na(make_default)
+  if (invalid_make_default) {
     stop("'make_default' must be TRUE or FALSE.")
   }
   if (!isTRUE(overwrite) && result_name %in% .diffMethylResultNames(object)) {
@@ -223,8 +235,11 @@ diffMethyl <- function(
       "' already exists. Use a new 'result_name' or set overwrite = TRUE."
     )
   }
-  if (isTRUE(overwrite) && !isTRUE(make_default) &&
-    identical(result_name, .diffMethylDefaultResultName(object))) {
+  overwrites_active_result <- identical(
+    result_name,
+    .diffMethylDefaultResultName(object)
+  )
+  if (isTRUE(overwrite) && !isTRUE(make_default) && overwrites_active_result) {
     stop(
       "Cannot overwrite the active differential methylation result layer ",
       "with make_default = FALSE because the rowData dm_* mirror would ",
@@ -233,14 +248,19 @@ diffMethyl <- function(
     )
   }
 
-  if (!is.numeric(min_coverage) || length(min_coverage) != 1L ||
-    is.na(min_coverage) || min_coverage < 0L) {
+  invalid_min_coverage <- !is.numeric(min_coverage) ||
+    length(min_coverage) != 1L ||
+    is.na(min_coverage) ||
+    min_coverage < 0L
+  if (invalid_min_coverage) {
     stop("'min_coverage' must be a single non-negative integer.")
   }
   min_coverage <- as.integer(min_coverage)
-  if (!is.character(p_adjust_method) || length(p_adjust_method) != 1L ||
+  invalid_adjust_method <- !is.character(p_adjust_method) ||
+    length(p_adjust_method) != 1L ||
     is.na(p_adjust_method) ||
-    !p_adjust_method %in% stats::p.adjust.methods) {
+    !p_adjust_method %in% stats::p.adjust.methods
+  if (invalid_adjust_method) {
     stop(
       "'p_adjust_method' must be one of: ",
       paste(stats::p.adjust.methods, collapse = ", ")
@@ -254,8 +274,8 @@ diffMethyl <- function(
     )
   }
 
-  if (method %in% c("limma", "quasi_f") &&
-    !requireNamespace("limma", quietly = TRUE)) {
+  needs_limma <- method %in% c("limma", "quasi_f")
+  if (needs_limma && !requireNamespace("limma", quietly = TRUE)) {
     stop(
       "Package 'limma' is required for method = \"", method, "\".\n",
       "Install it with: BiocManager::install(\"limma\")"
@@ -263,8 +283,11 @@ diffMethyl <- function(
   }
 
   if (method == "limma") {
-    if (!is.numeric(alpha) || length(alpha) != 1L ||
-      !is.finite(alpha) || alpha <= 0) {
+    invalid_alpha <- !is.numeric(alpha) ||
+      length(alpha) != 1L ||
+      !is.finite(alpha) ||
+      alpha <= 0
+    if (invalid_alpha) {
       stop("'alpha' must be a single positive finite number.")
     }
   }
@@ -347,6 +370,11 @@ diffMethyl <- function(
 
   # -- Initialise result columns (all NA) ------------------------------------
   pvalue_all <- rep(NA_real_, n_sites_all)
+  methylkit_qvalue_all <- if (method == "methylkit") {
+    rep(NA_real_, n_sites_all)
+  } else {
+    NULL
+  }
   delta_beta_all <- rep(NA_real_, n_sites_all)
   mean_beta_cols <- lapply(cond_levels, function(lv) rep(NA_real_, n_sites_all))
   names(mean_beta_cols) <- paste0("dm_mean_beta_", cond_levels)
@@ -425,6 +453,11 @@ diffMethyl <- function(
 
     # Write back to full-object vectors
     pvalue_all[site_idx] <- res_sub$pvalue
+    has_methylkit_qvalue <- !is.null(methylkit_qvalue_all) &&
+      "qvalue" %in% colnames(res_sub)
+    if (has_methylkit_qvalue) {
+      methylkit_qvalue_all[site_idx] <- res_sub$qvalue
+    }
     delta_beta_all[site_idx] <- res_sub$delta_beta
 
     for (lv in cond_levels) {
@@ -443,11 +476,21 @@ diffMethyl <- function(
     "dm_pvalue", "dm_padj", "dm_delta_beta",
     names(mean_beta_cols)
   )
+  if (!is.null(methylkit_qvalue_all)) {
+    result_cols <- append(
+      result_cols,
+      "dm_methylkit_qvalue",
+      after = match("dm_padj", result_cols)
+    )
+  }
   result_data <- S4Vectors::DataFrame(
     dm_pvalue = pvalue_all,
     dm_padj = padj_all,
     dm_delta_beta = delta_beta_all
   )
+  if (!is.null(methylkit_qvalue_all)) {
+    result_data$dm_methylkit_qvalue <- methylkit_qvalue_all
+  }
   for (col_nm in names(mean_beta_cols)) {
     result_data[[col_nm]] <- mean_beta_cols[[col_nm]]
   }
