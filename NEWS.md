@@ -332,8 +332,7 @@ provenance. They are not the current package version sequence.
 * Added subsetting: `[` for sites/samples and `subset()` for filtering by
   `mod_type`, `condition`, or `chrom`.
 
-* Added internal genome utilities: `.validateGenomeInfo()`, `.circularIndex()`,
-  `.makeSeqinfo()`.
+* Added internal genome utilities: `.validateGenomeInfo()` and `.makeSeqinfo()`.
 
 ## Data changes
 

@@ -4,7 +4,7 @@ NULL
 # Internal genome utility functions used by the commaData constructor, motif
 # search, and sliding window analyses.
 
-#' Validate and coerce genome input to a named integer vector of chromosome sizes
+#' Validate and coerce genome input to a named integer vector
 #'
 #' @param genome A BSgenome object, path to a FASTA file, named
 #'   \code{DNAStringSet}, or named integer vector of chromosome sizes
@@ -123,22 +123,6 @@ NULL
   }
 
   seqs
-}
-
-#' Vectorized circular genome index
-#'
-#' Converts a position that may wrap past the end (or before the start) of a
-#' circular genome into a valid 1-based position.
-#'
-#' @param position Integer vector of genomic positions (1-based).
-#' @param genome_size Integer. Total size of the circular genome in base pairs.
-#'
-#' @return Integer vector of positions in the range \code{[1, genome_size]}.
-#'
-#' @keywords internal
-.circularIndex <- function(position, genome_size) {
-  stopifnot(is.numeric(genome_size), length(genome_size) == 1, genome_size > 0)
-  ((as.integer(position) - 1L) %% as.integer(genome_size)) + 1L
 }
 
 #' Build a Seqinfo object from a named integer vector of chromosome sizes

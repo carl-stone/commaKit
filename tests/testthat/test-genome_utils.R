@@ -1,5 +1,5 @@
 ## Tests for internal genome utility functions:
-##   .validateGenomeInfo(), .circularIndex(), .makeSeqinfo()
+##   .validateGenomeInfo(), .makeSeqinfo()
 
 library(testthat)
 library(GenomicRanges)
@@ -185,56 +185,6 @@ test_that(
     ))
   }
 )
-
-# ─────────────────────────────────────────────────────────────────────────────
-# .circularIndex() — valid (in-range) positions
-# ─────────────────────────────────────────────────────────────────────────────
-
-test_that(".circularIndex() returns positions within range unchanged", {
-  expect_equal(commaKit:::.circularIndex(1L, 100L), 1L)
-  expect_equal(commaKit:::.circularIndex(50L, 100L), 50L)
-  expect_equal(commaKit:::.circularIndex(100L, 100L), 100L)
-})
-
-# ─────────────────────────────────────────────────────────────────────────────
-# .circularIndex() — wrapping past the end
-# ─────────────────────────────────────────────────────────────────────────────
-
-test_that(".circularIndex() wraps positions past the genome end", {
-  expect_equal(commaKit:::.circularIndex(101L, 100L), 1L)
-  expect_equal(commaKit:::.circularIndex(200L, 100L), 100L)
-  expect_equal(commaKit:::.circularIndex(201L, 100L), 1L)
-})
-
-test_that(".circularIndex() wraps position 0 to the last position", {
-  # position 0 is one step before position 1 on a circular genome
-  expect_equal(commaKit:::.circularIndex(0L, 100L), 100L)
-})
-
-# ─────────────────────────────────────────────────────────────────────────────
-# .circularIndex() — vectorised input
-# ─────────────────────────────────────────────────────────────────────────────
-
-test_that(".circularIndex() is vectorised over positions", {
-  result <- commaKit:::.circularIndex(c(1L, 100L, 101L, 200L), 100L)
-  expect_equal(result, c(1L, 100L, 1L, 100L))
-})
-
-# ─────────────────────────────────────────────────────────────────────────────
-# .circularIndex() — invalid genome_size
-# ─────────────────────────────────────────────────────────────────────────────
-
-test_that(".circularIndex() errors on genome_size = 0", {
-  expect_error(commaKit:::.circularIndex(5L, 0L))
-})
-
-test_that(".circularIndex() errors on negative genome_size", {
-  expect_error(commaKit:::.circularIndex(5L, -10L))
-})
-
-# ─────────────────────────────────────────────────────────────────────────────
-# .makeSeqinfo() — NULL input
-# ─────────────────────────────────────────────────────────────────────────────
 
 test_that(".makeSeqinfo() returns NULL for NULL input", {
   expect_null(commaKit:::.makeSeqinfo(NULL))
