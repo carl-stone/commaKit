@@ -90,8 +90,8 @@ test_that("results: mod_type filter reduces rows", {
   data(comma_example_data)
   dm <- diffMethyl(comma_example_data, formula = ~condition)
   res_all <- results(dm)
-  res_6mA <- results(dm, mod_type = "6mA")
-  expect_lt(nrow(res_6mA), nrow(res_all))
+  res_6ma <- results(dm, mod_type = "6mA")
+  expect_lt(nrow(res_6ma), nrow(res_all))
 })
 
 test_that("results: error on invalid mod_type", {
@@ -113,6 +113,26 @@ test_that("results: dm_delta_beta in [-1, 1] for non-NA sites", {
   expect_true(all(db >= -1 & db <= 1))
 })
 
+test_that("results: known fixture preserves row order and result values", {
+  dm <- .make_tested_object()
+  res <- results(dm)
+
+  expect_equal(res$position, seq(50L, 750L, by = 50L))
+  expect_equal(as.character(res$chrom), rep("chr_sim", 15L))
+  expect_equal(as.character(res$strand), rep("+", 15L))
+  expect_equal(as.character(res$mod_type), rep("6mA", 15L))
+  expect_equal(res$motif, rep("GATC", 15L))
+
+  expect_equal(res$dm_delta_beta, c(rep(-0.7, 10L), rep(0, 5L)))
+  expect_equal(res$dm_mean_beta_control, rep(0.9, 15L))
+  expect_equal(
+    res$dm_mean_beta_treatment,
+    c(rep(0.2, 10L), rep(0.9, 5L))
+  )
+  expect_true(all(res$dm_padj[seq_len(10L)] < 0.001))
+  expect_equal(res$dm_padj[11:15], rep(1, 5L))
+})
+
 # ─── filterResults() ──────────────────────────────────────────────────────────
 
 test_that("filterResults: returns a data.frame", {
@@ -131,17 +151,20 @@ test_that("filterResults: subset of results()", {
 test_that("filterResults: all returned sites meet padj threshold", {
   dm <- .make_tested_object()
   sig <- filterResults(dm, padj = 0.5)
-  if (nrow(sig) > 0) {
-    expect_true(all(sig$dm_padj <= 0.5))
-  }
+
+  expect_equal(nrow(sig), 10L)
+  expect_equal(sig$position, seq(50L, 500L, by = 50L))
+  expect_true(all(sig$dm_padj <= 0.5))
 })
 
 test_that("filterResults: all returned sites meet delta_beta threshold", {
   dm <- .make_tested_object()
   sig <- filterResults(dm, padj = 1, delta_beta = 0.1)
-  if (nrow(sig) > 0) {
-    expect_true(all(abs(sig$dm_delta_beta) >= 0.1))
-  }
+
+  expect_equal(nrow(sig), 10L)
+  expect_equal(sig$position, seq(50L, 500L, by = 50L))
+  expect_equal(sig$dm_delta_beta, rep(-0.7, 10L))
+  expect_true(all(abs(sig$dm_delta_beta) >= 0.1))
 })
 
 test_that("filterResults: tight thresholds return 0 rows", {
@@ -193,10 +216,11 @@ test_that("filterResults: both thresholds applied simultaneously (AND logic)", {
   padj_thresh <- 0.5
   db_thresh <- 0.1
   sig <- filterResults(dm, padj = padj_thresh, delta_beta = db_thresh)
-  if (nrow(sig) > 0) {
-    expect_true(all(sig$dm_padj <= padj_thresh))
-    expect_true(all(abs(sig$dm_delta_beta) >= db_thresh))
-  }
+
+  expect_equal(nrow(sig), 10L)
+  expect_equal(sig$position, seq(50L, 500L, by = 50L))
+  expect_true(all(sig$dm_padj <= padj_thresh))
+  expect_true(all(abs(sig$dm_delta_beta) >= db_thresh))
 })
 
 test_that("filterResults: padj=0 returns an empty data frame", {
@@ -219,3 +243,61 @@ test_that("filterResults: non-finite or negative thresholds error", {
   expect_error(filterResults(dm, delta_beta = Inf), "delta_beta")
   expect_error(filterResults(dm, delta_beta = -0.1), "delta_beta")
 })
+
+test_that(
+  "results: data.frame and GRanges paths align for selected result layer",
+  {
+    skip_if_not_installed("limma")
+    obj <- .make_diff_methyl_fixture(n_sites = 12L, n_ctrl = 2L, n_treat = 2L)
+    dm <- diffMethyl(
+      obj,
+      formula = ~condition,
+      method = "quasi_f",
+      result_name = "quasi_f.loose",
+      min_coverage = 0L
+    )
+    dm <- diffMethyl(
+      dm,
+      formula = ~condition,
+      method = "quasi_f",
+      result_name = "quasi_f.empty",
+      min_coverage = 1000L
+    )
+
+    df <- results(dm, name = "quasi_f.loose")
+    gr <- results(dm, name = "quasi_f.loose", as = "GRanges")
+    result_cols <- c("dm_pvalue", "dm_padj", "dm_delta_beta")
+    gr_result_data <- as.data.frame(GenomicRanges::mcols(gr)[, result_cols])
+    df_result_data <- df[, result_cols]
+    rownames(gr_result_data) <- NULL
+    rownames(df_result_data) <- NULL
+
+    expect_equal(as.character(GenomeInfoDb::seqnames(gr)), df$chrom)
+    expect_equal(GenomicRanges::start(gr), df$position)
+    expect_equal(as.character(GenomicRanges::strand(gr)), df$strand)
+    expect_equal(gr_result_data, df_result_data)
+
+    sig <- filterResults(
+      dm,
+      padj = 1,
+      delta_beta = 0,
+      name = "quasi_f.loose"
+    )
+    keep <- !is.na(df$dm_padj) &
+      !is.na(df$dm_delta_beta) &
+      df$dm_padj <= 1 &
+      abs(df$dm_delta_beta) >= 0
+    expected <- df[
+      keep, ,
+      drop = FALSE
+    ]
+
+    expect_gt(nrow(sig), 0L)
+    expect_equal(sig$position, expected$position)
+    sig_result_data <- sig[, result_cols]
+    expected_result_data <- expected[, result_cols]
+    rownames(sig_result_data) <- NULL
+    rownames(expected_result_data) <- NULL
+    expect_equal(sig_result_data, expected_result_data)
+  }
+)
