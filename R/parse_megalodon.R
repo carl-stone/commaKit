@@ -51,8 +51,11 @@ NULL
   }
   min_coverage <- as.integer(min_coverage)
 
-  if (is.null(mod_type) || !is.character(mod_type) || length(mod_type) != 1L ||
-        is.na(mod_type)) {
+  invalid_mod_type <- is.null(mod_type)
+  invalid_mod_type <- invalid_mod_type || !is.character(mod_type)
+  invalid_mod_type <- invalid_mod_type || length(mod_type) != 1L
+  invalid_mod_type <- invalid_mod_type || is.na(mod_type)
+  if (invalid_mod_type) {
     stop(
       "'mod_type' must be explicitly supplied as a single modification ",
       "type for Megalodon files. Megalodon output does not encode the ",
