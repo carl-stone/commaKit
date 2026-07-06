@@ -1,3 +1,77 @@
+test_that("varianceByDepth: computes known variances and counts by filter", {
+  beta <- rbind(
+    c(s1 = 0.10, s2 = 0.20),
+    c(s1 = 0.30, s2 = 0.60),
+    c(s1 = 0.50, s2 = 0.40),
+    c(s1 = 0.90, s2 = 0.80),
+    c(s1 = 0.20, s2 = 0.10),
+    c(s1 = 0.60, s2 = 0.70)
+  )
+  depth <- rbind(
+    c(s1 = 10L, s2 = 10L),
+    c(s1 = 10L, s2 = 10L),
+    c(s1 = 20L, s2 = 20L),
+    c(s1 = 20L, s2 = 30L),
+    c(s1 = 10L, s2 = 10L),
+    c(s1 = 20L, s2 = 20L)
+  )
+  object <- .make_commaData_fixture(
+    beta = beta,
+    coverage = depth,
+    mod_type = c("6mA", "6mA", "6mA", "6mA", "5mC", "5mC"),
+    motif = c("GATC", "GATC", "GATC", "GATC", "CCWGG", "CCWGG")
+  )
+
+  unfiltered <- varianceByDepth(
+    object,
+    coverage_bins = c(10L, 20L, 30L)
+  )
+  row.names(unfiltered) <- NULL
+  expect_equal(
+    unfiltered,
+    data.frame(
+      coverage = rep(c(10L, 20L, 30L), 2L),
+      sample_name = c(rep("s1", 3L), rep("s2", 3L)),
+      variance = c(
+        0.01,
+        0.0433333333333333,
+        NA_real_,
+        0.07,
+        0.045,
+        NA_real_
+      ),
+      n_sites = c(3L, 3L, 0L, 3L, 2L, 1L),
+      stringsAsFactors = FALSE
+    ),
+    tolerance = 1e-10
+  )
+
+  only_6ma <- varianceByDepth(
+    object,
+    coverage_bins = c(10L, 20L, 30L),
+    mod_type = "6mA"
+  )
+  row.names(only_6ma) <- NULL
+  expect_equal(
+    only_6ma,
+    data.frame(
+      coverage = rep(c(10L, 20L, 30L), 2L),
+      sample_name = c(rep("s1", 3L), rep("s2", 3L)),
+      variance = c(
+        0.02,
+        0.08,
+        NA_real_,
+        0.08,
+        NA_real_,
+        NA_real_
+      ),
+      n_sites = c(2L, 2L, 0L, 2L, 1L, 1L),
+      stringsAsFactors = FALSE
+    ),
+    tolerance = 1e-10
+  )
+})
+
 test_that("varianceByDepth: returns a data.frame", {
   data(comma_example_data)
   result <- varianceByDepth(comma_example_data, coverage_bins = 5:30)
@@ -7,10 +81,8 @@ test_that("varianceByDepth: returns a data.frame", {
 test_that("varianceByDepth: has required columns", {
   data(comma_example_data)
   result <- varianceByDepth(comma_example_data, coverage_bins = 5:30)
-  expect_true(
-    all(c("coverage", "sample_name", "variance", "n_sites") %in%
-      colnames(result))
-  )
+  required_cols <- c("coverage", "sample_name", "variance", "n_sites")
+  expect_true(all(required_cols %in% colnames(result)))
 })
 
 test_that("varianceByDepth: all sample names present", {
@@ -48,12 +120,12 @@ test_that("varianceByDepth: NA variance when fewer than 2 sites at a level", {
 
 test_that("varianceByDepth: mod_type filtering works", {
   data(comma_example_data)
-  result_6mA <- varianceByDepth(
+  result_6ma <- varianceByDepth(
     comma_example_data,
     coverage_bins = 5:30,
     mod_type = "6mA"
   )
-  result_5mC <- varianceByDepth(
+  result_5mc <- varianceByDepth(
     comma_example_data,
     coverage_bins = 5:30,
     mod_type = "5mC"
@@ -61,8 +133,8 @@ test_that("varianceByDepth: mod_type filtering works", {
   # n_sites sums differ between mod types
   expect_false(
     identical(
-      sum(result_6mA$n_sites, na.rm = TRUE),
-      sum(result_5mC$n_sites, na.rm = TRUE)
+      sum(result_6ma$n_sites, na.rm = TRUE),
+      sum(result_5mc$n_sites, na.rm = TRUE)
     )
   )
 })
