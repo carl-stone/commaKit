@@ -489,7 +489,13 @@ readiness_run <- function(checks, files = NULL, root = NULL) {
     "code-quality"
   )
   if (identical(checks, "all")) {
-    checks <- c("large-files", "debt-markers", "agents-links", "code-quality")
+    checks <- c(
+      "large-files",
+      "debt-markers",
+      "agents-links",
+      "dead-code",
+      "code-quality"
+    )
   }
   unknown <- setdiff(checks, available)
   if (length(unknown) > 0L) {
