@@ -390,16 +390,12 @@ commaData <- function(files,
     # Parsed rows must be unique for the site identity used by the merge.
     # Otherwise later matrix assignment would silently let the last duplicate
     # win.
-    df_key <- paste(df$chrom, df$position, df$strand, df$mod_type,
-      ifelse(is.na(df$motif), "<NA>", df$motif),
-      sep = "
-"
-    )
-    if (anyDuplicated(df_key)) {
-      dup <- df[duplicated(df_key) | duplicated(df_key, fromLast = TRUE),
-        c("chrom", "position", "strand", "mod_type", "motif"),
-        drop = FALSE
-      ]
+    identity_cols <- c("chrom", "position", "strand", "mod_type", "motif")
+    df_identity <- df[, identity_cols, drop = FALSE]
+    if (anyDuplicated(df_identity)) {
+      dup_mask <- duplicated(df_identity) |
+        duplicated(df_identity, fromLast = TRUE)
+      dup <- df_identity[dup_mask, , drop = FALSE]
       stop(
         "Parser returned duplicate methylation site rows for sample '", sn,
         "'. Duplicate chrom/position/strand/mod_type/motif entries ",

@@ -35,18 +35,18 @@ library(GenomicRanges)
   )
 }
 
-.write_constructor_modkit <- function(file = tempfile(fileext = ".bed")) {
-  rows <- data.frame(
-    chrom = "chr_sim", start = c(99L, 199L), end = c(100L, 200L),
-    mod_code = c("a,GATC,1", "a,GATC,1"), score = c(20L, 20L),
-    strand = "+", thickStart = c(99L, 199L), thickEnd = c(100L, 200L),
-    itemRgb = "255,0,0", Nvalid_cov = c(20L, 20L),
-    fraction_modified = c(50, 25), Nmod = c(10L, 5L),
-    Ncanonical = c(7L, 14L), Nother_mod = c(3L, 1L),
+.constructor_modkit_row <- function(start = 99L, mod_code = "a,GATC,1",
+                                    fraction_modified = 50, n_mod = 10L,
+                                    n_canonical = 7L, n_other_mod = 3L) {
+  data.frame(
+    chrom = "chr_sim", start = start, end = start + 1L,
+    mod_code = mod_code, score = 20L, strand = "+",
+    thickStart = start, thickEnd = start + 1L, itemRgb = "255,0,0",
+    Nvalid_cov = 20L, fraction_modified = fraction_modified,
+    Nmod = n_mod, Ncanonical = n_canonical, Nother_mod = n_other_mod,
     Ndelete = 0L, Nfail = 0L, Ndiff = 0L, Nnocall = 0L,
     stringsAsFactors = FALSE
   )
-  .write_constructor_modkit_rows(rows, file = file)
 }
 
 .write_constructor_modkit_rows <- function(rows,
@@ -56,6 +56,17 @@ library(GenomicRanges)
     row.names = FALSE, col.names = FALSE
   )
   file
+}
+
+.write_constructor_modkit <- function(file = tempfile(fileext = ".bed")) {
+  rows <- rbind(
+    .constructor_modkit_row(),
+    .constructor_modkit_row(
+      start = 199L, fraction_modified = 25,
+      n_mod = 5L, n_canonical = 14L, n_other_mod = 1L
+    )
+  )
+  .write_constructor_modkit_rows(rows, file = file)
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -650,12 +661,11 @@ test_that(
   ),
   {
     f <- tempfile(fileext = ".bed")
-    row <- paste(
-      "chr_sim", 99L, 100L, "a,GATC,1", 0L, "+",
-      99L, 100L, "0,0,0", 20L, 50, 10L, 10L, 0L, 0L, 0L, 0L, 0L,
-      sep = "\t"
+    row <- .constructor_modkit_row()
+    write.table(rbind(row, row),
+      file = f, sep = "\t", quote = FALSE,
+      row.names = FALSE, col.names = FALSE
     )
-    writeLines(c(row, row), f)
 
     expect_error(
       commaData(
@@ -715,6 +725,32 @@ test_that(
     )
   }
 )
+
+test_that("commaData() treats missing and explicit motifs as distinct sites", {
+  f <- tempfile(fileext = ".bed")
+  rows <- rbind(
+    .constructor_modkit_row(mod_code = "a"),
+    .constructor_modkit_row(mod_code = "a,GATC,1", fraction_modified = 25)
+  )
+  write.table(rows,
+    file = f, sep = "\t", quote = FALSE,
+    row.names = FALSE, col.names = FALSE
+  )
+
+  obj <- suppressMessages(commaData(
+    files = c(s1 = f),
+    colData = data.frame(
+      sample_name = "s1", condition = "control", replicate = 1L,
+      stringsAsFactors = FALSE
+    ),
+    genome = c(chr_sim = 100000L),
+    caller = "modkit"
+  ))
+
+  expect_equal(nrow(obj), 2L)
+  expect_true(any(is.na(mcols(rowRanges(obj))$motif)))
+  expect_true(any(mcols(rowRanges(obj))$motif == "GATC", na.rm = TRUE))
+})
 
 test_that(
   "commaData() errors clearly when data chromosomes are absent from genome",
