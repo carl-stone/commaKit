@@ -220,13 +220,15 @@ cd_dm
 `diffMethyl()` keeps `method = "methylkit"` as the default for compatibility
 with established methylKit workflows and its logistic-regression conventions.
 This is a sensible choice when you already use methylKit elsewhere or want
-results that follow methylKit's handling of differential methylation.
+results that use methylKit's differential methylation model. commaKit still
+stores methylKit raw p-values as `dm_pvalue`, computes `dm_padj` with its
+genome-wide adjustment across the full `diffMethyl()` call, and keeps methylKit
+q-values separately as `dm_methylkit_qvalue`.
 
 `method = "quasi_f"` is a good general-purpose alternative for bacterial
 methylomes. It uses a quasibinomial model with empirical Bayes dispersion
-shrinkage, keeps multiple-testing correction inside commaKit, and can be a
-practical first alternative when methylKit convergence warnings,
-zero-variance sites, or runtime become distracting.
+shrinkage and can be a practical first alternative when methylKit convergence
+warnings, zero-variance sites, or runtime become distracting.
 
 `method = "limma"` uses limma's empirical-Bayes linear model on M-values. It is
 most useful when you want a familiar limma workflow on complete data, especially
