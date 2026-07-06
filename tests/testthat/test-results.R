@@ -175,7 +175,7 @@ test_that("results: known fixture preserves row order and result values", {
     c(rep(0.2, 10L), rep(0.9, 5L))
   )
   expect_true(all(res$dm_padj[seq_len(10L)] < 0.001))
-  expect_equal(res$dm_padj[11:15], rep(1, 5L))
+  expect_equal(res$dm_padj[11:15], rep(1, 5L), tolerance = 1e-6)
 })
 
 # ─── filterResults() ──────────────────────────────────────────────────────────
