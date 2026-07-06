@@ -290,6 +290,39 @@ test_that("writeBED: failed final move does not leave a temporary BED file", {
   expect_length(temp_leftovers, 0L)
 })
 
+test_that(
+  paste(
+    "writeBED: empty output cleans up temporary BED file after",
+    "move failure"
+  ),
+  {
+    obj <- .make_bed_data()
+    m <- methylation(obj)
+    m[, "samp1"] <- NA_real_
+    SummarizedExperiment::assay(obj, "methylation") <- m
+
+    parent <- tempfile("writebed-parent-")
+    dir.create(parent)
+    on.exit(unlink(parent, recursive = TRUE), add = TRUE)
+
+    target <- file.path(parent, "target.bed")
+    dir.create(target)
+
+    expect_error(
+      suppressWarnings(writeBED(obj, file = target, sample = "samp1")),
+      "Failed to move temporary BED file into place"
+    )
+
+    expect_true(dir.exists(target))
+    temp_leftovers <- list.files(
+      parent,
+      pattern = "^target\\.bed\\.tmp-",
+      all.files = TRUE
+    )
+    expect_length(temp_leftovers, 0L)
+  }
+)
+
 # ─── mod_type filtering ───────────────────────────────────────────────────────
 
 test_that("writeBED: mod_type filtering writes only matching sites", {
@@ -298,32 +331,32 @@ test_that("writeBED: mod_type filtering writes only matching sites", {
   on.exit(unlink(f))
   writeBED(comma_example_data, file = f, sample = "ctrl_1", mod_type = "6mA")
   lines <- readLines(f)[-1]
-  n_6mA <- sum(!is.na(
+  n_6ma <- sum(!is.na(
     methylation(comma_example_data)[
       siteInfo(comma_example_data)$mod_type == "6mA", "ctrl_1"
     ]
   ))
-  expect_equal(length(lines), n_6mA)
+  expect_equal(length(lines), n_6ma)
 })
 
 test_that("writeBED: mod_type=NULL writes all sites", {
   data(comma_example_data)
   f_all <- tempfile(fileext = ".bed")
-  f_6mA <- tempfile(fileext = ".bed")
+  f_6ma <- tempfile(fileext = ".bed")
   on.exit({
     unlink(f_all)
-    unlink(f_6mA)
+    unlink(f_6ma)
   })
   writeBED(comma_example_data, file = f_all, sample = "ctrl_1")
   writeBED(
     comma_example_data,
-    file = f_6mA,
+    file = f_6ma,
     sample = "ctrl_1",
     mod_type = "6mA"
   )
   n_all <- length(readLines(f_all)) - 1L # subtract header
-  n_6mA <- length(readLines(f_6mA)) - 1L
-  expect_gt(n_all, n_6mA)
+  n_6ma <- length(readLines(f_6ma)) - 1L
+  expect_gt(n_all, n_6ma)
 })
 
 # ─── Error handling ───────────────────────────────────────────────────────────
