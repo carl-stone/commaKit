@@ -33,6 +33,21 @@ specific base modification, usually with probability or count support.
 Modified-base calls become commaKit site evidence only after they map to
 reference sites. *Avoid*: site
 
+**commaKit adjusted p-value**: The backend-independent
+multiple-testing-adjusted p-value reported by commaKit for a
+[`diffMethyl()`](https://carl-stone.github.io/commaKit/reference/diffMethyl.md)
+result. It belongs to the full testing family defined by the commaKit
+analysis call, not to a backend-specific correction statistic. *Avoid*:
+q-value, backend q-value, methylKit qvalue
+
+**backend differential statistic**: A statistic produced by a
+differential methylation backend that commaKit may preserve as
+backend-specific evidence. Backend differential statistics use
+backend-specific result columns, such as `dm_methylkit_qvalue`, and do
+not define commaKit’s shared result columns unless explicitly promoted
+by the commaKit contract. *Avoid*: commaKit result column, canonical
+adjusted p-value
+
 **durable knowledge**: Repository documentation that future agents or
 maintainers use as current project memory, including `dev/knowledge/`,
 `CONTEXT.md`, and ADRs. Durable knowledge should change in the same

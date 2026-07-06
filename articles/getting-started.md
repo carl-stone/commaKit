@@ -311,14 +311,17 @@ cd_dm
 keeps `method = "methylkit"` as the default for compatibility with
 established methylKit workflows and its logistic-regression conventions.
 This is a sensible choice when you already use methylKit elsewhere or
-want results that follow methylKit’s handling of differential
-methylation.
+want results that use methylKit’s differential methylation model.
+commaKit still stores methylKit raw p-values as `dm_pvalue`, computes
+`dm_padj` with its genome-wide adjustment across the full
+[`diffMethyl()`](https://carl-stone.github.io/commaKit/reference/diffMethyl.md)
+call, and keeps methylKit q-values separately as `dm_methylkit_qvalue`.
 
 `method = "quasi_f"` is a good general-purpose alternative for bacterial
 methylomes. It uses a quasibinomial model with empirical Bayes
-dispersion shrinkage, keeps multiple-testing correction inside commaKit,
-and can be a practical first alternative when methylKit convergence
-warnings, zero-variance sites, or runtime become distracting.
+dispersion shrinkage and can be a practical first alternative when
+methylKit convergence warnings, zero-variance sites, or runtime become
+distracting.
 
 `method = "limma"` uses limma’s empirical-Bayes linear model on
 M-values. It is most useful when you want a familiar limma workflow on
@@ -330,8 +333,9 @@ Extract the results as a tidy data frame:
 
 ``` r
 
-resultLayers(cd_dm)
-#> DataFrame with 1 row and 18 columns
+layers <- resultLayers(cd_dm)
+layers[, setdiff(colnames(layers), "timestamp")]
+#> DataFrame with 1 row and 17 columns
 #>          name        role                   type      source is_default
 #>   <character> <character>            <character> <character>  <logical>
 #> 1  diffMethyl  diffMethyl differential_methyla..  diffMethyl       TRUE
@@ -341,9 +345,9 @@ resultLayers(cd_dm)
 #>          mod_type           motif p_adjust_method min_coverage     alpha
 #>   <CharacterList> <CharacterList>     <character>    <integer> <numeric>
 #> 1             6mA                              BH            5       0.5
-#>                           result_cols              timestamp package_version
-#>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-03 18:12:30 ..           0.2.0
+#>                                 result_cols package_version
+#>                             <CharacterList>     <character>
+#> 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,...           0.2.0
 res <- results(cd_dm)
 # Top sites by adjusted p-value
 head(res[

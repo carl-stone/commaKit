@@ -32,21 +32,6 @@ when `method = "methylkit"`.
 
   Integer matrix (sites × samples) of read depths.
 
-- mod_counts_mat:
-
-  Optional integer matrix of observed modified-read counts. If supplied,
-  these counts are preferred over reconstructing from beta values.
-
-- canonical_counts_mat:
-
-  Optional integer matrix of observed canonical-read counts.
-
-- other_mod_counts_mat:
-
-  Optional integer matrix of observed non-target modified-read counts.
-  When present with `canonical_counts_mat`, these counts are included in
-  the non-target denominator so it matches coverage.
-
 - site_df:
 
   Data frame with columns `chrom`, `position`, `strand`, `mod_type`,
@@ -70,11 +55,28 @@ when `method = "methylkit"`.
   Optional precomputed design information from
   [`.resolveDiffMethylDesign()`](https://carl-stone.github.io/commaKit/reference/dot-resolveDiffMethylDesign.md).
 
+- mod_counts_mat:
+
+  Optional integer matrix of observed modified-read counts. If supplied,
+  these counts are preferred over reconstructing from beta values.
+
+- canonical_counts_mat:
+
+  Optional integer matrix of observed canonical-read counts.
+
+- other_mod_counts_mat:
+
+  Optional integer matrix of observed non-target modified-read counts.
+  When present with `canonical_counts_mat`, these counts are included in
+  the non-target denominator so it matches coverage.
+
 ## Value
 
-A `data.frame` with the same columns as `.betaBinomialTest()`: `pvalue`,
-`delta_beta`, and one `mean_beta_<level>` column per condition level.
-Row names are site keys.
+A `data.frame` with the same columns as other differential methylation
+backends: `pvalue`, `delta_beta`, and one `mean_beta_<level>` column per
+condition level. The methylKit-specific `qvalue` column is preserved for
+callers that want backend-specific evidence in addition to commaKit's
+adjusted p-values. Row names are site keys.
 
 ## Details
 

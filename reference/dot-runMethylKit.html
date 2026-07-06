@@ -78,23 +78,6 @@ methylation. Called by <code><a href="diffMethyl.html">diffMethyl</a></code> whe
 <dd><p>Integer matrix (sites × samples) of read depths.</p></dd>
 
 
-<dt id="arg-mod-counts-mat">mod_counts_mat<a class="anchor" aria-label="anchor" href="#arg-mod-counts-mat"></a></dt>
-<dd><p>Optional integer matrix of observed modified-read
-counts. If supplied, these counts are preferred over reconstructing from
-beta values.</p></dd>
-
-
-<dt id="arg-canonical-counts-mat">canonical_counts_mat<a class="anchor" aria-label="anchor" href="#arg-canonical-counts-mat"></a></dt>
-<dd><p>Optional integer matrix of observed
-canonical-read counts.</p></dd>
-
-
-<dt id="arg-other-mod-counts-mat">other_mod_counts_mat<a class="anchor" aria-label="anchor" href="#arg-other-mod-counts-mat"></a></dt>
-<dd><p>Optional integer matrix of observed non-target
-modified-read counts. When present with <code>canonical_counts_mat</code>, these
-counts are included in the non-target denominator so it matches coverage.</p></dd>
-
-
 <dt id="arg-site-df">site_df<a class="anchor" aria-label="anchor" href="#arg-site-df"></a></dt>
 <dd><p>Data frame with columns <code>chrom</code>, <code>position</code>,
 <code>strand</code>, <code>mod_type</code>, <code>motif</code> — one row per site.</p></dd>
@@ -117,12 +100,32 @@ RHS variable in <code>formula</code>.</p></dd>
 <dd><p>Optional precomputed design information from
 <code><a href="dot-resolveDiffMethylDesign.html">.resolveDiffMethylDesign()</a></code>.</p></dd>
 
+
+<dt id="arg-mod-counts-mat">mod_counts_mat<a class="anchor" aria-label="anchor" href="#arg-mod-counts-mat"></a></dt>
+<dd><p>Optional integer matrix of observed modified-read
+counts. If supplied, these counts are preferred over reconstructing from
+beta values.</p></dd>
+
+
+<dt id="arg-canonical-counts-mat">canonical_counts_mat<a class="anchor" aria-label="anchor" href="#arg-canonical-counts-mat"></a></dt>
+<dd><p>Optional integer matrix of observed
+canonical-read counts.</p></dd>
+
+
+<dt id="arg-other-mod-counts-mat">other_mod_counts_mat<a class="anchor" aria-label="anchor" href="#arg-other-mod-counts-mat"></a></dt>
+<dd><p>Optional integer matrix of observed non-target
+modified-read counts. When present with <code>canonical_counts_mat</code>, these
+counts are included in the non-target denominator so it matches coverage.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>data.frame</code> with the same columns as <code>.betaBinomialTest()</code>:
-<code>pvalue</code>, <code>delta_beta</code>, and one <code>mean_beta_&lt;level&gt;</code> column
-per condition level. Row names are site keys.</p>
+    <p>A <code>data.frame</code> with the same columns as
+other differential methylation backends: <code>pvalue</code>,
+<code>delta_beta</code>, and one <code>mean_beta_&lt;level&gt;</code> column per condition
+level. The methylKit-specific <code>qvalue</code> column is preserved for callers
+that want backend-specific evidence in addition to commaKit's adjusted
+p-values. Row names are site keys.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

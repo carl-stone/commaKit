@@ -62,8 +62,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-2-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-2-0"></a></h3>
-<ul><li>
-<code>diffMethyl(method = "methylkit")</code> no longer crashes with “object of type ‘closure’ is not subsettable” when a modification context contains sites where all samples have zero coverage after filtering. <code><a href="https://rdrr.io/pkg/methylKit/man/unite-methods.html" class="external-link">methylKit::unite()</a></code> retains such sites in the united object; <code>calculateDiffMeth()</code> then calls <code>glm.fit</code> with all-zero weights and all-NaN response, which crashes. The wrapper now filters those sites out before calling <code>calculateDiffMeth</code> and assigns them <code>p = 1</code> (consistent with the null hypothesis). Regression test added.</li>
+<ul><li><p><code>diffMethyl(method = "methylkit")</code> now keeps commaKit’s <code>dm_padj</code> semantics backend-independent. methylKit raw p-values feed <code>dm_pvalue</code>, commaKit computes <code>dm_padj</code> with the requested genome-wide adjustment method, and methylKit q-values are preserved separately as <code>dm_methylkit_qvalue</code> only on methylKit result layers.</p></li>
+<li><p><code>diffMethyl(method = "methylkit")</code> no longer crashes with “object of type ‘closure’ is not subsettable” when a modification context contains sites where all samples have zero coverage after filtering. <code><a href="https://rdrr.io/pkg/methylKit/man/unite-methods.html" class="external-link">methylKit::unite()</a></code> retains such sites in the united object; <code>calculateDiffMeth()</code> then calls <code>glm.fit</code> with all-zero weights and all-NaN response, which crashes. The wrapper now filters those sites out before calling <code>calculateDiffMeth</code> and assigns them <code>p = 1</code> (consistent with the null hypothesis). Regression test added.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="package-improvements-0-2-0">Package improvements<a class="anchor" aria-label="anchor" href="#package-improvements-0-2-0"></a></h3>

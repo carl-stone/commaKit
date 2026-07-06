@@ -62,10 +62,11 @@ diffMethyl(
   Character string selecting the statistical backend. `"methylkit"`
   (default) wraps
   [`methylKit::calculateDiffMeth()`](https://rdrr.io/pkg/methylKit/man/calculateDiffMeth-methods.html)
-  with logistic regression and SLIM p-value correction; robust for small
-  n and produces calibrated relative p-values suitable for downstream
-  filtering. Requires methylKit (Bioconductor). `"quasi_f"` applies
-  empirical Bayes shrinkage of quasibinomial dispersions via
+  with logistic regression. The raw methylKit p-value feeds `dm_pvalue`;
+  `dm_padj` is computed by commaKit using `p_adjust_method`; methylKit
+  q-values are preserved separately as `dm_methylkit_qvalue`. Requires
+  methylKit (Bioconductor). `"quasi_f"` applies empirical Bayes
+  shrinkage of quasibinomial dispersions via
   [`squeezeVar`](https://rdrr.io/pkg/limma/man/squeezeVar.html)
   (quasi-likelihood F-test; count-data EB), making it a good
   general-purpose alternative for bacterial methylomes. Requires limma.
@@ -150,17 +151,21 @@ diffMethyl(
 
 The input `commaData` object with additional columns in `rowData`:
 `dm_pvalue`, `dm_padj`, `dm_delta_beta`, and one
-`dm_mean_beta_<condition>` column per condition level. The `metadata`
-slot is updated with analysis parameters, result column names, and a
-named result layer registry.
+`dm_mean_beta_<condition>` column per condition level. The methylKit
+backend also adds `dm_methylkit_qvalue`. The `metadata` slot is updated
+with analysis parameters, result column names, and a named result layer
+registry.
 
 ## Details
 
 **Default method (`method = "methylkit"`):** Wraps
 [`methylKit::calculateDiffMeth()`](https://rdrr.io/pkg/methylKit/man/calculateDiffMeth-methods.html),
-which uses logistic regression with SLIM p-value correction. Robust for
-small n, produces calibrated relative p-values suitable for downstream
-filtering. Requires methylKit (`BiocManager::install("methylKit")`).
+which uses logistic regression and returns raw p-values plus
+methylKit-specific q-values. commaKit stores the raw methylKit p-value
+as `dm_pvalue`, computes `dm_padj` with the selected `p_adjust_method`
+across the full `diffMethyl()` testing family, and preserves methylKit
+q-values separately as `dm_methylkit_qvalue`. Requires methylKit
+(`BiocManager::install("methylKit")`).
 
 **Alternative model (`method = "quasi_f"`):** A per-site quasibinomial
 GLM with empirical Bayes shrinkage of dispersion estimates, analogous to
@@ -220,6 +225,11 @@ extremely low statistical power. Treat such results as exploratory only.
 
   Adjusted p-value (Benjamini-Hochberg by default).
 
+- `dm_methylkit_qvalue`:
+
+  methylKit q-value, present only for result layers produced with
+  `method = "methylkit"`.
+
 - `dm_delta_beta`:
 
   Effect size: mean methylation in the treatment group minus mean
@@ -253,7 +263,7 @@ to filter by significance thresholds.
 ``` r
 data(comma_example_data)
 # Test for differential 6mA methylation between conditions
-dm <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
 #> diffMethyl: testing 'condition' -- 'treatment' vs 'control' (reference)
 #> methylKit: comparing 'treatment' (treatment) vs 'control' (reference/control)
 #> uniting...

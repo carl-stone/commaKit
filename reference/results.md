@@ -109,6 +109,11 @@ A `data.frame` with one row per methylation site, containing:
 
   Adjusted p-value (Benjamini-Hochberg by default).
 
+- `dm_methylkit_qvalue`:
+
+  methylKit q-value, present only when extracting a result layer
+  produced by `method = "methylkit"`.
+
 - `dm_delta_beta`:
 
   Effect size: mean methylation in the treatment group minus mean
@@ -131,7 +136,7 @@ are also included.
 
 ``` r
 data(comma_example_data)
-dm <- diffMethyl(comma_example_data, formula = ~ condition, mod_type = "6mA")
+dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
 #> diffMethyl: testing 'condition' -- 'treatment' vs 'control' (reference)
 #> methylKit: comparing 'treatment' (treatment) vs 'control' (reference/control)
 #> uniting...
@@ -144,18 +149,18 @@ head(res[order(res$dm_padj), ])
 #> 249 chr_sim    61440      +      6mA  GATC    TRUE    6mA_GATC
 #> 347 chr_sim    86016      +      6mA  GATC    TRUE    6mA_GATC
 #> 9   chr_sim     2180      -      6mA  GATC    TRUE    6mA_GATC
-#>                     site_key    dm_pvalue      dm_padj dm_delta_beta
-#> 196 chr_sim:50176:-:6mA:GATC 4.705226e-78 1.849154e-75    -0.7336497
-#> 287 chr_sim:70003:-:6mA:GATC 1.982943e-70 3.896483e-68    -0.7050844
-#> 260 chr_sim:63550:+:6mA:GATC 3.822058e-68 5.006897e-66    -0.7799241
-#> 249 chr_sim:61440:+:6mA:GATC 1.199352e-66 1.178364e-64    -0.7090099
-#> 347 chr_sim:86016:+:6mA:GATC 4.658449e-64 3.661541e-62    -0.6743832
-#> 9    chr_sim:2180:-:6mA:GATC 6.144202e-62 4.024452e-60    -0.7543758
-#>     dm_mean_beta_control dm_mean_beta_treatment
-#> 196            0.8939269             0.16027720
-#> 287            0.8734775             0.16839309
-#> 260            0.8661683             0.08624415
-#> 249            0.9070218             0.19801189
-#> 347            0.8716203             0.19723706
-#> 9              0.9464297             0.19205391
+#>                     site_key    dm_pvalue      dm_padj dm_methylkit_qvalue
+#> 196 chr_sim:50176:-:6mA:GATC 4.705226e-78 1.849154e-75        1.259194e-75
+#> 287 chr_sim:70003:-:6mA:GATC 1.982943e-70 3.896483e-68        2.653338e-68
+#> 260 chr_sim:63550:+:6mA:GATC 3.822058e-68 5.006897e-66        3.409482e-66
+#> 249 chr_sim:61440:+:6mA:GATC 1.199352e-66 1.178364e-64        8.024152e-65
+#> 347 chr_sim:86016:+:6mA:GATC 4.658449e-64 3.661541e-62        2.493352e-62
+#> 9    chr_sim:2180:-:6mA:GATC 6.144202e-62 4.024452e-60        2.740479e-60
+#>     dm_delta_beta dm_mean_beta_control dm_mean_beta_treatment
+#> 196    -0.7336497            0.8939269             0.16027720
+#> 287    -0.7050844            0.8734775             0.16839309
+#> 260    -0.7799241            0.8661683             0.08624415
+#> 249    -0.7090099            0.9070218             0.19801189
+#> 347    -0.6743832            0.8716203             0.19723706
+#> 9      -0.7543758            0.9464297             0.19205391
 ```

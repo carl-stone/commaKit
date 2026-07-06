@@ -109,9 +109,10 @@ minus the reference level.</p></dd>
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>Character string selecting the statistical backend.
 <code>"methylkit"</code> (default) wraps <code><a href="https://rdrr.io/pkg/methylKit/man/calculateDiffMeth-methods.html" class="external-link">methylKit::calculateDiffMeth()</a></code>
-with logistic regression and SLIM p-value correction; robust for small n
-and produces calibrated relative p-values suitable for downstream
-filtering. Requires <span class="pkg">methylKit</span> (Bioconductor).
+with logistic regression. The raw methylKit p-value feeds
+<code>dm_pvalue</code>; <code>dm_padj</code> is computed by commaKit using
+<code>p_adjust_method</code>; methylKit q-values are preserved separately as
+<code>dm_methylkit_qvalue</code>. Requires <span class="pkg">methylKit</span> (Bioconductor).
 <code>"quasi_f"</code> applies empirical Bayes shrinkage of quasibinomial
 dispersions via <code><a href="https://rdrr.io/pkg/limma/man/squeezeVar.html" class="external-link">squeezeVar</a></code> (quasi-likelihood F-test;
 count-data EB), making it a good general-purpose alternative for bacterial
@@ -156,7 +157,8 @@ this threshold are treated as <code>NA</code> in that sample. Default <code>5L</
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
 <dd><p>Positive numeric pseudocount used to compute M-values when
 <code>method = "limma"</code>:
-\(M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))\).
+\(M = \log_2((n_{\mathrm{mod}} + \alpha) /
+(n_{\mathrm{unmod}} + \alpha))\).
 Default <code>0.5</code> (a Beta(0.5, 0.5) prior). Ignored for other methods.</p></dd>
 
 
@@ -197,6 +199,7 @@ becomes the default used by <code><a href="results.html">results()</a></code> an
     <p>The input <code>commaData</code> object with additional columns in
 <code>rowData</code>: <code>dm_pvalue</code>, <code>dm_padj</code>, <code>dm_delta_beta</code>,
 and one <code>dm_mean_beta_&lt;condition&gt;</code> column per condition level. The
+methylKit backend also adds <code>dm_methylkit_qvalue</code>. The
 <code>metadata</code> slot is updated with analysis parameters, result column
 names, and a named result layer registry.</p>
     </div>
@@ -204,8 +207,11 @@ names, and a named result layer registry.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><strong>Default method (<code>method = "methylkit"</code>):</strong>
 Wraps <code><a href="https://rdrr.io/pkg/methylKit/man/calculateDiffMeth-methods.html" class="external-link">methylKit::calculateDiffMeth()</a></code>, which uses logistic regression
-with SLIM p-value correction. Robust for small n, produces calibrated
-relative p-values suitable for downstream filtering. Requires <span class="pkg">methylKit</span>
+and returns raw p-values plus methylKit-specific q-values. commaKit stores
+the raw methylKit p-value as <code>dm_pvalue</code>, computes <code>dm_padj</code> with
+the selected <code>p_adjust_method</code> across the full <code>diffMethyl()</code>
+testing family, and preserves methylKit q-values separately as
+<code>dm_methylkit_qvalue</code>. Requires <span class="pkg">methylKit</span>
 (<code>BiocManager::install("methylKit")</code>).</p>
 <p><strong>Alternative model (<code>method = "quasi_f"</code>):</strong>
 A per-site quasibinomial GLM with empirical Bayes shrinkage of dispersion
@@ -217,7 +223,8 @@ are evaluated against a t-distribution with \(d_0 + df_j\) degrees of
 freedom. Requires <span class="pkg">limma</span>.</p>
 <p><strong>Alternative model (<code>method = "limma"</code>):</strong>
 Beta values are transformed to M-values via
-\(M = \log_2((n_{\mathrm{mod}} + \alpha) / (n_{\mathrm{unmod}} + \alpha))\),
+\(M = \log_2((n_{\mathrm{mod}} + \alpha) /
+  (n_{\mathrm{unmod}} + \alpha))\),
 then <code><a href="https://rdrr.io/pkg/limma/man/lmFit.html" class="external-link">lmFit</a></code> fits an OLS model per site and
 <code><a href="https://rdrr.io/pkg/limma/man/ebayes.html" class="external-link">eBayes</a></code> applies empirical Bayes variance shrinkage,
 borrowing information across all sites to stabilize the per-site variance
@@ -230,10 +237,11 @@ established <span class="pkg">methylKit</span> workflows or need results that cl
 methylKit's logistic-regression conventions. Use <code>"quasi_f"</code> as a
 good general-purpose alternative for bacterial methylomes when you want a
 count-aware model with empirical Bayes dispersion shrinkage and genome-wide
-multiple-testing correction handled entirely inside <span class="pkg">commaKit</span>. It is often
-a good first alternative if methylKit convergence warnings, zero-variance
-sites, or runtime become distracting. Use <code>"limma"</code> when you want the
-familiar <span class="pkg">limma</span> empirical-Bayes linear-model workflow on M-values,
+multiple-testing correction handled entirely inside <span class="pkg">commaKit</span>. It is
+often a good first alternative if methylKit convergence warnings,
+zero-variance sites, or runtime become distracting. Use <code>"limma"</code> when
+you want the familiar <span class="pkg">limma</span> empirical-Bayes linear-model workflow on
+M-values,
 especially for complete datasets with few replicates per group. All three
 backends report <code>dm_delta_beta</code> on the original beta scale, so effect
 sizes remain comparable even when p-values differ.</p>
@@ -253,6 +261,10 @@ extremely low statistical power. Treat such results as exploratory only.</p>
 
 <dt><code>dm_padj</code></dt>
 <dd><p>Adjusted p-value (Benjamini-Hochberg by default).</p></dd>
+
+<dt><code>dm_methylkit_qvalue</code></dt>
+<dd><p>methylKit q-value, present only for
+result layers produced with <code>method = "methylkit"</code>.</p></dd>
 
 <dt><code>dm_delta_beta</code></dt>
 <dd><p>Effect size: mean methylation in the treatment
@@ -285,7 +297,7 @@ thresholds.</p></div>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># Test for differential 6mA methylation between conditions</span></span></span>
-<span class="r-in"><span><span class="va">dm</span> <span class="op">&lt;-</span> <span class="fu">diffMethyl</span><span class="op">(</span><span class="va">comma_example_data</span>, formula <span class="op">=</span> <span class="op">~</span> <span class="va">condition</span>, mod_type <span class="op">=</span> <span class="st">"6mA"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dm</span> <span class="op">&lt;-</span> <span class="fu">diffMethyl</span><span class="op">(</span><span class="va">comma_example_data</span>, formula <span class="op">=</span> <span class="op">~</span><span class="va">condition</span>, mod_type <span class="op">=</span> <span class="st">"6mA"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> diffMethyl: testing 'condition' -- 'treatment' vs 'control' (reference)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> methylKit: comparing 'treatment' (treatment) vs 'control' (reference/control)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> uniting...</span>
