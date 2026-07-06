@@ -68,13 +68,34 @@ test_that(
   }
 )
 
-test_that("plot_methylation_distribution: mod_type filter returns ggplot", {
+test_that("plot_methylation_distribution: mod_type filter keeps exact sites", {
   obj <- .make_dist_data_two_mods()
-  p_unfiltered <- plot_methylation_distribution(obj)
   p <- plot_methylation_distribution(obj, mod_type = "6mA")
+
+  filtered <- filterSites(obj, mod_type = "6mA")
+  methyl_mat <- methylation(filtered)
+  site_info <- siteInfo(filtered)
+  sample_names <- colnames(methyl_mat)
+  expected <- data.frame(
+    beta = as.vector(methyl_mat),
+    sample_name = rep(sample_names, each = nrow(methyl_mat)),
+    mod_type = rep(site_info$mod_type, times = length(sample_names)),
+    stringsAsFactors = FALSE
+  )
+  sample_info <- sampleInfo(filtered)
+  sample_info_sub <- sample_info[
+    ,
+    intersect(c("sample_name", "condition"), colnames(sample_info)),
+    drop = FALSE
+  ]
+  expected <- merge(expected, sample_info_sub,
+    by = "sample_name",
+    all.x = TRUE
+  )
+
   expect_s3_class(p, "ggplot")
-  # Filtered data has fewer rows than unfiltered (filters to one mod_type)
-  expect_lt(nrow(p$data), nrow(p_unfiltered$data))
+  expect_equal(p$data, expected)
+  expect_equal(unique(as.character(p$data$mod_type)), "6mA")
 })
 
 # ─── Faceting ─────────────────────────────────────────────────────────────────
