@@ -231,10 +231,11 @@ setMethod(
   "commaData",
   function(x, shift = 0L, width = NULL, weight = 1L, ...) {
     dots <- list(...)
-    if (!identical(shift, 0L) ||
-          !is.null(width) ||
-          !identical(weight, 1L) ||
-          length(dots) > 0L) {
+    has_iranges_args <- !identical(shift, 0L)
+    has_iranges_args <- has_iranges_args || !is.null(width)
+    has_iranges_args <- has_iranges_args || !identical(weight, 1L)
+    has_iranges_args <- has_iranges_args || length(dots) > 0L
+    if (has_iranges_args) {
       stop(
         "coverage() for commaData objects is deprecated and does not ",
         "support IRanges::coverage arguments such as 'shift', 'width', ",
@@ -322,8 +323,12 @@ setMethod("siteInfo", "commaData", function(object) {
     row.names   = NULL
   )
   # Add computed mod_context column if not already present
-  if (!"mod_context" %in% colnames(df) &&
-        "mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
+  can_compute_mod_context <- !"mod_context" %in% colnames(df)
+  can_compute_mod_context <- can_compute_mod_context &&
+    "mod_type" %in% colnames(mc)
+  can_compute_mod_context <- can_compute_mod_context &&
+    "motif" %in% colnames(mc)
+  if (can_compute_mod_context) {
     df$mod_context <- .computeModContext(mc$mod_type, mc$motif)
   }
   # Add computed site_key column for human readability (not used for matching).
