@@ -52,7 +52,8 @@ NULL
 #'       for positive-coverage rows; 0 for zero-coverage rows.}
 #'     \item{\code{coverage}}{Total read depth at this site (integer).}
 #'     \item{\code{mod_counts}}{Observed reads called as this modification.}
-#'     \item{\code{canonical_counts}}{Observed reads called canonical/unmodified.}
+#'     \item{\code{canonical_counts}}{Observed reads called
+#'       canonical/unmodified.}
 #'     \item{\code{other_mod_counts}}{Observed reads called as a non-target
 #'       modification. Together, \code{mod_counts + canonical_counts +
 #'       other_mod_counts} is the modkit \code{Nvalid_cov} denominator used for
@@ -216,7 +217,3 @@ NULL
     stringsAsFactors = FALSE
   )
 }
-
-
-# Backward-compatible internal alias for older tests/code paths.
-.emptyModkitResult <- .emptyParseResult
