@@ -1,7 +1,6 @@
-# Validate and coerce genome input to a named integer vector of chromosome sizes
+# Validate and coerce genome input to a named integer vector
 
-Validate and coerce genome input to a named integer vector of chromosome
-sizes
+Validate and coerce genome input to a named integer vector
 
 ## Usage
 

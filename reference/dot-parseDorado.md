@@ -88,7 +88,7 @@ The function reads the BAM using
 processes the MM/ML tags from each aligned read. The MM tag encodes
 which bases carry modifications and their positions within the read
 sequence (as inter-base offsets); the parallel ML tag provides
-modification probabilities (0–255 scaled to 0–1).
+modification probabilities (0-255 scaled to 0-1).
 
 A base is called modified when its ML probability is \\\> 0.5\\.
 Per-site statistics are aggregated by counting modified reads
@@ -100,6 +100,21 @@ CIGAR operations are used to map read positions to reference
 coordinates. Soft-clipped (`S`) and hard-clipped (`H`) bases are
 excluded; insertions (`I`) consume read positions without advancing the
 reference.
+
+Two kinds of information loss can occur and should be distinguished:
+
+- Read-level skips:
+
+  An entire read is skipped when its CIGAR string is malformed or its
+  MM/ML tags are missing or truncated. No modified-base calls from that
+  read contribute to any site.
+
+- Call-level drops:
+
+  Individual modified-base calls whose read positions cannot be mapped
+  to reference sites (inserted or soft-clipped positions) are dropped
+  before site aggregation. The rest of the read is still used; only the
+  unmappable call is discarded.
 
 **Recommended workflow:** For most users, it is simpler to first run
 `modkit pileup` on the Dorado BAM, then load the resulting BED file with

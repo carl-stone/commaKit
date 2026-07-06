@@ -85,7 +85,7 @@ data(comma_example_data)
 
 # Compute M-values for all modification types
 m <- mValues(comma_example_data)
-dim(m)          # same as dim(methylation(comma_example_data))
+dim(m) # same as dim(methylation(comma_example_data))
 #> [1] 588   6
 range(m, na.rm = TRUE)
 #> [1] -4.523562  7.851749

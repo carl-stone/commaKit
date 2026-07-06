@@ -70,13 +70,13 @@ calling this function.
 
 ``` r
 data(comma_example_data)
-cd_dm <- diffMethyl(comma_example_data, ~ condition)
+cd_dm <- diffMethyl(comma_example_data, ~condition)
 #> diffMethyl: testing 'condition' -- 'treatment' vs 'control' (reference)
 #> methylKit: comparing 'treatment' (treatment) vs 'control' (reference/control)
 #> uniting...
 #> methylKit: comparing 'treatment' (treatment) vs 'control' (reference/control)
 #> uniting...
-res   <- results(cd_dm)
+res <- results(cd_dm)
 plot_heatmap(res, cd_dm)
 
 

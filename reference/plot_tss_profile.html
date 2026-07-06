@@ -209,8 +209,10 @@ so the plot still renders.</p>
 <span class="r-plt img"><img src="plot_tss_profile-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Colour by modification type, facet by sample</span></span></span>
-<span class="r-in"><span><span class="fu">plot_tss_profile</span><span class="op">(</span><span class="va">comma_example_data</span>, feature_type <span class="op">=</span> <span class="st">"gene"</span>,</span></span>
-<span class="r-in"><span>                 color_by <span class="op">=</span> <span class="st">"mod_type"</span>, facet_by <span class="op">=</span> <span class="st">"sample"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plot_tss_profile</span><span class="op">(</span><span class="va">comma_example_data</span>,</span></span>
+<span class="r-in"><span>  feature_type <span class="op">=</span> <span class="st">"gene"</span>,</span></span>
+<span class="r-in"><span>  color_by <span class="op">=</span> <span class="st">"mod_type"</span>, facet_by <span class="op">=</span> <span class="st">"sample"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Ignoring unknown labels:</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> <span style="color: #00BB00;">colour</span> : <span style="color: #0000BB;">"Modification type"</span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>No shared levels found between `names(values)` of the manual scale and the</span>
@@ -219,8 +221,10 @@ so the plot still renders.</p>
 <span class="r-plt img"><img src="plot_tss_profile-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Overlay loess smooth</span></span></span>
-<span class="r-in"><span><span class="fu">plot_tss_profile</span><span class="op">(</span><span class="va">comma_example_data</span>, feature_type <span class="op">=</span> <span class="st">"gene"</span>,</span></span>
-<span class="r-in"><span>                 show_smooth <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plot_tss_profile</span><span class="op">(</span><span class="va">comma_example_data</span>,</span></span>
+<span class="r-in"><span>  feature_type <span class="op">=</span> <span class="st">"gene"</span>,</span></span>
+<span class="r-in"><span>  show_smooth <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>LOESS smooth for group(s) 'ctrl_1', 'ctrl_2', 'ctrl_3', 'treat_1', 'treat_2', 'treat_3' encountered numerical instability; the smooth may be unreliable. Consider adjusting smooth_span or increasing data density near this feature.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Ignoring empty aesthetic: `colour`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Removed 420 rows containing missing values or values outside the scale range</span>

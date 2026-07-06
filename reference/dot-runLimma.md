@@ -34,21 +34,6 @@ when `method = "limma"`.
 
   Integer matrix (sites × samples) of read depths.
 
-- mod_counts_mat:
-
-  Optional integer matrix of observed modified-read counts. If supplied,
-  these counts are preferred over reconstructing from beta values.
-
-- canonical_counts_mat:
-
-  Optional integer matrix of observed canonical-read counts.
-
-- other_mod_counts_mat:
-
-  Optional integer matrix of observed non-target modified-read counts.
-  When present with `canonical_counts_mat`, these counts are included in
-  the non-target denominator so it matches coverage.
-
 - site_df:
 
   Data frame with columns `chrom`, `position`, `strand`, `mod_type`,
@@ -68,14 +53,20 @@ when `method = "limma"`.
   Positive numeric pseudocount added to modified and unmodified read
   counts before log-transformation. Default `0.5`.
 
-- ref_level:
+- mod_counts_mat:
 
-  Optional reference level for the two-level contrast.
+  Optional integer matrix of observed modified-read counts. If supplied,
+  these counts are preferred over reconstructing from beta values.
 
-- design_info:
+- canonical_counts_mat:
 
-  Optional precomputed design information from
-  [`.resolveDiffMethylDesign()`](https://carl-stone.github.io/commaKit/reference/dot-resolveDiffMethylDesign.md).
+  Optional integer matrix of observed canonical-read counts.
+
+- other_mod_counts_mat:
+
+  Optional integer matrix of observed non-target modified-read counts.
+  When present with `canonical_counts_mat`, these counts are included in
+  the non-target denominator so it matches coverage.
 
 ## Value
 
@@ -102,11 +93,11 @@ containing:
 limma must be installed (it is listed in `Suggests`). If it is not
 available, this function stops with an informative message.
 
-Beta values are first transformed to M-values: \$\$M =
-\log_2\\\left(\frac{n\_{\mathrm{mod}} + \alpha}{n\_{\mathrm{unmod}} +
-\alpha}\right)\$\$ where \\\alpha\\ is a pseudocount (default 0.5).
-M-values are approximately normally distributed and homoscedastic,
-making OLS appropriate.
+Beta values are first transformed to M-values: \$\$M = \log_2\\\left(
+\frac{n\_{\mathrm{mod}} + \alpha}{n\_{\mathrm{unmod}} + \alpha}
+\right)\$\$ where \\\alpha\\ is a pseudocount (default 0.5). M-values
+are approximately normally distributed and homoscedastic, making OLS
+appropriate.
 
 A linear model is fitted across all sites simultaneously with
 [`lmFit`](https://rdrr.io/pkg/limma/man/lmFit.html).

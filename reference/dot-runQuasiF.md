@@ -34,21 +34,6 @@ when `method = "quasi_f"`.
 
   Integer matrix (sites × samples) of read depths.
 
-- mod_counts_mat:
-
-  Optional integer matrix of observed modified-read counts. If supplied,
-  these counts are preferred over reconstructing from beta values.
-
-- canonical_counts_mat:
-
-  Optional integer matrix of observed canonical-read counts.
-
-- other_mod_counts_mat:
-
-  Optional integer matrix of observed non-target modified-read counts.
-  When present with `canonical_counts_mat`, these counts are included in
-  the non-target denominator so it matches coverage.
-
 - site_df:
 
   Data frame with columns `chrom`, `position`, `strand`, `mod_type`,
@@ -63,14 +48,20 @@ when `method = "quasi_f"`.
 
   One-sided formula specifying the design (e.g., `~ condition`).
 
-- ref_level:
+- mod_counts_mat:
 
-  Optional reference level for the two-level contrast.
+  Optional integer matrix of observed modified-read counts. If supplied,
+  these counts are preferred over reconstructing from beta values.
 
-- design_info:
+- canonical_counts_mat:
 
-  Optional precomputed design information from
-  [`.resolveDiffMethylDesign()`](https://carl-stone.github.io/commaKit/reference/dot-resolveDiffMethylDesign.md).
+  Optional integer matrix of observed canonical-read counts.
+
+- other_mod_counts_mat:
+
+  Optional integer matrix of observed non-target modified-read counts.
+  When present with `canonical_counts_mat`, these counts are included in
+  the non-target denominator so it matches coverage.
 
 ## Value
 

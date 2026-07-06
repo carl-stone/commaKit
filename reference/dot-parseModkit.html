@@ -101,8 +101,9 @@ or <code>"4mC"</code> (character).</p></dd>
 information (older modkit formats).</p></dd>
 
 <dt><code>beta</code></dt>
-<dd><p>Proportion of reads called methylated, range 0–1
-(numeric).</p></dd>
+<dd><p>Proportion of reads called methylated, computed as
+<code>Nmod / Nvalid_cov</code> from authoritative count fields. Range 0-1
+for positive-coverage rows; 0 for zero-coverage rows.</p></dd>
 
 <dt><code>coverage</code></dt>
 <dd><p>Total read depth at this site (integer).</p></dd>
@@ -111,12 +112,13 @@ information (older modkit formats).</p></dd>
 <dd><p>Observed reads called as this modification.</p></dd>
 
 <dt><code>canonical_counts</code></dt>
-<dd><p>Observed reads called canonical/unmodified.</p></dd>
+<dd><p>Observed reads called
+canonical/unmodified.</p></dd>
 
 <dt><code>other_mod_counts</code></dt>
 <dd><p>Observed reads called as a non-target
 modification. Together, <code>mod_counts + canonical_counts +
-other_mod_counts</code> is the modkit <code>Nvalid_cov</code> denominator used for
+      other_mod_counts</code> is the modkit <code>Nvalid_cov</code> denominator used for
 <code>coverage</code>.</p></dd>
 
 

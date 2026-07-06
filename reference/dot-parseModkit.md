@@ -61,7 +61,9 @@ A `data.frame` with columns:
 
 - `beta`:
 
-  Proportion of reads called methylated, range 0–1 (numeric).
+  Proportion of reads called methylated, computed as `Nmod / Nvalid_cov`
+  from authoritative count fields. Range 0-1 for positive-coverage rows;
+  0 for zero-coverage rows.
 
 - `coverage`:
 

@@ -41,8 +41,10 @@ provenance.
 
 ``` r
 data(comma_example_data)
-dm <- diffMethyl(comma_example_data, formula = ~ condition,
-                 method = "quasi_f", result_name = "quasi_f.v1")
+dm <- diffMethyl(comma_example_data,
+  formula = ~condition,
+  method = "quasi_f", result_name = "quasi_f.v1"
+)
 #> diffMethyl: testing 'condition' -- 'treatment' vs 'control' (reference)
 resultLayers(dm)
 #> DataFrame with 1 row and 18 columns
@@ -57,5 +59,5 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-06 13:04:01 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-06 13:46:54 ..           0.2.0
 ```

@@ -54,8 +54,7 @@ commaKit's v1 layer policy is intentionally minimal:
 [`methylation`](https://carl-stone.github.io/commaKit/reference/methylation.md),
 [`siteCoverage`](https://carl-stone.github.io/commaKit/reference/siteCoverage.md),
 [`modCounts`](https://carl-stone.github.io/commaKit/reference/modCounts.md),
-[`canonicalCounts`](https://carl-stone.github.io/commaKit/reference/canonicalCounts.md),
-[`otherModCounts`](https://carl-stone.github.io/commaKit/reference/otherModCounts.md)
+[`canonicalCounts`](https://carl-stone.github.io/commaKit/reference/canonicalCounts.md)
 
 ## Examples
 

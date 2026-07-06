@@ -73,8 +73,8 @@ consume the count assays present in the `commaData` object.
 ``` r
 data(comma_example_data)
 regions <- GenomicRanges::GRanges(
-    seqnames = "chr_sim",
-    ranges = IRanges::IRanges(start = 1, end = 5000)
+  seqnames = "chr_sim",
+  ranges = IRanges::IRanges(start = 1, end = 5000)
 )
 summarizeRegions(comma_example_data, regions, mod_type = "6mA")
 #>   region_id seqnames start  end width strand sample_name n_sites

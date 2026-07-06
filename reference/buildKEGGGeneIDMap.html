@@ -174,11 +174,12 @@ when you have downloaded a mapping from NCBI's <code>gene_info</code> file.</p><
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"KEGGREST"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">&amp;&amp;</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"org.EcK12.eg.db"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>  <span class="va">id_file</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"eco_id_map.rds"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"org.EcK12.eg.db"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">id_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"eco_id_map.rds"</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="va">id_map</span> <span class="op">&lt;-</span> <span class="fu">buildKEGGGeneIDMap</span><span class="op">(</span><span class="st">"eco"</span>,</span></span>
-<span class="r-in"><span>                               OrgDb <span class="op">=</span> <span class="fu">org.EcK12.eg.db</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/org.EcK12.eg.db/man/org.EcK12.egBASE.html" class="external-link">org.EcK12.eg.db</a></span>,</span></span>
-<span class="r-in"><span>                               file  <span class="op">=</span> <span class="va">id_file</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    OrgDb <span class="op">=</span> <span class="fu">org.EcK12.eg.db</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/org.EcK12.eg.db/man/org.EcK12.egBASE.html" class="external-link">org.EcK12.eg.db</a></span>,</span></span>
+<span class="r-in"><span>    file  <span class="op">=</span> <span class="va">id_file</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span>  <span class="co"># Apply when building pathway map:</span></span></span>
 <span class="r-in"><span>  <span class="va">kegg_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"eco_kegg.rds"</span><span class="op">)</span></span></span>
@@ -187,17 +188,17 @@ when you have downloaded a mapping from NCBI's <code>gene_info</code> file.</p><
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Fetching KEGG gene ID map for organism 'eco' ...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> 'select()' returned 1:1 mapping between keys and columns</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> KEGG ID map cached to: /tmp/Rtmp7ABdsx/eco_id_map.rds</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> KEGG ID map cached to: /tmp/RtmprpuUJ7/eco_id_map.rds</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Done. 4634 gene symbols mapped to KEGG IDs.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Fetching KEGG pathway data for organism 'eco' ...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> KEGG data cached to: /tmp/Rtmp7ABdsx/eco_kegg.rds</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> KEGG data cached to: /tmp/RtmprpuUJ7/eco_kegg.rds</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Done. 4984 gene-pathway associations across 138 pathways.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Manual table alternative:</span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"KEGGREST"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="va">ent2sym</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    entrez_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"945076"</span>, <span class="st">"945803"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    symbol    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lacZ"</span>,   <span class="st">"lacY"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    symbol <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lacZ"</span>, <span class="st">"lacY"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>    stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="va">id_map</span> <span class="op">&lt;-</span> <span class="fu">buildKEGGGeneIDMap</span><span class="op">(</span><span class="st">"eco"</span>, entrez2symbol <span class="op">=</span> <span class="va">ent2sym</span><span class="op">)</span></span></span>

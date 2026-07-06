@@ -1,6 +1,6 @@
 # Accessor for observed canonical-read counts
 
-Retrieves the sites x samples matrix of observed reads called as
+Retrieves the sites × samples matrix of observed reads called as
 canonical or unmodified for the site. For callers that cannot provide a
 true canonical-count decomposition, values may be `NA`; consult
 [`assayProvenance`](https://carl-stone.github.io/commaKit/reference/assayProvenance.md)

@@ -177,7 +177,7 @@ comma_example_data
 if (FALSE) { # \dontrun{
 # Load two modkit BED files (requires user-provided files)
 cd <- commaData(
-  files   = c(
+  files = c(
     ctrl_1  = "ctrl_1_modkit.bed",
     treat_1 = "treat_1_modkit.bed"
   ),
@@ -186,9 +186,9 @@ cd <- commaData(
     condition   = c("control", "treatment"),
     replicate   = c(1L, 1L)
   ),
-  genome    = c(chr1 = 4641652L),
+  genome = c(chr1 = 4641652L),
   annotation = "MG1655.gff3",
-  caller    = "modkit"
+  caller = "modkit"
 )
 cd
 } # }

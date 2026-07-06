@@ -99,7 +99,7 @@
   : Sliding window methylation summary along the genome
 - [`` `[`( ``*`<commaData>`*`,`*`<ANY>`*`,`*`<ANY>`*`,`*`<ANY>`*`)`](https://carl-stone.github.io/commaKit/reference/sub-commaData-ANY-ANY-ANY-method.md)
   : Subset a commaData object by sites and/or samples
-- [`subset(`*`<commaData>`*`)`](https://carl-stone.github.io/commaKit/reference/subset.commaData.md)
+- [`subset.commaData()`](https://carl-stone.github.io/commaKit/reference/subset.commaData.md)
   : Deprecated subset method for commaData objects
 - [`summarizeRegions()`](https://carl-stone.github.io/commaKit/reference/summarizeRegions.md)
   : Summarize methylation counts over genomic regions

@@ -82,23 +82,6 @@ dispersion estimates. Called by <code><a href="diffMethyl.html">diffMethyl</a></
 <dd><p>Integer matrix (sites × samples) of read depths.</p></dd>
 
 
-<dt id="arg-mod-counts-mat">mod_counts_mat<a class="anchor" aria-label="anchor" href="#arg-mod-counts-mat"></a></dt>
-<dd><p>Optional integer matrix of observed modified-read
-counts. If supplied, these counts are preferred over reconstructing from
-beta values.</p></dd>
-
-
-<dt id="arg-canonical-counts-mat">canonical_counts_mat<a class="anchor" aria-label="anchor" href="#arg-canonical-counts-mat"></a></dt>
-<dd><p>Optional integer matrix of observed
-canonical-read counts.</p></dd>
-
-
-<dt id="arg-other-mod-counts-mat">other_mod_counts_mat<a class="anchor" aria-label="anchor" href="#arg-other-mod-counts-mat"></a></dt>
-<dd><p>Optional integer matrix of observed non-target
-modified-read counts. When present with <code>canonical_counts_mat</code>, these
-counts are included in the non-target denominator so it matches coverage.</p></dd>
-
-
 <dt id="arg-site-df">site_df<a class="anchor" aria-label="anchor" href="#arg-site-df"></a></dt>
 <dd><p>Data frame with columns <code>chrom</code>, <code>position</code>,
 <code>strand</code>, <code>mod_type</code>, <code>motif</code> — one row per site.</p></dd>
@@ -114,13 +97,21 @@ RHS variable in <code>formula</code> (typically <code>condition</code>).</p></dd
 <code>~ condition</code>).</p></dd>
 
 
-<dt id="arg-ref-level">ref_level<a class="anchor" aria-label="anchor" href="#arg-ref-level"></a></dt>
-<dd><p>Optional reference level for the two-level contrast.</p></dd>
+<dt id="arg-mod-counts-mat">mod_counts_mat<a class="anchor" aria-label="anchor" href="#arg-mod-counts-mat"></a></dt>
+<dd><p>Optional integer matrix of observed modified-read
+counts. If supplied, these counts are preferred over reconstructing from
+beta values.</p></dd>
 
 
-<dt id="arg-design-info">design_info<a class="anchor" aria-label="anchor" href="#arg-design-info"></a></dt>
-<dd><p>Optional precomputed design information from
-<code><a href="dot-resolveDiffMethylDesign.html">.resolveDiffMethylDesign()</a></code>.</p></dd>
+<dt id="arg-canonical-counts-mat">canonical_counts_mat<a class="anchor" aria-label="anchor" href="#arg-canonical-counts-mat"></a></dt>
+<dd><p>Optional integer matrix of observed
+canonical-read counts.</p></dd>
+
+
+<dt id="arg-other-mod-counts-mat">other_mod_counts_mat<a class="anchor" aria-label="anchor" href="#arg-other-mod-counts-mat"></a></dt>
+<dd><p>Optional integer matrix of observed non-target
+modified-read counts. When present with <code>canonical_counts_mat</code>, these
+counts are included in the non-target denominator so it matches coverage.</p></dd>
 
 </dl></div>
     <div class="section level2">

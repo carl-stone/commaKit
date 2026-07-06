@@ -162,8 +162,10 @@ plot_tss_profile(comma_example_data, feature_type = "gene", window = 500L)
 
 
 # Colour by modification type, facet by sample
-plot_tss_profile(comma_example_data, feature_type = "gene",
-                 color_by = "mod_type", facet_by = "sample")
+plot_tss_profile(comma_example_data,
+  feature_type = "gene",
+  color_by = "mod_type", facet_by = "sample"
+)
 #> Ignoring unknown labels:
 #> • colour : "Modification type"
 #> Warning: No shared levels found between `names(values)` of the manual scale and the
@@ -172,8 +174,10 @@ plot_tss_profile(comma_example_data, feature_type = "gene",
 
 
 # Overlay loess smooth
-plot_tss_profile(comma_example_data, feature_type = "gene",
-                 show_smooth = TRUE)
+plot_tss_profile(comma_example_data,
+  feature_type = "gene",
+  show_smooth = TRUE
+)
 #> Warning: LOESS smooth for group(s) 'ctrl_1', 'ctrl_2', 'ctrl_3', 'treat_1', 'treat_2', 'treat_3' encountered numerical instability; the smooth may be unreliable. Consider adjusting smooth_span or increasing data density near this feature.
 #> Warning: Ignoring empty aesthetic: `colour`.
 #> Warning: Removed 420 rows containing missing values or values outside the scale range

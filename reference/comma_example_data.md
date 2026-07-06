@@ -38,8 +38,8 @@ A `commaData` object with:
 
   `canonical_counts`
 
-  :   Integer canonical-read counts reconstructed as
-      `coverage - mod_counts`.
+  :   Integer canonical-read counts reconstructed from the simulated
+      beta and coverage values.
 
   `other_mod_counts`
 

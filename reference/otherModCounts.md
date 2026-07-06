@@ -1,6 +1,6 @@
 # Accessor for observed non-target modified-read counts
 
-Retrieves the sites x samples matrix of observed reads called as a
+Retrieves the sites × samples matrix of observed reads called as a
 non-target modification at the same site. For modkit pileup this is the
 `Nother_mod` column, and `coverage` is the denominator
 `mod_counts + canonical_counts + other_mod_counts`. For callers that

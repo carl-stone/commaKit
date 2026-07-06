@@ -122,11 +122,12 @@ Exactly one of `OrgDb` or `entrez2symbol` must be supplied:
 ``` r
 # \donttest{
 if (requireNamespace("KEGGREST", quietly = TRUE) &&
-    requireNamespace("org.EcK12.eg.db", quietly = TRUE)) {
-  id_file  <- file.path(tempdir(), "eco_id_map.rds")
+  requireNamespace("org.EcK12.eg.db", quietly = TRUE)) {
+  id_file <- file.path(tempdir(), "eco_id_map.rds")
   id_map <- buildKEGGGeneIDMap("eco",
-                               OrgDb = org.EcK12.eg.db::org.EcK12.eg.db,
-                               file  = id_file)
+    OrgDb = org.EcK12.eg.db::org.EcK12.eg.db,
+    file  = id_file
+  )
 
   # Apply when building pathway map:
   kegg_file <- file.path(tempdir(), "eco_kegg.rds")
@@ -135,17 +136,17 @@ if (requireNamespace("KEGGREST", quietly = TRUE) &&
 }
 #> Fetching KEGG gene ID map for organism 'eco' ...
 #> 'select()' returned 1:1 mapping between keys and columns
-#> KEGG ID map cached to: /tmp/Rtmp7ABdsx/eco_id_map.rds
+#> KEGG ID map cached to: /tmp/RtmprpuUJ7/eco_id_map.rds
 #> Done. 4634 gene symbols mapped to KEGG IDs.
 #> Fetching KEGG pathway data for organism 'eco' ...
-#> KEGG data cached to: /tmp/Rtmp7ABdsx/eco_kegg.rds
+#> KEGG data cached to: /tmp/RtmprpuUJ7/eco_kegg.rds
 #> Done. 4984 gene-pathway associations across 138 pathways.
 
 # Manual table alternative:
 if (requireNamespace("KEGGREST", quietly = TRUE)) {
   ent2sym <- data.frame(
     entrez_id = c("945076", "945803"),
-    symbol    = c("lacZ",   "lacY"),
+    symbol = c("lacZ", "lacY"),
     stringsAsFactors = FALSE
   )
   id_map <- buildKEGGGeneIDMap("eco", entrez2symbol = ent2sym)
