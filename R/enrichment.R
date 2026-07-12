@@ -20,7 +20,7 @@ NULL
   Sigma19 = "fecI"
 )
 
-# --- Existing internal helpers (kept for backward compatibility) ---------------
+# --- Existing internal helpers ------------------------------------------------
 
 # Map differential methylation results from sites to genes.
 #
@@ -86,7 +86,8 @@ NULL
 # @param site_gene_df  data.frame from .siteToGeneMap() or .extractGeneRoles()
 # @param score_metric  "combined" | "padj" | "delta_beta"
 # @param agg           how to aggregate site scores per gene: "max" | "mean"
-# @return  named numeric vector sorted decreasing, suitable for clusterProfiler::GSEA()
+# @return  named numeric vector sorted decreasing, suitable for
+# clusterProfiler::GSEA()
 .computeGeneScores <- function(site_gene_df, score_metric = "combined",
                                agg = "max") {
   valid <- !is.na(site_gene_df$dm_padj) & !is.na(site_gene_df$dm_delta_beta)
@@ -718,7 +719,7 @@ NULL
   }
 }
 
-# --- buildKEGGTermGene() -------------------------------------------------------
+# --- buildKEGGTermGene() -----------------------------------------------------
 
 #' Build a KEGG term-to-gene mapping for use with enrichMethylation()
 #'
@@ -774,12 +775,14 @@ NULL
 #'       description).}
 #'   }
 #'   Pass these to \code{\link{enrichMethylation}()} as
-#'   \code{kegg_term2gene = result$term2gene, kegg_term2name = result$term2name}.
+#'   \code{kegg_term2gene = result$term2gene,
+#'   kegg_term2name = result$term2name}.
 #'
 #' @examples
 #' \donttest{
 #' if (requireNamespace("KEGGREST", quietly = TRUE)) {
-#'   # Fetch once and cache to disk (use tempdir() so check directory stays clean)
+#'   # Fetch once and cache to disk
+#'   # (use tempdir() so check directory stays clean)
 #'   kegg_file <- file.path(tempdir(), "eco_kegg.rds")
 #'   kegg <- buildKEGGTermGene("eco", file = kegg_file)
 #'
@@ -1373,7 +1376,8 @@ buildKEGGGeneIDMap <- function(organism,
 #' # Requires clusterProfiler and a custom TERM2GENE mapping
 #' if (requireNamespace("clusterProfiler", quietly = TRUE)) {
 #'   data(comma_example_data)
-#'   dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
+#'   dm <- diffMethyl(comma_example_data,
+#'     formula = ~condition, mod_type = "6mA")
 #'   ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
 #'
 #'   # Custom TERM2GENE (works without network access or OrgDb)
@@ -1381,7 +1385,8 @@ buildKEGGGeneIDMap <- function(organism,
 #'     term = c("PATH:01", "PATH:01", "PATH:02"),
 #'     gene = c("geneA", "geneB", "geneC")
 #'   )
-#'   res <- enrichMethylation(ann, TERM2GENE = fake_t2g, method = c("ora", "gsea"))
+#'   res <- enrichMethylation(ann,
+#'     TERM2GENE = fake_t2g, method = c("ora", "gsea"))
 #'   str(res, max.level = 2)
 #' }
 #' }

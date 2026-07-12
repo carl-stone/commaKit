@@ -1051,7 +1051,8 @@ test_that(
     })
     expect_type(res_target, "list")
     expect_type(res_regulator, "list")
-    # Target and regulator should use different gene sets when both produce results
+    # Target and regulator should use different gene sets when both produce
+    # results.
     # GO may be NULL with tiny synthetic data — but the gene_role distinction
     # should still manifest in the gene universe (accessible via @gene slot)
     if (!is.null(res_target$go) && !is.null(res_regulator$go)) {

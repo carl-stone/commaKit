@@ -14,6 +14,7 @@ feature-type lists, and `gene_role = "both"`.
 ## Files Changed
 
 - `R/enrichment.R`
+- `tests/testthat/test-buildKEGGTermGene.R`
 - `tests/testthat/test-enrichMethylation.R`
 - `reports/STO-85.md`
 
@@ -30,6 +31,8 @@ feature-type lists, and `gene_role = "both"`.
 - Preserved KEGG `TERM2NAME` behavior where an empty KEGG term-name table is
   treated like `NULL`.
 - Updated `enrichMethylation()` call sites to pass the shared dispatch context.
+- Follow-up for PR #313 feedback: wrapped long lines in the changed source and
+  test files so changed-file lint/style checks no longer trip on line length.
 
 ## Acceptance Criteria Mapping
 
@@ -51,28 +54,38 @@ feature-type lists, and `gene_role = "both"`.
 - `git diff --check`
   - Result: passed.
   - Notes: no whitespace errors.
-- `timeout 30 Rscript -e "print('r-ok')"`
+- `Rscript --vanilla -e "print('r-ok')"`
+  - Result: passed.
+  - Notes: R starts correctly when repository renv activation is bypassed.
+- `timeout 180 Rscript -e "testthat::test_file('tests/testthat/test-enrichMethylation.R')"`
   - Result: failed.
-  - Notes: timed out after 30 seconds with no output. This indicates Rscript
-    does not start in the sandbox before package or test code is reached.
-- `timeout 300 Rscript -e "testthat::test_file('tests/testthat/test-enrichMethylation.R', reporter = 'summary')"`
+  - Notes: timed out with exit code 124 and no output before test execution
+    reached a report.
+- `timeout 180 Rscript -e "testthat::test_file('tests/testthat/test-buildKEGGTermGene.R')"`
   - Result: failed.
-  - Notes: timed out after 300 seconds with no output.
-- `timeout 300 Rscript -e "testthat::test_file('tests/testthat/test-buildKEGGTermGene.R', reporter = 'summary')"`
+  - Notes: timed out with exit code 124 and no output before test execution
+    reached a report.
+- `timeout 120 Rscript dev/precommit.R lint R/enrichment.R tests/testthat/test-enrichMethylation.R tests/testthat/test-buildKEGGTermGene.R`
   - Result: failed.
-  - Notes: timed out after 300 seconds with no output.
+  - Notes: timed out with exit code 124 and no output before lint execution
+    reached a report.
+- `timeout 120 Rscript dev/precommit.R style R/enrichment.R tests/testthat/test-enrichMethylation.R tests/testthat/test-buildKEGGTermGene.R`
+  - Result: failed.
+  - Notes: timed out with exit code 124 and no output before style execution
+    reached a report.
 
 ## Blockers
 
-Runtime validation is blocked in this sandbox because `Rscript` does not start:
-even a trivial `Rscript -e "print('r-ok')"` command timed out with no output.
+Runtime validation through repository-managed R is blocked in this sandbox:
+commands that load `.Rprofile` and activate `renv` timed out with no output.
+`Rscript --vanilla -e "print('r-ok')"` passes, which narrows the issue to
+repository startup/dependency activation rather than the R executable itself.
 
 ## Working Tree Notes
 
-Baseline status already included modified `R/enrichment.R`,
-`tests/testthat/test-enrichMethylation.R`, and untracked `.symphony/` plus
-`logs/`. This handoff leaves the intended source diff in place and does not
-stage, commit, push, or open a PR.
+Baseline status included untracked `.symphony/`, `logs/`, and
+`reports/STO-85.codex-final.json`. This handoff leaves the intended source
+diff in place and does not stage, commit, push, or open a PR.
 
 ## Next Owner
 

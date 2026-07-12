@@ -22,7 +22,7 @@ mock_links <- c(
 )
 
 # Mimics KEGGREST::keggList("pathway", "eco") output
-# names = pathway IDs with path: prefix, values = descriptions with organism suffix
+# names = pathway IDs with path: prefix; values = descriptions with suffixes
 mock_pathways <- c(
   "path:eco00010" = "Glycolysis / Gluconeogenesis - Escherichia coli K-12",
   "path:eco00020" = "Citrate cycle (TCA cycle) - Escherichia coli K-12",
@@ -301,9 +301,10 @@ test_that(
       kegg_term2gene = fake_kegg_t2g,
       minGSSize = 1L
     )
-    # $go should be NULL (no OrgDb/TERM2GENE), $kegg should be populated (even if NULL result from enricher)
+    # $go should be NULL; $kegg should be populated even when enricher
+    # returns no hits.
     expect_null(res$go)
-    # kegg slot exists in the result list (value may be NULL if no enrichment found)
+    # kegg slot exists in the result list.
     expect_true("kegg" %in% names(res))
   }
 )
