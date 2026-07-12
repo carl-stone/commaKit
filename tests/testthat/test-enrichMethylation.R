@@ -29,6 +29,202 @@ fake_t2n <- data.frame(
   stringsAsFactors = FALSE
 )
 
+# ── enrichment dispatch setup ────────────────────────────────────────────────
+
+test_that("enrichment dispatch builds custom GO and KEGG call specs", {
+  kegg_t2g <- data.frame(
+    term = "eco00010", gene = "geneA",
+    stringsAsFactors = FALSE
+  )
+  kegg_t2n <- data.frame(
+    term = "eco00010", name = "Glycolysis",
+    stringsAsFactors = FALSE
+  )
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = c("ora", "gsea"),
+    OrgDb = NULL,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = NULL,
+    TERM2GENE = fake_t2g,
+    TERM2NAME = fake_t2n,
+    kegg_term2gene = kegg_t2g,
+    kegg_term2name = kegg_t2n,
+    padj_threshold = 0.05,
+    delta_beta_threshold = 0.1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+
+  go_ora <- commaKit:::.enrichmentCallSpec(
+    "go", "ora", "geneA", c("geneA", "geneB"), ctx
+  )
+  go_gsea <- commaKit:::.enrichmentCallSpec(
+    "go", "gsea", c(geneA = 2, geneB = 1), c("geneA", "geneB"), ctx
+  )
+  kegg_ora <- commaKit:::.enrichmentCallSpec(
+    "kegg", "ora", "geneA", c("geneA", "geneB"), ctx
+  )
+
+  expect_equal(go_ora$fun, "enricher")
+  expect_equal(go_ora$args$gene, "geneA")
+  expect_equal(go_ora$args$universe, c("geneA", "geneB"))
+  expect_equal(go_ora$args$TERM2GENE, fake_t2g)
+  expect_equal(go_ora$args$TERM2NAME, fake_t2n)
+  expect_equal(go_ora$args$qvalueCutoff, 0.2)
+
+  expect_equal(go_gsea$fun, "GSEA")
+  expect_equal(go_gsea$args$geneList, c(geneA = 2, geneB = 1))
+  expect_false("universe" %in% names(go_gsea$args))
+  expect_false("qvalueCutoff" %in% names(go_gsea$args))
+
+  expect_equal(kegg_ora$fun, "enricher")
+  expect_equal(kegg_ora$args$TERM2GENE, kegg_t2g)
+  expect_equal(kegg_ora$args$TERM2NAME, kegg_t2n)
+})
+
+test_that("enrichment dispatch builds optional database call specs", {
+  fake_orgdb <- structure(list(), class = "OrgDb")
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = c("ora", "gsea"),
+    OrgDb = fake_orgdb,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = "eco",
+    TERM2GENE = NULL,
+    TERM2NAME = NULL,
+    kegg_term2gene = NULL,
+    kegg_term2name = NULL,
+    padj_threshold = 0.05,
+    delta_beta_threshold = 0.1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+
+  go_ora <- commaKit:::.enrichmentCallSpec(
+    "go", "ora", "geneA", c("geneA", "geneB"), ctx
+  )
+  go_gsea <- commaKit:::.enrichmentCallSpec(
+    "go", "gsea", c(geneA = 2, geneB = 1), c("geneA", "geneB"), ctx
+  )
+  kegg_ora <- commaKit:::.enrichmentCallSpec(
+    "kegg", "ora", "geneA", c("geneA", "geneB"), ctx
+  )
+  kegg_gsea <- commaKit:::.enrichmentCallSpec(
+    "kegg", "gsea", c(geneA = 2, geneB = 1), c("geneA", "geneB"), ctx
+  )
+
+  expect_equal(go_ora$fun, "enrichGO")
+  expect_identical(go_ora$args$OrgDb, fake_orgdb)
+  expect_equal(go_ora$args$readable, FALSE)
+  expect_equal(go_ora$args$universe, c("geneA", "geneB"))
+
+  expect_equal(go_gsea$fun, "gseGO")
+  expect_false("universe" %in% names(go_gsea$args))
+  expect_false("readable" %in% names(go_gsea$args))
+
+  expect_equal(kegg_ora$fun, "enrichKEGG")
+  expect_equal(kegg_ora$args$organism, "eco")
+  expect_equal(kegg_ora$args$universe, c("geneA", "geneB"))
+
+  expect_equal(kegg_gsea$fun, "gseKEGG")
+  expect_equal(kegg_gsea$args$organism, "eco")
+  expect_false("universe" %in% names(kegg_gsea$args))
+})
+
+test_that("enrichment dispatch keeps empty KEGG names optional", {
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = "ora",
+    OrgDb = NULL,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = NULL,
+    TERM2GENE = NULL,
+    TERM2NAME = NULL,
+    kegg_term2gene = data.frame(
+      term = "eco00010", gene = "geneA",
+      stringsAsFactors = FALSE
+    ),
+    kegg_term2name = data.frame(
+      term = character(), name = character(),
+      stringsAsFactors = FALSE
+    ),
+    padj_threshold = 0.05,
+    delta_beta_threshold = 0.1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+
+  spec <- commaKit:::.enrichmentCallSpec(
+    "kegg", "ora", "geneA", c("geneA", "geneB"), ctx
+  )
+
+  expect_equal(spec$fun, "enricher")
+  expect_null(spec$args$TERM2NAME)
+})
+
+test_that("enrichment dispatch preserves combined short-circuit shape", {
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = c("ora", "gsea"),
+    OrgDb = NULL,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = NULL,
+    TERM2GENE = fake_t2g,
+    TERM2NAME = NULL,
+    kegg_term2gene = NULL,
+    kegg_term2name = NULL,
+    padj_threshold = 0.01,
+    delta_beta_threshold = 1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+  sg <- data.frame(
+    gene_id = "geneA",
+    site_key = "chr1:100:+",
+    dm_padj = NA_real_,
+    dm_delta_beta = NA_real_,
+    stringsAsFactors = FALSE
+  )
+
+  warnings <- character()
+  res <- withCallingHandlers(
+    commaKit:::.runEnrichmentForGeneMap(sg, "geneA", ctx),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_true(any(grepl(
+    "No significantly differentially methylated genes", warnings
+  )))
+  expect_true(any(grepl("No valid gene scores", warnings)))
+  expect_equal(names(res), c("go", "kegg"))
+  expect_equal(names(res$go), c("ora", "gsea"))
+  expect_equal(names(res$kegg), c("ora", "gsea"))
+  expect_null(res$go$ora)
+  expect_null(res$go$gsea)
+  expect_null(res$kegg$ora)
+  expect_null(res$kegg$gsea)
+})
+
 # ── .siteToGeneMap() ─────────────────────────────────────────────────────────
 
 test_that(".siteToGeneMap returns data.frame with expected columns", {
