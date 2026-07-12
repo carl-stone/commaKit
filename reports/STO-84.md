@@ -43,6 +43,13 @@ git diff --check origin/main...HEAD
 Result: passed. No whitespace errors in the issue diff.
 
 ```bash
+Rscript -e "styler::style_pkg(dry = 'fail'); message('All R source files are properly formatted.')"
+```
+
+Result: passed. This is the same full-package style command used by the
+previously failed CI check; no R file would be modified.
+
+```bash
 Rscript --vanilla - <<'RS'
 .emptyParseResult <- function() {
   data.frame(
