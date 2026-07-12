@@ -1,4 +1,5 @@
-#' @importFrom GenomicRanges GRanges findOverlaps start end width strand resize mcols "mcols<-"
+#' @importFrom GenomicRanges GRanges findOverlaps start end width strand resize
+#' @importFrom GenomicRanges mcols "mcols<-"
 #' @importFrom IRanges IRanges CharacterList IntegerList NumericList
 #' @importFrom S4Vectors DataFrame queryHits subjectHits splitAsList mendoapply
 #' @importFrom SummarizedExperiment rowData "rowData<-" rowRanges "rowRanges<-"
@@ -237,8 +238,8 @@ annotateSites <- function(object,
 
   # ── rel_position: signed, strand-aware ────────────────────────────────────
   # 0 when site is inside the feature.
-  # For + strand (and *): negative = upstream (lower coord), positive = downstream.
-  # For - strand: negative = upstream (higher coord, biological), positive = downstream.
+  # On + and * strands, lower coordinates are upstream and larger coordinates
+  # are downstream. On - strands, higher coordinates are upstream biologically.
   inside <- site_pos >= feat_starts & site_pos <= feat_ends
   pos_signed <- ifelse(inside, 0L,
     ifelse(site_pos < feat_starts,
@@ -282,7 +283,7 @@ annotateSites <- function(object,
     (feat_ends - site_pos) / denom, # TSS at feat_end on - strand
     (site_pos - feat_starts) / denom # TSS at feat_start on + strand
   )
-  frac_raw <- pmax(0, pmin(1, frac_raw)) # clamp [0, 1]
+  frac_raw <- pmax(0, pmin(1, frac_raw))
   frac_pos <- ifelse(inside, frac_raw, NA_real_)
 
   # ── Split into parallel list columns ──────────────────────────────────────
