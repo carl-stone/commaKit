@@ -47,7 +47,7 @@
   )
 }
 
-# ─── .cigarToRefPos() ────────────────────────────────────────────────────────
+# .cigarToRefPos()
 
 test_that("cigarToRefPos: simple all-match CIGAR", {
   # 5M: 5 match operations from ref position 100
@@ -165,7 +165,7 @@ test_that("cigarToRefPos: matches GenomicAlignments reference/query ranges", {
   }
 })
 
-# ─── .parseMmTag() ────────────────────────────────────────────────────────────
+# .parseMmTag()
 
 test_that("parseMmTag: parses single-mod-type MM tag", {
   # MM: "A+a?,0" means first A in read is modified (6mA)
@@ -194,7 +194,7 @@ test_that("parseMmTag: ML probability <= 0.5 → is_mod = FALSE", {
 
 test_that("parseMmTag: delta offset positions multiple modifications", {
   # MM: "A+a?,0,1" — two 6mA modifications
-  # delta 0 → first A; delta 1 → skip 1 A, so third A overall (2nd A skipped)
+  # delta 0 -> first A; delta 1 -> third A overall (2nd A skipped)
   # Sequence "AACGTA": A at pos 1,2,6; delta 0 → pos1, delta 1 → pos6
   result <- commaKit:::.parseMmTag(
     mm_tag    = "A+a?,0,1",
@@ -220,7 +220,7 @@ test_that("parseMmTag: skips unknown mod_code", {
   expect_null(result)
 })
 
-# ─── .parseDorado() error handling ────────────────────────────────────────────
+# .parseDorado() error handling
 
 test_that("parseDorado: error on missing file", {
   expect_error(
@@ -352,7 +352,7 @@ test_that("parseDorado: CIGAR-unmapped modification calls are dropped", {
   expect_equal(result$mod_counts, 1L)
 })
 
-# ─── .cigarToRefPos() additional edge cases ───────────────────────────────────
+# .cigarToRefPos() additional edge cases
 
 test_that("cigarToRefPos: hard clip (H) does not consume read positions", {
   # 2H5M: 2 hard-clipped bases (not in seq), then 5 matches
@@ -398,7 +398,7 @@ test_that(
   }
 )
 
-# ─── .parseMmTag() additional tests ──────────────────────────────────────────
+# .parseMmTag() additional tests
 
 test_that("parseMmTag: 5mC (mod_code 'm') is recognised", {
   # MM: "C+m?,0" — first C in read is potentially 5-methylcytosine
@@ -461,17 +461,19 @@ test_that("parseMmTag: ML at exactly 127/255 ≈ 0.498 is_mod = FALSE", {
   expect_false(result$is_mod[1])
 })
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Production-like Dorado MM/ML/CIGAR edge cases
-# ─────────────────────────────────────────────────────────────────────────────
+# used by direct parser integration coverage.
 
-test_that("cigarToRefPos: malformed CIGAR returns NULL rather than partial map", {
-  expect_null(commaKit:::.cigarToRefPos(
-    "3M2Z2M",
-    ref_start = 100L,
-    seq_bases = "ACGTACG"
-  ))
-})
+test_that(
+  "cigarToRefPos: malformed CIGAR returns NULL, not a partial map",
+  {
+    expect_null(commaKit:::.cigarToRefPos(
+      "3M2Z2M",
+      ref_start = 100L,
+      seq_bases = "ACGTACG"
+    ))
+  }
+)
 
 test_that("Dorado MM/ML helper path drops modification calls on insertions", {
   ref_positions <- commaKit:::.cigarToRefPos(

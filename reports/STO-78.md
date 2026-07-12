@@ -18,6 +18,9 @@ Added deterministic Dorado BAM integration coverage in
   range utilities for supported CIGAR cases.
 - Added `GenomicAlignments` to `Suggests` so the reference-comparison coverage
   is available in normal package test environments.
+- Cleaned up the Dorado test section comments and long malformed-CIGAR
+  expectation shape to address the failed `lintr` check without changing test
+  behavior.
 
 ## Files Changed
 
@@ -41,6 +44,10 @@ Passed:
     DCF metadata.
 - `git diff --check`
   - Result: passed; no whitespace errors.
+- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null R_LIBS_USER=$PWD/.symphony/renv-library/linux-debian-trixie/R-4.5/x86_64-pc-linux-gnu:$PWD/.symphony/renv/library/linux-debian-trixie/R-4.5/x86_64-pc-linux-gnu Rscript --vanilla -e "cat('libPaths=', paste(.libPaths(), collapse='|'), '\n'); for (pkg in c('testthat','Rsamtools','GenomicAlignments','lintr')) cat(pkg, requireNamespace(pkg, quietly=TRUE), '\n')"`
+  - Result: passed; command completed and confirmed the workspace-local library
+    is present but contains none of `testthat`, `Rsamtools`,
+    `GenomicAlignments`, or `lintr`.
 
 Attempted but blocked by local R dependency environment:
 
@@ -62,6 +69,10 @@ Attempted but blocked by local R dependency environment:
 - `Rscript -e "cat('libPaths:', paste(.libPaths(), collapse='|'), '\n'); cat('testthat=', requireNamespace('testthat', quietly=TRUE), '\n'); cat('Rsamtools=', requireNamespace('Rsamtools', quietly=TRUE), '\n'); cat('GenomicAlignments=', requireNamespace('GenomicAlignments', quietly=TRUE), '\n')"`
   - Result: stopped after hanging for more than 60 seconds in repository renv
     startup.
+- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null Rscript --vanilla -e "cat('libPaths=', paste(.libPaths(), collapse='|'), '\n'); for (pkg in c('testthat','Rsamtools','GenomicAlignments','lintr')) cat(pkg, requireNamespace(pkg, quietly=TRUE), '\n')"`
+  - Result: passed; command completed and confirmed the system library lacks
+    `testthat`, `Rsamtools`, `GenomicAlignments`, and `lintr` when renv
+    activation is disabled.
 
 Not run successfully:
 
