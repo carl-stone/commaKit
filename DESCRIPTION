@@ -64,7 +64,6 @@ Collate:
     'm_values.R'
     'methylkit_wrapper.R'
     'methylome_summary.R'
-    'multiple_testing.R'
     'parse_dorado.R'
     'parse_megalodon.R'
     'parse_modkit.R'

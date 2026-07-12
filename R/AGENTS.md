@@ -7,7 +7,7 @@ This directory contains package implementation files. Read the root `AGENTS.md` 
 - `commaData_class.R`, `commaData_constructor.R`, and `accessors.R` define the core S4/RangedSummarizedExperiment contract.
 - `assay_layers.R` and `result_layers.R` define named assay/result layer registries and provenance.
 - Parser files (`parse_modkit.R`, `parse_dorado.R`, `parse_megalodon.R`) normalize external caller formats into the shared constructor path.
-- Analysis files (`diffMethyl.R`, `quasi_f.R`, `limma_wrapper.R`, `methylkit_wrapper.R`, `multiple_testing.R`, `results_methods.R`, `result_layers.R`) must preserve per-`mod_context` analysis and genome-wide multiple-testing semantics.
+- Analysis files (`diffMethyl.R`, `quasi_f.R`, `limma_wrapper.R`, `methylkit_wrapper.R`, `results_methods.R`, `result_layers.R`) must preserve per-`mod_context` analysis and genome-wide multiple-testing semantics.
 - `coverage_analysis.R`, `m_values.R`, `methylome_summary.R`, `sliding_window.R`, and `summarizeRegions.R` provide QC/diagnostic/regional summaries.
 - Plot files return ggplot objects, with optional patchwork composition where a function combines multiple plot panels.
 
