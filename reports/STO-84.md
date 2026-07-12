@@ -13,7 +13,8 @@ explicit `mod_type`, output-schema, and `min_coverage` filtering contracts.
 
 Mandatory PR feedback was inspected for PR #312: its only failed check is
 `style`, and it has no unresolved automated-review threads. The current branch
-includes the formatting-only follow-up to the changed source and test files.
+includes the formatting-only follow-up to the changed source and test files;
+the corresponding local style and lint guards now pass.
 
 ## Files Changed
 
@@ -93,38 +94,40 @@ Result: passed. Output: `R parse validation passed`.
 
 ```bash
 Rscript -e "testthat::test_file('tests/testthat/test-parse_megalodon.R')"
+```
+
+Result: passed.
+
+```bash
 Rscript -e "testthat::test_file('tests/testthat/test-parsers.R')"
 ```
 
-Result: unavailable locally. The workspace's renv activation has no installed
-library. With activation disabled and `--vanilla`, both commands fail before
-test execution with `there is no package called 'testthat'`.
+Result: passed.
 
 ```bash
-RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/precommit.R style R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
-RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/precommit.R lint R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
+Rscript -e "styler::style_file('R/parse_megalodon.R'); styler::style_file('tests/testthat/test-parse_megalodon.R')"
+Rscript dev/precommit.R style R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
+Rscript dev/precommit.R lint R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
 ```
 
-Result: unavailable locally. The development dependencies `styler` and
-`lintr` are absent, respectively. The required CI `style` check must rerun
-against this branch.
+Result: passed. All changed R files were formatted, and the required style and
+lint guards reported no findings.
 
 ## Validation
 
-The direct parser regression proves the changed aggregation behavior, including
-the paired known values, strand separation, required modification type,
-coverage filtering, and output count-column schema. The testthat and style
-checks remain for CI because their dependencies are not installed in this
-workspace.
+The direct parser regression and both requested test files prove the changed
+aggregation behavior, including paired known values, strand separation,
+required modification type, coverage filtering, and the output count-column
+schema. The changed R files also pass the required formatting, style, and lint
+checks.
 
 ## Blockers
 
-- Local package-level validation cannot run without the project's testthat,
-  styler, and lintr dependencies. Do not configure a host-level renv cache in
-  this worker workspace; use the prepared CI or review environment instead.
+None. CI should rerun the previously failed `style` check after the factory
+finalizer publishes the branch.
 
 ## Next Owner
 
-Factory finalizer / Carl reviewer: publish the existing branch diff, rerun the
-two issue-specified test files and the failed `style` check in CI, then review
-the result before merge.
+Factory finalizer / Carl reviewer: publish the existing branch diff, rerun CI
+(including its previously failed `style` check), then independently review the
+result before merge.
