@@ -654,6 +654,43 @@ test_that(
   }
 )
 
+test_that(
+  "annotateSites keep='metagene' filters metadata_cols in parallel",
+  {
+    features <- GenomicRanges::GRanges(
+      seqnames = rep("chr_test", 3L),
+      ranges = IRanges::IRanges(
+        start = c(130L, 100L, 103L),
+        end = c(140L, 120L, 108L)
+      ),
+      strand = "+",
+      feature_type = c("operon", "gene", "TF_binding_site"),
+      name = c("near_operon", "geneA", "tfbsB"),
+      locus_tag = c("near-tag", "gene-tag", "tfbs-tag")
+    )
+    obj <- .make_annotateSites_fixture(105L)
+
+    result <- annotateSites(obj,
+      features = features,
+      keep = "metagene",
+      window = 50L,
+      metadata_cols = "locus_tag"
+    )
+    si <- siteInfo(result)
+
+    expect_true(is(si$locus_tag_values, "CharacterList"))
+    expect_true(is(si$frac_position, "NumericList"))
+    expect_equal(as.character(si$feature_names[[1L]]), c("geneA", "tfbsB"))
+    expect_equal(
+      as.character(si$locus_tag_values[[1L]]),
+      c("gene-tag", "tfbs-tag")
+    )
+    expect_equal(length(si$frac_position[[1L]]), 2L)
+    expect_false("near-tag" %in% as.character(si$locus_tag_values[[1L]]))
+    expect_false("rel_position" %in% colnames(si))
+  }
+)
+
 # ── error handling ────────────────────────────────────────────────────────────
 
 test_that("annotateSites errors on non-commaData input", {
