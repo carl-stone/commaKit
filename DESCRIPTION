@@ -29,6 +29,7 @@ Suggests:
     curl,
     KEGGREST,
     DelayedArray,
+    GenomicAlignments,
     limma,
     lintr,
     methylKit,

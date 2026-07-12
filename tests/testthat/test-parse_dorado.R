@@ -1,6 +1,6 @@
 # Tests for .parseDorado() and its internal helpers — Phase 4
 
-make_dorado_test_bam <- function(records) {
+.make_dorado_test_bam <- function(records) {
   skip_if_not_installed("Rsamtools")
 
   sam_file <- tempfile(fileext = ".sam")
@@ -22,13 +22,13 @@ make_dorado_test_bam <- function(records) {
   bam_file
 }
 
-make_sam_record <- function(qname,
-                            pos,
-                            cigar,
-                            seq,
-                            mm,
-                            ml,
-                            flag = 0L) {
+.make_sam_record <- function(qname,
+                             pos,
+                             cigar,
+                             seq,
+                             mm,
+                             ml,
+                             flag = 0L) {
   paste(
     qname,
     flag,
@@ -244,8 +244,8 @@ test_that("parseDorado: error on length-2 file argument", {
 })
 
 test_that("parseDorado: synthetic BAM reaches site aggregation path", {
-  bam_file <- make_dorado_test_bam(c(
-    make_sam_record(
+  bam_file <- .make_dorado_test_bam(c(
+    .make_sam_record(
       qname = "read_mod",
       pos = 100L,
       cigar = "4M",
@@ -253,7 +253,7 @@ test_that("parseDorado: synthetic BAM reaches site aggregation path", {
       mm = "A+a?,0;C+m?,0;",
       ml = c(200L, 100L)
     ),
-    make_sam_record(
+    .make_sam_record(
       qname = "read_canonical",
       pos = 100L,
       cigar = "4M",
@@ -288,8 +288,8 @@ test_that("parseDorado: synthetic BAM reaches site aggregation path", {
 })
 
 test_that("parseDorado: malformed MM/ML reads are skipped without recycling", {
-  bam_file <- make_dorado_test_bam(c(
-    make_sam_record(
+  bam_file <- .make_dorado_test_bam(c(
+    .make_sam_record(
       qname = "read_valid",
       pos = 100L,
       cigar = "4M",
@@ -297,11 +297,11 @@ test_that("parseDorado: malformed MM/ML reads are skipped without recycling", {
       mm = "A+a?,0;",
       ml = 200L
     ),
-    make_sam_record(
+    .make_sam_record(
       qname = "read_truncated",
       pos = 100L,
       cigar = "4M",
-      seq = "ACGT",
+      seq = "AAGT",
       mm = "A+a?,0,0;",
       ml = 200L
     )
@@ -321,8 +321,8 @@ test_that("parseDorado: malformed MM/ML reads are skipped without recycling", {
 })
 
 test_that("parseDorado: CIGAR-unmapped modification calls are dropped", {
-  bam_file <- make_dorado_test_bam(c(
-    make_sam_record(
+  bam_file <- .make_dorado_test_bam(c(
+    .make_sam_record(
       qname = "read_inserted_call",
       pos = 100L,
       cigar = "1M1I2M",
@@ -330,7 +330,7 @@ test_that("parseDorado: CIGAR-unmapped modification calls are dropped", {
       mm = "A+a?,1;",
       ml = 200L
     ),
-    make_sam_record(
+    .make_sam_record(
       qname = "read_on_reference",
       pos = 100L,
       cigar = "4M",
