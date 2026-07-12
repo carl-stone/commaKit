@@ -1,5 +1,52 @@
 # Tests for .parseDorado() and its internal helpers — Phase 4
 
+make_dorado_test_bam <- function(records) {
+  skip_if_not_installed("Rsamtools")
+
+  sam_file <- tempfile(fileext = ".sam")
+  bam_prefix <- tempfile()
+
+  writeLines(c(
+    "@HD\tVN:1.6\tSO:coordinate",
+    "@SQ\tSN:chr1\tLN:1000",
+    records
+  ), sam_file)
+
+  bam_file <- Rsamtools::asBam(
+    sam_file,
+    destination = bam_prefix,
+    overwrite = TRUE
+  )
+  Rsamtools::indexBam(bam_file)
+
+  bam_file
+}
+
+make_sam_record <- function(qname,
+                            pos,
+                            cigar,
+                            seq,
+                            mm,
+                            ml,
+                            flag = 0L) {
+  paste(
+    qname,
+    flag,
+    "chr1",
+    pos,
+    60L,
+    cigar,
+    "*",
+    0L,
+    0L,
+    seq,
+    "*",
+    paste0("MM:Z:", mm),
+    paste0("ML:B:C,", paste(ml, collapse = ",")),
+    sep = "\t"
+  )
+}
+
 # ─── .cigarToRefPos() ────────────────────────────────────────────────────────
 
 test_that("cigarToRefPos: simple all-match CIGAR", {
@@ -68,6 +115,54 @@ test_that("cigarToRefPos: overlong CIGAR stops after exhausting read", {
     seq_bases = "ACGTA"
   )
   expect_equal(result, 10L:14L)
+})
+
+test_that("cigarToRefPos: matches GenomicAlignments reference/query ranges", {
+  skip_if_not_installed("GenomicAlignments")
+  skip_if_not_installed("IRanges")
+
+  cases <- list(
+    list(cigar = "5M", ref_start = 100L, seq_bases = "ACGTA"),
+    list(cigar = "3M2D2M", ref_start = 100L, seq_bases = "ACGTA"),
+    list(cigar = "3M2I2M", ref_start = 100L, seq_bases = "ACGTAAG"),
+    list(cigar = "2S3M", ref_start = 50L, seq_bases = "XXACG"),
+    list(cigar = "2M3N2M", ref_start = 100L, seq_bases = "ACGT")
+  )
+
+  for (case in cases) {
+    observed <- commaKit:::.cigarToRefPos(
+      case$cigar,
+      ref_start = case$ref_start,
+      seq_bases = case$seq_bases
+    )
+
+    query_ranges <- GenomicAlignments::cigarRangesAlongQuerySpace(
+      case$cigar,
+      ops = c("M", "=", "X"),
+      drop.empty.ranges = FALSE
+    )[[1L]]
+    reference_ranges <- GenomicAlignments::cigarRangesAlongReferenceSpace(
+      case$cigar,
+      pos = case$ref_start,
+      ops = c("M", "=", "X"),
+      drop.empty.ranges = FALSE
+    )[[1L]]
+
+    expected <- rep(NA_integer_, nchar(case$seq_bases))
+    for (i in seq_along(query_ranges)) {
+      query_pos <- seq(
+        IRanges::start(query_ranges)[[i]],
+        IRanges::end(query_ranges)[[i]]
+      )
+      reference_pos <- seq(
+        IRanges::start(reference_ranges)[[i]],
+        IRanges::end(reference_ranges)[[i]]
+      )
+      expected[query_pos] <- reference_pos[seq_along(query_pos)]
+    }
+
+    expect_equal(observed, expected, info = case$cigar)
+  }
 })
 
 # ─── .parseMmTag() ────────────────────────────────────────────────────────────
@@ -146,6 +241,115 @@ test_that("parseDorado: error on length-2 file argument", {
     commaKit:::.parseDorado(c("a.bam", "b.bam"), "sample1"),
     "must be a single character string"
   )
+})
+
+test_that("parseDorado: synthetic BAM reaches site aggregation path", {
+  bam_file <- make_dorado_test_bam(c(
+    make_sam_record(
+      qname = "read_mod",
+      pos = 100L,
+      cigar = "4M",
+      seq = "ACGT",
+      mm = "A+a?,0;C+m?,0;",
+      ml = c(200L, 100L)
+    ),
+    make_sam_record(
+      qname = "read_canonical",
+      pos = 100L,
+      cigar = "4M",
+      seq = "ACGT",
+      mm = "A+a?,0;",
+      ml = 100L
+    )
+  ))
+
+  result <- commaKit:::.parseDorado(
+    bam_file,
+    sample_name = "sample1",
+    min_coverage = 1L
+  )
+  result <- result[order(result$position, result$mod_type), ]
+
+  expect_s3_class(result, "data.frame")
+  expect_named(result, c(
+    "chrom", "position", "strand", "mod_type", "motif", "beta", "coverage",
+    "mod_counts", "canonical_counts", "other_mod_counts"
+  ))
+  expect_equal(result$chrom, c("chr1", "chr1"))
+  expect_equal(result$position, c(100L, 101L))
+  expect_equal(result$strand, c("+", "+"))
+  expect_equal(result$mod_type, c("6mA", "5mC"))
+  expect_true(all(is.na(result$motif)))
+  expect_equal(result$beta, c(0.5, 0))
+  expect_equal(result$coverage, c(2L, 1L))
+  expect_equal(result$mod_counts, c(1L, 0L))
+  expect_equal(result$canonical_counts, c(1L, 1L))
+  expect_true(all(is.na(result$other_mod_counts)))
+})
+
+test_that("parseDorado: malformed MM/ML reads are skipped without recycling", {
+  bam_file <- make_dorado_test_bam(c(
+    make_sam_record(
+      qname = "read_valid",
+      pos = 100L,
+      cigar = "4M",
+      seq = "ACGT",
+      mm = "A+a?,0;",
+      ml = 200L
+    ),
+    make_sam_record(
+      qname = "read_truncated",
+      pos = 100L,
+      cigar = "4M",
+      seq = "ACGT",
+      mm = "A+a?,0,0;",
+      ml = 200L
+    )
+  ))
+
+  result <- commaKit:::.parseDorado(
+    bam_file,
+    sample_name = "sample1",
+    min_coverage = 1L
+  )
+
+  expect_equal(nrow(result), 1L)
+  expect_equal(result$position, 100L)
+  expect_equal(result$coverage, 1L)
+  expect_equal(result$mod_counts, 1L)
+  expect_equal(result$canonical_counts, 0L)
+})
+
+test_that("parseDorado: CIGAR-unmapped modification calls are dropped", {
+  bam_file <- make_dorado_test_bam(c(
+    make_sam_record(
+      qname = "read_inserted_call",
+      pos = 100L,
+      cigar = "1M1I2M",
+      seq = "AAAA",
+      mm = "A+a?,1;",
+      ml = 200L
+    ),
+    make_sam_record(
+      qname = "read_on_reference",
+      pos = 100L,
+      cigar = "4M",
+      seq = "AAAA",
+      mm = "A+a?,0;",
+      ml = 200L
+    )
+  ))
+
+  result <- commaKit:::.parseDorado(
+    bam_file,
+    sample_name = "sample1",
+    min_coverage = 1L
+  )
+
+  expect_equal(nrow(result), 1L)
+  expect_equal(result$position, 100L)
+  expect_equal(result$coverage, 1L)
+  expect_equal(result$mod_counts, 1L)
 })
 
 # ─── .cigarToRefPos() additional edge cases ───────────────────────────────────
