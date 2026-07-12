@@ -2,21 +2,18 @@
 
 ## Summary
 
-Implemented the Megalodon per-site aggregation change on branch
-`symphony/STO-84`.
+The branch implementation aggregates Megalodon per-read rows once by
+`chrom`, `position`, `strand`, and `mod_type`. Its one keyed summary provides
+both beta (`mean(mod_prob)`) and coverage (`length(mod_prob)`), removing the
+former dependency on matching the order of two independent aggregations.
 
-`.parseMegalodon()` now builds one keyed per-site summary grouped by
-`chrom`, `position`, `strand`, and `mod_type`. The same `stats::aggregate()`
-result supplies both beta (`mean(mod_prob)`) and coverage (`length(mod_prob)`),
-so output no longer depends on matching row order from independent aggregate
-calls.
+The focused regression uses unequal per-site read counts and asserts each
+site's paired beta and coverage. Existing tests retain the strand-separation,
+explicit `mod_type`, output-schema, and `min_coverage` filtering contracts.
 
-Added a focused known-value regression with unequal per-site read counts to
-assert paired beta and coverage values after key ordering.
-
-Follow-up for PR #312 fixed the reported style/lintr failures by formatting the
-changed aggregate call, removing overlong/non-ASCII separator comments from the
-touched test file, and keeping touched R/test lines within 80 columns.
+Mandatory PR feedback was inspected for PR #312: its only failed check is
+`style`, and it has no unresolved automated-review threads. The current branch
+includes the formatting-only follow-up to the changed source and test files.
 
 ## Files Changed
 
@@ -34,91 +31,100 @@ touched test file, and keeping touched R/test lines within 80 columns.
 git status --short --branch
 ```
 
-Result: passed. Baseline branch was
-`symphony/STO-84...origin/symphony/STO-84` with pre-existing untracked
-`.symphony/`, `logs/`, and `reports/STO-84.codex-final.json`.
+Result: passed. Branch is `symphony/STO-84...origin/symphony/STO-84`.
+Pre-existing untracked factory artifacts are `.symphony/`, `logs/`, and
+`reports/STO-84.codex-final.json`.
 
 ```bash
-git diff --check
+git diff --check origin/main...HEAD
 ```
 
-Result: passed. No whitespace errors.
+Result: passed. No whitespace errors in the issue diff.
 
 ```bash
-RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript - <<'RS'
-# Sourced R/parse_megalodon.R with minimal parser helpers, wrote a temporary
-# Megalodon BED fixture, and verified:
-# - same chrom/position on different strands remains separate;
-# - chr1:100:+ beta 0.8 coverage 2;
-# - chr2:200:+ beta 0.4 coverage 3;
-# - min_coverage = 2 filters the one-read strand-specific site.
+Rscript --vanilla - <<'RS'
+.emptyParseResult <- function() {
+  data.frame(
+    chrom = character(), position = integer(), strand = character(),
+    mod_type = character(), motif = character(), beta = numeric(),
+    coverage = integer(), mod_counts = integer(),
+    canonical_counts = integer(), other_mod_counts = integer()
+  )
+}
+.checkModTypeValues <- function(values, levels = NULL) {
+  if (all(values %in% c("6mA", "5mC", "4mC"))) character() else "invalid"
+}
+source("R/parse_megalodon.R")
+rows <- data.frame(
+  chrom = c("chr2", "chr1", "chr1", "chr2", "chr2", "chr1"),
+  start = c(199L, 99L, 99L, 199L, 199L, 99L),
+  end = c(200L, 100L, 100L, 200L, 200L, 100L),
+  read_id = paste0("r", 1:6), score = 255L,
+  strand = c("+", "+", "+", "+", "+", "-"),
+  mod_prob = c(0.2, 0.9, 0.7, 0.4, 0.6, 0.1)
+)
+file <- tempfile(fileext = ".bed")
+write.table(rows, file, sep = "\t", quote = FALSE, row.names = FALSE,
+            col.names = FALSE)
+result <- .parseMegalodon(file, "sample", mod_type = "6mA", min_coverage = 2L)
+result <- result[order(result$chrom, result$position, result$strand), ]
+stopifnot(
+  identical(result$chrom, c("chr1", "chr2")),
+  identical(result$position, c(100L, 200L)),
+  identical(result$strand, c("+", "+")),
+  identical(result$mod_type, c("6mA", "6mA")),
+  isTRUE(all.equal(result$beta, c(0.8, 0.4))),
+  identical(result$coverage, c(2L, 3L)),
+  all(is.na(result$mod_counts)),
+  all(is.na(result$canonical_counts)),
+  all(is.na(result$other_mod_counts))
+)
+cat("keyed parser aggregation validation passed\n")
 RS
 ```
 
-Result: passed. Output: `base parser validation passed`.
+Result: passed. Output: `keyed parser aggregation validation passed`.
 
 ```bash
-timeout 600s Rscript -e "testthat::test_file('tests/testthat/test-parse_megalodon.R')"
+Rscript --vanilla -e "invisible(parse('R/parse_megalodon.R')); invisible(parse('tests/testthat/test-parse_megalodon.R')); cat('R parse validation passed\\n')"
 ```
 
-Result: failed. Timed out after 600 seconds with no output.
+Result: passed. Output: `R parse validation passed`.
 
 ```bash
-timeout 300s Rscript -e "testthat::test_file('tests/testthat/test-parsers.R')"
+Rscript -e "testthat::test_file('tests/testthat/test-parse_megalodon.R')"
+Rscript -e "testthat::test_file('tests/testthat/test-parsers.R')"
 ```
 
-Result: failed. Timed out after 300 seconds with no output.
+Result: unavailable locally. The workspace's renv activation has no installed
+library. With activation disabled and `--vanilla`, both commands fail before
+test execution with `there is no package called 'testthat'`.
 
 ```bash
-RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript -e "cat(requireNamespace('testthat', quietly=TRUE), '\n'); cat(requireNamespace('commaKit', quietly=TRUE), '\n')"
+RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/precommit.R style R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
+RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/precommit.R lint R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
 ```
 
-Result: passed command execution; output showed `FALSE` for both `testthat` and
-`commaKit` in the system library when the renv autoloader is disabled.
-
-```bash
-awk 'length($0)>80 { printf "%s:%d:%d:%s\n", FILENAME, FNR, length($0), $0 }' R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
-```
-
-Result: passed. No over-80 lines in touched R/test files.
-
-```bash
-LC_ALL=C rg -n "[^ -~]" R/parse_megalodon.R tests/testthat/test-parse_megalodon.R || true
-```
-
-Result: passed. No non-ASCII content in touched R/test files.
-
-```bash
-RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla -e "invisible(parse('R/parse_megalodon.R')); invisible(parse('tests/testthat/test-parse_megalodon.R')); cat('parse ok\n')"
-```
-
-Result: passed. Output: `parse ok`.
-
-```bash
-git diff --stat
-git status --short --branch
-```
-
-Result: passed. Final status shows the intended modified files plus
-pre-existing untracked factory artifacts.
+Result: unavailable locally. The development dependencies `styler` and
+`lintr` are absent, respectively. The required CI `style` check must rerun
+against this branch.
 
 ## Validation
 
-Parser-level known-value validation passed directly against the changed
-function. The two issue-specified testthat commands were attempted but did not
-reach test execution in this workspace because the local R startup path timed
-out. Static checks for whitespace, 80-column lint exposure, non-ASCII content,
-and R parse validity passed for the touched R/test files.
+The direct parser regression proves the changed aggregation behavior, including
+the paired known values, strand separation, required modification type,
+coverage filtering, and output count-column schema. The testthat and style
+checks remain for CI because their dependencies are not installed in this
+workspace.
 
 ## Blockers
 
-- Full issue-specified testthat validation is blocked by local R dependency
-  startup/setup. The renv autoloader did not reach test output within 600
-  seconds for `test-parse_megalodon.R` or 300 seconds for `test-parsers.R`.
-  With the autoloader disabled, R starts, but `testthat` and installed
-  `commaKit` are unavailable in the system library.
+- Local package-level validation cannot run without the project's testthat,
+  styler, and lintr dependencies. Do not configure a host-level renv cache in
+  this worker workspace; use the prepared CI or review environment instead.
 
 ## Next Owner
 
-Factory finalizer / Carl reviewer. Re-run the two requested testthat commands
-in the prepared CI or review environment before merge.
+Factory finalizer / Carl reviewer: publish the existing branch diff, rerun the
+two issue-specified test files and the failed `style` check in CI, then review
+the result before merge.
