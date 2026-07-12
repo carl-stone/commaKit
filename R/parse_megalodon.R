@@ -33,7 +33,8 @@ NULL
 #'
 #' @return A \code{data.frame} with columns: \code{chrom}, \code{position}
 #'   (1-based), \code{strand}, \code{mod_type}, \code{motif} (always
-#'   \code{NA} — Megalodon files do not encode motif context), \code{beta},
+#'   \code{NA} because Megalodon files do not encode motif context),
+#'   \code{beta},
 #'   \code{coverage}, \code{mod_counts}, \code{canonical_counts}, and
 #'   \code{other_mod_counts}. Count columns are \code{NA} because this parser
 #'   aggregates probabilities rather than observed calls.
@@ -67,15 +68,15 @@ NULL
     stop(paste(mod_type_errors, collapse = "\n"))
   }
 
-  # ── Read file ───────────────────────────────────────────────────────────
+  # Read file.
   raw <- tryCatch(
     read.table(
       file,
-      header           = FALSE,
-      sep              = "\t",
+      header = FALSE,
+      sep = "\t",
       stringsAsFactors = FALSE,
-      comment.char     = "#",
-      fill             = TRUE
+      comment.char = "#",
+      fill = TRUE
     ),
     error = function(e) {
       stop("Failed to read Megalodon file '", file, "': ", e$message)
@@ -120,7 +121,7 @@ NULL
     max = 1
   )
 
-  # ── Aggregate per-read → per-site ───────────────────────────────────────
+  # Aggregate per-read calls to per-site values.
   # Group by genomic position (chrom, position, strand) and compute
   # per-site beta (mean of mod_prob) and coverage (count of reads).
   position <- start + 1L
@@ -135,8 +136,8 @@ NULL
   )
 
   # Summarize each keyed site once so beta and coverage cannot drift by order.
-  site_summary <- stats::aggregate(mod_prob ~ chrom + position + strand +
-    mod_type,
+  site_summary <- stats::aggregate(
+    mod_prob ~ chrom + position + strand + mod_type,
     data = site_df,
     FUN = function(x) {
       c(beta = mean(x), coverage = length(x))
@@ -159,7 +160,7 @@ NULL
     stringsAsFactors = FALSE
   )
 
-  # ── Apply min_coverage filter ───────────────────────────────────────────
+  # Apply min_coverage filter.
   result <- result[result$coverage >= min_coverage, , drop = FALSE]
   rownames(result) <- NULL
   result
