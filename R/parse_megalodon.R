@@ -129,29 +129,30 @@ NULL
     chrom = chrom,
     position = position,
     strand = strand,
+    mod_type = mod_type,
     mod_prob = mod_prob,
     stringsAsFactors = FALSE
   )
 
-  # Use aggregate() for base-R dedup — no string keys needed
-  agg_beta <- stats::aggregate(mod_prob ~ chrom + position + strand,
+  # Summarize each keyed site once so beta and coverage cannot drift by order.
+  site_summary <- stats::aggregate(mod_prob ~ chrom + position + strand +
+    mod_type,
     data = site_df,
-    FUN = mean, na.rm = TRUE
+    FUN = function(x) {
+      c(beta = mean(x), coverage = length(x))
+    }
   )
-  agg_cov <- stats::aggregate(mod_prob ~ chrom + position + strand,
-    data = site_df,
-    FUN = length
-  )
+  beta <- site_summary$mod_prob[, "beta"]
+  coverage <- as.integer(site_summary$mod_prob[, "coverage"])
 
-  # Merge the two aggregates (same grouping columns, same row order)
   result <- data.frame(
-    chrom = agg_beta$chrom,
-    position = agg_beta$position,
-    strand = agg_beta$strand,
-    mod_type = mod_type,
+    chrom = site_summary$chrom,
+    position = site_summary$position,
+    strand = site_summary$strand,
+    mod_type = site_summary$mod_type,
     motif = NA_character_,
-    beta = agg_beta$mod_prob,
-    coverage = agg_cov$mod_prob,
+    beta = beta,
+    coverage = coverage,
     mod_counts = NA_integer_,
     canonical_counts = NA_integer_,
     other_mod_counts = NA_integer_,
