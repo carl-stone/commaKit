@@ -2,95 +2,71 @@
 
 ## Summary
 
-Added deterministic Dorado BAM integration coverage in
-`tests/testthat/test-parse_dorado.R` and addressed PR #311 review feedback.
+The Dorado parser now has deterministic SAM-to-BAM integration coverage. The
+fixture reaches `.parseDorado()` and asserts aggregated site rows, modification
+types, beta values, coverage, and count columns.
 
-- Added in-test SAM-to-BAM fixture helpers using `Rsamtools::asBam()` and
-  `Rsamtools::indexBam()`.
-- Dot-prefixed the test helpers as `.make_dorado_test_bam()` and
-  `.make_sam_record()` to avoid shared testthat environment name collisions.
-- Added a `.parseDorado()` happy-path fixture that asserts expected site rows,
-  modification types, beta values, coverage, and count columns.
-- Added parser-level malformed/truncated MM/ML skip coverage with an on-sequence
-  truncated ML fixture.
-- Added parser-level CIGAR-unmapped call drop coverage.
-- Added a CIGAR helper comparison against `GenomicAlignments` reference/query
-  range utilities for supported CIGAR cases.
-- Added `GenomicAlignments` to `Suggests` so the reference-comparison coverage
-  is available in normal package test environments.
-- Cleaned up the Dorado test section comments and long malformed-CIGAR
-  expectation shape to address the failed `lintr` check without changing test
-  behavior.
+- Added private, dot-prefixed BAM fixture helpers based on `Rsamtools`.
+- Compared supported CIGAR mappings against `cigarillo`, the current
+  replacement for the deprecated `GenomicAlignments` range helpers; declared
+  that test-only dependency in `Suggests`.
+- Added explicit parser-level handling tests for truncated ML input, malformed
+  MM input, and call-level drops for an insertion mapping.
+- Hardened `.parseMmTag()` to reject nonnumeric or negative MM deltas before
+  they can reach the read-position map.
+- Rewrote the comment at `R/parse_dorado.R:361` that failed
+  `commented_code_linter` during trusted finalization.
 
-## Files Changed
+## Acceptance Evidence
 
-- `DESCRIPTION`
-- `tests/testthat/test-parse_dorado.R`
-- `reports/STO-78.md`
+| Criterion | Evidence |
+| --- | --- |
+| Valid fixture reaches `.parseDorado()` | The synthetic BAM test asserts two known site rows and all output count columns. |
+| Error/drop behavior is explicit | Parser-level tests retain valid reads while dropping truncated ML and malformed MM reads; an insertion test retains the mapped call while dropping only the unmappable call. Direct CIGAR tests reject malformed operations. |
+| Supported CIGAR cases are compared | The test file compares match, deletion, insertion, soft-clip, and skipped-reference cases with `cigarillo`. |
 
-## Branch And PR
+## Diff
+
+- `DESCRIPTION`: add `cigarillo` to `Suggests` for the CIGAR reference test.
+- `R/parse_dorado.R`: reject malformed MM delta vectors with `NULL`.
+- `tests/testthat/test-parse_dorado.R`: add deterministic BAM integration and
+  malformed-input coverage; resolve all PR #311 automated-review findings.
+
+## Handoff
 
 - Branch: `symphony/STO-78`
-- PR: https://github.com/carl-stone/commaKit/pull/311
-- GitHub issue: `carl-stone/commaKit#279`
+- Pull request: https://github.com/carl-stone/commaKit/pull/311
+- GitHub issue: https://github.com/carl-stone/commaKit/issues/279
 - Linear issue: `STO-78`
 
 ## Validation
 
 Passed:
 
-- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null Rscript --vanilla -e "parse(file = 'tests/testthat/test-parse_dorado.R'); read.dcf('DESCRIPTION'); cat('parse/dcf ok\n')"`
-  - Result: passed; edited test file parses and `DESCRIPTION` remains valid
-    DCF metadata.
-- `git diff --check`
-  - Result: passed; no whitespace errors.
-- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null R_LIBS_USER=$PWD/.symphony/renv-library/linux-debian-trixie/R-4.5/x86_64-pc-linux-gnu:$PWD/.symphony/renv/library/linux-debian-trixie/R-4.5/x86_64-pc-linux-gnu Rscript --vanilla -e "cat('libPaths=', paste(.libPaths(), collapse='|'), '\n'); for (pkg in c('testthat','Rsamtools','GenomicAlignments','lintr')) cat(pkg, requireNamespace(pkg, quietly=TRUE), '\n')"`
-  - Result: passed; command completed and confirmed the workspace-local library
-    is present but contains none of `testthat`, `Rsamtools`,
-    `GenomicAlignments`, or `lintr`.
+- `git diff --check origin/main`
+  - No whitespace errors.
+- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null R_LIBS_USER=/home/carl/agent-control-plane/state/software-factory/factory-r-library R_CACHE_ROOTPATH=/tmp/sto-78-r-cache Rscript --vanilla -e "styler::style_file(c('R/parse_dorado.R', 'tests/testthat/test-parse_dorado.R'))"`
+  - Both changed R files are already formatted.
+- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null R_LIBS_USER=/home/carl/agent-control-plane/state/software-factory/factory-r-library R_CACHE_ROOTPATH=/tmp/sto-78-r-cache Rscript --vanilla dev/precommit.R style R/parse_dorado.R tests/testthat/test-parse_dorado.R`
+  - Changed-file style check passed.
+- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null R_LIBS_USER=/home/carl/agent-control-plane/state/software-factory/factory-r-library R_CACHE_ROOTPATH=/tmp/sto-78-r-cache Rscript --vanilla dev/precommit.R lint R/parse_dorado.R tests/testthat/test-parse_dorado.R`
+  - Changed-file lint passed with no lints, including `commented_code_linter`.
+- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null R_LIBS_USER=/home/carl/R/library Rscript --vanilla -e "options(testthat.progress.max_fails = Inf); pkgload::load_all('.', quiet = TRUE); testthat::test_file('tests/testthat/test-parse_dorado.R', reporter = 'summary')"`
+  - Dorado parser test file passed with no warnings or failures.
+- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null R_LIBS_USER=/home/carl/R/library Rscript --vanilla -e "options(testthat.progress.max_fails = Inf); pkgload::load_all('.', quiet = TRUE); testthat::test_dir('tests/testthat', filter = 'parse', reporter = 'summary')"`
+  - All parser tests passed with no warnings or failures.
+- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null R_LIBS_USER=/home/carl/R/library Rscript --vanilla -e "invisible(parse('R/parse_dorado.R')); invisible(parse('tests/testthat/test-parse_dorado.R')); invisible(read.dcf('DESCRIPTION')); cat('R source, test syntax, and DESCRIPTION DCF: OK\\n')"`
+  - Both R files parse and `DESCRIPTION` is valid DCF.
 
-Attempted but blocked by local R dependency environment:
+Not relied on:
 
-- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null Rscript --vanilla -e "options(testthat.progress.max_fails = Inf); testthat::test_file('tests/testthat/test-parse_dorado.R', reporter = 'summary')"`
-  - Result: failed before tests ran.
-  - Error: `there is no package called 'testthat'` in the system library when
-    renv activation is disabled.
-- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null Rscript --vanilla -e "options(testthat.progress.max_fails = Inf); testthat::test_dir('tests/testthat', filter = 'parse', reporter = 'summary')"`
-  - Result: failed before tests ran.
-  - Error: `there is no package called 'testthat'` in the system library when
-    renv activation is disabled.
-- `timeout 180 Rscript -e "options(testthat.progress.max_fails = Inf); testthat::test_file('tests/testthat/test-parse_dorado.R', reporter = 'summary')"`
-  - Result: failed; timed out during repository renv startup after bootstrapping
-    `renv`.
-- `timeout 180 Rscript -e "options(testthat.progress.max_fails = Inf); testthat::test_dir('tests/testthat', filter = 'parse', reporter = 'summary')"`
-  - Result: failed during concurrent renv bootstrap.
-  - Error: failed to lock the project renv library because the Dorado test
-    command was already bootstrapping renv.
-- `Rscript -e "cat('libPaths:', paste(.libPaths(), collapse='|'), '\n'); cat('testthat=', requireNamespace('testthat', quietly=TRUE), '\n'); cat('Rsamtools=', requireNamespace('Rsamtools', quietly=TRUE), '\n'); cat('GenomicAlignments=', requireNamespace('GenomicAlignments', quietly=TRUE), '\n')"`
-  - Result: stopped after hanging for more than 60 seconds in repository renv
-    startup.
-- `R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null Rscript --vanilla -e "cat('libPaths=', paste(.libPaths(), collapse='|'), '\n'); for (pkg in c('testthat','Rsamtools','GenomicAlignments','lintr')) cat(pkg, requireNamespace(pkg, quietly=TRUE), '\n')"`
-  - Result: passed; command completed and confirmed the system library lacks
-    `testthat`, `Rsamtools`, `GenomicAlignments`, and `lintr` when renv
-    activation is disabled.
-
-Not run successfully:
-
-- Dorado parser test file and all parser tests, because `testthat` is not
-  available without renv and the repository renv startup did not complete in
-  this sandbox.
-
-## Blockers
-
-- R package validation needs a restored/writable project library for the locked
-  renv environment, or a runner where the repository's renv cache is already
-  available.
-
-## Risk Notes
-
-The repository diff is bounded to test coverage and package test metadata.
-Runtime parser behavior was not changed.
+- `_R_CHECK_FORCE_SUGGESTS_=false R_PROFILE_USER=/dev/null R_ENVIRON_USER=/dev/null R_LIBS_USER=/home/carl/R/library R CMD check --no-manual --no-build-vignettes --output=/tmp/sto-78-check .`
+  - The check produced pre-existing workspace notes for hidden agent/renv
+    directories and stopped while loading its temporary installation without a
+    final status. The focused suites above load the current package source and
+    passed; run a check from a clean export in CI for a package-level receipt.
 
 ## Next Owner
 
-Factory steward / Carl reviewer.
+Trusted factory finalizer: publish the unstaged reviewable diff to PR #311. No
+files were staged, committed, pushed, or merged.
