@@ -128,6 +128,24 @@ required modification type, coverage filtering, and the output count-column
 schema. The changed R files also pass the required formatting, style, and lint
 checks.
 
+## Final Validation Receipt (2026-07-12)
+
+The implementer reran the mandatory local guards against the final workspace:
+
+```bash
+Rscript -e "styler::style_file('R/parse_megalodon.R'); styler::style_file('tests/testthat/test-parse_megalodon.R')"
+Rscript dev/precommit.R style R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
+Rscript dev/precommit.R lint R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
+Rscript -e "styler::style_pkg(dry = 'fail'); message('All R source files are properly formatted.')"
+Rscript -e "testthat::test_file('tests/testthat/test-parse_megalodon.R')"
+Rscript -e "testthat::test_file('tests/testthat/test-parsers.R')"
+git diff --check origin/main...HEAD
+```
+
+Result: passed. The previously failed CI `style` condition is clean locally;
+both required parser suites passed; and the issue diff has no whitespace
+errors.
+
 ## Blockers
 
 None. CI should rerun the previously failed `style` check after the factory
