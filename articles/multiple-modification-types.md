@@ -289,7 +289,7 @@ sessionInfo()
 #> [1] commaKit_0.2.0   BiocStyle_2.38.0
 #> 
 #> loaded via a namespace (and not attached):
-#>   [1] bitops_1.0-9                rlang_1.2.0                
+#>   [1] bitops_1.0-9                rlang_1.3.0                
 #>   [3] magrittr_2.0.5              otel_0.2.0                 
 #>   [5] matrixStats_1.5.0           compiler_4.5.2             
 #>   [7] mgcv_1.9-4                  systemfonts_1.3.2          
@@ -299,7 +299,7 @@ sessionInfo()
 #>  [15] XVector_0.50.0              labeling_0.4.3             
 #>  [17] Rsamtools_2.26.0            rmarkdown_2.31             
 #>  [19] UCSC.utils_1.6.1            ragg_1.5.2                 
-#>  [21] xfun_0.59                   cachem_1.1.0               
+#>  [21] xfun_0.60                   cachem_1.1.0               
 #>  [23] cigarillo_1.0.0             GenomeInfoDb_1.46.2        
 #>  [25] jsonlite_2.0.0              DelayedArray_0.36.1        
 #>  [27] BiocParallel_1.44.0         parallel_4.5.2             
@@ -307,7 +307,7 @@ sessionInfo()
 #>  [31] stringi_1.8.7               RColorBrewer_1.1-3         
 #>  [33] limma_3.66.0                rtracklayer_1.70.1         
 #>  [35] GenomicRanges_1.62.1        jquerylib_0.1.4            
-#>  [37] numDeriv_2016.8-1.1         Rcpp_1.1.1-1.1             
+#>  [37] numDeriv_2016.8-1.1         Rcpp_1.1.2                 
 #>  [39] Seqinfo_1.0.0               bookdown_0.47              
 #>  [41] SummarizedExperiment_1.40.0 knitr_1.51                 
 #>  [43] zoo_1.8-15                  R.utils_2.13.0             
@@ -320,7 +320,7 @@ sessionInfo()
 #>  [57] Biobase_2.70.0              withr_3.0.3                
 #>  [59] S7_0.2.2                    coda_0.19-4.1              
 #>  [61] evaluate_1.0.5              desc_1.4.3                 
-#>  [63] mclust_6.1.2                Biostrings_2.78.0          
+#>  [63] mclust_6.1.3                Biostrings_2.78.0          
 #>  [65] pillar_1.11.1               BiocManager_1.30.27        
 #>  [67] MatrixGenerics_1.22.0       stats4_4.5.2               
 #>  [69] generics_0.1.4              RCurl_1.98-1.19            
@@ -341,7 +341,7 @@ sessionInfo()
 #>  [99] digest_0.6.39               BiocGenerics_0.56.0        
 #> [101] SparseArray_1.10.10         rjson_0.2.23               
 #> [103] htmlwidgets_1.6.4           farver_2.1.2               
-#> [105] htmltools_0.5.9             pkgdown_2.2.0              
+#> [105] htmltools_0.5.9             pkgdown_2.2.1              
 #> [107] R.oo_1.27.1                 lifecycle_1.0.5            
 #> [109] httr_1.4.8                  statmod_1.5.2              
 #> [111] MASS_7.3-65

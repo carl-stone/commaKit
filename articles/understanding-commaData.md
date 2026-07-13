@@ -314,7 +314,7 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-06 13:49:22 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-13 03:38:59 ..           0.2.0
 ```
 
 [`results()`](https://carl-stone.github.io/commaKit/reference/results.md)
@@ -382,7 +382,7 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] SummarizedExperiment_1.40.0 gtable_0.3.6               
-#>  [3] xfun_0.59                   bslib_0.11.0               
+#>  [3] xfun_0.60                   bslib_0.11.0               
 #>  [5] ggplot2_4.0.3               htmlwidgets_1.6.4          
 #>  [7] Biobase_2.70.0              lattice_0.22-7             
 #>  [9] vctrs_0.7.3                 tools_4.5.2                
@@ -395,7 +395,7 @@ sessionInfo()
 #> [23] textshaping_1.0.5           statmod_1.5.2              
 #> [25] Seqinfo_1.0.0               GenomeInfoDb_1.46.2        
 #> [27] htmltools_0.5.9             sass_0.4.10                
-#> [29] yaml_2.3.12                 pkgdown_2.2.0              
+#> [29] yaml_2.3.12                 pkgdown_2.2.1              
 #> [31] pillar_1.11.1               jquerylib_0.1.4            
 #> [33] DelayedArray_0.36.1         cachem_1.1.0               
 #> [35] limma_3.66.0                abind_1.4-8                
@@ -410,7 +410,7 @@ sessionInfo()
 #> [53] otel_0.2.0                  ragg_1.5.2                 
 #> [55] zoo_1.8-15                  evaluate_1.0.5             
 #> [57] knitr_1.51                  GenomicRanges_1.62.1       
-#> [59] IRanges_2.44.0              rlang_1.2.0                
+#> [59] IRanges_2.44.0              rlang_1.3.0                
 #> [61] glue_1.8.1                  BiocManager_1.30.27        
 #> [63] BiocGenerics_0.56.0         jsonlite_2.0.0             
 #> [65] R6_2.6.1                    MatrixGenerics_1.22.0      
