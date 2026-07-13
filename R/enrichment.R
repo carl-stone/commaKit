@@ -660,6 +660,53 @@ NULL
   do.call(getExportedValue("clusterProfiler", spec$fun), spec$args)
 }
 
+# Derive the tested, analysis-eligible gene universe for ORA.
+#
+# The input must already have been filtered to one feature type, role, overlap
+# policy, and (for commaData input) mod_type/mod_context. A gene is eligible
+# when at least one associated site has both differential-methylation values.
+# @keywords internal
+.oraUniverse <- function(sg, role_name, feature_type) {
+  required_cols <- c("gene_id", "dm_padj", "dm_delta_beta")
+  missing_cols <- setdiff(required_cols, colnames(sg))
+  if (length(missing_cols) > 0L) {
+    stop(
+      "Cannot derive the ORA universe for ", role_name,
+      " genes of feature_type '", feature_type, "': missing column(s) ",
+      paste(sprintf("'%s'", missing_cols), collapse = ", "), "."
+    )
+  }
+
+  tested <- !is.na(sg$dm_padj) & !is.na(sg$dm_delta_beta)
+  universe <- unique(sg$gene_id[tested & !is.na(sg$gene_id)])
+  universe <- universe[nzchar(universe)]
+
+  if (length(universe) == 0L) {
+    stop(
+      "Cannot derive the ORA universe for ", role_name,
+      " genes of feature_type '", feature_type, "': no tested, ",
+      "analysis-eligible genes were found."
+    )
+  }
+
+  universe
+}
+
+# Ensure that a supplied ORA foreground can be compared to its universe.
+# @keywords internal
+.validateOraUniverse <- function(foreground, universe) {
+  if (is.null(universe) || length(universe) == 0L) {
+    stop("Cannot run ORA without a non-empty analysis-eligible universe.")
+  }
+  if (anyNA(universe) || any(!nzchar(universe))) {
+    stop("Cannot run ORA with missing or empty gene IDs in the universe.")
+  }
+  if (!all(foreground %in% universe)) {
+    stop("Cannot run ORA: the foreground contains genes outside its universe.")
+  }
+  invisible(NULL)
+}
+
 # @keywords internal
 .runEnrichmentMethod <- function(analysis, sg, universe, ctx) {
   if (identical(analysis, "ora")) {
@@ -667,6 +714,8 @@ NULL
       sg$dm_padj <= ctx$padj_threshold &
       abs(sg$dm_delta_beta) >= ctx$delta_beta_threshold
     genes <- unique(sg$gene_id[sig_mask])
+
+    .validateOraUniverse(genes, universe)
 
     if (length(genes) == 0L) {
       warning(
@@ -1218,14 +1267,31 @@ buildKEGGGeneIDMap <- function(organism,
 #' to specify which perspective to test:
 #' \describe{
 #'   \item{\code{"target"}}{(default) Which target genes have methylated
-#'     sites in/near this feature type?  Universe = all genes with site
-#'     coverage.}
+#'     sites in/near this feature type?  For ORA, the universe is the unique
+#'     target genes with at least one tested site after the same
+#'     \code{mod_type}/\code{mod_context}, feature-type, and overlap filters
+#'     as the foreground.}
 #'   \item{\code{"regulator"}}{Which regulators (sigma factors, TFs, RNA
-#'     regulators) have methylated binding sites?  Universe = all regulators
-#'     of the same type found in the annotation for this feature type.}
+#'     regulators) have methylated binding sites?  For ORA, the universe is
+#'     the tested regulators of the requested regulator class after those same
+#'     filters.}
 #'   \item{\code{"both"}}{Run target and regulator enrichments separately,
 #'     returning a named sub-list \code{list(target=..., regulator=...)}.}
 #' }
+#'
+#' @section Background and failure policy:
+#' ORA never uses only the significant foreground as its background. Its
+#' role-specific universe consists of genes with at least one non-missing
+#' \code{dm_padj} and \code{dm_delta_beta} value in the requested analysis
+#' slice. The foreground must be a subset of that universe or the analysis
+#' stops. GSEA does not accept an ORA universe; it ranks the valid scored genes
+#' from the same role-specific analysis slice.
+#'
+#' Missing annotation columns, an unmatched requested \code{feature_type},
+#' missing requested target/regulator genes, and an underivable ORA universe
+#' are setup errors and stop the requested analysis. In contrast, after a
+#' valid ORA universe exists, zero genes meeting the ORA thresholds is a valid
+#' no-signal result: the function warns and returns \code{NULL} result slots.
 #'
 #' @section Prerequisites:
 #' Before calling \code{enrichMethylation()}, you must:
@@ -1331,7 +1397,7 @@ buildKEGGGeneIDMap <- function(organism,
 #' @param feature_type Character vector or \code{NULL}. Feature type(s) to
 #'   analyse.  When more than one type is given, each is run separately and
 #'   results are returned as a named list.  Default \code{"gene"}.  Set
-#'   \code{NULL} to include all annotated sites.
+#'   \code{NULL} to include all annotated sites for target analysis only.
 #' @param gene_role Character string; which role to test.  One of
 #'   \code{"target"} (default), \code{"regulator"}, or \code{"both"}.
 #'   See Details.
@@ -1479,6 +1545,10 @@ enrichMethylation <- function(object,
   }
 
   # -- Build the per-feature-type loop ---------------------------------------
+  if (is.null(feature_type) && gene_role != "target") {
+    stop("'feature_type = NULL' supports only 'gene_role = \"target\"'.")
+  }
+
   ft_loop <- if (is.null(feature_type)) list(NULL) else as.list(feature_type)
   is_single <- length(ft_loop) == 1L
   dispatch_ctx <- .enrichmentDispatchContext(
@@ -1514,10 +1584,13 @@ enrichMethylation <- function(object,
       # NULL feature_type: use legacy siteToGeneMap (no role information)
       sg_all <- .siteToGeneMap(res_df, gene_col)
       if (is.null(sg_all) || nrow(sg_all) == 0L) {
-        warning("Gene map is empty -- returning NULL.")
-        return(list(go = NULL, kegg = NULL))
+        stop("No target genes found in the requested annotated sites.")
       }
-      universe <- unique(sg_all$gene_id[!is.na(sg_all$gene_id)])
+      universe <- if ("ora" %in% dispatch_ctx$method) {
+        .oraUniverse(sg_all, "target", "all annotated sites")
+      } else {
+        NULL
+      }
       return(.runEnrichmentForGeneMap(
         sg_all, universe, dispatch_ctx
       ))
@@ -1525,37 +1598,31 @@ enrichMethylation <- function(object,
 
     # New code path: use .extractGeneRoles()
     if (!"feature_types" %in% colnames(res_df)) {
-      warning(
+      stop(
         "'feature_types' column not found. Run annotateSites() first. ",
-        "Returning NULL for feature_type = '", ft, "'."
+        "Cannot analyse feature_type = '", ft, "'."
       )
-      return(list(go = NULL, kegg = NULL))
     }
 
     role_table <- .extractGeneRoles(res_df, ft, gene_col, eff_overlap_only)
 
     if (is.null(role_table)) {
-      warning("No sites with feature_type '", ft, "'. Returning NULL.")
-      return(list(go = NULL, kegg = NULL))
+      stop("No sites with requested feature_type '", ft, "'.")
     }
 
     # Helper to run enrichment for one role subset
     .enrich_for_role <- function(rt, role_name) {
       sg <- rt[rt$role == role_name & !is.na(rt$gene_id), , drop = FALSE]
       if (nrow(sg) == 0L) {
-        warning(
+        stop(
           "No ", role_name, " genes found for feature_type '",
-          ft, "'. Returning NULL."
+          ft, "'."
         )
-        return(list(go = NULL, kegg = NULL))
       }
-      if (role_name == "target") {
-        # Universe = all target genes (standard background)
-        universe <- unique(sg$gene_id)
+      universe <- if ("ora" %in% dispatch_ctx$method) {
+        .oraUniverse(sg, role_name, ft)
       } else {
-        # Universe = all regulator genes of this type in the annotation
-        regulator_rows <- rt$role == "regulator" & !is.na(rt$gene_id)
-        universe <- unique(rt$gene_id[regulator_rows])
+        NULL
       }
       .runEnrichmentForGeneMap(
         sg, universe, dispatch_ctx

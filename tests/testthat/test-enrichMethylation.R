@@ -224,6 +224,107 @@ test_that("enrichment dispatch preserves combined short-circuit shape", {
   expect_null(res$kegg$gsea)
 })
 
+# ── ORA universe policy ─────────────────────────────────────────────────────
+
+test_that(
+  ".oraUniverse retains every tested target gene, not only foreground",
+  {
+    targets <- data.frame(
+      gene_id = c("targetA", "targetB", "targetC", "targetD"),
+      dm_padj = c(0.01, 0.80, NA_real_, 0.90),
+      dm_delta_beta = c(0.30, 0.20, 0.40, NA_real_),
+      stringsAsFactors = FALSE
+    )
+
+    universe <- commaKit:::.oraUniverse(targets, "target", "gene")
+
+    expect_setequal(universe, c("targetA", "targetB"))
+    expect_false("targetC" %in% universe)
+    expect_false("targetD" %in% universe)
+  }
+)
+
+test_that(".oraUniverse restricts regulator background to tested regulators", {
+  regulators <- data.frame(
+    gene_id = c("rpoD", "rpoH", "rpoS"),
+    role = "regulator",
+    role_type = "sigma_factor",
+    dm_padj = c(0.01, 0.80, NA_real_),
+    dm_delta_beta = c(0.30, 0.20, 0.40),
+    stringsAsFactors = FALSE
+  )
+
+  universe <- commaKit:::.oraUniverse(
+    regulators,
+    "regulator",
+    "transcription_factor_binding_site"
+  )
+
+  expect_setequal(universe, c("rpoD", "rpoH"))
+  expect_false("rpoS" %in% universe)
+})
+
+test_that("ORA errors when its foreground is outside the universe", {
+  expect_error(
+    commaKit:::.validateOraUniverse("targetA", "targetB"),
+    "foreground contains genes outside"
+  )
+})
+
+test_that("valid ORA universe with no foreground is a no-signal result", {
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = "ora",
+    org_db = NULL,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = NULL,
+    term2gene = NULL,
+    term2name = NULL,
+    kegg_term2gene = NULL,
+    kegg_term2name = NULL,
+    padj_threshold = 0.05,
+    delta_beta_threshold = 0.1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+  targets <- data.frame(
+    gene_id = c("targetA", "targetB"),
+    site_key = c("chr1:100:+", "chr1:200:+"),
+    dm_padj = c(0.80, 0.90),
+    dm_delta_beta = c(0.20, 0.30),
+    stringsAsFactors = FALSE
+  )
+
+  expect_warning(
+    result <- commaKit:::.runEnrichmentForGeneMap(
+      targets,
+      commaKit:::.oraUniverse(targets, "target", "gene"),
+      ctx
+    ),
+    "No significantly differentially methylated genes"
+  )
+  expect_null(result$go)
+  expect_null(result$kegg)
+})
+
+test_that(".oraUniverse errors when no tested role genes are available", {
+  untested <- data.frame(
+    gene_id = "targetA",
+    dm_padj = NA_real_,
+    dm_delta_beta = NA_real_,
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    commaKit:::.oraUniverse(untested, "target", "gene"),
+    "Cannot derive the ORA universe"
+  )
+})
+
 test_that("enrichment dispatch ignores duplicate methods", {
   ctx <- commaKit:::.enrichmentDispatchContext(
     method = c("ora", "ora"),
@@ -473,18 +574,16 @@ test_that("enrichMethylation errors when diffMethyl not run", {
 })
 
 test_that(
-  "enrichMethylation warns when annotateSites not run (feature_type='gene')",
+  "enrichMethylation errors when annotateSites not run (feature_type='gene')",
   {
     skip_if_not_installed("clusterProfiler")
     data(comma_example_data)
     dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
-    # dm has no feature_types column; new code path warns and returns NULL
-    expect_warning(
-      res <- enrichMethylation(dm, TERM2GENE = fake_t2g),
+    # dm has no feature_types column, so its requested annotation is absent.
+    expect_error(
+      enrichMethylation(dm, TERM2GENE = fake_t2g),
       "feature_types.*not found|annotateSites"
     )
-    expect_null(res$go)
-    expect_null(res$kegg)
   }
 )
 
@@ -732,19 +831,17 @@ test_that(
 )
 
 test_that(
-  "enrichMethylation warns and returns NULL for unmatched feature_type",
+  "enrichMethylation errors for an unmatched feature_type",
   {
     skip_if_not_installed("clusterProfiler")
     ann <- make_annotated_dm()
-    expect_warning(
-      res <- enrichMethylation(ann,
+    expect_error(
+      enrichMethylation(ann,
         method = "ora", TERM2GENE = fake_t2g,
         feature_type = "nonexistent_type"
       ),
-      "No sites with feature_type"
+      "No sites with requested feature_type"
     )
-    expect_null(res$go)
-    expect_null(res$kegg)
   }
 )
 
@@ -1065,6 +1162,55 @@ make_tfbs_res_df <- function() {
   )
 }
 
+make_tfbs_universe_res_df <- function() {
+  data.frame(
+    chrom = rep("chr1", 3L),
+    position = c(100L, 200L, 300L),
+    strand = rep("+", 3L),
+    dm_padj = c(0.01, 0.80, 0.90),
+    dm_delta_beta = c(0.30, 0.20, 0.20),
+    feature_types = I(rep(list("transcription_factor_binding_site"), 3L)),
+    feature_names = I(list("geneAp", "geneBp", "geneCp")),
+    feature_subtype_values = I(list("Sigma70", "Sigma32", "Sigma38")),
+    stringsAsFactors = FALSE
+  )
+}
+
+test_that("enrichMethylation uses tested role-specific ORA universes", {
+  skip_if_not_installed("clusterProfiler")
+  df <- make_tfbs_universe_res_df()
+  t2g <- data.frame(
+    term = c(
+      "TARGET", "TARGET", "TARGET",
+      "REGULATOR", "REGULATOR", "REGULATOR"
+    ),
+    gene = c("geneA", "geneB", "geneC", "rpoD", "rpoH", "rpoS"),
+    stringsAsFactors = FALSE
+  )
+
+  target <- enrichMethylation(
+    df,
+    TERM2GENE = t2g,
+    feature_type = "transcription_factor_binding_site",
+    gene_role = "target",
+    minGSSize = 1L,
+    pvalueCutoff = 1
+  )
+  regulator <- enrichMethylation(
+    df,
+    TERM2GENE = t2g,
+    feature_type = "transcription_factor_binding_site",
+    gene_role = "regulator",
+    minGSSize = 1L,
+    pvalueCutoff = 1
+  )
+
+  expect_s4_class(target$go, "enrichResult")
+  expect_s4_class(regulator$go, "enrichResult")
+  expect_setequal(target$go@universe, c("geneA", "geneB", "geneC"))
+  expect_setequal(regulator$go@universe, c("rpoD", "rpoH", "rpoS"))
+})
+
 test_that(
   paste(
     "enrichMethylation gene_role='target' and 'regulator' use",
@@ -1120,6 +1266,20 @@ test_that("enrichMethylation gene_role='regulator' returns valid results", {
   }
 })
 
+test_that("enrichMethylation errors when a requested role has no genes", {
+  skip_if_not_installed("clusterProfiler")
+  df <- make_role_res_df(list("gene"), list("geneA"))
+  expect_error(
+    enrichMethylation(
+      df,
+      TERM2GENE = fake_t2g,
+      feature_type = "gene",
+      gene_role = "regulator"
+    ),
+    "No regulator genes found"
+  )
+})
+
 test_that(
   "enrichMethylation gene_role='both' returns list with target and regulator",
   {
@@ -1141,22 +1301,20 @@ test_that(
 
 # ── enrichMethylation() — multiple feature_type values ────────────────────────
 
-test_that("enrichMethylation multiple feature_type returns named list", {
-  skip_if_not_installed("clusterProfiler")
-  ann <- make_annotated_dm()
-  suppressWarnings({
-    res <- enrichMethylation(ann,
-      TERM2GENE = fake_t2g,
-      feature_type = c("gene", "nonexistent_type")
+test_that(
+  "enrichMethylation errors when any requested feature_type is absent",
+  {
+    skip_if_not_installed("clusterProfiler")
+    ann <- make_annotated_dm()
+    expect_error(
+      enrichMethylation(ann,
+        TERM2GENE = fake_t2g,
+        feature_type = c("gene", "nonexistent_type")
+      ),
+      "No sites with requested feature_type"
     )
-  })
-  expect_type(res, "list")
-  expect_true(all(c("gene", "nonexistent_type") %in% names(res)))
-  # gene result: standard list(go, kegg)
-  expect_true(all(c("go", "kegg") %in% names(res[["gene"]])))
-  # nonexistent_type: NULL slots
-  expect_null(res[["nonexistent_type"]]$go)
-})
+  }
+)
 
 # ── enrichMethylation() — data.frame input ────────────────────────────────────
 

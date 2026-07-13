@@ -65,7 +65,10 @@ The active result is mirrored into bare `dm_*` row metadata columns for backward
 2. `annotateSites()` annotates sites to genomic features and stores all associations as list-columns.
 3. `diffMethyl()` tests differential methylation by `mod_context`.
 4. `results()` and `filterResults()` extract and filter result layers.
-5. `enrichMethylation()` runs ORA/GSEA over target/regulator genes.
+5. `enrichMethylation()` runs ORA/GSEA over target/regulator genes. ORA uses
+   tested, analysis-eligible role-specific universes after the requested
+   mod-context, feature-type, and overlap filters; unmet annotation or role
+   prerequisites are errors rather than empty results.
 6. QC and diagnostics include `methylomeSummary()`, `coverageDepth()`, `varianceByDepth()`, `mValues()`, and plots.
 7. Regional/export utilities include `slidingWindow()`, `summarizeRegions()`, and `writeBED()`.
 

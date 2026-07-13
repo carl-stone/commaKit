@@ -85,7 +85,7 @@ identifiers per site.  Default \code{"feature_names"}.}
 \item{feature_type}{Character vector or \code{NULL}. Feature type(s) to
 analyse.  When more than one type is given, each is run separately and
 results are returned as a named list.  Default \code{"gene"}.  Set
-\code{NULL} to include all annotated sites.}
+\code{NULL} to include all annotated sites for target analysis only.}
 
 \item{gene_role}{Character string; which role to test.  One of
 \code{"target"} (default), \code{"regulator"}, or \code{"both"}.
@@ -150,15 +150,34 @@ appropriate comparison universe changes accordingly.  Use \code{gene_role}
 to specify which perspective to test:
 \describe{
 \item{\code{"target"}}{(default) Which target genes have methylated
-sites in/near this feature type?  Universe = all genes with site
-coverage.}
+sites in/near this feature type?  For ORA, the universe is the unique
+target genes with at least one tested site after the same
+\code{mod_type}/\code{mod_context}, feature-type, and overlap filters
+as the foreground.}
 \item{\code{"regulator"}}{Which regulators (sigma factors, TFs, RNA
-regulators) have methylated binding sites?  Universe = all regulators
-of the same type found in the annotation for this feature type.}
+regulators) have methylated binding sites?  For ORA, the universe is
+the tested regulators of the requested regulator class after those same
+filters.}
 \item{\code{"both"}}{Run target and regulator enrichments separately,
 returning a named sub-list \code{list(target=..., regulator=...)}.}
 }
 }
+\section{Background and failure policy}{
+
+ORA never uses only the significant foreground as its background. Its
+role-specific universe consists of genes with at least one non-missing
+\code{dm_padj} and \code{dm_delta_beta} value in the requested analysis
+slice. The foreground must be a subset of that universe or the analysis
+stops. GSEA does not accept an ORA universe; it ranks the valid scored genes
+from the same role-specific analysis slice.
+
+Missing annotation columns, an unmatched requested \code{feature_type},
+missing requested target/regulator genes, and an underivable ORA universe
+are setup errors and stop the requested analysis. In contrast, after a
+valid ORA universe exists, zero genes meeting the ORA thresholds is a valid
+no-signal result: the function warns and returns \code{NULL} result slots.
+}
+
 \section{Prerequisites}{
 
 Before calling \code{enrichMethylation()}, you must:
@@ -234,7 +253,9 @@ with the largest absolute score, preserving its sign) or \code{"mean"}.
 # Requires clusterProfiler and a custom TERM2GENE mapping
 if (requireNamespace("clusterProfiler", quietly = TRUE)) {
   data(comma_example_data)
-  dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
+  dm <- diffMethyl(comma_example_data,
+    formula = ~condition, mod_type = "6mA"
+  )
   ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
 
   # Custom TERM2GENE (works without network access or OrgDb)
@@ -242,7 +263,9 @@ if (requireNamespace("clusterProfiler", quietly = TRUE)) {
     term = c("PATH:01", "PATH:01", "PATH:02"),
     gene = c("geneA", "geneB", "geneC")
   )
-  res <- enrichMethylation(ann, TERM2GENE = fake_t2g, method = c("ora", "gsea"))
+  res <- enrichMethylation(ann,
+    TERM2GENE = fake_t2g, method = c("ora", "gsea")
+  )
   str(res, max.level = 2)
 }
 }

@@ -333,9 +333,9 @@ layers[, setdiff(colnames(layers), "timestamp")]
 #>          mod_type           motif p_adjust_method min_coverage     alpha
 #>   <CharacterList> <CharacterList>     <character>    <integer> <numeric>
 #> 1             6mA                              BH            5       0.5
-#>                                 result_cols package_version
-#>                             <CharacterList>     <character>
-#> 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,...           0.2.0
+#>                           result_cols package_version
+#>                       <CharacterList>     <character>
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,...           0.2.0
 res <- results(cd_dm)
 # Top sites by adjusted p-value
 head(res[
@@ -424,11 +424,20 @@ enr$go
 The `gene_role` argument controls how genes are classified:
 
 - `"target"` — genes whose bodies overlap DM sites. The background
-  universe is all genes in the annotation.
+  universe for ORA is the target genes with at least one tested site
+  after the selected modification-context, feature-type, and overlap
+  filters.
 - `"regulator"` — genes whose products (e.g., transcription factors)
-  bind near DM sites. The background universe is only regulators of that
-  type.
+  bind near DM sites. The ORA background is only tested regulators of
+  the requested regulator class after those same filters.
 - `"both"` — runs both analyses separately and returns a named list.
+
+GSEA ranks valid scored genes from the same role-specific analysis
+slice; it does not use an ORA background universe. Missing annotations,
+an unmatched requested feature type, missing requested role genes, or an
+underivable ORA universe are setup errors. Once a valid ORA universe
+exists, no genes passing the significance thresholds is a valid
+no-signal result and returns empty result slots with a warning.
 
 ## KEGG Enrichment (Offline Path)
 

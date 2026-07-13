@@ -81,9 +81,14 @@ This document records significant architectural and API decisions. When you're t
 **Rationale:** Methylation can affect gene expression (target) or protein binding (regulator). These are different biological questions with different background universes.
 
 **Consequence:**
-- `gene_role = "target"` — background is all genes in annotation
-- `gene_role = "regulator"` — background is only regulators of that type (e.g., sigma factors)
+- `gene_role = "target"` — ORA background is target genes with at least one
+  tested site under the requested mod-context, feature-type, and overlap filters
+- `gene_role = "regulator"` — ORA background is only tested regulators of the
+  requested class (e.g., sigma factors) under those same filters
 - `gene_role = "both"` — runs both analyses separately
+- Missing requested annotation/roles and an underivable ORA universe are setup
+  errors. A valid universe with no significant foreground genes is a no-signal
+  result and warns with `NULL` result slots.
 
 **Do not change:** The semantics are intentional and documented.
 
