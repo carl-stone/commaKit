@@ -470,7 +470,7 @@ diffMethyl <- function(
   }
 
   # -- Apply genome-wide multiple testing correction -------------------------
-  padj_all <- .applyMultipleTesting(pvalue_all, method = p_adjust_method)
+  padj_all <- stats::p.adjust(pvalue_all, method = p_adjust_method)
 
   result_cols <- c(
     "dm_pvalue", "dm_padj", "dm_delta_beta",

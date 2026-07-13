@@ -286,6 +286,23 @@ test_that("diffMethyl: p_adjust_method = 'none' gives padj equal to pvalue", {
   expect_equal(rd$dm_pvalue[ok], rd$dm_padj[ok], tolerance = 1e-10)
 })
 
+test_that("diffMethyl: every p.adjust method matches stats::p.adjust", {
+  obj <- .make_dm_data()
+
+  for (adjust_method in stats::p.adjust.methods) {
+    dm <- diffMethyl(obj,
+      formula = ~condition, method = "quasi_f",
+      p_adjust_method = adjust_method
+    )
+    rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+    expect_equal(
+      rd$dm_padj,
+      stats::p.adjust(rd$dm_pvalue, method = adjust_method),
+      tolerance = 1e-12
+    )
+  }
+})
+
 # ─── Error handling ───────────────────────────────────────────────────────────
 
 test_that("diffMethyl: error on non-commaData input", {
@@ -554,42 +571,6 @@ test_that("diffMethyl: method='quasi_f' errors informatively if limma absent", {
   )
 })
 
-# ─── .applyMultipleTesting() direct tests ────────────────────────────────────
-
-test_that("applyMultipleTesting: BH correction returns values in [0, 1]", {
-  pvals <- c(0.01, 0.05, 0.1, 0.5, 0.9)
-  padj <- commaKit:::.applyMultipleTesting(pvals, method = "BH")
-  expect_true(all(padj >= 0 & padj <= 1))
-})
-
-test_that(
-  "applyMultipleTesting: method='none' returns original p-values unchanged",
-  {
-    pvals <- c(0.01, 0.05, 0.1, 0.5, 0.9)
-    padj <- commaKit:::.applyMultipleTesting(pvals, method = "none")
-    expect_equal(padj, pvals)
-  }
-)
-
-test_that("applyMultipleTesting: NA values pass through as NA", {
-  pvals <- c(0.01, NA_real_, 0.1)
-  padj <- commaKit:::.applyMultipleTesting(pvals, method = "BH")
-  expect_true(is.na(padj[2]))
-})
-
-test_that("applyMultipleTesting: output length equals input length", {
-  pvals <- c(0.001, 0.01, 0.05, 0.1)
-  padj <- commaKit:::.applyMultipleTesting(pvals, method = "BH")
-  expect_equal(length(padj), length(pvals))
-})
-
-test_that("applyMultipleTesting: bonferroni method accepted without error", {
-  pvals <- c(0.01, 0.05, 0.1)
-  expect_no_error(
-    commaKit:::.applyMultipleTesting(pvals, method = "bonferroni")
-  )
-})
-
 # ─── Edge cases ───────────────────────────────────────────────────────────────
 
 test_that(
@@ -604,6 +585,7 @@ test_that(
     dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
     rd <- as.data.frame(SummarizedExperiment::rowData(dm))
     expect_true(all(is.na(rd$dm_pvalue)))
+    expect_true(all(is.na(rd$dm_padj)))
   }
 )
 
@@ -641,6 +623,7 @@ test_that(
     dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
     rd <- as.data.frame(SummarizedExperiment::rowData(dm))
     expect_true(is.na(rd$dm_pvalue[1]))
+    expect_true(is.na(rd$dm_padj[1]))
   }
 )
 
