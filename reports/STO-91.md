@@ -35,73 +35,45 @@ backend wrappers.
 
 - `git status --short --branch`
   - Result: passed
-  - Baseline: `## symphony/STO-91...origin/main`
-  - Initial status included modified target files and pre-existing untracked
-    `logs/`.
+  - Branch: `symphony/STO-91`.
+  - Existing factory artifacts remain untracked: `.symphony/`, `logs/`, and
+    `reports/STO-91.codex-final.json`.
 
 - `rg -n "\\.run(MethylKit|Limma|QuasiF)|resolveDiffMethylDesign|requireNamespace\\(\\\"(limma|methylKit)\\\"" R tests/testthat/test-diffMethyl.R`
   - Result: passed
   - Confirmed internal wrapper calls come from `diffMethyl()` and dependency
     checks remain at the public boundary.
 
-- `Rscript --vanilla -e "for (f in c('R/diffMethyl.R','R/limma_wrapper.R','R/methylkit_wrapper.R','R/quasi_f.R','tests/testthat/test-diffMethyl.R')) parse(f); cat('parse ok\n')"`
+- `Rscript -e "styler::style_file(c('R/diffMethyl.R', 'R/limma_wrapper.R', 'R/methylkit_wrapper.R', 'R/quasi_f.R', 'tests/testthat/test-diffMethyl.R'))"`
   - Result: passed
-  - Output: `parse ok`
+  - Formatted every changed R file without introducing a source diff.
+
+- `Rscript dev/precommit.R style R/diffMethyl.R R/limma_wrapper.R R/methylkit_wrapper.R R/quasi_f.R tests/testthat/test-diffMethyl.R`
+  - Result: passed
+
+- `Rscript dev/precommit.R lint R/diffMethyl.R R/limma_wrapper.R R/methylkit_wrapper.R R/quasi_f.R tests/testthat/test-diffMethyl.R`
+  - Result: passed
 
 - `git diff --check`
   - Result: passed
   - Output: none
 
-- `Rscript --vanilla -e "cat('R ok\n'); print(requireNamespace('testthat', quietly=TRUE)); print(requireNamespace('limma', quietly=TRUE)); print(requireNamespace('methylKit', quietly=TRUE))"`
-  - Result: passed
-  - Output showed R runs, but the non-renv/global library lacks
-    `testthat`, `limma`, and `methylKit`.
-
 - `Rscript -e "testthat::test_file('tests/testthat/test-diffMethyl.R')"`
-  - Result: failed/unavailable
-  - Attempt 1 bootstrapped `renv` and then left a stale PTY with no visible R
-    process or test result; interrupted after waiting.
-
-- `timeout 120s Rscript -e "testthat::test_file('tests/testthat/test-diffMethyl.R')"`
-  - Result: failed/unavailable
-  - Output reached `renv` bootstrap/install only:
-    `# Bootstrapping renv 1.1.8`, `Downloading renv ... OK`,
-    `Installing renv ... OK`.
-  - Exit code: `124`
-  - The command timed out before `testthat` ran.
-
-- `RENV_CONFIG_CACHE_ENABLED=FALSE RENV_PATHS_LIBRARY=.symphony/renv/library/linux-debian-trixie/R-4.5/x86_64-pc-linux-gnu timeout 600s Rscript --vanilla -e ".libPaths(c(file.path(getwd(), '.symphony/renv/library/linux-debian-trixie/R-4.5/x86_64-pc-linux-gnu'), .libPaths())); library(renv); renv::restore(project = getwd(), prompt = FALSE)"`
-  - Result: failed/unavailable
-  - Attempted a workspace-local dependency restore with cache disabled.
-    The session became stale after loading `renv`; no R process was visible
-    and no restore result was produced. Generated `.symphony/` files were
-    removed because they were validation noise, not intended source diff.
+  - Result: passed (exit code 0).
+  - The initial renv bootstrap completed before this successful rerun.
 
 ## Validation
 
 Passed:
 
-- Changed R files and the changed test file parse successfully under
-  `Rscript --vanilla`.
+- Formatter and pre-commit style/lint checks pass for every changed R file.
+- Required focused public API test passes.
 - `git diff --check` reports no whitespace errors.
-
-Unavailable:
-
-- Required focused validation
-  `Rscript -e "testthat::test_file('tests/testthat/test-diffMethyl.R')"`
-  could not complete in this sandbox because repository `renv` activation
-  repeatedly timed out or produced a stale PTY during bootstrap before
-  `testthat` could run. The global/non-renv R library also lacks `testthat`,
-  `limma`, and `methylKit`.
 
 ## Blockers
 
-- Focused `test-diffMethyl.R` validation needs a restored commaKit R
-  dependency environment. Safest next step is to rerun the required test in
-  the factory/finalizer environment where `renv` can complete or dependencies
-  are already available.
+None.
 
 ## Next Owner
 
 factory steward / Carl reviewer
-
