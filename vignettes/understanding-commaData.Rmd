@@ -121,9 +121,7 @@ The built-in data illustrate that a `mod_context` is the combination of both
 parts.
 
 ```{r context-table}
-context_table <- unique(as.data.frame(
-  si[, c("mod_type", "motif", "mod_context")]
-))
+context_table <- unique(as.data.frame(si[, c("mod_type", "motif", "mod_context")]))
 context_table[order(context_table$mod_context), ]
 ```
 
