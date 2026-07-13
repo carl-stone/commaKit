@@ -1,4 +1,5 @@
-# Create a tiny dataset for most tests to speed up execution. We can still use the full dataset for tests that require more complex structure or specific edge cases.
+# Create a tiny dataset for most tests to speed up execution. We can still use
+# the full dataset for tests that require more complex structure or edge cases.
 make_tiny <- function() {
   gi <- c(chr_test = 20L)
 
@@ -52,24 +53,22 @@ make_tiny <- function() {
 }
 
 tiny_data <- make_tiny()
-W <- 8L
+window_width <- 8L
 
 
 test_that("slidingWindow: returns a data.frame", {
-  result <- slidingWindow(tiny_data, window = W)
+  result <- slidingWindow(tiny_data, window = window_width)
   expect_s3_class(result, "data.frame")
 })
 
 test_that("slidingWindow: output has required columns", {
-  result <- slidingWindow(tiny_data, window = W)
-  expect_true(
-    all(c("chrom", "position", "sample_name", "window_median") %in%
-      colnames(result))
-  )
+  result <- slidingWindow(tiny_data, window = window_width)
+  expected_columns <- c("chrom", "position", "sample_name", "window_median")
+  expect_true(all(expected_columns %in% colnames(result)))
 })
 
 test_that("slidingWindow: stat='mean' produces window_mean column", {
-  result <- slidingWindow(tiny_data, window = W, stat = "mean")
+  result <- slidingWindow(tiny_data, window = window_width, stat = "mean")
   expect_true("window_mean" %in% colnames(result))
   expect_false("window_median" %in% colnames(result))
 })
@@ -78,14 +77,14 @@ test_that("slidingWindow: number of rows equals genome_size * n_samples", {
   gi <- genomeSizes(tiny_data)
   n_pos <- sum(gi)
   n_samp <- ncol(tiny_data)
-  result <- slidingWindow(tiny_data, window = W)
+  result <- slidingWindow(tiny_data, window = window_width)
   expect_equal(nrow(result), n_pos * n_samp)
 })
 
 test_that("slidingWindow: positions span 1 to chromosome size", {
   gi <- genomeSizes(tiny_data)
   chr_size <- gi[1]
-  result <- slidingWindow(tiny_data, window = W)
+  result <- slidingWindow(tiny_data, window = window_width)
   chr_result <- result[result$chrom == names(gi)[1], ]
   expect_equal(
     min(chr_result$position[
@@ -102,7 +101,7 @@ test_that("slidingWindow: positions span 1 to chromosome size", {
 })
 
 test_that("slidingWindow: all sample names present in output", {
-  result <- slidingWindow(tiny_data, window = W)
+  result <- slidingWindow(tiny_data, window = window_width)
   expect_setequal(unique(result$sample_name), sampleInfo(tiny_data)$sample_name)
 })
 
@@ -116,21 +115,27 @@ test_that("slidingWindow: median and mean give different results", {
 })
 
 test_that("slidingWindow: mod_type filtering works", {
-  result_6mA <- slidingWindow(tiny_data, window = W, mod_type = "6mA")
-  result_5mC <- slidingWindow(tiny_data, window = W, mod_type = "5mC")
+  result_6ma <- slidingWindow(
+    tiny_data,
+    window = window_width, mod_type = "6mA"
+  )
+  result_5mc <- slidingWindow(
+    tiny_data,
+    window = window_width, mod_type = "5mC"
+  )
   # Both still produce full-genome output (genome size × n_samples)
   gi <- genomeSizes(tiny_data)
   n_samp <- ncol(tiny_data)
-  expect_equal(nrow(result_6mA), sum(gi) * n_samp)
-  expect_equal(nrow(result_5mC), sum(gi) * n_samp)
+  expect_equal(nrow(result_6ma), sum(gi) * n_samp)
+  expect_equal(nrow(result_5mc), sum(gi) * n_samp)
   # The smoothed values should differ because different sites are included
-  v6 <- result_6mA$window_median[!is.na(result_6mA$window_median)]
-  v5 <- result_5mC$window_median[!is.na(result_5mC$window_median)]
+  v6 <- result_6ma$window_median[!is.na(result_6ma$window_median)]
+  v5 <- result_5mc$window_median[!is.na(result_5mc$window_median)]
   expect_false(isTRUE(all.equal(v6, v5, check.attributes = FALSE)))
 })
 
 test_that("slidingWindow: values are in [0,1] range (ignoring NA)", {
-  result <- slidingWindow(tiny_data, window = W)
+  result <- slidingWindow(tiny_data, window = window_width)
   vals <- result$window_median[!is.na(result$window_median)]
   expect_true(all(vals >= 0 & vals <= 1))
 })
@@ -138,7 +143,7 @@ test_that("slidingWindow: values are in [0,1] range (ignoring NA)", {
 test_that(
   "slidingWindow: circular=FALSE returns correct row count with valid values",
   {
-    result <- slidingWindow(tiny_data, window = W, circular = FALSE)
+    result <- slidingWindow(tiny_data, window = window_width, circular = FALSE)
     expect_s3_class(result, "data.frame")
     expect_true("window_median" %in% colnames(result))
     # Row count should be genome_size * n_samples
@@ -161,9 +166,9 @@ test_that(
     chr <- names(gi)[1]
     samp <- sampleInfo(tiny_data)$sample_name[1]
     # Compare all positions for one sample on the chromosome.
-    # With 300 sites across a 100kb genome and a 5000bp window, circular wrapping
-    # at the chromosome boundary must produce at least one position with a different
-    # smoothed value.
+    # With 300 sites across a 100kb genome and a 5000bp window, circular
+    # wrapping at the chromosome boundary must produce at least one position
+    # with a different smoothed value.
     v_circ <- r_circ$window_median[
       r_circ$chrom == chr & r_circ$sample_name == samp
     ]
@@ -278,11 +283,14 @@ test_that("slidingWindow: example data is circular by default", {
 
 test_that("slidingWindow: circular must be TRUE, FALSE, or NULL", {
   expect_error(
-    slidingWindow(tiny_data, window = W, circular = NA),
+    slidingWindow(tiny_data, window = window_width, circular = NA),
     "TRUE, FALSE, or NULL"
   )
   expect_error(
-    slidingWindow(tiny_data, window = W, circular = c(TRUE, FALSE)),
+    slidingWindow(
+      tiny_data,
+      window = window_width, circular = c(TRUE, FALSE)
+    ),
     "TRUE, FALSE, or NULL"
   )
 })
@@ -324,7 +332,7 @@ test_that("slidingWindow: error when window exceeds chromosome size", {
 
 test_that("slidingWindow: error on invalid mod_type", {
   expect_error(
-    slidingWindow(tiny_data, window = W, mod_type = "invalid_type"),
+    slidingWindow(tiny_data, window = window_width, mod_type = "invalid_type"),
     "not found in object"
   )
 })

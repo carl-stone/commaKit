@@ -1,173 +1,83 @@
-# STO-84 Report
+# STO-84 Implementation Report
 
-## Summary
+## Scope and Diff
 
-The branch implementation aggregates Megalodon per-read rows once by
-`chrom`, `position`, `strand`, and `mod_type`. Its one keyed summary provides
-both beta (`mean(mod_prob)`) and coverage (`length(mod_prob)`), removing the
-former dependency on matching the order of two independent aggregations.
+GitHub issue [#268](https://github.com/carl-stone/commaKit/issues/268) is the
+source for STO-84. `R/parse_megalodon.R` now consumes the `beta` and
+`coverage` metrics returned by its single keyed `aggregate()` result. The
+key is chromosome, position, strand, and modification type, so the output no
+longer pairs values from independently ordered aggregations.
 
-The focused regression uses unequal per-site read counts and asserts each
-site's paired beta and coverage. Existing tests retain the strand-separation,
-explicit `mod_type`, output-schema, and `min_coverage` filtering contracts.
+`tests/testthat/test-parse_megalodon.R` adds a known-value regression with
+unequal read counts on the two strands of one site. It verifies the paired
+mean beta and coverage values, and confirms strand separation. Existing
+filtering, explicit `mod_type`, and output-schema tests remain intact.
 
-Mandatory PR feedback was inspected for PR #312: its only failed check is
-`style`, and it has no unresolved automated-review threads. The current branch
-includes the formatting-only follow-up to the changed source and test files;
-the corresponding local style and lint guards now pass.
+The remaining changed test/vignette files are formatting and lint remediation
+from the previous finalization failure. They do not change behavior.
 
-## Files Changed
+## Validation Receipts
 
-- `R/parse_megalodon.R`
-- `tests/testthat/test-parse_megalodon.R`
-- `reports/STO-84.md`
-
-## Intended Branch
-
-`symphony/STO-84`
-
-## Commands Run
+The workspace package was installed into `/tmp/commakit-r-library` with
+`R CMD INSTALL --no-test-load --library=/tmp/commakit-r-library .`. This
+ensures direct test-file commands load the checkout rather than the stale
+`/home/carl/R/library/commaKit` installation.
 
 ```bash
-git status --short --branch
+R_LIBS=/tmp/commakit-r-library:/home/carl/R/library \
+  Rscript -e "testthat::test_file('tests/testthat/test-parse_megalodon.R')"
+R_LIBS=/tmp/commakit-r-library:/home/carl/R/library \
+  Rscript -e "testthat::test_file('tests/testthat/test-parsers.R')"
 ```
 
-Result: passed. Branch is `symphony/STO-84...origin/symphony/STO-84`.
-Pre-existing untracked factory artifacts are `.symphony/`, `logs/`, and
-`reports/STO-84.codex-final.json`.
+Result: passed. The Megalodon test file has 43 passing expectations and the
+parser test file has 56. The testthat reporter emitted pre-existing R stack
+imbalance warnings while loading the package, but neither suite had failures,
+errors, skips, or test warnings.
 
 ```bash
-git diff --check origin/main...HEAD
+R_CACHE_ROOTPATH=/tmp/commakit-r-cache \
+  R_LIBS=/tmp/commakit-r-library:/home/carl/R/library \
+  Rscript --vanilla -e 'styler::style_file(c("R/parse_megalodon.R", "tests/testthat/test-parse_megalodon.R", "tests/testthat/test-slidingWindow.R", "tests/testthat/test-vignettes.R", "vignettes/multiple-modification-types.Rmd", "vignettes/understanding-commaData.Rmd"))'
+R_CACHE_ROOTPATH=/tmp/commakit-r-cache \
+  R_LIBS=/tmp/commakit-r-library:/home/carl/R/library \
+  Rscript --vanilla dev/precommit.R style R/parse_megalodon.R tests/testthat/test-parse_megalodon.R tests/testthat/test-slidingWindow.R tests/testthat/test-vignettes.R vignettes/multiple-modification-types.Rmd vignettes/understanding-commaData.Rmd
+R_CACHE_ROOTPATH=/tmp/commakit-r-cache \
+  R_LIBS=/tmp/commakit-r-library:/home/carl/R/library \
+  Rscript --vanilla dev/precommit.R lint R/parse_megalodon.R tests/testthat/test-parse_megalodon.R tests/testthat/test-slidingWindow.R tests/testthat/test-vignettes.R vignettes/multiple-modification-types.Rmd vignettes/understanding-commaData.Rmd
+R_CACHE_ROOTPATH=/tmp/commakit-r-cache \
+  R_LIBS=/tmp/commakit-r-library:/home/carl/R/library \
+  Rscript --vanilla -e 'styler::style_pkg(dry = "fail")'
+R_CACHE_ROOTPATH=/tmp/commakit-r-cache \
+  R_LIBS=/tmp/commakit-r-library:/home/carl/R/library \
+  Rscript --vanilla -e 'lintr::lint_package()'
+git diff --check
 ```
 
-Result: passed. No whitespace errors in the issue diff.
+Result: passed. The formatter left all six changed R/Rmd files unchanged; the
+per-file lint guard reported no issues; all 90 package R/Rmd files pass the
+full style check; package lint reported no findings; and there are no
+whitespace errors.
+
+## Vignette Validation Blocker
+
+`devtools::build_vignettes()` cannot be invoked in this worker image because
+`devtools` is not installed. Its equivalent package build command was run:
 
 ```bash
-Rscript -e "styler::style_pkg(dry = 'fail'); message('All R source files are properly formatted.')"
+R_LIBS=/tmp/commakit-r-library:/home/carl/R/library \
+  Rscript --vanilla -e 'tools::buildVignettes(dir = ".")'
 ```
 
-Result: passed. This is the same full-package style command used by the
-previously failed CI check; no R file would be modified.
+It reached `getting-started.Rmd` and failed because R package `magick` is not
+available for required image cropping. Installing `magick` in the temporary
+library fails because the image lacks the system `Magick++` headers and
+library (`libmagick++-dev` on Debian/Ubuntu). This is an environment dependency
+outside STO-84; no package source was changed to bypass it.
 
-```bash
-Rscript --vanilla - <<'RS'
-.emptyParseResult <- function() {
-  data.frame(
-    chrom = character(), position = integer(), strand = character(),
-    mod_type = character(), motif = character(), beta = numeric(),
-    coverage = integer(), mod_counts = integer(),
-    canonical_counts = integer(), other_mod_counts = integer()
-  )
-}
-.checkModTypeValues <- function(values, levels = NULL) {
-  if (all(values %in% c("6mA", "5mC", "4mC"))) character() else "invalid"
-}
-source("R/parse_megalodon.R")
-rows <- data.frame(
-  chrom = c("chr2", "chr1", "chr1", "chr2", "chr2", "chr1"),
-  start = c(199L, 99L, 99L, 199L, 199L, 99L),
-  end = c(200L, 100L, 100L, 200L, 200L, 100L),
-  read_id = paste0("r", 1:6), score = 255L,
-  strand = c("+", "+", "+", "+", "+", "-"),
-  mod_prob = c(0.2, 0.9, 0.7, 0.4, 0.6, 0.1)
-)
-file <- tempfile(fileext = ".bed")
-write.table(rows, file, sep = "\t", quote = FALSE, row.names = FALSE,
-            col.names = FALSE)
-result <- .parseMegalodon(file, "sample", mod_type = "6mA", min_coverage = 2L)
-result <- result[order(result$chrom, result$position, result$strand), ]
-stopifnot(
-  identical(result$chrom, c("chr1", "chr2")),
-  identical(result$position, c(100L, 200L)),
-  identical(result$strand, c("+", "+")),
-  identical(result$mod_type, c("6mA", "6mA")),
-  isTRUE(all.equal(result$beta, c(0.8, 0.4))),
-  identical(result$coverage, c(2L, 3L)),
-  all(is.na(result$mod_counts)),
-  all(is.na(result$canonical_counts)),
-  all(is.na(result$other_mod_counts))
-)
-cat("keyed parser aggregation validation passed\n")
-RS
-```
+## Handoff
 
-Result: passed. Output: `keyed parser aggregation validation passed`.
-
-```bash
-Rscript --vanilla -e "invisible(parse('R/parse_megalodon.R')); invisible(parse('tests/testthat/test-parse_megalodon.R')); cat('R parse validation passed\\n')"
-```
-
-Result: passed. Output: `R parse validation passed`.
-
-```bash
-Rscript -e "testthat::test_file('tests/testthat/test-parse_megalodon.R')"
-```
-
-Result: passed.
-
-```bash
-Rscript -e "testthat::test_file('tests/testthat/test-parsers.R')"
-```
-
-Result: passed.
-
-```bash
-Rscript -e "styler::style_file('R/parse_megalodon.R'); styler::style_file('tests/testthat/test-parse_megalodon.R')"
-Rscript dev/precommit.R style R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
-Rscript dev/precommit.R lint R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
-```
-
-Result: passed. All changed R files were formatted, and the required style and
-lint guards reported no findings.
-
-## Validation
-
-The direct parser regression and both requested test files prove the changed
-aggregation behavior, including paired known values, strand separation,
-required modification type, coverage filtering, and the output count-column
-schema. The changed R files also pass the required formatting, style, and lint
-checks.
-
-## Final Validation Receipt (2026-07-12)
-
-The implementer reran the mandatory local guards against the final workspace:
-
-```bash
-Rscript -e "styler::style_file('R/parse_megalodon.R'); styler::style_file('tests/testthat/test-parse_megalodon.R')"
-Rscript dev/precommit.R style R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
-Rscript dev/precommit.R lint R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
-Rscript -e "styler::style_pkg(dry = 'fail'); message('All R source files are properly formatted.')"
-Rscript -e "testthat::test_file('tests/testthat/test-parse_megalodon.R')"
-Rscript -e "testthat::test_file('tests/testthat/test-parsers.R')"
-git diff --check origin/main...HEAD
-```
-
-Result: passed. The previously failed CI `style` condition is clean locally;
-both required parser suites passed; and the issue diff has no whitespace
-errors.
-
-## Blockers
-
-None. CI should rerun the previously failed `style` check after the factory
-finalizer publishes the branch.
-
-## Next Owner
-
-Factory finalizer / Carl reviewer: publish the existing branch diff, rerun CI
-(including its previously failed `style` check), then independently review the
-result before merge.
-
-## Current Workspace Verification Note (2026-07-12)
-
-The implementation and prior successful receipts above are already tracked on
-this branch. In the current worker environment, `Rscript --vanilla` reports
-that `styler`, `lintr`, and `testthat` are unavailable. Consequently, the
-required formatter, pre-commit style/lint guards, and focused parser suites
-cannot be reproduced locally here. The non-R checks passed: the workspace has
-no unstaged source changes and `git diff --check origin/main...HEAD` reports no
-whitespace errors. The dependency-free keyed-aggregation check shown in
-`Commands Run` was rerun successfully in this environment and printed
-`keyed parser aggregation validation passed`.
-
-Safest next step: run the recorded R validation in the CI or development
-environment that provides the project's renv dependencies before publication.
+Next owner: factory finalizer and independent reviewer. The working tree is
+intentionally unstaged. Do not commit, push, merge, or close GitHub issue
+#268 from this workspace. In CI or a development image with `devtools` and
+the ImageMagick development dependency, rerun `devtools::build_vignettes()`.

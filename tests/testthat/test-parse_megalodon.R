@@ -153,19 +153,24 @@ test_that(".parseMegalodon() aggregates multiple sites independently", {
 
 test_that(".parseMegalodon() reports paired beta and coverage per keyed site", {
   rows <- rbind(
-    .megalodon_row(chrom = "chr2", start = 199L, read_id = "r1",
+    .megalodon_row(
+      chrom = "chr2", start = 199L, read_id = "r1",
       mod_prob = 0.2
     ),
-    .megalodon_row(chrom = "chr1", start = 99L, read_id = "r2",
+    .megalodon_row(
+      chrom = "chr1", start = 99L, read_id = "r2",
       mod_prob = 0.9
     ),
-    .megalodon_row(chrom = "chr1", start = 99L, read_id = "r3",
+    .megalodon_row(
+      chrom = "chr1", start = 99L, read_id = "r3",
       mod_prob = 0.7
     ),
-    .megalodon_row(chrom = "chr2", start = 199L, read_id = "r4",
+    .megalodon_row(
+      chrom = "chr2", start = 199L, read_id = "r4",
       mod_prob = 0.4
     ),
-    .megalodon_row(chrom = "chr2", start = 199L, read_id = "r5",
+    .megalodon_row(
+      chrom = "chr2", start = 199L, read_id = "r5",
       mod_prob = 0.6
     )
   )
@@ -181,6 +186,27 @@ test_that(".parseMegalodon() reports paired beta and coverage per keyed site", {
   expect_equal(result$position, c(100L, 200L))
   expect_equal(result$mod_type, c("6mA", "6mA"))
   expect_equal(result$beta, c(0.8, 0.4), tolerance = 1e-6)
+  expect_equal(result$coverage, c(2L, 3L))
+})
+
+test_that(".parseMegalodon() keeps keyed summaries separate by strand", {
+  rows <- rbind(
+    .megalodon_row(start = 99L, strand = "-", read_id = "r1", mod_prob = 0.1),
+    .megalodon_row(start = 99L, strand = "+", read_id = "r2", mod_prob = 0.9),
+    .megalodon_row(start = 99L, strand = "-", read_id = "r3", mod_prob = 0.3),
+    .megalodon_row(start = 99L, strand = "+", read_id = "r4", mod_prob = 0.7),
+    .megalodon_row(start = 99L, strand = "+", read_id = "r5", mod_prob = 0.8)
+  )
+  f <- .write_tmp_megalodon(rows)
+  result <- commaKit:::.parseMegalodon(
+    f, "s1",
+    mod_type = "6mA",
+    min_coverage = 1L
+  )
+  result <- result[match(c("-", "+"), result$strand), ]
+
+  expect_equal(result$strand, c("-", "+"))
+  expect_equal(result$beta, c(0.2, 0.8), tolerance = 1e-6)
   expect_equal(result$coverage, c(2L, 3L))
 })
 

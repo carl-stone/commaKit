@@ -31,7 +31,10 @@ test_that(
 )
 
 test_that(
-  "import troubleshooting vignette distinguishes Dorado read-level skips from call-level drops",
+  paste(
+    "import troubleshooting vignette distinguishes Dorado read-level skips",
+    "from call-level drops"
+  ),
   {
     vignette_path <- testthat::test_path(
       "..", "..", "vignettes", "import-troubleshooting.Rmd"
