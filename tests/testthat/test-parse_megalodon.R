@@ -1,8 +1,6 @@
 library(testthat)
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Helpers
-# ─────────────────────────────────────────────────────────────────────────────
 
 # Write a temporary Megalodon per-read BED file.
 # Minimum Megalodon format:
@@ -31,9 +29,7 @@ library(testthat)
   )
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
-# .parseMegalodon() — output structure
-# ─────────────────────────────────────────────────────────────────────────────
+# .parseMegalodon() output structure
 
 test_that(".parseMegalodon() returns a data.frame with correct columns", {
   f <- .write_tmp_megalodon(.megalodon_row())
@@ -50,9 +46,7 @@ test_that(".parseMegalodon() returns a data.frame with correct columns", {
   ))
 })
 
-# ─────────────────────────────────────────────────────────────────────────────
-# .parseMegalodon() — coordinate and value handling
-# ─────────────────────────────────────────────────────────────────────────────
+# .parseMegalodon() coordinate and value handling
 
 test_that(".parseMegalodon() converts 0-based start to 1-based position", {
   f <- .write_tmp_megalodon(.megalodon_row(start = 99L))
@@ -101,9 +95,7 @@ test_that(".parseMegalodon() accepts legacy rows with extra columns", {
   expect_equal(result$beta, 0.75)
 })
 
-# ─────────────────────────────────────────────────────────────────────────────
-# .parseMegalodon() — per-read → per-site aggregation
-# ─────────────────────────────────────────────────────────────────────────────
+# .parseMegalodon() per-read to per-site aggregation
 
 test_that(".parseMegalodon() computes beta as mean of per-read mod_prob", {
   rows <- rbind(
@@ -159,6 +151,65 @@ test_that(".parseMegalodon() aggregates multiple sites independently", {
   expect_equal(result$coverage, c(2L, 2L))
 })
 
+test_that(".parseMegalodon() reports paired beta and coverage per keyed site", {
+  rows <- rbind(
+    .megalodon_row(
+      chrom = "chr2", start = 199L, read_id = "r1",
+      mod_prob = 0.2
+    ),
+    .megalodon_row(
+      chrom = "chr1", start = 99L, read_id = "r2",
+      mod_prob = 0.9
+    ),
+    .megalodon_row(
+      chrom = "chr1", start = 99L, read_id = "r3",
+      mod_prob = 0.7
+    ),
+    .megalodon_row(
+      chrom = "chr2", start = 199L, read_id = "r4",
+      mod_prob = 0.4
+    ),
+    .megalodon_row(
+      chrom = "chr2", start = 199L, read_id = "r5",
+      mod_prob = 0.6
+    )
+  )
+  f <- .write_tmp_megalodon(rows)
+  result <- commaKit:::.parseMegalodon(
+    f, "s1",
+    mod_type = "6mA",
+    min_coverage = 1L
+  )
+  result <- result[order(result$chrom, result$position), ]
+
+  expect_equal(result$chrom, c("chr1", "chr2"))
+  expect_equal(result$position, c(100L, 200L))
+  expect_equal(result$mod_type, c("6mA", "6mA"))
+  expect_equal(result$beta, c(0.8, 0.4), tolerance = 1e-6)
+  expect_equal(result$coverage, c(2L, 3L))
+})
+
+test_that(".parseMegalodon() keeps keyed summaries separate by strand", {
+  rows <- rbind(
+    .megalodon_row(start = 99L, strand = "-", read_id = "r1", mod_prob = 0.1),
+    .megalodon_row(start = 99L, strand = "+", read_id = "r2", mod_prob = 0.9),
+    .megalodon_row(start = 99L, strand = "-", read_id = "r3", mod_prob = 0.3),
+    .megalodon_row(start = 99L, strand = "+", read_id = "r4", mod_prob = 0.7),
+    .megalodon_row(start = 99L, strand = "+", read_id = "r5", mod_prob = 0.8)
+  )
+  f <- .write_tmp_megalodon(rows)
+  result <- commaKit:::.parseMegalodon(
+    f, "s1",
+    mod_type = "6mA",
+    min_coverage = 1L
+  )
+  result <- result[match(c("-", "+"), result$strand), ]
+
+  expect_equal(result$strand, c("-", "+"))
+  expect_equal(result$beta, c(0.2, 0.8), tolerance = 1e-6)
+  expect_equal(result$coverage, c(2L, 3L))
+})
+
 test_that(
   paste(
     ".parseMegalodon() treats the same position on different",
@@ -175,22 +226,20 @@ test_that(
       mod_type = "6mA",
       min_coverage = 1L
     )
-    # Same position, different strand → two separate sites
+    # Same position, different strand: two separate sites
     expect_equal(nrow(result), 2L)
     expect_setequal(result$strand, c("-", "+"))
   }
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
-# .parseMegalodon() — min_coverage filtering
-# ─────────────────────────────────────────────────────────────────────────────
+# .parseMegalodon() min_coverage filtering
 
 test_that(".parseMegalodon() drops sites below min_coverage", {
   rows <- rbind(
-    # site at position 100: 2 reads — below threshold of 5
+    # Site at position 100: 2 reads below threshold of 5.
     .megalodon_row(start = 99L, read_id = "r1", mod_prob = 0.8),
     .megalodon_row(start = 99L, read_id = "r2", mod_prob = 0.9),
-    # site at position 200: 6 reads — above threshold
+    # Site at position 200: 6 reads above threshold.
     .megalodon_row(start = 199L, read_id = "r3", mod_prob = 0.7),
     .megalodon_row(start = 199L, read_id = "r4", mod_prob = 0.8),
     .megalodon_row(start = 199L, read_id = "r5", mod_prob = 0.9),
@@ -206,6 +255,8 @@ test_that(".parseMegalodon() drops sites below min_coverage", {
   )
   expect_equal(nrow(result), 1L)
   expect_equal(result$position, 200L)
+  expect_equal(result$beta, 0.75, tolerance = 1e-6)
+  expect_equal(result$coverage, 6L)
 })
 
 test_that(".parseMegalodon() retains all sites when min_coverage = 0", {
@@ -222,9 +273,7 @@ test_that(".parseMegalodon() retains all sites when min_coverage = 0", {
   expect_equal(nrow(result), 2L)
 })
 
-# ─────────────────────────────────────────────────────────────────────────────
-# .parseMegalodon() — mod_type validation
-# ─────────────────────────────────────────────────────────────────────────────
+# .parseMegalodon() mod_type validation
 
 test_that(".parseMegalodon() requires explicit mod_type", {
   f <- .write_tmp_megalodon(.megalodon_row())
@@ -242,9 +291,7 @@ test_that(".parseMegalodon() rejects invalid mod_type values", {
   )
 })
 
-# ─────────────────────────────────────────────────────────────────────────────
-# .parseMegalodon() — error handling
-# ─────────────────────────────────────────────────────────────────────────────
+# .parseMegalodon() error handling
 
 test_that(".parseMegalodon() errors on non-existent file", {
   expect_error(
