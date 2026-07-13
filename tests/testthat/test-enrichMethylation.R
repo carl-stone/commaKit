@@ -1,4 +1,3 @@
-## tests/testthat/test-enrichment.R
 ## Tests for enrichMethylation(), .siteToGeneMap(), .computeGeneScores()
 ## All tests use custom TERM2GENE to avoid requiring clusterProfiler, OrgDb,
 ## KEGG access, or internet connectivity.
@@ -42,12 +41,12 @@ test_that("enrichment dispatch builds custom GO and KEGG call specs", {
   )
   ctx <- commaKit:::.enrichmentDispatchContext(
     method = c("ora", "gsea"),
-    OrgDb = NULL,
+    org_db = NULL,
     keyType = "SYMBOL",
     ont = "BP",
     organism = NULL,
-    TERM2GENE = fake_t2g,
-    TERM2NAME = fake_t2n,
+    term2gene = fake_t2g,
+    term2name = fake_t2n,
     kegg_term2gene = kegg_t2g,
     kegg_term2name = kegg_t2n,
     padj_threshold = 0.05,
@@ -91,12 +90,12 @@ test_that("enrichment dispatch builds optional database call specs", {
   fake_orgdb <- structure(list(), class = "OrgDb")
   ctx <- commaKit:::.enrichmentDispatchContext(
     method = c("ora", "gsea"),
-    OrgDb = fake_orgdb,
+    org_db = fake_orgdb,
     keyType = "SYMBOL",
     ont = "BP",
     organism = "eco",
-    TERM2GENE = NULL,
-    TERM2NAME = NULL,
+    term2gene = NULL,
+    term2name = NULL,
     kegg_term2gene = NULL,
     kegg_term2name = NULL,
     padj_threshold = 0.05,
@@ -143,12 +142,12 @@ test_that("enrichment dispatch builds optional database call specs", {
 test_that("enrichment dispatch keeps empty KEGG names optional", {
   ctx <- commaKit:::.enrichmentDispatchContext(
     method = "ora",
-    OrgDb = NULL,
+    org_db = NULL,
     keyType = "SYMBOL",
     ont = "BP",
     organism = NULL,
-    TERM2GENE = NULL,
-    TERM2NAME = NULL,
+    term2gene = NULL,
+    term2name = NULL,
     kegg_term2gene = data.frame(
       term = "eco00010", gene = "geneA",
       stringsAsFactors = FALSE
@@ -178,12 +177,12 @@ test_that("enrichment dispatch keeps empty KEGG names optional", {
 test_that("enrichment dispatch preserves combined short-circuit shape", {
   ctx <- commaKit:::.enrichmentDispatchContext(
     method = c("ora", "gsea"),
-    OrgDb = NULL,
+    org_db = NULL,
     keyType = "SYMBOL",
     ont = "BP",
     organism = NULL,
-    TERM2GENE = fake_t2g,
-    TERM2NAME = NULL,
+    term2gene = fake_t2g,
+    term2name = NULL,
     kegg_term2gene = NULL,
     kegg_term2name = NULL,
     padj_threshold = 0.01,
@@ -225,6 +224,44 @@ test_that("enrichment dispatch preserves combined short-circuit shape", {
   expect_null(res$kegg$gsea)
 })
 
+test_that("enrichment dispatch ignores duplicate methods", {
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = c("ora", "ora"),
+    org_db = NULL,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = NULL,
+    term2gene = fake_t2g,
+    term2name = NULL,
+    kegg_term2gene = NULL,
+    kegg_term2name = NULL,
+    padj_threshold = 0.01,
+    delta_beta_threshold = 1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+  sg <- data.frame(
+    gene_id = "geneA",
+    site_key = "chr1:100:+",
+    dm_padj = NA_real_,
+    dm_delta_beta = NA_real_,
+    stringsAsFactors = FALSE
+  )
+
+  expect_identical(ctx$method, "ora")
+  expect_warning(
+    res <- commaKit:::.runEnrichmentForGeneMap(sg, "geneA", ctx),
+    "No significantly differentially methylated genes"
+  )
+  expect_equal(names(res), c("go", "kegg"))
+  expect_null(res$go)
+  expect_null(res$kegg)
+})
+
 # ── .siteToGeneMap() ─────────────────────────────────────────────────────────
 
 test_that(".siteToGeneMap returns data.frame with expected columns", {
@@ -240,10 +277,9 @@ test_that(".siteToGeneMap returns data.frame with expected columns", {
   sg <- commaKit:::.siteToGeneMap(res_df, "feature_names")
 
   expect_s3_class(sg, "data.frame")
-  expect_true(
-    all(c("gene_id", "site_key", "dm_padj", "dm_delta_beta") %in%
-      colnames(sg))
-  )
+  expect_true(all(
+    c("gene_id", "site_key", "dm_padj", "dm_delta_beta") %in% colnames(sg)
+  ))
 })
 
 test_that(".siteToGeneMap correctly explodes multi-gene sites", {
@@ -369,7 +405,7 @@ test_that(".computeGeneScores excludes sites with NA padj", {
 test_that(".computeGeneScores 'max' aggregation picks largest absolute score", {
   # geneA has two sites: padj=0.001 (larger -log10) and padj=0.01
   scores <- commaKit:::.computeGeneScores(make_sg(), "padj", "max")
-  # -log10(0.001) = 3 > -log10(0.01) = 2
+  # The expected maximum score is 3.
   expect_equal(scores[["geneA"]], -log10(0.001), tolerance = 1e-6)
 })
 

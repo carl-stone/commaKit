@@ -1,4 +1,3 @@
-## tests/testthat/test-buildKEGGTermGene.R
 ## Tests for buildKEGGTermGene() and the kegg_term2gene/kegg_term2name pathway
 ## in enrichMethylation().
 ##

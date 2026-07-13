@@ -87,7 +87,7 @@ NULL
 # @param score_metric  "combined" | "padj" | "delta_beta"
 # @param agg           how to aggregate site scores per gene: "max" | "mean"
 # @return  named numeric vector sorted decreasing, suitable for
-# clusterProfiler::GSEA()
+# `clusterProfiler::GSEA()` accepts this ranking format.
 .computeGeneScores <- function(site_gene_df, score_metric = "combined",
                                agg = "max") {
   valid <- !is.na(site_gene_df$dm_padj) & !is.na(site_gene_df$dm_delta_beta)
@@ -207,7 +207,7 @@ NULL
       result
     },
     terminator = {
-      # "{gene} terminator" -> "{gene}"
+      # Strip the terminator suffix to recover the associated gene name.
       stripped <- sub("\\s+terminator$", "", feature_names, perl = TRUE)
       as.list(stripped)
     },
@@ -521,7 +521,7 @@ NULL
     return(invisible(NULL))
   }
   if (!is.character(file) ||
-    length(file) != 1L ||
+    length(file) != 1L || # nolint: indentation_linter
     is.na(file) ||
     nchar(file) == 0L) {
     stop("'", arg_name, "' must be a single non-empty file path or NULL.")
@@ -535,20 +535,20 @@ NULL
 
 # Build the shared enrichment dispatch context.
 # @keywords internal
-.enrichmentDispatchContext <- function(method, OrgDb, keyType, ont, organism,
-                                       TERM2GENE, TERM2NAME, kegg_term2gene,
+.enrichmentDispatchContext <- function(method, org_db, keyType, ont, organism,
+                                       term2gene, term2name, kegg_term2gene,
                                        kegg_term2name, padj_threshold,
                                        delta_beta_threshold, score_metric,
                                        gene_score_agg, pvalueCutoff,
                                        qvalueCutoff, minGSSize, maxGSSize) {
   list(
-    method = method,
-    OrgDb = OrgDb,
+    method = unique(method),
+    OrgDb = org_db,
     keyType = keyType,
     ont = ont,
     organism = organism,
-    TERM2GENE = TERM2GENE,
-    TERM2NAME = TERM2NAME,
+    TERM2GENE = term2gene,
+    TERM2NAME = term2name,
     kegg_term2gene = kegg_term2gene,
     kegg_term2name = kegg_term2name,
     padj_threshold = padj_threshold,
@@ -704,8 +704,10 @@ NULL
 # @return list(go = ..., kegg = ...)
 .runEnrichmentForGeneMap <- function(sg, universe, ctx) {
   by_method <- stats::setNames(
-    lapply(ctx$method, .runEnrichmentMethod, sg = sg, universe = universe,
-      ctx = ctx),
+    lapply(ctx$method, .runEnrichmentMethod,
+      sg = sg, universe = universe,
+      ctx = ctx
+    ),
     ctx$method
   )
 
@@ -803,7 +805,7 @@ NULL
 buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
                               id_map = NULL) {
   if (!is.character(organism) ||
-    length(organism) != 1L ||
+    length(organism) != 1L || # nolint: indentation_linter
     nchar(organism) == 0L) {
     stop("'organism' must be a non-empty character string (e.g., \"eco\").")
   }
@@ -887,7 +889,7 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
   # -- Optionally translate KEGG IDs to gene symbols -------------------------
   if (!is.null(id_map)) {
     if (!is.data.frame(id_map) ||
-      !all(c("symbol", "kegg_id") %in% colnames(id_map))) {
+      !all(c("symbol", "kegg_id") %in% colnames(id_map))) { # nolint: indentation_linter
       stop(
         "'id_map' must be a data.frame with columns 'symbol' and 'kegg_id'.\n",
         "Use buildKEGGGeneIDMap() to create it."
@@ -1039,14 +1041,14 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
 #' @seealso \code{\link{buildKEGGTermGene}}, \code{\link{enrichMethylation}}
 #' @export
 buildKEGGGeneIDMap <- function(organism,
-                               OrgDb = NULL,
+                               OrgDb = NULL, # nolint: object_name_linter
                                entrez2symbol = NULL,
                                keys_col = "SYMBOL",
                                id_col = "ENTREZID",
                                file = NULL) {
   # -- Input validation ------------------------------------------------------
   if (!is.character(organism) ||
-    length(organism) != 1L ||
+    length(organism) != 1L || # nolint: indentation_linter
     nchar(organism) == 0L) {
     stop("'organism' must be a non-empty character string (e.g., \"eco\").")
   }
@@ -1061,7 +1063,7 @@ buildKEGGGeneIDMap <- function(organism,
 
   if (!is.null(entrez2symbol)) {
     if (!is.data.frame(entrez2symbol) ||
-      !all(c("entrez_id", "symbol") %in% colnames(entrez2symbol))) {
+      !all(c("entrez_id", "symbol") %in% colnames(entrez2symbol))) { # nolint: indentation_linter
       stop(
         "'entrez2symbol' must be a data.frame with columns ",
         "'entrez_id' and 'symbol'."
@@ -1377,7 +1379,8 @@ buildKEGGGeneIDMap <- function(organism,
 #' if (requireNamespace("clusterProfiler", quietly = TRUE)) {
 #'   data(comma_example_data)
 #'   dm <- diffMethyl(comma_example_data,
-#'     formula = ~condition, mod_type = "6mA")
+#'     formula = ~condition, mod_type = "6mA"
+#'   )
 #'   ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
 #'
 #'   # Custom TERM2GENE (works without network access or OrgDb)
@@ -1386,7 +1389,8 @@ buildKEGGGeneIDMap <- function(organism,
 #'     gene = c("geneA", "geneB", "geneC")
 #'   )
 #'   res <- enrichMethylation(ann,
-#'     TERM2GENE = fake_t2g, method = c("ora", "gsea"))
+#'     TERM2GENE = fake_t2g, method = c("ora", "gsea")
+#'   )
 #'   str(res, max.level = 2)
 #' }
 #' }
@@ -1394,12 +1398,12 @@ buildKEGGGeneIDMap <- function(organism,
 #' @export
 enrichMethylation <- function(object,
                               method = "ora",
-                              OrgDb = NULL,
+                              OrgDb = NULL, # nolint: object_name_linter
                               keyType = "SYMBOL",
                               ont = "BP",
                               organism = NULL,
-                              TERM2GENE = NULL,
-                              TERM2NAME = NULL,
+                              TERM2GENE = NULL, # nolint: object_name_linter
+                              TERM2NAME = NULL, # nolint: object_name_linter
                               kegg_term2gene = NULL,
                               kegg_term2name = NULL,
                               gene_col = "feature_names",
@@ -1429,7 +1433,7 @@ enrichMethylation <- function(object,
   }
 
   if (is.null(OrgDb) && is.null(organism) && is.null(TERM2GENE) &&
-    is.null(kegg_term2gene)) {
+    is.null(kegg_term2gene)) { # nolint: indentation_linter
     stop(
       "No gene-to-term mapping supplied. Provide at least one of:\n",
       "  kegg_term2gene -- pre-built KEGG mapping from buildKEGGTermGene()\n",
@@ -1550,8 +1554,8 @@ enrichMethylation <- function(object,
         universe <- unique(sg$gene_id)
       } else {
         # Universe = all regulator genes of this type in the annotation
-        universe <- unique(rt$gene_id[rt$role == "regulator" &
-          !is.na(rt$gene_id)])
+        regulator_rows <- rt$role == "regulator" & !is.na(rt$gene_id)
+        universe <- unique(rt$gene_id[regulator_rows])
       }
       .runEnrichmentForGeneMap(
         sg, universe, dispatch_ctx
