@@ -358,8 +358,7 @@
 
   for (b in seq_along(blocks)) {
     block <- trimws(blocks[[b]])
-    # Format: "<base_type>+<mod_code>[?,.]<delta>,<delta>,..."
-    # e.g., "A+a?,0,1,3"  or  "C+m?,5"
+    # Each block begins with the modified canonical base and its modification.
     header_match <- regexpr(
       "^([ACGT])([+-])([^,?. ]+)[?,.]?",
       block,
@@ -387,11 +386,11 @@
     if (nchar(rest) == 0L) next
     delta_str <- rest
 
-    deltas <- tryCatch(
-      as.integer(strsplit(delta_str, ",")[[1L]]),
-      error = function(e) NULL
-    )
-    if (is.null(deltas) || length(deltas) == 0L) next
+    deltas <- suppressWarnings(as.integer(strsplit(delta_str, ",")[[1L]]))
+    if (length(deltas) == 0L) next
+    if (anyNA(deltas) || any(deltas < 0L)) {
+      return(NULL)
+    }
 
     n_mods_this_block <- length(deltas)
 
