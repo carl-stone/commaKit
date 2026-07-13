@@ -8,8 +8,8 @@ NULL
 #' methylation. Called by \code{\link{diffMethyl}} when
 #' \code{method = "methylkit"}.
 #'
-#' \pkg{methylKit} must be installed (it is listed in \code{Suggests}). If it
-#' is not available, this function stops with an informative message.
+#' \code{diffMethyl()} validates \pkg{methylKit} availability and resolves the
+#' two-level design before calling this wrapper.
 #'
 #' @details
 #' The wrapper converts the methylation and coverage matrices from a
@@ -18,9 +18,8 @@ NULL
 #' \code{methylKit::calculateDiffMeth()}, and returns results in the same
 #' standardised format as \code{.betaBinomialTest()}.
 #'
-#' Only the first RHS variable of \code{formula} is used as the grouping
-#' variable. Complex formulas with interactions or batch terms are not currently
-#' supported by this wrapper.
+#' This wrapper assumes \code{diffMethyl()} has already validated the
+#' single-variable, two-level design contract.
 #'
 #' @param methyl_mat Numeric matrix (sites × samples) of beta values.
 #' @param coverage_mat Integer matrix (sites × samples) of read depths.
@@ -37,8 +36,7 @@ NULL
 #' @param coldata \code{data.frame} with at least one column matching the
 #'   RHS variable in \code{formula}.
 #' @param formula One-sided formula (e.g., \code{~ condition}).
-#' @param ref_level Optional reference level for the two-level contrast.
-#' @param design_info Optional precomputed design information from
+#' @param design_info Precomputed design information from
 #'   \code{.resolveDiffMethylDesign()}.
 #'
 #' @return A \code{data.frame} with the same columns as
@@ -50,28 +48,10 @@ NULL
 #'
 #' @keywords internal
 .runMethylKit <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
-                          ref_level = NULL, design_info = NULL,
+                          design_info,
                           mod_counts_mat = NULL, canonical_counts_mat = NULL,
                           other_mod_counts_mat = NULL) {
-  # ── Dependency check ──────────────────────────────────────────────────────
-  if (!requireNamespace("methylKit", quietly = TRUE)) {
-    stop(
-      "Package 'methylKit' is required for method = \"methylkit\".\n",
-      "Install it with: BiocManager::install(\"methylKit\")\n",
-      "Install it with: BiocManager::install(\"methylKit\"), or use ",
-      "method = \"quasi_f\" or \"limma\"."
-    )
-  }
-
-  # ── Resolve two-level design and group statistics ─────────────────────────
-  if (is.null(design_info)) {
-    design_info <- .resolveDiffMethylDesign(
-      coldata,
-      formula,
-      ref_level = ref_level
-    )
-  }
-  primary_var <- design_info$primary_var
+  # ── Use validated two-level design and group statistics ───────────────────
   ref_level <- design_info$ref_level
   treat_level <- design_info$treat_level
   cond_levels <- design_info$cond_levels
@@ -135,98 +115,94 @@ NULL
   }
 
   # ── Build methylKit objects per sample ─────────────────────────────────────
-  if (requireNamespace("methylKit", quietly = TRUE)) {
-    # Construct methylRaw objects directly — bypasses methRead() which only
-    # accepts file paths, not in-memory data frames
-    sample_list <- lapply(seq_len(ncol(methyl_mat)), function(j) {
-      beta_j <- methyl_mat[keep_idx, j]
-      n_meth <- as.integer(count_mats$modified[keep_idx, j])
-      n_unmeth <- as.integer(count_mats$unmodified[keep_idx, j])
-      cov_j <- n_meth + n_unmeth
+  # Construct methylRaw objects directly — bypasses methRead() which only
+  # accepts file paths, not in-memory data frames.
+  sample_list <- lapply(seq_len(ncol(methyl_mat)), function(j) {
+    beta_j <- methyl_mat[keep_idx, j]
+    n_meth <- as.integer(count_mats$modified[keep_idx, j])
+    n_unmeth <- as.integer(count_mats$unmodified[keep_idx, j])
+    cov_j <- n_meth + n_unmeth
 
-      # Replace NA with 0 coverage for methylKit (it handles 0-coverage sites
-      # via unite() with min.per.group)
-      cov_j[is.na(cov_j)] <- 0L
-      n_meth[is.na(n_meth)] <- 0L
-      n_unmeth[is.na(n_unmeth)] <- 0L
-      cov_j[is.na(beta_j)] <- 0L
-      n_meth <- pmax(0L, pmin(n_meth, cov_j))
-      n_unmeth <- pmax(0L, cov_j - n_meth)
+    # Replace NA with 0 coverage for methylKit (it handles 0-coverage sites
+    # via unite() with min.per.group).
+    cov_j[is.na(cov_j)] <- 0L
+    n_meth[is.na(n_meth)] <- 0L
+    n_unmeth[is.na(n_unmeth)] <- 0L
+    cov_j[is.na(beta_j)] <- 0L
+    n_meth <- pmax(0L, pmin(n_meth, cov_j))
+    n_unmeth <- pmax(0L, cov_j - n_meth)
 
-      df <- data.frame(
-        chr = chroms[keep_idx],
-        start = positions[keep_idx],
-        end = positions[keep_idx],
-        strand = strands[keep_idx],
-        coverage = cov_j,
-        numCs = n_meth,
-        numTs = n_unmeth,
-        stringsAsFactors = FALSE
-      )
-
-      # methylRaw extends data.frame; pass df as first positional arg
-      methods::new("methylRaw", df,
-        sample.id  = colnames(methyl_mat)[[j]],
-        assembly   = "custom",
-        context    = "none",
-        resolution = "base"
-      )
-    })
-
-    mk_list <- methods::new("methylRawList",
-      .Data     = sample_list,
-      treatment = as.integer(treatment)
+    df <- data.frame(
+      chr = chroms[keep_idx],
+      start = positions[keep_idx],
+      end = positions[keep_idx],
+      strand = strands[keep_idx],
+      coverage = cov_j,
+      numCs = n_meth,
+      numTs = n_unmeth,
+      stringsAsFactors = FALSE
     )
-  }
+
+    # methylRaw extends data.frame; pass df as first positional arg.
+    methods::new("methylRaw", df,
+      sample.id  = colnames(methyl_mat)[[j]],
+      assembly   = "custom",
+      context    = "none",
+      resolution = "base"
+    )
+  })
+
+  mk_list <- methods::new("methylRawList",
+    .Data     = sample_list,
+    treatment = as.integer(treatment)
+  )
 
   # ── Unite and test ────────────────────────────────────────────────────────
-  if (requireNamespace("methylKit", quietly = TRUE)) {
-    mk_united <- tryCatch(
-      methylKit::unite(mk_list, destrand = FALSE, min.per.group = 1L),
-      error = function(e) {
-        stop("methylKit::unite() failed: ", e$message)
-      }
-    )
-
-    # methylKit's unite() does not filter sites where ALL samples have
-    # zero coverage (e.g. when every sample had coverage below min_coverage
-    # and was set to 0).  glm.fit inside logReg crashes with
-    # "object of type 'closure' is not subsettable" when all weights are 0.
-    # Remove such sites from the united object before calling
-    # calculateDiffMeth; they retain p = NA via the untestable-site path above.
-    united_df <- methylKit::getData(mk_united)
-    cov_cols <- seq(5L, ncol(united_df), by = 3L)
-    site_total_cov <- rowSums(as.matrix(united_df[, cov_cols, drop = FALSE]))
-    keep_united <- which(site_total_cov > 0L)
-    n_dropped <- nrow(united_df) - length(keep_united)
-    if (n_dropped > 0L) {
-      message(
-        "methylKit: ", n_dropped, " site(s) with zero total coverage across ",
-        "all samples removed before testing (p = NA assigned)."
-      )
-      mk_united <- mk_united[keep_united, ]
+  mk_united <- tryCatch(
+    methylKit::unite(mk_list, destrand = FALSE, min.per.group = 1L),
+    error = function(e) {
+      stop("methylKit::unite() failed: ", e$message)
     }
+  )
 
-    mk_warn_counts <- list()
-    mk_diff <- tryCatch(
-      withCallingHandlers(
-        # suppress only the "group: 0/1" message we've replaced
-        suppressMessages(
-          methylKit::calculateDiffMeth(mk_united, weighted.mean = FALSE)
-        ),
-        warning = function(w) {
-          key <- trimws(conditionMessage(w))
-          n_prev <- mk_warn_counts[[key]]
-          mk_warn_counts[[key]] <<- (if (is.null(n_prev)) 0L else n_prev) + 1L
-          invokeRestart("muffleWarning")
-        }
-      ),
-      error = function(e) {
-        stop("methylKit::calculateDiffMeth() failed: ", e$message)
-      }
+  # methylKit's unite() does not filter sites where ALL samples have
+  # zero coverage (e.g. when every sample had coverage below min_coverage
+  # and was set to 0).  glm.fit inside logReg crashes with
+  # "object of type 'closure' is not subsettable" when all weights are 0.
+  # Remove such sites from the united object before calling
+  # calculateDiffMeth; they retain p = NA via the untestable-site path above.
+  united_df <- methylKit::getData(mk_united)
+  cov_cols <- seq(5L, ncol(united_df), by = 3L)
+  site_total_cov <- rowSums(as.matrix(united_df[, cov_cols, drop = FALSE]))
+  keep_united <- which(site_total_cov > 0L)
+  n_dropped <- nrow(united_df) - length(keep_united)
+  if (n_dropped > 0L) {
+    message(
+      "methylKit: ", n_dropped, " site(s) with zero total coverage across ",
+      "all samples removed before testing (p = NA assigned)."
     )
-    .emitMethylKitWarnings(mk_warn_counts)
+    mk_united <- mk_united[keep_united, ]
   }
+
+  mk_warn_counts <- list()
+  mk_diff <- tryCatch(
+    withCallingHandlers(
+      # suppress only the "group: 0/1" message we've replaced
+      suppressMessages(
+        methylKit::calculateDiffMeth(mk_united, weighted.mean = FALSE)
+      ),
+      warning = function(w) {
+        key <- trimws(conditionMessage(w))
+        n_prev <- mk_warn_counts[[key]]
+        mk_warn_counts[[key]] <<- (if (is.null(n_prev)) 0L else n_prev) + 1L
+        invokeRestart("muffleWarning")
+      }
+    ),
+    error = function(e) {
+      stop("methylKit::calculateDiffMeth() failed: ", e$message)
+    }
+  )
+  .emitMethylKitWarnings(mk_warn_counts)
 
   # ── Extract results and standardise format ────────────────────────────────
   diff_df <- as.data.frame(mk_diff)

@@ -9,8 +9,8 @@ NULL
 #' t-test to identify differentially methylated sites. Called by
 #' \code{\link{diffMethyl}} when \code{method = "limma"}.
 #'
-#' \pkg{limma} must be installed (it is listed in \code{Suggests}). If it
-#' is not available, this function stops with an informative message.
+#' \code{diffMethyl()} validates \pkg{limma} availability and resolves the
+#' two-level design before calling this wrapper.
 #'
 #' @details
 #' Beta values are first transformed to M-values:
@@ -54,6 +54,8 @@ NULL
 #'   RHS variable in \code{formula} (typically \code{condition}).
 #' @param formula One-sided formula specifying the design (e.g.,
 #'   \code{~ condition}).
+#' @param design_info Precomputed design information from
+#'   \code{.resolveDiffMethylDesign()}.
 #' @param alpha Positive numeric pseudocount added to modified and unmodified
 #'   read counts before log-transformation. Default \code{0.5}.
 #'
@@ -75,21 +77,11 @@ NULL
                       site_df,
                       coldata,
                       formula,
+                      design_info,
                       alpha = 0.5,
-                      ref_level = NULL,
-                      design_info = NULL,
                       mod_counts_mat = NULL,
                       canonical_counts_mat = NULL,
                       other_mod_counts_mat = NULL) {
-  # ── Dependency check ──────────────────────────────────────────────────────
-  if (!requireNamespace("limma", quietly = TRUE)) {
-    stop(
-      "Package 'limma' is required for method = \"limma\".\n",
-      "Install it with: BiocManager::install(\"limma\")\n",
-      "Alternatively, use method = \"methylkit\" if methylKit is available."
-    )
-  }
-
   # ── Validate alpha ────────────────────────────────────────────────────────
   if (
     !is.numeric(alpha) || length(alpha) != 1L ||
@@ -98,19 +90,10 @@ NULL
     stop("'alpha' must be a single positive finite number.")
   }
 
-  # ── Resolve two-level design and group statistics ─────────────────────────
-  if (is.null(design_info)) {
-    design_info <- .resolveDiffMethylDesign(
-      coldata,
-      formula,
-      ref_level = ref_level
-    )
-  }
+  # ── Use validated two-level design and group statistics ───────────────────
   primary_var <- design_info$primary_var
   ref_level <- design_info$ref_level
-  treat_level <- design_info$treat_level
   cond_levels <- design_info$cond_levels
-  cond <- design_info$cond
 
   n_sites <- nrow(methyl_mat)
 

@@ -419,22 +419,22 @@ diffMethyl <- function(
     res_sub <- tryCatch(
       if (method == "limma") {
         .runLimma(methyl_sub, cov_sub, site_sub, cd, formula,
+          design_info = design_info,
           alpha = alpha,
-          ref_level = ref_level, design_info = design_info,
           mod_counts_mat = mod_counts_sub,
           canonical_counts_mat = canonical_counts_sub,
           other_mod_counts_mat = other_mod_counts_sub
         )
       } else if (method == "quasi_f") {
         .runQuasiF(methyl_sub, cov_sub, site_sub, cd, formula,
-          ref_level = ref_level, design_info = design_info,
+          design_info = design_info,
           mod_counts_mat = mod_counts_sub,
           canonical_counts_mat = canonical_counts_sub,
           other_mod_counts_mat = other_mod_counts_sub
         )
       } else {
         .runMethylKit(methyl_sub, cov_sub, site_sub, cd, formula,
-          ref_level = ref_level, design_info = design_info,
+          design_info = design_info,
           mod_counts_mat = mod_counts_sub,
           canonical_counts_mat = canonical_counts_sub,
           other_mod_counts_mat = other_mod_counts_sub
