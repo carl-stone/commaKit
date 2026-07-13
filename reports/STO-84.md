@@ -5,9 +5,9 @@
 Issue: [#268](https://github.com/carl-stone/commaKit/issues/268), mapped to
 Linear STO-84. Branch: `symphony/STO-84`.
 
-`R/parse_megalodon.R` makes the single keyed aggregate's named metric matrix a
-data frame before extracting `beta` and `coverage`. The one aggregate remains
-keyed by chromosome, position, strand, and modification type, so beta and
+`R/parse_megalodon.R` uses one keyed aggregate and converts its named metric
+matrix to a data frame before extracting `beta` and `coverage`. The aggregate
+is keyed by chromosome, position, strand, and modification type, so beta and
 coverage come from the same group rather than matched independent aggregate
 output.
 
@@ -16,6 +16,15 @@ filter test with known beta (`0.75`) and coverage (`6`) assertions for the
 retained site. This confirms filtering preserves the paired metrics.
 
 No public API, schema, roxygen, dependency, or vignette source was changed.
+
+## Scope Note
+
+The assigned branch already contains committed changes to
+`tests/testthat/test-slidingWindow.R`, `tests/testthat/test-vignettes.R`, and
+two vignette sources relative to `origin/main`. They are outside STO-84 and
+were not modified during this implementation pass. The factory finalizer must
+isolate them from the STO-84 PR before publication; this worker did not reset,
+revert, stage, or otherwise alter inherited branch history.
 
 ## Validation Receipts
 
@@ -32,7 +41,8 @@ HOME=/tmp R_LIBS=/tmp/commakit-r-library:/home/carl/R/library \
   Rscript --vanilla dev/precommit.R lint R/parse_megalodon.R tests/testthat/test-parse_megalodon.R
 ```
 
-Result: passed. Both files were already styled; lint reported no findings.
+Result: passed. Both files were unchanged by formatting; lint reported no
+findings.
 
 ```bash
 HOME=/tmp R_LIBS=/tmp/commakit-r-library:/home/carl/R/library \
@@ -74,7 +84,9 @@ are outside this issue's diff.
 ## Handoff
 
 Next owner: factory finalizer, then factory steward / Carl reviewer. The
-working tree is intentionally unstaged. Do not commit, push, merge, or close
-GitHub issue #268 from this workspace. Re-run vignette validation in CI or an
-image with the ImageMagick/Magick++ development dependency if a broader branch
-validation is required.
+working tree is intentionally unstaged. First isolate the inherited,
+out-of-scope branch changes noted above; then publish only the STO-84 parser,
+test, and report changes. Do not commit, push, merge, or close GitHub issue
+#268 from this workspace. Re-run vignette validation in CI or an image with the
+ImageMagick/Magick++ development dependency if a broader branch validation is
+required.
