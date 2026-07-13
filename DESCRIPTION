@@ -25,6 +25,7 @@ Suggests:
     BSgenome,
     Biostrings,
     BiocStyle,
+    cigarillo,
     clusterProfiler,
     curl,
     KEGGREST,
