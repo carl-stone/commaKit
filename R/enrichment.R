@@ -20,7 +20,7 @@ NULL
   Sigma19 = "fecI"
 )
 
-# --- Existing internal helpers (kept for backward compatibility) ---------------
+# --- Existing internal helpers ------------------------------------------------
 
 # Map differential methylation results from sites to genes.
 #
@@ -86,7 +86,8 @@ NULL
 # @param site_gene_df  data.frame from .siteToGeneMap() or .extractGeneRoles()
 # @param score_metric  "combined" | "padj" | "delta_beta"
 # @param agg           how to aggregate site scores per gene: "max" | "mean"
-# @return  named numeric vector sorted decreasing, suitable for clusterProfiler::GSEA()
+# @return  named numeric vector sorted decreasing, suitable for
+# `clusterProfiler::GSEA()` accepts this ranking format.
 .computeGeneScores <- function(site_gene_df, score_metric = "combined",
                                agg = "max") {
   valid <- !is.na(site_gene_df$dm_padj) & !is.na(site_gene_df$dm_delta_beta)
@@ -206,7 +207,7 @@ NULL
       result
     },
     terminator = {
-      # "{gene} terminator" -> "{gene}"
+      # Strip the terminator suffix to recover the associated gene name.
       stripped <- sub("\\s+terminator$", "", feature_names, perl = TRUE)
       as.list(stripped)
     },
@@ -520,7 +521,7 @@ NULL
     return(invisible(NULL))
   }
   if (!is.character(file) ||
-    length(file) != 1L ||
+    length(file) != 1L || # nolint: indentation_linter
     is.na(file) ||
     nchar(file) == 0L) {
     stop("'", arg_name, "' must be a single non-empty file path or NULL.")
@@ -532,173 +533,195 @@ NULL
   invisible(NULL)
 }
 
-# Run ORA and/or GSEA for a prepared site-gene data.frame.
-#
-# This is the refactored ORA+GSEA block from enrichMethylation(), now callable
-# once per feature_type x gene_role combination.
-#
-# @param sg           data.frame with columns gene_id, site_key, dm_padj,
-#                     dm_delta_beta
-# @param universe     character vector of universe gene IDs
-# @param method, OrgDb, keyType, ont, organism, TERM2GENE, TERM2NAME,
-#   kegg_term2gene, kegg_term2name,
-#   padj_threshold, delta_beta_threshold, score_metric, gene_score_agg,
-#   pvalueCutoff, qvalueCutoff, minGSSize, maxGSSize -- same as enrichMethylation()
-# @return list(go = ..., kegg = ...)
-.runEnrichmentForGeneMap <- function(sg, universe, method, OrgDb, keyType, ont,
-                                     organism, TERM2GENE, TERM2NAME,
-                                     kegg_term2gene, kegg_term2name,
-                                     padj_threshold, delta_beta_threshold,
-                                     score_metric, gene_score_agg,
-                                     pvalueCutoff, qvalueCutoff,
-                                     minGSSize, maxGSSize) {
-  both <- length(method) > 1L
+# Build the shared enrichment dispatch context.
+# @keywords internal
+.enrichmentDispatchContext <- function(method, org_db, keyType, ont, organism,
+                                       term2gene, term2name, kegg_term2gene,
+                                       kegg_term2name, padj_threshold,
+                                       delta_beta_threshold, score_metric,
+                                       gene_score_agg, pvalueCutoff,
+                                       qvalueCutoff, minGSSize, maxGSSize) {
+  list(
+    method = unique(method),
+    OrgDb = org_db,
+    keyType = keyType,
+    ont = ont,
+    organism = organism,
+    TERM2GENE = term2gene,
+    TERM2NAME = term2name,
+    kegg_term2gene = kegg_term2gene,
+    kegg_term2name = kegg_term2name,
+    padj_threshold = padj_threshold,
+    delta_beta_threshold = delta_beta_threshold,
+    score_metric = score_metric,
+    gene_score_agg = gene_score_agg,
+    pvalueCutoff = pvalueCutoff,
+    qvalueCutoff = qvalueCutoff,
+    minGSSize = minGSSize,
+    maxGSSize = maxGSSize
+  )
+}
 
-  go_ora <- NULL
-  go_gsea <- NULL
-  keg_ora <- NULL
-  keg_gsea <- NULL
-
-  # -- ORA -------------------------------------------------------------------
-  if ("ora" %in% method) {
-    sig_mask <- !is.na(sg$dm_padj) & !is.na(sg$dm_delta_beta) &
-      sg$dm_padj <= padj_threshold &
-      abs(sg$dm_delta_beta) >= delta_beta_threshold
-
-    sig_genes <- unique(sg$gene_id[sig_mask])
-
-    if (length(sig_genes) == 0L) {
-      warning(
-        "No significantly differentially methylated genes found ",
-        "(padj <= ", padj_threshold, " and |delta_beta| >= ",
-        delta_beta_threshold, "). ORA will not be run."
-      )
-    } else {
-      if (!is.null(TERM2GENE)) {
-        go_ora <- clusterProfiler::enricher(
-          gene         = sig_genes,
-          universe     = universe,
-          TERM2GENE    = TERM2GENE,
-          TERM2NAME    = TERM2NAME,
-          pvalueCutoff = pvalueCutoff,
-          qvalueCutoff = qvalueCutoff,
-          minGSSize    = minGSSize,
-          maxGSSize    = maxGSSize
-        )
-      } else if (!is.null(OrgDb)) {
-        go_ora <- clusterProfiler::enrichGO(
-          gene         = sig_genes,
-          OrgDb        = OrgDb,
-          keyType      = keyType,
-          ont          = ont,
-          universe     = universe,
-          pvalueCutoff = pvalueCutoff,
-          qvalueCutoff = qvalueCutoff,
-          minGSSize    = minGSSize,
-          maxGSSize    = maxGSSize,
-          readable     = FALSE
-        )
-      }
-
-      if (!is.null(kegg_term2gene)) {
-        keg_t2n <- if (!is.null(kegg_term2name) && nrow(kegg_term2name) > 0L) {
-          kegg_term2name
-        } else {
-          NULL
-        }
-        keg_ora <- clusterProfiler::enricher(
-          gene         = sig_genes,
-          universe     = universe,
-          TERM2GENE    = kegg_term2gene,
-          TERM2NAME    = keg_t2n,
-          pvalueCutoff = pvalueCutoff,
-          qvalueCutoff = qvalueCutoff,
-          minGSSize    = minGSSize,
-          maxGSSize    = maxGSSize
-        )
-      } else if (!is.null(organism)) {
-        keg_ora <- clusterProfiler::enrichKEGG(
-          gene         = sig_genes,
-          organism     = organism,
-          keyType      = keyType,
-          universe     = universe,
-          pvalueCutoff = pvalueCutoff,
-          qvalueCutoff = qvalueCutoff,
-          minGSSize    = minGSSize,
-          maxGSSize    = maxGSSize
-        )
-      }
-    }
-  }
-
-  # -- GSEA ------------------------------------------------------------------
-  if ("gsea" %in% method) {
-    gene_scores <- .computeGeneScores(sg, score_metric, gene_score_agg)
-
-    if (length(gene_scores) == 0L) {
-      warning("No valid gene scores computed. GSEA will not be run.")
-    } else {
-      if (!is.null(TERM2GENE)) {
-        go_gsea <- clusterProfiler::GSEA(
-          geneList     = gene_scores,
-          TERM2GENE    = TERM2GENE,
-          TERM2NAME    = TERM2NAME,
-          pvalueCutoff = pvalueCutoff,
-          minGSSize    = minGSSize,
-          maxGSSize    = maxGSSize
-        )
-      } else if (!is.null(OrgDb)) {
-        go_gsea <- clusterProfiler::gseGO(
-          geneList     = gene_scores,
-          OrgDb        = OrgDb,
-          keyType      = keyType,
-          ont          = ont,
-          pvalueCutoff = pvalueCutoff,
-          minGSSize    = minGSSize,
-          maxGSSize    = maxGSSize
-        )
-      }
-
-      if (!is.null(kegg_term2gene)) {
-        keg_t2n <- if (!is.null(kegg_term2name) && nrow(kegg_term2name) > 0L) {
-          kegg_term2name
-        } else {
-          NULL
-        }
-        keg_gsea <- clusterProfiler::GSEA(
-          geneList     = gene_scores,
-          TERM2GENE    = kegg_term2gene,
-          TERM2NAME    = keg_t2n,
-          pvalueCutoff = pvalueCutoff,
-          minGSSize    = minGSSize,
-          maxGSSize    = maxGSSize
-        )
-      } else if (!is.null(organism)) {
-        keg_gsea <- clusterProfiler::gseKEGG(
-          geneList     = gene_scores,
-          organism     = organism,
-          keyType      = keyType,
-          pvalueCutoff = pvalueCutoff,
-          minGSSize    = minGSSize,
-          maxGSSize    = maxGSSize
-        )
-      }
-    }
-  }
-
-  if (both) {
-    list(
-      go = list(ora = go_ora, gsea = go_gsea),
-      kegg = list(ora = keg_ora, gsea = keg_gsea)
-    )
-  } else if ("ora" %in% method) {
-    list(go = go_ora, kegg = keg_ora)
+# Empty KEGG TERM2NAME tables should behave like a missing TERM2NAME.
+# @keywords internal
+.term2nameOrNull <- function(term2name) {
+  if (!is.null(term2name) && nrow(term2name) > 0L) {
+    term2name
   } else {
-    list(go = go_gsea, kegg = keg_gsea)
+    NULL
   }
 }
 
-# --- buildKEGGTermGene() -------------------------------------------------------
+# Describe one clusterProfiler call without running it.
+# @keywords internal
+.enrichmentCallSpec <- function(collection, analysis, genes, universe, ctx) {
+  stopifnot(collection %in% c("go", "kegg"))
+  stopifnot(analysis %in% c("ora", "gsea"))
+
+  is_ora <- identical(analysis, "ora")
+  gene_arg <- if (is_ora) "gene" else "geneList"
+  args <- list()
+  args[[gene_arg]] <- genes
+
+  if (identical(collection, "go")) {
+    if (!is.null(ctx$TERM2GENE)) {
+      args <- c(args, list(
+        TERM2GENE = ctx$TERM2GENE,
+        TERM2NAME = ctx$TERM2NAME,
+        pvalueCutoff = ctx$pvalueCutoff,
+        minGSSize = ctx$minGSSize,
+        maxGSSize = ctx$maxGSSize
+      ))
+      if (is_ora) {
+        args$universe <- universe
+        args$qvalueCutoff <- ctx$qvalueCutoff
+      }
+      return(list(fun = if (is_ora) "enricher" else "GSEA", args = args))
+    }
+
+    if (!is.null(ctx$OrgDb)) {
+      args <- c(args, list(
+        OrgDb = ctx$OrgDb,
+        keyType = ctx$keyType,
+        ont = ctx$ont,
+        pvalueCutoff = ctx$pvalueCutoff,
+        minGSSize = ctx$minGSSize,
+        maxGSSize = ctx$maxGSSize
+      ))
+      if (is_ora) {
+        args$universe <- universe
+        args$qvalueCutoff <- ctx$qvalueCutoff
+        args$readable <- FALSE
+      }
+      return(list(fun = if (is_ora) "enrichGO" else "gseGO", args = args))
+    }
+
+    return(NULL)
+  }
+
+  if (!is.null(ctx$kegg_term2gene)) {
+    args <- c(args, list(
+      TERM2GENE = ctx$kegg_term2gene,
+      TERM2NAME = .term2nameOrNull(ctx$kegg_term2name),
+      pvalueCutoff = ctx$pvalueCutoff,
+      minGSSize = ctx$minGSSize,
+      maxGSSize = ctx$maxGSSize
+    ))
+    if (is_ora) {
+      args$universe <- universe
+      args$qvalueCutoff <- ctx$qvalueCutoff
+    }
+    return(list(fun = if (is_ora) "enricher" else "GSEA", args = args))
+  }
+
+  if (!is.null(ctx$organism)) {
+    args <- c(args, list(
+      organism = ctx$organism,
+      keyType = ctx$keyType,
+      pvalueCutoff = ctx$pvalueCutoff,
+      minGSSize = ctx$minGSSize,
+      maxGSSize = ctx$maxGSSize
+    ))
+    if (is_ora) {
+      args$universe <- universe
+      args$qvalueCutoff <- ctx$qvalueCutoff
+    }
+    return(list(fun = if (is_ora) "enrichKEGG" else "gseKEGG", args = args))
+  }
+
+  NULL
+}
+
+# @keywords internal
+.runClusterProfilerCall <- function(spec) {
+  if (is.null(spec)) {
+    return(NULL)
+  }
+  do.call(getExportedValue("clusterProfiler", spec$fun), spec$args)
+}
+
+# @keywords internal
+.runEnrichmentMethod <- function(analysis, sg, universe, ctx) {
+  if (identical(analysis, "ora")) {
+    sig_mask <- !is.na(sg$dm_padj) & !is.na(sg$dm_delta_beta) &
+      sg$dm_padj <= ctx$padj_threshold &
+      abs(sg$dm_delta_beta) >= ctx$delta_beta_threshold
+    genes <- unique(sg$gene_id[sig_mask])
+
+    if (length(genes) == 0L) {
+      warning(
+        "No significantly differentially methylated genes found ",
+        "(padj <= ", ctx$padj_threshold, " and |delta_beta| >= ",
+        ctx$delta_beta_threshold, "). ORA will not be run."
+      )
+      return(list(go = NULL, kegg = NULL))
+    }
+  } else {
+    genes <- .computeGeneScores(sg, ctx$score_metric, ctx$gene_score_agg)
+
+    if (length(genes) == 0L) {
+      warning("No valid gene scores computed. GSEA will not be run.")
+      return(list(go = NULL, kegg = NULL))
+    }
+  }
+
+  list(
+    go = .runClusterProfilerCall(
+      .enrichmentCallSpec("go", analysis, genes, universe, ctx)
+    ),
+    kegg = .runClusterProfilerCall(
+      .enrichmentCallSpec("kegg", analysis, genes, universe, ctx)
+    )
+  )
+}
+
+# Run ORA and/or GSEA for a prepared site-gene data.frame.
+#
+# @param sg       data.frame with columns gene_id, site_key, dm_padj,
+#                 dm_delta_beta
+# @param universe character vector of universe gene IDs
+# @param ctx      dispatch context from .enrichmentDispatchContext()
+# @return list(go = ..., kegg = ...)
+.runEnrichmentForGeneMap <- function(sg, universe, ctx) {
+  by_method <- stats::setNames(
+    lapply(ctx$method, .runEnrichmentMethod,
+      sg = sg, universe = universe,
+      ctx = ctx
+    ),
+    ctx$method
+  )
+
+  if (length(ctx$method) > 1L) {
+    list(
+      go = list(ora = by_method$ora$go, gsea = by_method$gsea$go),
+      kegg = list(ora = by_method$ora$kegg, gsea = by_method$gsea$kegg)
+    )
+  } else {
+    by_method[[1L]]
+  }
+}
+
+# --- buildKEGGTermGene() -----------------------------------------------------
 
 #' Build a KEGG term-to-gene mapping for use with enrichMethylation()
 #'
@@ -754,12 +777,14 @@ NULL
 #'       description).}
 #'   }
 #'   Pass these to \code{\link{enrichMethylation}()} as
-#'   \code{kegg_term2gene = result$term2gene, kegg_term2name = result$term2name}.
+#'   \code{kegg_term2gene = result$term2gene,
+#'   kegg_term2name = result$term2name}.
 #'
 #' @examples
 #' \donttest{
 #' if (requireNamespace("KEGGREST", quietly = TRUE)) {
-#'   # Fetch once and cache to disk (use tempdir() so check directory stays clean)
+#'   # Fetch once and cache to disk
+#'   # (use tempdir() so check directory stays clean)
 #'   kegg_file <- file.path(tempdir(), "eco_kegg.rds")
 #'   kegg <- buildKEGGTermGene("eco", file = kegg_file)
 #'
@@ -780,7 +805,7 @@ NULL
 buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
                               id_map = NULL) {
   if (!is.character(organism) ||
-    length(organism) != 1L ||
+    length(organism) != 1L || # nolint: indentation_linter
     nchar(organism) == 0L) {
     stop("'organism' must be a non-empty character string (e.g., \"eco\").")
   }
@@ -864,7 +889,7 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
   # -- Optionally translate KEGG IDs to gene symbols -------------------------
   if (!is.null(id_map)) {
     if (!is.data.frame(id_map) ||
-      !all(c("symbol", "kegg_id") %in% colnames(id_map))) {
+      !all(c("symbol", "kegg_id") %in% colnames(id_map))) { # nolint: indentation_linter
       stop(
         "'id_map' must be a data.frame with columns 'symbol' and 'kegg_id'.\n",
         "Use buildKEGGGeneIDMap() to create it."
@@ -1016,14 +1041,14 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
 #' @seealso \code{\link{buildKEGGTermGene}}, \code{\link{enrichMethylation}}
 #' @export
 buildKEGGGeneIDMap <- function(organism,
-                               OrgDb = NULL,
+                               OrgDb = NULL, # nolint: object_name_linter
                                entrez2symbol = NULL,
                                keys_col = "SYMBOL",
                                id_col = "ENTREZID",
                                file = NULL) {
   # -- Input validation ------------------------------------------------------
   if (!is.character(organism) ||
-    length(organism) != 1L ||
+    length(organism) != 1L || # nolint: indentation_linter
     nchar(organism) == 0L) {
     stop("'organism' must be a non-empty character string (e.g., \"eco\").")
   }
@@ -1038,7 +1063,7 @@ buildKEGGGeneIDMap <- function(organism,
 
   if (!is.null(entrez2symbol)) {
     if (!is.data.frame(entrez2symbol) ||
-      !all(c("entrez_id", "symbol") %in% colnames(entrez2symbol))) {
+      !all(c("entrez_id", "symbol") %in% colnames(entrez2symbol))) { # nolint: indentation_linter
       stop(
         "'entrez2symbol' must be a data.frame with columns ",
         "'entrez_id' and 'symbol'."
@@ -1353,7 +1378,9 @@ buildKEGGGeneIDMap <- function(organism,
 #' # Requires clusterProfiler and a custom TERM2GENE mapping
 #' if (requireNamespace("clusterProfiler", quietly = TRUE)) {
 #'   data(comma_example_data)
-#'   dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
+#'   dm <- diffMethyl(comma_example_data,
+#'     formula = ~condition, mod_type = "6mA"
+#'   )
 #'   ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
 #'
 #'   # Custom TERM2GENE (works without network access or OrgDb)
@@ -1361,7 +1388,9 @@ buildKEGGGeneIDMap <- function(organism,
 #'     term = c("PATH:01", "PATH:01", "PATH:02"),
 #'     gene = c("geneA", "geneB", "geneC")
 #'   )
-#'   res <- enrichMethylation(ann, TERM2GENE = fake_t2g, method = c("ora", "gsea"))
+#'   res <- enrichMethylation(ann,
+#'     TERM2GENE = fake_t2g, method = c("ora", "gsea")
+#'   )
 #'   str(res, max.level = 2)
 #' }
 #' }
@@ -1369,12 +1398,12 @@ buildKEGGGeneIDMap <- function(organism,
 #' @export
 enrichMethylation <- function(object,
                               method = "ora",
-                              OrgDb = NULL,
+                              OrgDb = NULL, # nolint: object_name_linter
                               keyType = "SYMBOL",
                               ont = "BP",
                               organism = NULL,
-                              TERM2GENE = NULL,
-                              TERM2NAME = NULL,
+                              TERM2GENE = NULL, # nolint: object_name_linter
+                              TERM2NAME = NULL, # nolint: object_name_linter
                               kegg_term2gene = NULL,
                               kegg_term2name = NULL,
                               gene_col = "feature_names",
@@ -1404,7 +1433,7 @@ enrichMethylation <- function(object,
   }
 
   if (is.null(OrgDb) && is.null(organism) && is.null(TERM2GENE) &&
-    is.null(kegg_term2gene)) {
+    is.null(kegg_term2gene)) { # nolint: indentation_linter
     stop(
       "No gene-to-term mapping supplied. Provide at least one of:\n",
       "  kegg_term2gene -- pre-built KEGG mapping from buildKEGGTermGene()\n",
@@ -1452,6 +1481,16 @@ enrichMethylation <- function(object,
   # -- Build the per-feature-type loop ---------------------------------------
   ft_loop <- if (is.null(feature_type)) list(NULL) else as.list(feature_type)
   is_single <- length(ft_loop) == 1L
+  dispatch_ctx <- .enrichmentDispatchContext(
+    method,
+    OrgDb, keyType, ont, organism,
+    TERM2GENE, TERM2NAME,
+    kegg_term2gene, kegg_term2name,
+    padj_threshold, delta_beta_threshold,
+    score_metric, gene_score_agg,
+    pvalueCutoff, qvalueCutoff,
+    minGSSize, maxGSSize
+  )
 
   results_by_ft <- lapply(ft_loop, function(ft) {
     # Determine effective overlap_only for this feature type
@@ -1480,14 +1519,7 @@ enrichMethylation <- function(object,
       }
       universe <- unique(sg_all$gene_id[!is.na(sg_all$gene_id)])
       return(.runEnrichmentForGeneMap(
-        sg_all, universe, method,
-        OrgDb, keyType, ont, organism,
-        TERM2GENE, TERM2NAME,
-        kegg_term2gene, kegg_term2name,
-        padj_threshold, delta_beta_threshold,
-        score_metric, gene_score_agg,
-        pvalueCutoff, qvalueCutoff,
-        minGSSize, maxGSSize
+        sg_all, universe, dispatch_ctx
       ))
     }
 
@@ -1522,18 +1554,11 @@ enrichMethylation <- function(object,
         universe <- unique(sg$gene_id)
       } else {
         # Universe = all regulator genes of this type in the annotation
-        universe <- unique(rt$gene_id[rt$role == "regulator" &
-          !is.na(rt$gene_id)])
+        regulator_rows <- rt$role == "regulator" & !is.na(rt$gene_id)
+        universe <- unique(rt$gene_id[regulator_rows])
       }
       .runEnrichmentForGeneMap(
-        sg, universe, method,
-        OrgDb, keyType, ont, organism,
-        TERM2GENE, TERM2NAME,
-        kegg_term2gene, kegg_term2name,
-        padj_threshold, delta_beta_threshold,
-        score_metric, gene_score_agg,
-        pvalueCutoff, qvalueCutoff,
-        minGSSize, maxGSSize
+        sg, universe, dispatch_ctx
       )
     }
 
