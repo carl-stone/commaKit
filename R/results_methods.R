@@ -155,6 +155,7 @@ setMethod("results", "commaData", function(object,
   if (length(drop_cols) > 0L) {
     site_df <- site_df[, setdiff(colnames(site_df), drop_cols), drop = FALSE]
   }
+  site_df <- site_df[idx, , drop = FALSE]
   result_data <- result_data[idx, , drop = FALSE]
   if (identical(as, "GRanges")) {
     gr <- SummarizedExperiment::rowRanges(object)[idx]
@@ -176,9 +177,8 @@ setMethod("results", "commaData", function(object,
 
   out <- cbind(
     site_df,
-    as.data.frame(.diffMethylResultData(object, selected_result))
+    as.data.frame(result_data)
   )
-  out <- out[idx, , drop = FALSE]
   rownames(out) <- as.character(idx)
   out
 })
