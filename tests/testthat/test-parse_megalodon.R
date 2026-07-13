@@ -255,6 +255,8 @@ test_that(".parseMegalodon() drops sites below min_coverage", {
   )
   expect_equal(nrow(result), 1L)
   expect_equal(result$position, 200L)
+  expect_equal(result$beta, 0.75, tolerance = 1e-6)
+  expect_equal(result$coverage, 6L)
 })
 
 test_that(".parseMegalodon() retains all sites when min_coverage = 0", {

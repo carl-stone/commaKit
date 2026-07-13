@@ -143,7 +143,7 @@ NULL
       c(beta = mean(x), coverage = length(x))
     }
   )
-  summary_metrics <- site_summary$mod_prob
+  summary_metrics <- as.data.frame(site_summary$mod_prob)
 
   result <- data.frame(
     chrom = site_summary$chrom,
@@ -151,8 +151,8 @@ NULL
     strand = site_summary$strand,
     mod_type = site_summary$mod_type,
     motif = NA_character_,
-    beta = summary_metrics[, "beta"],
-    coverage = as.integer(summary_metrics[, "coverage"]),
+    beta = summary_metrics$beta,
+    coverage = as.integer(summary_metrics$coverage),
     mod_counts = NA_integer_,
     canonical_counts = NA_integer_,
     other_mod_counts = NA_integer_,
