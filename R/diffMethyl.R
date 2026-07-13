@@ -418,7 +418,7 @@ diffMethyl <- function(
     # Dispatch to statistical backend
     res_sub <- tryCatch(
       if (method == "limma") {
-        .runLimma(methyl_sub, cov_sub, site_sub, cd, formula,
+        .runLimma(methyl_sub, cov_sub, cd, formula,
           design_info = design_info,
           alpha = alpha,
           mod_counts_mat = mod_counts_sub,
@@ -426,14 +426,14 @@ diffMethyl <- function(
           other_mod_counts_mat = other_mod_counts_sub
         )
       } else if (method == "quasi_f") {
-        .runQuasiF(methyl_sub, cov_sub, site_sub, cd, formula,
+        .runQuasiF(methyl_sub, cov_sub,
           design_info = design_info,
           mod_counts_mat = mod_counts_sub,
           canonical_counts_mat = canonical_counts_sub,
           other_mod_counts_mat = other_mod_counts_sub
         )
       } else {
-        .runMethylKit(methyl_sub, cov_sub, site_sub, cd, formula,
+        .runMethylKit(methyl_sub, cov_sub, site_sub,
           design_info = design_info,
           mod_counts_mat = mod_counts_sub,
           canonical_counts_mat = canonical_counts_sub,

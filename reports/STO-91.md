@@ -10,6 +10,9 @@ backend wrappers.
 - `.runLimma()`, `.runQuasiF()`, and `.runMethylKit()` now require
   `design_info` from `.resolveDiffMethylDesign()` instead of accepting
   `ref_level` or resolving a fallback design internally.
+- Tightened each internal wrapper signature to accept only the validated
+  inputs it uses; `diffMethyl()` is the sole internal caller and owns
+  dependency validation plus design resolution.
 - Removed duplicate wrapper-level dependency checks; public missing-package
   errors remain in `diffMethyl()`.
 - Preserved count-matrix plumbing, reference/treatment direction, backend
@@ -22,6 +25,10 @@ backend wrappers.
 
 `symphony/STO-91`
 
+The intended source and test changes are present as unstaged working-tree
+changes for trusted finalization. No commits, pushes, or pull requests were
+created by this worker.
+
 ## Files Changed
 
 - `R/diffMethyl.R`
@@ -30,6 +37,16 @@ backend wrappers.
 - `R/quasi_f.R`
 - `tests/testthat/test-diffMethyl.R`
 - `reports/STO-91.md`
+
+## Diff
+
+- Removed wrapper arguments that were only needed for former fallback
+  validation paths: `site_df` from limma; `site_df`, `coldata`, and `formula`
+  from quasi-F; and `coldata` plus `formula` from methylKit.
+- Updated `diffMethyl()` dispatch to pass the minimal validated backend inputs.
+- Strengthened the public API test to pass `reference = "WT"` and assert the
+  treatment-minus-reference direction and recorded comparison metadata for
+  each available backend.
 
 ## Commands Run
 
@@ -69,6 +86,8 @@ Passed:
 - Formatter and pre-commit style/lint checks pass for every changed R file.
 - Required focused public API test passes.
 - `git diff --check` reports no whitespace errors.
+- The working tree contains the intended R source and public-test diff; only
+  pre-existing factory artifacts remain untracked.
 
 ## Blockers
 

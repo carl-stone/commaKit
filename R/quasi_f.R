@@ -60,12 +60,6 @@ NULL
 #' @param other_mod_counts_mat Optional integer matrix of observed non-target
 #'   modified-read counts. When present with \code{canonical_counts_mat}, these
 #'   counts are included in the non-target denominator so it matches coverage.
-#' @param site_df Data frame with columns \code{chrom}, \code{position},
-#'   \code{strand}, \code{mod_type}, \code{motif} — one row per site.
-#' @param coldata \code{data.frame} with at least one column matching the
-#'   RHS variable in \code{formula} (typically \code{condition}).
-#' @param formula One-sided formula specifying the design (e.g.,
-#'   \code{~ condition}).
 #' @param design_info Precomputed design information from
 #'   \code{.resolveDiffMethylDesign()}.
 #'
@@ -81,8 +75,7 @@ NULL
 #'   }
 #'
 #' @keywords internal
-.runQuasiF <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
-                       design_info,
+.runQuasiF <- function(methyl_mat, coverage_mat, design_info,
                        mod_counts_mat = NULL, canonical_counts_mat = NULL,
                        other_mod_counts_mat = NULL) {
   # ── Use validated two-level design and group statistics ───────────────────

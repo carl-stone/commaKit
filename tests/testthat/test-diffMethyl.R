@@ -843,13 +843,18 @@ test_that("diffMethyl: factor condition uses first factor level as reference", {
 })
 
 test_that(
-  "diffMethyl: public design validation controls backend direction",
+  "diffMethyl: public design validation passes reference direction to backends",
   {
     obj <- .make_ref_test_data(as_factor = TRUE)
     methods <- c("quasi_f", "limma")
     for (method in methods) {
       skip_if_not_installed("limma")
-      dm <- diffMethyl(obj, formula = ~condition, method = method)
+      dm <- diffMethyl(
+        obj,
+        formula = ~condition,
+        reference = "WT",
+        method = method
+      )
       rd <- as.data.frame(SummarizedExperiment::rowData(dm))
       db <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
       expect_true(
@@ -862,7 +867,12 @@ test_that(
 
     if (requireNamespace("methylKit", quietly = TRUE)) {
       dm <- suppressWarnings(
-        diffMethyl(obj, formula = ~condition, method = "methylkit")
+        diffMethyl(
+          obj,
+          formula = ~condition,
+          reference = "WT",
+          method = "methylkit"
+        )
       )
       rd <- as.data.frame(SummarizedExperiment::rowData(dm))
       db <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
