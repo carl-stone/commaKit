@@ -1,4 +1,3 @@
-## tests/testthat/test-enrichment.R
 ## Tests for enrichMethylation(), .siteToGeneMap(), .computeGeneScores()
 ## All tests use custom TERM2GENE to avoid requiring clusterProfiler, OrgDb,
 ## KEGG access, or internet connectivity.
@@ -29,6 +28,240 @@ fake_t2n <- data.frame(
   stringsAsFactors = FALSE
 )
 
+# ── enrichment dispatch setup ────────────────────────────────────────────────
+
+test_that("enrichment dispatch builds custom GO and KEGG call specs", {
+  kegg_t2g <- data.frame(
+    term = "eco00010", gene = "geneA",
+    stringsAsFactors = FALSE
+  )
+  kegg_t2n <- data.frame(
+    term = "eco00010", name = "Glycolysis",
+    stringsAsFactors = FALSE
+  )
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = c("ora", "gsea"),
+    org_db = NULL,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = NULL,
+    term2gene = fake_t2g,
+    term2name = fake_t2n,
+    kegg_term2gene = kegg_t2g,
+    kegg_term2name = kegg_t2n,
+    padj_threshold = 0.05,
+    delta_beta_threshold = 0.1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+
+  go_ora <- commaKit:::.enrichmentCallSpec(
+    "go", "ora", "geneA", c("geneA", "geneB"), ctx
+  )
+  go_gsea <- commaKit:::.enrichmentCallSpec(
+    "go", "gsea", c(geneA = 2, geneB = 1), c("geneA", "geneB"), ctx
+  )
+  kegg_ora <- commaKit:::.enrichmentCallSpec(
+    "kegg", "ora", "geneA", c("geneA", "geneB"), ctx
+  )
+
+  expect_equal(go_ora$fun, "enricher")
+  expect_equal(go_ora$args$gene, "geneA")
+  expect_equal(go_ora$args$universe, c("geneA", "geneB"))
+  expect_equal(go_ora$args$TERM2GENE, fake_t2g)
+  expect_equal(go_ora$args$TERM2NAME, fake_t2n)
+  expect_equal(go_ora$args$qvalueCutoff, 0.2)
+
+  expect_equal(go_gsea$fun, "GSEA")
+  expect_equal(go_gsea$args$geneList, c(geneA = 2, geneB = 1))
+  expect_false("universe" %in% names(go_gsea$args))
+  expect_false("qvalueCutoff" %in% names(go_gsea$args))
+
+  expect_equal(kegg_ora$fun, "enricher")
+  expect_equal(kegg_ora$args$TERM2GENE, kegg_t2g)
+  expect_equal(kegg_ora$args$TERM2NAME, kegg_t2n)
+})
+
+test_that("enrichment dispatch builds optional database call specs", {
+  fake_orgdb <- structure(list(), class = "OrgDb")
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = c("ora", "gsea"),
+    org_db = fake_orgdb,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = "eco",
+    term2gene = NULL,
+    term2name = NULL,
+    kegg_term2gene = NULL,
+    kegg_term2name = NULL,
+    padj_threshold = 0.05,
+    delta_beta_threshold = 0.1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+
+  go_ora <- commaKit:::.enrichmentCallSpec(
+    "go", "ora", "geneA", c("geneA", "geneB"), ctx
+  )
+  go_gsea <- commaKit:::.enrichmentCallSpec(
+    "go", "gsea", c(geneA = 2, geneB = 1), c("geneA", "geneB"), ctx
+  )
+  kegg_ora <- commaKit:::.enrichmentCallSpec(
+    "kegg", "ora", "geneA", c("geneA", "geneB"), ctx
+  )
+  kegg_gsea <- commaKit:::.enrichmentCallSpec(
+    "kegg", "gsea", c(geneA = 2, geneB = 1), c("geneA", "geneB"), ctx
+  )
+
+  expect_equal(go_ora$fun, "enrichGO")
+  expect_identical(go_ora$args$OrgDb, fake_orgdb)
+  expect_equal(go_ora$args$readable, FALSE)
+  expect_equal(go_ora$args$universe, c("geneA", "geneB"))
+
+  expect_equal(go_gsea$fun, "gseGO")
+  expect_false("universe" %in% names(go_gsea$args))
+  expect_false("readable" %in% names(go_gsea$args))
+
+  expect_equal(kegg_ora$fun, "enrichKEGG")
+  expect_equal(kegg_ora$args$organism, "eco")
+  expect_equal(kegg_ora$args$universe, c("geneA", "geneB"))
+
+  expect_equal(kegg_gsea$fun, "gseKEGG")
+  expect_equal(kegg_gsea$args$organism, "eco")
+  expect_false("universe" %in% names(kegg_gsea$args))
+})
+
+test_that("enrichment dispatch keeps empty KEGG names optional", {
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = "ora",
+    org_db = NULL,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = NULL,
+    term2gene = NULL,
+    term2name = NULL,
+    kegg_term2gene = data.frame(
+      term = "eco00010", gene = "geneA",
+      stringsAsFactors = FALSE
+    ),
+    kegg_term2name = data.frame(
+      term = character(), name = character(),
+      stringsAsFactors = FALSE
+    ),
+    padj_threshold = 0.05,
+    delta_beta_threshold = 0.1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+
+  spec <- commaKit:::.enrichmentCallSpec(
+    "kegg", "ora", "geneA", c("geneA", "geneB"), ctx
+  )
+
+  expect_equal(spec$fun, "enricher")
+  expect_null(spec$args$TERM2NAME)
+})
+
+test_that("enrichment dispatch preserves combined short-circuit shape", {
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = c("ora", "gsea"),
+    org_db = NULL,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = NULL,
+    term2gene = fake_t2g,
+    term2name = NULL,
+    kegg_term2gene = NULL,
+    kegg_term2name = NULL,
+    padj_threshold = 0.01,
+    delta_beta_threshold = 1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+  sg <- data.frame(
+    gene_id = "geneA",
+    site_key = "chr1:100:+",
+    dm_padj = NA_real_,
+    dm_delta_beta = NA_real_,
+    stringsAsFactors = FALSE
+  )
+
+  warnings <- character()
+  res <- withCallingHandlers(
+    commaKit:::.runEnrichmentForGeneMap(sg, "geneA", ctx),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_true(any(grepl(
+    "No significantly differentially methylated genes", warnings
+  )))
+  expect_true(any(grepl("No valid gene scores", warnings)))
+  expect_equal(names(res), c("go", "kegg"))
+  expect_equal(names(res$go), c("ora", "gsea"))
+  expect_equal(names(res$kegg), c("ora", "gsea"))
+  expect_null(res$go$ora)
+  expect_null(res$go$gsea)
+  expect_null(res$kegg$ora)
+  expect_null(res$kegg$gsea)
+})
+
+test_that("enrichment dispatch ignores duplicate methods", {
+  ctx <- commaKit:::.enrichmentDispatchContext(
+    method = c("ora", "ora"),
+    org_db = NULL,
+    keyType = "SYMBOL",
+    ont = "BP",
+    organism = NULL,
+    term2gene = fake_t2g,
+    term2name = NULL,
+    kegg_term2gene = NULL,
+    kegg_term2name = NULL,
+    padj_threshold = 0.01,
+    delta_beta_threshold = 1,
+    score_metric = "combined",
+    gene_score_agg = "max",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.2,
+    minGSSize = 1L,
+    maxGSSize = 500L
+  )
+  sg <- data.frame(
+    gene_id = "geneA",
+    site_key = "chr1:100:+",
+    dm_padj = NA_real_,
+    dm_delta_beta = NA_real_,
+    stringsAsFactors = FALSE
+  )
+
+  expect_identical(ctx$method, "ora")
+  expect_warning(
+    res <- commaKit:::.runEnrichmentForGeneMap(sg, "geneA", ctx),
+    "No significantly differentially methylated genes"
+  )
+  expect_equal(names(res), c("go", "kegg"))
+  expect_null(res$go)
+  expect_null(res$kegg)
+})
+
 # ── .siteToGeneMap() ─────────────────────────────────────────────────────────
 
 test_that(".siteToGeneMap returns data.frame with expected columns", {
@@ -44,10 +277,9 @@ test_that(".siteToGeneMap returns data.frame with expected columns", {
   sg <- commaKit:::.siteToGeneMap(res_df, "feature_names")
 
   expect_s3_class(sg, "data.frame")
-  expect_true(
-    all(c("gene_id", "site_key", "dm_padj", "dm_delta_beta") %in%
-      colnames(sg))
-  )
+  expect_true(all(
+    c("gene_id", "site_key", "dm_padj", "dm_delta_beta") %in% colnames(sg)
+  ))
 })
 
 test_that(".siteToGeneMap correctly explodes multi-gene sites", {
@@ -173,7 +405,7 @@ test_that(".computeGeneScores excludes sites with NA padj", {
 test_that(".computeGeneScores 'max' aggregation picks largest absolute score", {
   # geneA has two sites: padj=0.001 (larger -log10) and padj=0.01
   scores <- commaKit:::.computeGeneScores(make_sg(), "padj", "max")
-  # -log10(0.001) = 3 > -log10(0.01) = 2
+  # The expected maximum score is 3.
   expect_equal(scores[["geneA"]], -log10(0.001), tolerance = 1e-6)
 })
 
@@ -855,7 +1087,8 @@ test_that(
     })
     expect_type(res_target, "list")
     expect_type(res_regulator, "list")
-    # Target and regulator should use different gene sets when both produce results
+    # Target and regulator should use different gene sets when both produce
+    # results.
     # GO may be NULL with tiny synthetic data — but the gene_role distinction
     # should still manifest in the gene universe (accessible via @gene slot)
     if (!is.null(res_target$go) && !is.null(res_regulator$go)) {
