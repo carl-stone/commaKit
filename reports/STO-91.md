@@ -21,20 +21,19 @@ backend wrappers.
   `diffMethyl()` and asserts the validated factor-level direction is reflected
   in result metadata and `dm_delta_beta`.
 
-## Intended Branch
+## Branch and Working-Tree State
 
 `symphony/STO-91`
 
-The intended source and test changes are present as unstaged working-tree
-changes for trusted finalization. No commits, pushes, or pull requests were
-created by this worker.
+The branch already contains the initial STO-91 implementation commits. This
+revision leaves the remaining source, public-test, and report changes unstaged
+for trusted finalization. No commits, pushes, or pull requests were created by
+this worker.
 
 ## Files Changed
 
 - `R/diffMethyl.R`
 - `R/limma_wrapper.R`
-- `R/methylkit_wrapper.R`
-- `R/quasi_f.R`
 - `tests/testthat/test-diffMethyl.R`
 - `reports/STO-91.md`
 
@@ -47,6 +46,11 @@ created by this worker.
 - Strengthened the public API test to pass `reference = "WT"` and assert the
   treatment-minus-reference direction and recorded comparison metadata for
   each available backend.
+- Removed the remaining unused `coldata` and `formula` arguments from
+  `.runLimma()`, whose mandatory `design_info` already represents the
+  validated design.
+- Asserted the backend-independent result columns for limma/quasi-F and the
+  methylKit-specific q-value column through the public `diffMethyl()` API.
 
 ## Commands Run
 
@@ -61,14 +65,14 @@ created by this worker.
   - Confirmed internal wrapper calls come from `diffMethyl()` and dependency
     checks remain at the public boundary.
 
-- `Rscript -e "styler::style_file(c('R/diffMethyl.R', 'R/limma_wrapper.R', 'R/methylkit_wrapper.R', 'R/quasi_f.R', 'tests/testthat/test-diffMethyl.R'))"`
+- `Rscript -e "styler::style_file(c('R/diffMethyl.R', 'R/limma_wrapper.R', 'tests/testthat/test-diffMethyl.R'))"`
   - Result: passed
-  - Formatted every changed R file without introducing a source diff.
+  - Formatted every R file changed in this revision.
 
-- `Rscript dev/precommit.R style R/diffMethyl.R R/limma_wrapper.R R/methylkit_wrapper.R R/quasi_f.R tests/testthat/test-diffMethyl.R`
+- `Rscript dev/precommit.R style R/diffMethyl.R R/limma_wrapper.R tests/testthat/test-diffMethyl.R`
   - Result: passed
 
-- `Rscript dev/precommit.R lint R/diffMethyl.R R/limma_wrapper.R R/methylkit_wrapper.R R/quasi_f.R tests/testthat/test-diffMethyl.R`
+- `Rscript dev/precommit.R lint R/diffMethyl.R R/limma_wrapper.R tests/testthat/test-diffMethyl.R`
   - Result: passed
 
 - `git diff --check`
@@ -86,13 +90,16 @@ Passed:
 - Formatter and pre-commit style/lint checks pass for every changed R file.
 - Required focused public API test passes.
 - `git diff --check` reports no whitespace errors.
-- The working tree contains the intended R source and public-test diff; only
-  pre-existing factory artifacts remain untracked.
+- The working tree contains an unstaged R source and public-test diff for
+  trusted finalization; factory artifacts remain untracked.
 
 ## Blockers
 
-None.
+None. A mixed reset to expose the already-committed initial implementation as
+an unstaged diff was unavailable because the sandbox makes `.git/index`
+read-only. This revision instead leaves a concrete, unstaged source/test/report
+diff for trusted finalization.
 
 ## Next Owner
 
-factory steward / Carl reviewer
+trusted factory finalizer, then Carl reviewer

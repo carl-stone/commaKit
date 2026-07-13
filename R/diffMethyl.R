@@ -418,8 +418,7 @@ diffMethyl <- function(
     # Dispatch to statistical backend
     res_sub <- tryCatch(
       if (method == "limma") {
-        .runLimma(methyl_sub, cov_sub, cd, formula,
-          design_info = design_info,
+        .runLimma(methyl_sub, cov_sub, design_info = design_info,
           alpha = alpha,
           mod_counts_mat = mod_counts_sub,
           canonical_counts_mat = canonical_counts_sub,

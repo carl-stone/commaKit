@@ -857,6 +857,10 @@ test_that(
       )
       rd <- as.data.frame(SummarizedExperiment::rowData(dm))
       db <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
+      expect_true(all(c(
+        "dm_pvalue", "dm_padj", "dm_delta_beta",
+        "dm_mean_beta_WT", "dm_mean_beta_HNS"
+      ) %in% names(rd)))
       expect_true(
         mean(db) > 0,
         info = paste("Expected HNS - WT direction for", method)
@@ -876,6 +880,10 @@ test_that(
       )
       rd <- as.data.frame(SummarizedExperiment::rowData(dm))
       db <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
+      expect_true(all(c(
+        "dm_pvalue", "dm_padj", "dm_delta_beta",
+        "dm_mean_beta_WT", "dm_mean_beta_HNS", "dm_methylkit_qvalue"
+      ) %in% names(rd)))
       expect_true(
         mean(db) > 0,
         info = "Expected HNS - WT direction for methylkit"

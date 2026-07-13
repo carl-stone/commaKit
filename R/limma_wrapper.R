@@ -48,10 +48,6 @@ NULL
 #' @param other_mod_counts_mat Optional integer matrix of observed non-target
 #'   modified-read counts. When present with \code{canonical_counts_mat}, these
 #'   counts are included in the non-target denominator so it matches coverage.
-#' @param coldata \code{data.frame} with at least one column matching the
-#'   RHS variable in \code{formula} (typically \code{condition}).
-#' @param formula One-sided formula specifying the design (e.g.,
-#'   \code{~ condition}).
 #' @param design_info Precomputed design information from
 #'   \code{.resolveDiffMethylDesign()}.
 #' @param alpha Positive numeric pseudocount added to modified and unmodified
@@ -72,8 +68,6 @@ NULL
 #' @keywords internal
 .runLimma <- function(methyl_mat,
                       coverage_mat,
-                      coldata,
-                      formula,
                       design_info,
                       alpha = 0.5,
                       mod_counts_mat = NULL,
