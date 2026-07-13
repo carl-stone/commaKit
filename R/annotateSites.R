@@ -1,4 +1,5 @@
-#' @importFrom GenomicRanges GRanges findOverlaps start end width strand resize mcols "mcols<-"
+#' @importFrom GenomicRanges GRanges findOverlaps start end width strand resize
+#' @importFrom GenomicRanges mcols "mcols<-"
 #' @importFrom IRanges IRanges CharacterList IntegerList NumericList
 #' @importFrom S4Vectors DataFrame queryHits subjectHits splitAsList mendoapply
 #' @importFrom SummarizedExperiment rowData "rowData<-" rowRanges "rowRanges<-"
@@ -237,8 +238,8 @@ annotateSites <- function(object,
 
   # ── rel_position: signed, strand-aware ────────────────────────────────────
   # 0 when site is inside the feature.
-  # For + strand (and *): negative = upstream (lower coord), positive = downstream.
-  # For - strand: negative = upstream (higher coord, biological), positive = downstream.
+  # On + and * strands, lower coordinates are upstream and larger coordinates
+  # are downstream. On - strands, higher coordinates are upstream biologically.
   inside <- site_pos >= feat_starts & site_pos <= feat_ends
   pos_signed <- ifelse(inside, 0L,
     ifelse(site_pos < feat_starts,
@@ -282,7 +283,7 @@ annotateSites <- function(object,
     (feat_ends - site_pos) / denom, # TSS at feat_end on - strand
     (site_pos - feat_starts) / denom # TSS at feat_start on + strand
   )
-  frac_raw <- pmax(0, pmin(1, frac_raw)) # clamp [0, 1]
+  frac_raw <- pmax(0, pmin(1, frac_raw))
   frac_pos <- ifelse(inside, frac_raw, NA_real_)
 
   # ── Split into parallel list columns ──────────────────────────────────────
@@ -413,40 +414,21 @@ annotateSites <- function(object,
   }
 
   if (keep %in% c("overlap", "metagene")) {
-    # Subset all list columns to indices where rel_position == 0
     keep_idx <- S4Vectors::mendoapply(
       function(rp) which(rp == 0L),
       rd$rel_position
     )
-
-    rd$feature_types <- S4Vectors::mendoapply(
-      function(x, idx) x[idx],
-      rd$feature_types,
-      keep_idx
-    )
-    rd$feature_names <- S4Vectors::mendoapply(
-      function(x, idx) x[idx],
-      rd$feature_names,
-      keep_idx
+    subset_cols <- c(
+      "feature_types",
+      "feature_names",
+      meta_out_cols
     )
 
     if (keep == "metagene") {
-      # Keep frac_position (now NA-free since all are inside)
-      rd$frac_position <- S4Vectors::mendoapply(
-        function(x, idx) x[idx],
-        rd$frac_position,
-        keep_idx
-      )
+      subset_cols <- c(subset_cols, "frac_position")
     }
 
-    # Subset metadata columns too
-    for (col in meta_out_cols) {
-      rd[[col]] <- S4Vectors::mendoapply(
-        function(x, idx) x[idx],
-        rd[[col]],
-        keep_idx
-      )
-    }
+    rd <- .subsetAnnotationListColumns(rd, subset_cols, keep_idx)
 
     # Drop position columns per keep mode
     rd$rel_position <- NULL
@@ -456,6 +438,18 @@ annotateSites <- function(object,
   } else if (keep == "proximity") {
     # Keep all associations, just drop frac_position
     rd$frac_position <- NULL
+  }
+
+  rd
+}
+
+.subsetAnnotationListColumns <- function(rd, cols, idx) {
+  for (col in cols) {
+    rd[[col]] <- S4Vectors::mendoapply(
+      function(x, i) x[i],
+      rd[[col]],
+      idx
+    )
   }
 
   rd
