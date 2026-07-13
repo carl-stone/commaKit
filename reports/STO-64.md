@@ -47,6 +47,23 @@ of returning warning/`NULL`-shaped biology.
 
 ## Validation
 
+- Current independent verification (2026-07-13):
+  - `R_LIBS_USER=/home/carl/R/library Rscript --vanilla -e "pkgload::load_all('.', quiet = TRUE); testthat::test_file('tests/testthat/test-enrichMethylation.R')"`
+    - Passed: 151 expectations, 0 failures/warnings; 21 expected skips because
+      optional `clusterProfiler` is unavailable.
+  - `R_LIBS_USER=/home/carl/R/library Rscript --vanilla -e "R.cache::setCacheRootPath('/tmp/commakit-r-cache'); styler::style_file(c('R/enrichment.R', 'tests/testthat/test-enrichMethylation.R', 'vignettes/getting-started.Rmd'))"`
+    - Passed: all changed R/Rmd files were unchanged.
+  - `R_LIBS_USER=/home/carl/R/library Rscript --vanilla dev/precommit.R lint R/enrichment.R tests/testthat/test-enrichMethylation.R vignettes/getting-started.Rmd`
+    - Passed: no lint diagnostics.
+  - `R_LIBS_USER=/home/carl/R/library Rscript --vanilla dev/precommit.R style R/enrichment.R tests/testthat/test-enrichMethylation.R vignettes/getting-started.Rmd`
+    - Blocked: the `styler` dry-run check fails internally with
+      ``cnd_type(): `cnd` is not a condition object`` despite the successful
+      direct `styler::style_file()` result above. No source formatting changes
+      are indicated; investigate the installed `styler`/precommit integration
+      outside this issue's authorized scope.
+  - `git diff HEAD^ HEAD --check`
+    - Passed: no whitespace errors in the STO-64 implementation commit.
+
 - `R_LIBS_USER=/home/carl/R/library Rscript --vanilla -e "pkgload::load_all('.', quiet = TRUE); testthat::test_file('tests/testthat/test-enrichMethylation.R')"`
   - Passed: 151 expectations, 0 failures/warnings; 21 expected skips because
     optional `clusterProfiler` is unavailable.
@@ -70,15 +87,20 @@ of returning warning/`NULL`-shaped biology.
 - `clusterProfiler` is not present in the available shared R library, so the
   exported clusterProfiler-backed target/regulator fixture is an expected skip
   locally. The dependency-free universe and failure-policy fixtures executed.
+- The current `dev/precommit.R style` dry-run wrapper errors inside `styler`
+  even though direct formatting reports all three changed R/Rmd files unchanged.
+  This is a tooling issue outside STO-64; the finalizer should rerun the wrapper
+  in its standard CI image.
 - `devtools` is unavailable, so the repository's `precommit.R roxygen` wrapper
   could not run. `roxygen2::roxygenise()` completed successfully and generated
   the required Rd file.
 
 ## Working Tree Notes
 
-Changes are unstaged. No commit, push, PR publication, or issue-state change
-was performed. Baseline untracked `.symphony/` and `logs/` content was not
-touched.
+The intended STO-64 implementation is present in commit `c846147` on the
+assigned branch. This verification only updates this handoff report; no commit,
+push, PR publication, or issue-state change was performed. Baseline untracked
+`.symphony/` and `logs/` content was not touched.
 
 ## Next Owner
 
