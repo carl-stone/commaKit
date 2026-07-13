@@ -156,3 +156,18 @@ finalizer publishes the branch.
 Factory finalizer / Carl reviewer: publish the existing branch diff, rerun CI
 (including its previously failed `style` check), then independently review the
 result before merge.
+
+## Current Workspace Verification Note (2026-07-12)
+
+The implementation and prior successful receipts above are already tracked on
+this branch. In the current worker environment, `Rscript --vanilla` reports
+that `styler`, `lintr`, and `testthat` are unavailable. Consequently, the
+required formatter, pre-commit style/lint guards, and focused parser suites
+cannot be reproduced locally here. The non-R checks passed: the workspace has
+no unstaged source changes and `git diff --check origin/main...HEAD` reports no
+whitespace errors. The dependency-free keyed-aggregation check shown in
+`Commands Run` was rerun successfully in this environment and printed
+`keyed parser aggregation validation passed`.
+
+Safest next step: run the recorded R validation in the CI or development
+environment that provides the project's renv dependencies before publication.
