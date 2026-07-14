@@ -30,8 +30,10 @@ NULL
 #
 # @param res_df  data.frame returned by results()
 # @param gene_col  name of the list-valued column containing gene IDs
+# @param warn_empty  logical; whether to warn when no sites have gene
+#   annotations
 # @return data.frame with columns gene_id, site_key, dm_padj, dm_delta_beta
-.siteToGeneMap <- function(res_df, gene_col) {
+.siteToGeneMap <- function(res_df, gene_col, warn_empty = TRUE) {
   if (!gene_col %in% colnames(res_df)) {
     stop(
       "Column '", gene_col, "' not found in results.\n",
@@ -49,10 +51,12 @@ NULL
   has_gene <- lens > 0L
 
   if (!any(has_gene)) {
-    warning(
-      "No sites have gene annotations in column '", gene_col, "'. ",
-      "Returning empty gene map."
-    )
+    if (isTRUE(warn_empty)) {
+      warning(
+        "No sites have gene annotations in column '", gene_col, "'. ",
+        "Returning empty gene map."
+      )
+    }
     return(data.frame(
       gene_id = character(),
       site_key = character(),
@@ -1582,7 +1586,7 @@ enrichMethylation <- function(object,
     # Build site-gene role map
     if (is.null(ft)) {
       # NULL feature_type: use legacy siteToGeneMap (no role information)
-      sg_all <- .siteToGeneMap(res_df, gene_col)
+      sg_all <- .siteToGeneMap(res_df, gene_col, warn_empty = FALSE)
       if (is.null(sg_all) || nrow(sg_all) == 0L) {
         stop("No target genes found in the requested annotated sites.")
       }

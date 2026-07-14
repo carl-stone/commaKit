@@ -434,6 +434,27 @@ test_that(".siteToGeneMap returns empty data.frame when all sites intergenic", {
   expect_equal(nrow(sg), 0L)
 })
 
+test_that(".siteToGeneMap can return an empty map without a warning", {
+  res_df <- data.frame(
+    chrom = "chr1",
+    position = 100L,
+    strand = "+",
+    dm_padj = 0.01,
+    dm_delta_beta = 0.3,
+    feature_names = I(list(character(0))),
+    stringsAsFactors = FALSE
+  )
+
+  expect_no_warning(
+    sg <- commaKit:::.siteToGeneMap(
+      res_df,
+      "feature_names",
+      warn_empty = FALSE
+    )
+  )
+  expect_equal(nrow(sg), 0L)
+})
+
 test_that(".siteToGeneMap errors when gene_col is missing", {
   res_df <- data.frame(
     chrom = "chr1", position = 100L, strand = "+",
@@ -572,6 +593,41 @@ test_that("enrichMethylation errors when diffMethyl not run", {
     "diffMethyl"
   )
 })
+
+test_that(
+  "enrichMethylation feature_type = NULL emits no warning before setup error",
+  {
+    skip_if_not_installed("clusterProfiler")
+    res_df <- data.frame(
+      chrom = "chr1",
+      position = 100L,
+      strand = "+",
+      dm_padj = 0.01,
+      dm_delta_beta = 0.3,
+      feature_names = I(list(character(0))),
+      stringsAsFactors = FALSE
+    )
+    warnings <- character()
+    error <- tryCatch(
+      withCallingHandlers(
+        enrichMethylation(
+          res_df,
+          TERM2GENE = fake_t2g,
+          feature_type = NULL
+        ),
+        warning = function(w) {
+          warnings <<- c(warnings, conditionMessage(w))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      error = function(e) e
+    )
+
+    expect_s3_class(error, "error")
+    expect_match(conditionMessage(error), "No target genes found")
+    expect_length(warnings, 0L)
+  }
+)
 
 test_that(
   "enrichMethylation errors when annotateSites not run (feature_type='gene')",

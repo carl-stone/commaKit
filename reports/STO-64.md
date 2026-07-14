@@ -8,6 +8,21 @@ from all eligible tested genes in the requested analysis slice, not from only
 significant foreground genes. User-requested setup failures now stop instead
 of returning warning/`NULL`-shaped biology.
 
+## Revision: PR #318 feedback and validation repair (2026-07-13)
+
+- Resolved the remaining automated-review thread: when `feature_type = NULL`
+  finds no annotated genes, `enrichMethylation()` now raises only its setup
+  error. The internal mapper retains its existing warning by default, but the
+  fail-loud caller deliberately suppresses it before stopping.
+- Added dependency-free coverage for the silent empty-map mode and a
+  clusterProfiler-backed regression test that proves the public setup error is
+  not preceded by a warning.
+- Re-ran the previously failed `render-rmarkdown` precommit check; the tracked
+  `getting-started.Rmd` and generated Markdown output are current.
+- The earlier style-wrapper error was caused by `styler` selecting an unwritable
+  default R cache. Running the exact wrapper with
+  `R_CACHE_ROOTPATH=/tmp/commakit-r-cache` passes without source changes.
+
 ## Intended Diff
 
 - `R/enrichment.R`
@@ -87,23 +102,38 @@ of returning warning/`NULL`-shaped biology.
 - `clusterProfiler` is not present in the available shared R library, so the
   exported clusterProfiler-backed target/regulator fixture is an expected skip
   locally. The dependency-free universe and failure-policy fixtures executed.
-- The current `dev/precommit.R style` dry-run wrapper errors inside `styler`
-  even though direct formatting reports all three changed R/Rmd files unchanged.
-  This is a tooling issue outside STO-64; the finalizer should rerun the wrapper
-  in its standard CI image.
+- The new public no-warning regression test is also an expected local skip for
+  the same reason; CI must run it in its clusterProfiler-enabled image.
 - `devtools` is unavailable, so the repository's `precommit.R roxygen` wrapper
   could not run. `roxygen2::roxygenise()` completed successfully and generated
   the required Rd file.
 
 ## Working Tree Notes
 
-The intended STO-64 implementation is present in commit `c846147` on the
-assigned branch. This verification only updates this handoff report; no commit,
-push, PR publication, or issue-state change was performed. Baseline untracked
-`.symphony/` and `logs/` content was not touched.
+The prior STO-64 implementation is present in commits `c846147` and `58ea07d`
+on the assigned branch. This revision leaves an unstaged corrective diff in
+`R/enrichment.R`, `tests/testthat/test-enrichMethylation.R`, and this report;
+no commit, push, PR publication, or issue-state change was performed. Baseline
+untracked `.symphony/` and `logs/` content was not touched.
+
+## Revision Validation
+
+- `R_LIBS_USER=/home/carl/R/library Rscript --vanilla -e "R.cache::setCacheRootPath('/tmp/commakit-r-cache'); styler::style_file(c('R/enrichment.R', 'tests/testthat/test-enrichMethylation.R'))"`
+  - Passed: both files were already formatted.
+- `R_LIBS_USER=/home/carl/R/library R_CACHE_ROOTPATH=/tmp/commakit-r-cache Rscript --vanilla dev/precommit.R style R/enrichment.R tests/testthat/test-enrichMethylation.R`
+  - Passed: the exact multi-file style wrapper completed successfully.
+- `R_LIBS_USER=/home/carl/R/library Rscript --vanilla dev/precommit.R lint R/enrichment.R tests/testthat/test-enrichMethylation.R`
+  - Passed: no lint diagnostics.
+- `R_LIBS_USER=/home/carl/R/library Rscript --vanilla -e "pkgload::load_all('.', quiet = TRUE); testthat::test_file('tests/testthat/test-enrichMethylation.R')"`
+  - Passed: 153 expectations, 0 failures/warnings; 22 expected skips because
+    `clusterProfiler` is unavailable.
+- `R_LIBS_USER=/home/carl/R/library Rscript --vanilla dev/precommit.R rmarkdown vignettes/getting-started.Rmd`
+  - Passed: generated Markdown is up to date.
+- `git diff --check`
+  - Passed: no whitespace errors.
 
 ## Next Owner
 
-Trusted factory finalizer: review the unstaged diff, run the
-clusterProfiler-backed test in an environment with that optional dependency,
-then publish the draft PR for GitHub issue #292.
+Trusted factory finalizer: review the unstaged corrective diff, rerun the
+clusterProfiler-backed test in CI, and publish/update the draft PR for GitHub
+issue #292.
