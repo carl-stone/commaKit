@@ -8,10 +8,7 @@
   methyl_mat,
   coverage_mat,
   site_df,
-  coldata,
-  formula,
-  ref_level = NULL,
-  design_info = NULL,
+  design_info,
   mod_counts_mat = NULL,
   canonical_counts_mat = NULL,
   other_mod_counts_mat = NULL
@@ -25,14 +22,7 @@
 \item{site_df}{Data frame with columns \code{chrom}, \code{position},
 \code{strand}, \code{mod_type}, \code{motif} — one row per site.}
 
-\item{coldata}{\code{data.frame} with at least one column matching the
-RHS variable in \code{formula}.}
-
-\item{formula}{One-sided formula (e.g., \code{~ condition}).}
-
-\item{ref_level}{Optional reference level for the two-level contrast.}
-
-\item{design_info}{Optional precomputed design information from
+\item{design_info}{Precomputed design information from
 \code{.resolveDiffMethylDesign()}.}
 
 \item{mod_counts_mat}{Optional integer matrix of observed modified-read
@@ -60,8 +50,8 @@ methylation. Called by \code{\link{diffMethyl}} when
 \code{method = "methylkit"}.
 }
 \details{
-\pkg{methylKit} must be installed (it is listed in \code{Suggests}). If it
-is not available, this function stops with an informative message.
+\code{diffMethyl()} validates \pkg{methylKit} availability and resolves the
+two-level design before calling this wrapper.
 
 The wrapper converts the methylation and coverage matrices from a
 \code{\link{commaData}} object into the format expected by
@@ -69,8 +59,7 @@ The wrapper converts the methylation and coverage matrices from a
 \code{methylKit::calculateDiffMeth()}, and returns results in the same
 standardised format as \code{.betaBinomialTest()}.
 
-Only the first RHS variable of \code{formula} is used as the grouping
-variable. Complex formulas with interactions or batch terms are not currently
-supported by this wrapper.
+This wrapper assumes \code{diffMethyl()} has already validated the
+single-variable, two-level design contract.
 }
 \keyword{internal}

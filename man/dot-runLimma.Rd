@@ -7,12 +7,8 @@
 .runLimma(
   methyl_mat,
   coverage_mat,
-  site_df,
-  coldata,
-  formula,
+  design_info,
   alpha = 0.5,
-  ref_level = NULL,
-  design_info = NULL,
   mod_counts_mat = NULL,
   canonical_counts_mat = NULL,
   other_mod_counts_mat = NULL
@@ -24,14 +20,8 @@
 
 \item{coverage_mat}{Integer matrix (sites × samples) of read depths.}
 
-\item{site_df}{Data frame with columns \code{chrom}, \code{position},
-\code{strand}, \code{mod_type}, \code{motif} — one row per site.}
-
-\item{coldata}{\code{data.frame} with at least one column matching the
-RHS variable in \code{formula} (typically \code{condition}).}
-
-\item{formula}{One-sided formula specifying the design (e.g.,
-\code{~ condition}).}
+\item{design_info}{Precomputed design information from
+\code{.resolveDiffMethylDesign()}.}
 
 \item{alpha}{Positive numeric pseudocount added to modified and unmodified
 read counts before log-transformation. Default \code{0.5}.}
@@ -66,8 +56,8 @@ t-test to identify differentially methylated sites. Called by
 \code{\link{diffMethyl}} when \code{method = "limma"}.
 }
 \details{
-\pkg{limma} must be installed (it is listed in \code{Suggests}). If it
-is not available, this function stops with an informative message.
+\code{diffMethyl()} validates \pkg{limma} availability and resolves the
+two-level design before calling this wrapper.
 
 Beta values are first transformed to M-values:
 \deqn{M = \log_2\!\left(

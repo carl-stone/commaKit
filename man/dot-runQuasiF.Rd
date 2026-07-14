@@ -7,11 +7,7 @@
 .runQuasiF(
   methyl_mat,
   coverage_mat,
-  site_df,
-  coldata,
-  formula,
-  ref_level = NULL,
-  design_info = NULL,
+  design_info,
   mod_counts_mat = NULL,
   canonical_counts_mat = NULL,
   other_mod_counts_mat = NULL
@@ -23,14 +19,8 @@
 
 \item{coverage_mat}{Integer matrix (sites × samples) of read depths.}
 
-\item{site_df}{Data frame with columns \code{chrom}, \code{position},
-\code{strand}, \code{mod_type}, \code{motif} — one row per site.}
-
-\item{coldata}{\code{data.frame} with at least one column matching the
-RHS variable in \code{formula} (typically \code{condition}).}
-
-\item{formula}{One-sided formula specifying the design (e.g.,
-\code{~ condition}).}
+\item{design_info}{Precomputed design information from
+\code{.resolveDiffMethylDesign()}.}
 
 \item{mod_counts_mat}{Optional integer matrix of observed modified-read
 counts. If supplied, these counts are preferred over reconstructing from
@@ -62,7 +52,8 @@ dispersion estimates. Called by \code{\link{diffMethyl}} when
 \code{method = "quasi_f"}.
 }
 \details{
-\pkg{limma} must be installed (it is listed in \code{Suggests}).
+\code{diffMethyl()} validates \pkg{limma} availability and resolves the
+two-level design before calling this wrapper.
 
 The method runs in three passes:
 
