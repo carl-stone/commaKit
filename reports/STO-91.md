@@ -1,105 +1,70 @@
 # STO-91 Report
 
-## Summary
+## Outcome
 
-Implemented the validated-input contract for internal differential methylation
-backend wrappers.
+The assigned `symphony/STO-91` branch implements the validated-input contract
+for the internal differential-methylation wrappers. `diffMethyl()` remains the
+public preflight boundary; the three backend wrappers accept the resolved
+`design_info` and no longer duplicate package checks or fallback design
+resolution.
 
-- `diffMethyl()` remains the public validation boundary for backend dependency
-  checks and two-level design resolution.
-- `.runLimma()`, `.runQuasiF()`, and `.runMethylKit()` now require
-  `design_info` from `.resolveDiffMethylDesign()` instead of accepting
-  `ref_level` or resolving a fallback design internally.
-- Tightened each internal wrapper signature to accept only the validated
-  inputs it uses; `diffMethyl()` is the sole internal caller and owns
-  dependency validation plus design resolution.
-- Removed duplicate wrapper-level dependency checks; public missing-package
-  errors remain in `diffMethyl()`.
-- Preserved count-matrix plumbing, reference/treatment direction, backend
-  result columns, and existing statistical failure policy.
-- Added public API coverage that runs the supported backends through
-  `diffMethyl()` and asserts the validated factor-level direction is reflected
-  in result metadata and `dm_delta_beta`.
+## Implementation Diff
 
-## Branch and Working-Tree State
+The branch's existing STO-91 commits modify:
 
-`symphony/STO-91`
+- `R/diffMethyl.R`: resolves the two-level design and performs dependency
+  checks before dispatch; passes only the validated backend inputs.
+- `R/limma_wrapper.R`, `R/quasi_f.R`, and `R/methylkit_wrapper.R`: remove
+  duplicate dependency checks, former fallback inputs, and fallback design
+  resolution while retaining count-matrix plumbing and result construction.
+- `tests/testthat/test-diffMethyl.R`: exercises the wrappers only through
+  `diffMethyl()`, checking reference/treatment direction, result columns, and
+  metadata for each available backend. Existing absent-package tests target
+  the public API.
 
-The branch already contains the initial STO-91 implementation commits. This
-revision leaves the remaining source, public-test, and report changes unstaged
-for trusted finalization. No commits, pushes, or pull requests were created by
-this worker.
+The limma wrapper constructs its model matrix from the resolved condition
+vector with the resolved reference level first, preserving its
+treatment-minus-reference contrast after removal of its former raw design
+arguments.
 
-## Files Changed
+## Source Inspection
 
-- `R/diffMethyl.R`
-- `R/limma_wrapper.R`
-- `tests/testthat/test-diffMethyl.R`
-- `reports/STO-91.md`
+- GitHub issue #261 was read with
+  `gh issue view 261 --repo carl-stone/commaKit --json number,title,body,url,state,labels`.
+- `rg -n -C 4 "\\.run(MethylKit|Limma|QuasiF)" R tests` found `diffMethyl()` as
+  the only internal caller of all three wrappers.
+- The only `requireNamespace()` checks for `limma` and `methylKit` are in
+  public `diffMethyl()`; no wrapper has an `is.null(design_info)` fallback.
 
-## Diff
+## Validation Receipts
 
-- Removed wrapper arguments that were only needed for former fallback
-  validation paths: `site_df` from limma; `site_df`, `coldata`, and `formula`
-  from quasi-F; and `coldata` plus `formula` from methylKit.
-- Updated `diffMethyl()` dispatch to pass the minimal validated backend inputs.
-- Strengthened the public API test to pass `reference = "WT"` and assert the
-  treatment-minus-reference direction and recorded comparison metadata for
-  each available backend.
-- Removed the remaining unused `coldata` and `formula` arguments from
-  `.runLimma()`, whose mandatory `design_info` already represents the
-  validated design.
-- Asserted the backend-independent result columns for limma/quasi-F and the
-  methylKit-specific q-value column through the public `diffMethyl()` API.
+| Command | Result |
+| --- | --- |
+| `Rscript -e "styler::style_file(c('R/diffMethyl.R', 'R/limma_wrapper.R', 'R/methylkit_wrapper.R', 'R/quasi_f.R', 'tests/testthat/test-diffMethyl.R'))"` | Passed |
+| `Rscript dev/precommit.R style R/diffMethyl.R R/limma_wrapper.R R/methylkit_wrapper.R R/quasi_f.R tests/testthat/test-diffMethyl.R` | Passed |
+| `Rscript dev/precommit.R lint R/diffMethyl.R R/limma_wrapper.R R/methylkit_wrapper.R R/quasi_f.R tests/testthat/test-diffMethyl.R` | Passed |
+| `Rscript dev/precommit.R roxygen R/diffMethyl.R R/limma_wrapper.R R/methylkit_wrapper.R R/quasi_f.R` | Passed; generated documentation is current |
+| `Rscript -e "testthat::test_file('tests/testthat/test-diffMethyl.R')"` | Passed (exit code 0) |
+| `git diff --check` | Passed; no whitespace errors |
 
-## Commands Run
+An attempted `Rscript dev/precommit.R document ...` used a nonexistent
+subcommand and exited nonzero without modifying files. It was immediately
+replaced with the supported `roxygen` command above, which passed.
 
-- `git status --short --branch`
-  - Result: passed
-  - Branch: `symphony/STO-91`.
-  - Existing factory artifacts remain untracked: `.symphony/`, `logs/`, and
-    `reports/STO-91.codex-final.json`.
+## Working Tree and Handoff
 
-- `rg -n "\\.run(MethylKit|Limma|QuasiF)|resolveDiffMethylDesign|requireNamespace\\(\\\"(limma|methylKit)\\\"" R tests/testthat/test-diffMethyl.R`
-  - Result: passed
-  - Confirmed internal wrapper calls come from `diffMethyl()` and dependency
-    checks remain at the public boundary.
-
-- `Rscript -e "styler::style_file(c('R/diffMethyl.R', 'R/limma_wrapper.R', 'tests/testthat/test-diffMethyl.R'))"`
-  - Result: passed
-  - Formatted every R file changed in this revision.
-
-- `Rscript dev/precommit.R style R/diffMethyl.R R/limma_wrapper.R tests/testthat/test-diffMethyl.R`
-  - Result: passed
-
-- `Rscript dev/precommit.R lint R/diffMethyl.R R/limma_wrapper.R tests/testthat/test-diffMethyl.R`
-  - Result: passed
-
-- `git diff --check`
-  - Result: passed
-  - Output: none
-
-- `Rscript -e "testthat::test_file('tests/testthat/test-diffMethyl.R')"`
-  - Result: passed (exit code 0).
-  - The initial renv bootstrap completed before this successful rerun.
-
-## Validation
-
-Passed:
-
-- Formatter and pre-commit style/lint checks pass for every changed R file.
-- Required focused public API test passes.
-- `git diff --check` reports no whitespace errors.
-- The working tree contains an unstaged R source and public-test diff for
-  trusted finalization; factory artifacts remain untracked.
+- Branch: `symphony/STO-91`.
+- No staging, commits, pushes, pull requests, merges, or issue-state changes
+  were performed in this worker session.
+- The source/test implementation arrived as existing branch history. This
+  worker leaves the refreshed `reports/STO-91.md` handoff report unstaged.
+- Pre-existing factory artifacts remain untracked: `.symphony/`, `logs/`, and
+  `reports/STO-91.codex-final.json`.
 
 ## Blockers
 
-None. A mixed reset to expose the already-committed initial implementation as
-an unstaged diff was unavailable because the sandbox makes `.git/index`
-read-only. This revision instead leaves a concrete, unstaged source/test/report
-diff for trusted finalization.
+None.
 
 ## Next Owner
 
-trusted factory finalizer, then Carl reviewer
+Trusted factory finalizer for PR publication, then independent reviewer.
