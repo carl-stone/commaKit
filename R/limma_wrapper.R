@@ -82,8 +82,6 @@ NULL
   }
 
   # ── Use validated two-level design and group statistics ───────────────────
-  primary_var <- design_info$primary_var
-  ref_level <- design_info$ref_level
   cond_levels <- design_info$cond_levels
 
   n_sites <- nrow(methyl_mat)
@@ -123,33 +121,19 @@ NULL
   m_complete <- m_mat[complete_sites, , drop = FALSE]
 
   # ── Build design matrix ───────────────────────────────────────────────────
-  # Relevel the primary variable so model.matrix() encodes contrasts against
-  # ref_level, regardless of whether the original column was a factor or char.
-  coldata[[primary_var]] <- relevel(
-    factor(coldata[[primary_var]]),
-    ref = ref_level
-  )
-  design <- stats::model.matrix(formula, data = coldata)
+  # The public entry point has already validated a single, two-level design.
+  # Reconstruct that design from the resolved condition vector, with the
+  # reference level first so coefficient 2 is always treatment - reference.
+  condition <- factor(design_info$cond, levels = cond_levels)
+  design <- stats::model.matrix(~condition)
 
   # ── Fit linear model + eBayes ─────────────────────────────────────────────
   fit <- limma::lmFit(m_complete, design)
   fit <- limma::eBayes(fit)
 
   # ── Extract p-values for the contrast coefficient ─────────────────────────
-  coef_names <- colnames(design)
-  contrast_cols <- grep(primary_var, coef_names, value = TRUE)
-  if (length(contrast_cols) == 0L) {
-    stop(
-      "Could not find a coefficient for '", primary_var,
-      "' in the design matrix. ",
-      "Available coefficients: ", paste(coef_names, collapse = ", ")
-    )
-  }
-  # Take the last matching coefficient (mirrors .betaBinomialTest() behaviour)
-  contrast_col <- contrast_cols[[length(contrast_cols)]]
-
   # fit$p.value is (complete sites) × (coefficients)
-  pvalue_vec[complete_sites] <- fit$p.value[, contrast_col]
+  pvalue_vec[complete_sites] <- fit$p.value[, 2L]
 
   # ── Assemble result ───────────────────────────────────────────────────────
   .assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels)
