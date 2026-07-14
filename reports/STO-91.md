@@ -57,7 +57,8 @@ replaced with the supported `roxygen` command above, which passed.
 - No staging, commits, pushes, pull requests, merges, or issue-state changes
   were performed in this worker session.
 - The source/test implementation arrived as existing branch history. This
-  worker leaves the refreshed `reports/STO-91.md` handoff report unstaged.
+  worker refreshed this report with the current validation receipts; the
+  report change is intentionally unstaged for trusted finalization.
 - Pre-existing factory artifacts remain untracked: `.symphony/`, `logs/`, and
   `reports/STO-91.codex-final.json`.
 
