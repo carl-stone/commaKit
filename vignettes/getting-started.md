@@ -333,9 +333,9 @@ layers[, setdiff(colnames(layers), "timestamp")]
 #>          mod_type           motif p_adjust_method min_coverage     alpha
 #>   <CharacterList> <CharacterList>     <character>    <integer> <numeric>
 #> 1             6mA                              BH            5       0.5
-#>                           result_cols package_version
-#>                       <CharacterList>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,...           0.2.0
+#>                                 result_cols package_version
+#>                             <CharacterList>     <character>
+#> 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,...           0.2.0
 res <- results(cd_dm)
 # Top sites by adjusted p-value
 head(res[
