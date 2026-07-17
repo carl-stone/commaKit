@@ -100,19 +100,25 @@ while true; do
     | head -n 1)
   [ -n "$review_found" ] && break
 
-  issue_review=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
+  issue_reviews=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
     --paginate \
-    --jq ".[] | select(((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and ((.body // \"\") | contains(\"**Reviewed commit:** \`$head_marker\`\")) and (\"$issue_review_not_before\" == \"\" or .created_at > \"$issue_review_not_before\")) | [.id, .created_at] | @tsv" \
-    | tail -n 1)
-  if [ -n "$issue_review" ]; then
-    issue_review_id=${issue_review%%$'\t'*}
-    issue_review_at=${issue_review#*$'\t'}
+    --jq ".[] | select(((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and ((.body // \"\") | contains(\"**Reviewed commit:** \`$head_marker\`\")) and (\"$issue_review_not_before\" == \"\" or .created_at > \"$issue_review_not_before\")) | [.id, .created_at] | @tsv"
+  )
+  issue_reviews_found=false
+  issue_reviews_all_acked=true
+  while IFS=$'\t' read -r issue_review_id issue_review_at; do
+    [ -z "$issue_review_id" ] && continue
+    issue_reviews_found=true
     issue_ack=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
       --paginate \
       --jq ".[] | select(.user.login == \"$acknowledger_login\" and .created_at > \"$issue_review_at\" and ((.body // \"\") | startswith(\"[codex] Review $issue_review_id:\"))) | .id" \
       | head -n 1)
-    [ -n "$issue_ack" ] && break
-  fi
+    if [ -z "$issue_ack" ]; then
+      issue_reviews_all_acked=false
+      break
+    fi
+  done <<< "$issue_reviews"
+  $issue_reviews_found && $issue_reviews_all_acked && break
   sleep 10
 done
 
