@@ -84,7 +84,7 @@ head_marker=${head_sha:0:10}
 acknowledger_login=$(gh api user --jq .login)
 latest_review_request_at=$(
   gh api repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
-    --jq '.[] | select(.user.login != "chatgpt-codex-connector[bot]" and ((.body // "") | contains("@codex review"))) | .created_at' \
+    --jq '.[] | select((.user.login != "chatgpt-codex-connector[bot]" and .user.login != "github-actions[bot]" and .user.login != "codex-gc-app[bot]" and .user.login != "app/codex-gc-app") and ((.body // "") | contains("@codex review"))) | .created_at' \
     | sort | tail -n 1
 )
 head_check_at=$(gh api repos/{owner}/{repo}/commits/"$head_sha"/check-runs \
@@ -96,13 +96,13 @@ issue_review_not_before=$(
 while true; do
   review_found=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/reviews \
     --paginate \
-    --jq ".[] | select(.user.login == \"chatgpt-codex-connector[bot]\" and .commit_id == \"$head_sha\" and .submitted_at != null and (.state == \"APPROVED\" or (.state == \"COMMENTED\" and (((.body // \"\") | length) == 0 or ((.body // \"\") | test(\"^[[:space:]]*### 💡 Codex Review\"))))) and (\"$latest_review_request_at\" == \"\" or .submitted_at > \"$latest_review_request_at\")) | .id" \
+    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\") and .commit_id == \"$head_sha\" and .submitted_at != null and (.state == \"APPROVED\" or .state == \"COMMENTED\") and (\"$latest_review_request_at\" == \"\" or .submitted_at > \"$latest_review_request_at\")) | .id" \
     | head -n 1)
   review_decision=$(gh pr view "$pr_number" --json reviewDecision \
     -q .reviewDecision)
   substantive_reviews=$(gh api \
     repos/{owner}/{repo}/pulls/"$pr_number"/reviews --paginate \
-    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.state == \"COMMENTED\" or .state == \"APPROVED\") and ((.body // \"\") | length) > 0 and ((.body // \"\") | test(\"^[[:space:]]*### 💡 Codex Review\") | not) and ((.body // \"\") | startswith(\"## Pull request overview\") | not)) | [.id, .submitted_at] | @tsv"
+    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.state == \"COMMENTED\" or .state == \"APPROVED\") and ((.body // \"\") | length) > 0 and ((.body // \"\") | test(\"^[[:space:]]*### 💡 Codex Review\") | not) and ((.body // \"\") | startswith(\"## Pull request overview\") | not)) | [.id, .submitted_at] | @tsv"
   )
   substantive_reviews_all_acked=true
   while IFS=$'\t' read -r substantive_review_id substantive_review_at; do
@@ -118,7 +118,7 @@ while true; do
   done <<< "$substantive_reviews"
   review_comments=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/comments \
     --paginate \
-    --jq ".[] | select(.in_reply_to_id == null and (.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.user.login != \"chatgpt-codex-connector[bot]\" or \"$latest_review_request_at\" == \"\" or .created_at > \"$latest_review_request_at\")) | [.id, (.updated_at // .created_at)] | @tsv"
+    --jq ".[] | select(.in_reply_to_id == null and (.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and (.user.login == \"copilot-pull-request-reviewer[bot]\" or \"$latest_review_request_at\" == \"\" or .created_at > \"$latest_review_request_at\")) | [.id, (.updated_at // .created_at)] | @tsv"
   )
   review_comments_all_acked=true
   while IFS=$'\t' read -r review_comment_id review_comment_at; do
@@ -132,16 +132,9 @@ while true; do
       break
     fi
   done <<< "$review_comments"
-  if [ -n "$review_found" ] && \
-    [ "$review_decision" != "CHANGES_REQUESTED" ] && \
-    $substantive_reviews_all_acked && \
-    $review_comments_all_acked; then
-    break
-  fi
-
   issue_reviews=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
     --paginate \
-    --jq ".[] | select(((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and ((.body // \"\") | contains(\"**Reviewed commit:** \`$head_marker\`\")) and (\"$issue_review_not_before\" == \"\" or .created_at > \"$issue_review_not_before\")) | [.id, (.updated_at // .created_at)] | @tsv"
+    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\") and ((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and ((.body // \"\") | contains(\"**Reviewed commit:** \`$head_marker\`\")) and (\"$issue_review_not_before\" == \"\" or .created_at > \"$issue_review_not_before\")) | [.id, (.updated_at // .created_at)] | @tsv"
   )
   issue_reviews_found=false
   issue_reviews_all_acked=true
@@ -157,7 +150,10 @@ while true; do
       break
     fi
   done <<< "$issue_reviews"
-  if $issue_reviews_found && $issue_reviews_all_acked && \
+  completion_found=false
+  [ -n "$review_found" ] && completion_found=true
+  $issue_reviews_found && completion_found=true
+  if $completion_found && $issue_reviews_all_acked && \
     [ "$review_decision" != "CHANGES_REQUESTED" ] && \
     $substantive_reviews_all_acked && \
     $review_comments_all_acked; then

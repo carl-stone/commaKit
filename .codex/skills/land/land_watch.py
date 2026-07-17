@@ -816,15 +816,18 @@ async def wait_for_codex(
             acknowledger_login,
         )
         if bot_comments:
-            latest = max(
+            print("Automated reviewer left comments. Address before merge.")
+            for comment in sorted(
                 bot_comments,
-                key=lambda comment: parse_time(comment["created_at"]),
-            )
-            body = sanitize_terminal_output(latest.get("body") or "").strip()
-            if body:
-                print("Automated reviewer left comments. Address before merge.")
-                print(body)
-                raise WatchExit(2)
+                key=lambda item: parse_time(item["created_at"]),
+            ):
+                body = sanitize_terminal_output(
+                    comment.get("body") or "",
+                ).strip()
+                if body:
+                    print(body)
+                    print("---")
+            raise WatchExit(2)
         submitted_review_observed = has_current_codex_review(
             reviews,
             head_sha,
