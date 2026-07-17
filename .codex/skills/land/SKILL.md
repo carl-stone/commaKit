@@ -157,7 +157,12 @@ while true; do
       break
     fi
   done <<< "$issue_reviews"
-  $issue_reviews_found && $issue_reviews_all_acked && break
+  if $issue_reviews_found && $issue_reviews_all_acked && \
+    [ "$review_decision" != "CHANGES_REQUESTED" ] && \
+    $substantive_reviews_all_acked && \
+    $review_comments_all_acked; then
+    break
+  fi
   sleep 10
 done
 
