@@ -130,13 +130,13 @@ coverage filter rather than failing import.
 
 Common symptoms and fixes:
 
-| Symptom                         | Likely cause                                                                                        | Fix                                                                                                        |
-|---------------------------------|-----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `expected at least 18`          | The file is not modkit pileup bedMethyl output, or it was truncated.                                | Re-run `modkit pileup` and pass the BED output, not the BAM.                                               |
-| Unknown `mod_code` warning      | Column 4 contains codes outside the supported modkit map.                                           | Confirm the file is a methylation pileup and decide whether the code should map to `6mA`, `5mC`, or `4mC`. |
-| Missing required fields         | One or more rows are partial or malformed after parsing the first 18 bedMethyl columns.             | Inspect the reported row, then regenerate or filter the pileup before import.                              |
-| No sites remain                 | Coverage or `mod_type` filtering removed every row.                                                 | Lower `min_coverage`, check `mod_type`, and inspect the input file for nonzero coverage.                   |
-| Duplicate methylation site rows | The file has repeated rows for the same chromosome, position, strand, modification type, and motif. | Aggregate or regenerate the per-sample pileup before importing.                                            |
+| Symptom | Likely cause | Fix |
+|----|----|----|
+| `expected at least 18` | The file is not modkit pileup bedMethyl output, or it was truncated. | Re-run `modkit pileup` and pass the BED output, not the BAM. |
+| Unknown `mod_code` warning | Column 4 contains codes outside the supported modkit map. | Confirm the file is a methylation pileup and decide whether the code should map to `6mA`, `5mC`, or `4mC`. |
+| Missing required fields | One or more rows are partial or malformed after parsing the first 18 bedMethyl columns. | Inspect the reported row, then regenerate or filter the pileup before import. |
+| No sites remain | Coverage or `mod_type` filtering removed every row. | Lower `min_coverage`, check `mod_type`, and inspect the input file for nonzero coverage. |
+| Duplicate methylation site rows | The file has repeated rows for the same chromosome, position, strand, modification type, and motif. | Aggregate or regenerate the per-sample pileup before importing. |
 
 If the modkit `mod_code` field includes motif context, such as
 `a,GATC,1`, commaKit stores `mod_type = "6mA"` and `motif = "GATC"`.
@@ -228,12 +228,12 @@ if (requireNamespace("rtracklayer", quietly = TRUE)) {
 
 Common symptoms and fixes:
 
-| Symptom                             | Likely cause                                                                              | Fix                                                                             |
-|-------------------------------------|-------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `Package 'rtracklayer' is required` | The optional annotation dependency is not installed.                                      | Install with `BiocManager::install("rtracklayer")`, or set `annotation = NULL`. |
-| `Annotation file not found`         | The path is wrong relative to the R working directory.                                    | Use `normalizePath()` or an absolute path to confirm the file.                  |
-| Unsupported extension               | The file extension is not `.gff`, `.gff3`, or `.bed` after removing compression suffixes. | Rename or convert the file, or import it yourself as `GRanges`.                 |
-| No requested feature types          | `feature_types` does not match the standardized feature type column.                      | Inspect `table(mcols(loadAnnotation(file))$feature_type)`.                      |
+| Symptom | Likely cause | Fix |
+|----|----|----|
+| `Package 'rtracklayer' is required` | The optional annotation dependency is not installed. | Install with `BiocManager::install("rtracklayer")`, or set `annotation = NULL`. |
+| `Annotation file not found` | The path is wrong relative to the R working directory. | Use `normalizePath()` or an absolute path to confirm the file. |
+| Unsupported extension | The file extension is not `.gff`, `.gff3`, or `.bed` after removing compression suffixes. | Rename or convert the file, or import it yourself as `GRanges`. |
+| No requested feature types | `feature_types` does not match the standardized feature type column. | Inspect `table(mcols(loadAnnotation(file))$feature_type)`. |
 
 # Quick Checklist
 
