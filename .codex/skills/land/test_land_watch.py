@@ -481,6 +481,7 @@ class ReviewGateTests(unittest.TestCase):
             LAND_WATCH.filter_codex_review_issue_comments(
                 comments,
                 HEAD_SHA,
+                None,
                 "carl-stone",
             ),
             [],
@@ -522,6 +523,26 @@ class ReviewGateTests(unittest.TestCase):
             ),
         )
 
+    def test_issue_review_before_latest_request_is_not_blocking(self) -> None:
+        comment = {
+            "id": 101,
+            "user": {
+                "login": "github-actions[bot]",
+                "type": "Bot",
+            },
+            "body": ISSUE_REVIEW_BODY,
+            "created_at": "2026-07-17T04:01:00Z",
+        }
+        self.assertEqual(
+            LAND_WATCH.filter_codex_review_issue_comments(
+                [comment],
+                HEAD_SHA,
+                utc_time(4, 2),
+                "carl-stone",
+            ),
+            [],
+        )
+
     def test_exact_ack_must_follow_issue_review(self) -> None:
         comments = [
             {
@@ -552,6 +573,7 @@ class ReviewGateTests(unittest.TestCase):
             LAND_WATCH.filter_codex_review_issue_comments(
                 comments,
                 HEAD_SHA,
+                None,
                 "carl-stone",
             ),
             [comments[1]],

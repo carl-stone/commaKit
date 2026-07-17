@@ -427,6 +427,7 @@ def filter_human_issue_comments(
 def filter_codex_review_issue_comments(
     comments: list[dict[str, Any]],
     head_sha: str,
+    not_before_at: datetime | None,
     acknowledger_login: str,
 ) -> list[dict[str, Any]]:
     acknowledged = codex_issue_review_ack_times(comments, acknowledger_login)
@@ -439,6 +440,11 @@ def filter_codex_review_issue_comments(
         if reviewed_sha is None or not head_sha.lower().startswith(reviewed_sha):
             continue
         created_at = comment_created_time(comment)
+        if (
+            created_at is None
+            or (not_before_at is not None and created_at <= not_before_at)
+        ):
+            continue
         acknowledged_at = acknowledged.get(comment.get("id"))
         if (
             created_at is not None
@@ -740,6 +746,7 @@ def raise_on_human_feedback(
     codex_review_comments = filter_codex_review_issue_comments(
         issue_comments,
         head_sha,
+        review_request_at,
         acknowledger_login,
     )
     human_review_comments = filter_human_review_comments(
