@@ -246,6 +246,56 @@ class ReviewGateTests(unittest.TestCase):
             ),
         )
 
+    def test_issue_review_must_be_newer_than_head(self) -> None:
+        comments = [
+            {
+                "id": 101,
+                "user": {
+                    "login": "github-actions[bot]",
+                    "type": "Bot",
+                },
+                "body": "## Codex Review — correctness",
+                "created_at": "2026-07-17T04:01:00Z",
+            },
+            {
+                "id": 102,
+                "user": {"login": "carl-stone", "type": "User"},
+                "body": "[codex] Review 101: acknowledged",
+                "created_at": "2026-07-17T04:02:00Z",
+            },
+        ]
+        self.assertFalse(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                comments,
+                utc_time(4, 3),
+            ),
+        )
+
+    def test_bot_identity_can_acknowledge_exact_issue_review(self) -> None:
+        comments = [
+            {
+                "id": 101,
+                "user": {
+                    "login": "github-actions[bot]",
+                    "type": "Bot",
+                },
+                "body": "## Codex Review — correctness",
+                "created_at": "2026-07-17T04:01:00Z",
+            },
+            {
+                "id": 102,
+                "user": {"login": "landing-agent[bot]", "type": "Bot"},
+                "body": "[codex] Review 101: acknowledged",
+                "created_at": "2026-07-17T04:02:00Z",
+            },
+        ]
+        self.assertTrue(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                comments,
+                utc_time(4, 0),
+            ),
+        )
+
     def test_unrelated_ack_cannot_complete_issue_review(self) -> None:
         comments = [
             {
@@ -348,6 +398,8 @@ class ReviewGateTests(unittest.TestCase):
 
             checks_done = asyncio.Event()
             checks_done.set()
+            head_review_boundary = asyncio.get_running_loop().create_future()
+            head_review_boundary.set_result(utc_time(4, 0))
             with (
                 patch.object(
                     LAND_WATCH,
@@ -357,10 +409,61 @@ class ReviewGateTests(unittest.TestCase):
                 patch.object(LAND_WATCH, "POLL_SECONDS", 0),
             ):
                 await asyncio.wait_for(
-                    LAND_WATCH.wait_for_codex(1, HEAD_SHA, checks_done),
+                    LAND_WATCH.wait_for_codex(
+                        1,
+                        HEAD_SHA,
+                        head_review_boundary,
+                        checks_done,
+                    ),
                     timeout=0.2,
                 )
             self.assertEqual(calls, 2)
+
+        asyncio.run(run())
+
+    def test_issue_review_without_request_completes_after_head(self) -> None:
+        async def run() -> None:
+            issue_comments = [
+                {
+                    "id": 101,
+                    "user": {
+                        "login": "github-actions[bot]",
+                        "type": "Bot",
+                    },
+                    "body": "## Codex Review — correctness",
+                    "created_at": "2026-07-17T04:01:00Z",
+                },
+                {
+                    "id": 102,
+                    "user": {"login": "carl-stone", "type": "User"},
+                    "body": "[codex] Review 101: acknowledged",
+                    "created_at": "2026-07-17T04:02:00Z",
+                },
+            ]
+
+            async def review_context(
+                _pr_number: int,
+            ) -> tuple[list[object], list[object], list[object], None]:
+                return issue_comments, [], [], None
+
+            checks_done = asyncio.Event()
+            checks_done.set()
+            head_review_boundary = asyncio.get_running_loop().create_future()
+            head_review_boundary.set_result(utc_time(4, 0))
+            with patch.object(
+                LAND_WATCH,
+                "fetch_review_context",
+                review_context,
+            ):
+                await asyncio.wait_for(
+                    LAND_WATCH.wait_for_codex(
+                        1,
+                        HEAD_SHA,
+                        head_review_boundary,
+                        checks_done,
+                    ),
+                    timeout=0.2,
+                )
 
         asyncio.run(run())
 

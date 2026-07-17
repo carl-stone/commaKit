@@ -178,6 +178,8 @@ Exit codes:
 - For a Codex review issue comment, acknowledge that exact result with a root
   issue comment of the form `[codex] Review <comment-id>: <disposition>`. State
   whether you will address the feedback now or defer it (include rationale).
+  The watcher accepts only results newer than the current head's first check
+  run and any later explicit review request.
 - For a substantive top-level automated review body, acknowledge its findings
   with a root-level `[codex]` issue comment. Generated Copilot “Pull request
   overview” summaries are informational and do not require acknowledgement.

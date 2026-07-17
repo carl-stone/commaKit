@@ -331,8 +331,6 @@ def codex_issue_review_ack_times(
 ) -> dict[int, datetime]:
     acknowledged: dict[int, datetime] = {}
     for comment in comments:
-        if is_bot_user(comment.get("user", {})):
-            continue
         body = (comment.get("body") or "").strip()
         match = re.match(r"^\[codex\]\s+Review\s+(\d+):", body)
         created_at = comment_created_time(comment)
@@ -596,10 +594,8 @@ def has_current_codex_review(
 
 def has_acknowledged_codex_issue_review(
     issue_comments: list[dict[str, Any]],
-    review_requested_at: datetime | None,
+    not_before_at: datetime,
 ) -> bool:
-    if review_requested_at is None:
-        return False
     acknowledged = codex_issue_review_ack_times(issue_comments)
     relevant_reviews: list[tuple[int, datetime]] = []
     for comment in issue_comments:
@@ -609,7 +605,7 @@ def has_acknowledged_codex_issue_review(
         if not is_codex_review_body(body):
             continue
         created_at = comment_created_time(comment)
-        if created_at is None or created_at <= review_requested_at:
+        if created_at is None or created_at <= not_before_at:
             continue
         comment_id = comment.get("id")
         if isinstance(comment_id, int):
@@ -677,6 +673,7 @@ def raise_on_human_feedback(
 async def wait_for_codex(
     pr_number: int,
     head_sha: str,
+    head_review_boundary: asyncio.Future[datetime],
     checks_done: asyncio.Event,
 ) -> None:
     print("Waiting for review feedback...", flush=True)
@@ -706,24 +703,35 @@ async def wait_for_codex(
                 print("Automated reviewer left comments. Address before merge.")
                 print(body)
                 raise WatchExit(2)
-        review_observed = (
-            has_current_codex_review(
-                reviews,
-                head_sha,
-                review_request_at,
-            )
-            or has_acknowledged_codex_issue_review(
-                issue_comments,
-                review_request_at,
-            )
+        submitted_review_observed = has_current_codex_review(
+            reviews,
+            head_sha,
+            review_request_at,
         )
+        issue_review_observed = False
+        if head_review_boundary.done():
+            issue_review_boundary = head_review_boundary.result()
+            if (
+                review_request_at is not None
+                and review_request_at > issue_review_boundary
+            ):
+                issue_review_boundary = review_request_at
+            issue_review_observed = has_acknowledged_codex_issue_review(
+                issue_comments,
+                issue_review_boundary,
+            )
+        review_observed = submitted_review_observed or issue_review_observed
         if checks_done.is_set() and review_observed:
             print("Codex review observed for current PR head")
             return
         await asyncio.sleep(POLL_SECONDS)
 
 
-async def wait_for_checks(head_sha: str, checks_done: asyncio.Event) -> None:
+async def wait_for_checks(
+    head_sha: str,
+    checks_done: asyncio.Event,
+    head_review_boundary: asyncio.Future[datetime],
+) -> None:
     print("Waiting for CI checks...", flush=True)
     empty_seconds = 0
     while True:
@@ -738,6 +746,14 @@ async def wait_for_checks(head_sha: str, checks_done: asyncio.Event) -> None:
             await asyncio.sleep(POLL_SECONDS)
             continue
         empty_seconds = 0
+        if not head_review_boundary.done():
+            created_times = [
+                parse_time(check["created_at"])
+                for check in check_runs
+                if check.get("created_at")
+            ]
+            if created_times:
+                head_review_boundary.set_result(min(created_times))
         pending, failed, failures = summarize_checks(check_runs)
         if failed:
             print("Checks failed:")
@@ -765,10 +781,24 @@ async def watch_pr() -> None:
         raise WatchExit(5)
     head_sha = pr.head_sha
     checks_done = asyncio.Event()
-    codex_task = asyncio.create_task(
-        wait_for_codex(pr.number, head_sha, checks_done),
+    head_review_boundary: asyncio.Future[datetime] = (
+        asyncio.get_running_loop().create_future()
     )
-    checks_task = asyncio.create_task(wait_for_checks(head_sha, checks_done))
+    codex_task = asyncio.create_task(
+        wait_for_codex(
+            pr.number,
+            head_sha,
+            head_review_boundary,
+            checks_done,
+        ),
+    )
+    checks_task = asyncio.create_task(
+        wait_for_checks(
+            head_sha,
+            checks_done,
+            head_review_boundary,
+        ),
+    )
 
     async def head_monitor() -> None:
         while True:
