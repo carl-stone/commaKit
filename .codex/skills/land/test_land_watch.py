@@ -40,6 +40,17 @@ def codex_review(**overrides: object) -> dict[str, object]:
 
 
 class ReviewGateTests(unittest.TestCase):
+    def test_check_boundary_prefers_started_time(self) -> None:
+        self.assertEqual(
+            LAND_WATCH.check_boundary_timestamp(
+                {
+                    "started_at": "2026-07-17T04:00:00Z",
+                    "completed_at": "2026-07-17T04:02:00Z",
+                },
+            ),
+            utc_time(4, 0),
+        )
+
     def test_accepts_current_head_review(self) -> None:
         self.assertTrue(
             LAND_WATCH.has_current_codex_review(

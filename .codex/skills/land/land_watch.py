@@ -200,6 +200,14 @@ def check_timestamp(check: dict[str, Any]) -> datetime | None:
     return None
 
 
+def check_boundary_timestamp(check: dict[str, Any]) -> datetime | None:
+    for key in ("started_at", "run_started_at", "created_at", "completed_at"):
+        value = check.get(key)
+        if value:
+            return parse_time(value)
+    return None
+
+
 def dedupe_check_runs(check_runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     latest_by_name: dict[str, dict[str, Any]] = {}
     for check in check_runs:
@@ -874,13 +882,13 @@ async def wait_for_checks(
             continue
         empty_seconds = 0
         if not head_review_boundary.done():
-            created_times = [
-                parse_time(check["created_at"])
+            boundary_times = [
+                timestamp
                 for check in check_runs
-                if check.get("created_at")
+                if (timestamp := check_boundary_timestamp(check)) is not None
             ]
-            if created_times:
-                head_review_boundary.set_result(min(created_times))
+            if boundary_times:
+                head_review_boundary.set_result(min(boundary_times))
         pending, failed, failures = summarize_checks(check_runs)
         if failed:
             print("Checks failed:")

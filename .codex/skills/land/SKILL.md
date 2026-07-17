@@ -80,26 +80,31 @@ fi
 # issue-review result for the current PR head. Review comments and issue
 # comments remain blocking feedback and must be handled before merging.
 head_sha=$(gh pr view --json headRefOid -q .headRefOid)
-head_marker=${head_sha:0:10}
 acknowledger_login=$(gh api user --jq .login)
 latest_review_request_at=$(
   gh api repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
     --jq '.[] | select((.user.login != "chatgpt-codex-connector[bot]" and .user.login != "github-actions[bot]" and .user.login != "codex-gc-app[bot]" and .user.login != "app/codex-gc-app") and ((.body // "") | contains("@codex review"))) | .created_at' \
     | sort | tail -n 1
 )
-head_check_at=$(gh api repos/{owner}/{repo}/commits/"$head_sha"/check-runs \
-  --paginate --jq '.check_runs[].created_at' | sort | head -n 1)
-issue_review_not_before=$(
-  printf '%s\n%s\n' "$head_check_at" "$latest_review_request_at" \
-    | sed '/^$/d' | sort | tail -n 1
-)
 while true; do
+  head_check_at=$(gh api repos/{owner}/{repo}/commits/"$head_sha"/check-runs \
+    --method GET -f per_page=100 --paginate \
+    --jq '.check_runs[] | (.started_at // .created_at // .completed_at)' \
+    | sort | head -n 1)
+  issue_review_not_before=$(
+    printf '%s\n%s\n' "$head_check_at" "$latest_review_request_at" \
+      | sed '/^$/d' | sort | tail -n 1
+  )
   review_found=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/reviews \
     --paginate \
     --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\") and .commit_id == \"$head_sha\" and .submitted_at != null and (.state == \"APPROVED\" or .state == \"COMMENTED\") and (\"$latest_review_request_at\" == \"\" or .submitted_at > \"$latest_review_request_at\")) | .id" \
     | head -n 1)
   review_decision=$(gh pr view "$pr_number" --json reviewDecision \
     -q .reviewDecision)
+  if [ "$review_decision" = "CHANGES_REQUESTED" ]; then
+    echo "Review changes requested. Address feedback before merge." >&2
+    exit 2
+  fi
   substantive_reviews=$(gh api \
     repos/{owner}/{repo}/pulls/"$pr_number"/reviews --paginate \
     --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.state == \"COMMENTED\" or .state == \"APPROVED\") and ((.body // \"\") | length) > 0 and ((.body // \"\") | test(\"^[[:space:]]*### 💡 Codex Review\") | not) and ((.body // \"\") | startswith(\"## Pull request overview\") | not)) | [.id, .submitted_at] | @tsv"
@@ -134,7 +139,7 @@ while true; do
   done <<< "$review_comments"
   issue_reviews=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
     --paginate \
-    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\") and ((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and ((.body // \"\") | contains(\"**Reviewed commit:** \`$head_marker\`\")) and (\"$issue_review_not_before\" == \"\" or .created_at > \"$issue_review_not_before\")) | [.id, (.updated_at // .created_at)] | @tsv"
+    --jq ".[] | ((.body // \"\") | split(\"**Reviewed commit:** \\u0060\") | (.[1]? // \"\") | split(\"\\u0060\") | (.[0]? // \"\")) as \$reviewed_sha | select(\"$head_check_at\" != \"\" and (.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\") and ((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and (\$reviewed_sha | test(\"^[0-9a-fA-F]{7,40}$\")) and (\"$head_sha\" | startswith(\$reviewed_sha)) and .created_at > \"$issue_review_not_before\") | [.id, (.updated_at // .created_at)] | @tsv"
   )
   issue_reviews_found=false
   issue_reviews_all_acked=true
