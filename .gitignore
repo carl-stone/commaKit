@@ -19,7 +19,12 @@ docs/*
 !docs/adr/*.md
 .claude/settings.local.json
 .claude/worktrees/
-.codex/
+.codex/*
+!.codex/skills/
+.codex/skills/*
+!.codex/skills/*/
+!.codex/skills/*/SKILL.md
+!.codex/skills/land/land_watch.py
 droid-wiki/
 .letta/
 .lteams/
