@@ -253,6 +253,7 @@ def filter_codex_comments(
 ) -> list[dict[str, Any]]:
     latest_codex_reply = latest_codex_reply_by_thread(comments)
     latest_issue_ack = latest_codex_issue_reply_time(comments)
+    acknowledged_issue_reviews = acknowledged_codex_issue_review_ids(comments)
     codex_comments = [
         c
         for c in comments
@@ -273,7 +274,17 @@ def filter_codex_comments(
             comment.get("in_reply_to_id") or comment.get("pull_request_review_id")
         )
         if not is_threaded:
-            if latest_issue_ack is not None and created_time <= latest_issue_ack:
+            body = (comment.get("body") or "").strip()
+            if (
+                is_codex_review_body(body)
+                and comment.get("id") in acknowledged_issue_reviews
+            ):
+                continue
+            if (
+                not is_codex_review_body(body)
+                and latest_issue_ack is not None
+                and created_time <= latest_issue_ack
+            ):
                 continue
         else:
             thread_root = thread_root_id(comment)
@@ -311,6 +322,20 @@ def is_codex_reply_body(body: str) -> bool:
 
 def is_codex_review_body(body: str) -> bool:
     return body.startswith("## Codex Review")
+
+
+def acknowledged_codex_issue_review_ids(
+    comments: list[dict[str, Any]],
+) -> set[int]:
+    acknowledged: set[int] = set()
+    for comment in comments:
+        if is_bot_user(comment.get("user", {})):
+            continue
+        body = (comment.get("body") or "").strip()
+        match = re.match(r"^\[codex\]\s+Review\s+(\d+):", body)
+        if match:
+            acknowledged.add(int(match.group(1)))
+    return acknowledged
 
 
 def latest_codex_issue_reply_time(
@@ -356,18 +381,13 @@ def filter_human_issue_comments(comments: list[dict[str, Any]]) -> list[dict[str
 def filter_codex_review_issue_comments(
     comments: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    latest_ack = latest_codex_issue_reply_time(comments)
+    acknowledged = acknowledged_codex_issue_review_ids(comments)
     filtered: list[dict[str, Any]] = []
     for comment in comments:
         body = (comment.get("body") or "").strip()
         if not is_codex_review_body(body):
             continue
-        created_time = comment_time(comment)
-        if (
-            latest_ack is not None
-            and created_time is not None
-            and created_time <= latest_ack
-        ):
+        if comment.get("id") in acknowledged:
             continue
         filtered.append(comment)
     return filtered
@@ -568,9 +588,8 @@ def has_acknowledged_codex_issue_review(
 ) -> bool:
     if review_requested_at is None:
         return False
-    acknowledged_at = latest_codex_issue_reply_time(issue_comments)
-    if acknowledged_at is None:
-        return False
+    acknowledged = acknowledged_codex_issue_review_ids(issue_comments)
+    relevant_review_ids: list[int] = []
     for comment in issue_comments:
         if not is_codex_bot_user(comment.get("user", {})):
             continue
@@ -580,9 +599,12 @@ def has_acknowledged_codex_issue_review(
         created_at = comment_created_time(comment)
         if created_at is None or created_at <= review_requested_at:
             continue
-        if created_at <= acknowledged_at:
-            return True
-    return False
+        comment_id = comment.get("id")
+        if isinstance(comment_id, int):
+            relevant_review_ids.append(comment_id)
+    return bool(relevant_review_ids) and all(
+        review_id in acknowledged for review_id in relevant_review_ids
+    )
 
 
 def is_merge_conflicting(pr: PrInfo) -> bool:

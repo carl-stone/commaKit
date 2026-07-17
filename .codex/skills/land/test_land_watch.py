@@ -218,6 +218,7 @@ class ReviewGateTests(unittest.TestCase):
     def test_acknowledged_issue_review_can_complete_gate(self) -> None:
         comments = [
             {
+                "id": 101,
                 "user": {
                     "login": "github-actions[bot]",
                     "type": "Bot",
@@ -226,8 +227,9 @@ class ReviewGateTests(unittest.TestCase):
                 "created_at": "2026-07-17T04:01:00Z",
             },
             {
+                "id": 102,
                 "user": {"login": "carl-stone", "type": "User"},
-                "body": "[codex] acknowledged",
+                "body": "[codex] Review 101: acknowledged",
                 "created_at": "2026-07-17T04:02:00Z",
             },
         ]
@@ -240,6 +242,65 @@ class ReviewGateTests(unittest.TestCase):
         self.assertFalse(
             LAND_WATCH.has_acknowledged_codex_issue_review(
                 comments[:1],
+                utc_time(4, 0),
+            ),
+        )
+
+    def test_unrelated_ack_cannot_complete_issue_review(self) -> None:
+        comments = [
+            {
+                "id": 101,
+                "user": {
+                    "login": "github-actions[bot]",
+                    "type": "Bot",
+                },
+                "body": "## Codex Review — correctness",
+                "created_at": "2026-07-17T04:01:00Z",
+            },
+            {
+                "id": 102,
+                "user": {"login": "carl-stone", "type": "User"},
+                "body": "[codex] unrelated status update",
+                "created_at": "2026-07-17T04:02:00Z",
+            },
+        ]
+        self.assertFalse(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                comments,
+                utc_time(4, 0),
+            ),
+        )
+
+    def test_newer_issue_review_also_requires_exact_ack(self) -> None:
+        comments = [
+            {
+                "id": 101,
+                "user": {
+                    "login": "github-actions[bot]",
+                    "type": "Bot",
+                },
+                "body": "## Codex Review — correctness",
+                "created_at": "2026-07-17T04:01:00Z",
+            },
+            {
+                "id": 102,
+                "user": {"login": "carl-stone", "type": "User"},
+                "body": "[codex] Review 101: acknowledged",
+                "created_at": "2026-07-17T04:02:00Z",
+            },
+            {
+                "id": 103,
+                "user": {
+                    "login": "github-actions[bot]",
+                    "type": "Bot",
+                },
+                "body": "## Codex Review — security",
+                "created_at": "2026-07-17T04:03:00Z",
+            },
+        ]
+        self.assertFalse(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                comments,
                 utc_time(4, 0),
             ),
         )
