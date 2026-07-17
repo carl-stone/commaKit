@@ -157,6 +157,30 @@ class ReviewGateTests(unittest.TestCase):
             [finding],
         )
 
+    def test_submitted_review_requires_exact_id_acknowledgement(self) -> None:
+        finding = codex_review(
+            id=55,
+            body="Please fix this correctness issue.",
+        )
+        unrelated_ack = {101: utc_time(4, 2)}
+        exact_ack = {55: utc_time(4, 2)}
+        self.assertEqual(
+            LAND_WATCH.filter_blocking_reviews(
+                [finding],
+                None,
+                unrelated_ack,
+            ),
+            [finding],
+        )
+        self.assertEqual(
+            LAND_WATCH.filter_blocking_reviews(
+                [finding],
+                None,
+                exact_ack,
+            ),
+            [],
+        )
+
     def test_later_bot_approval_clears_change_request(self) -> None:
         change_request = codex_review(
             state="CHANGES_REQUESTED",

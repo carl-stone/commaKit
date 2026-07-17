@@ -518,7 +518,7 @@ def filter_human_review_comments(
 def is_blocking_review(
     review: dict[str, Any],
     review_requested_at: datetime | None,
-    issue_acknowledged_at: datetime | None = None,
+    acknowledged_at: datetime | None = None,
 ) -> bool:
     created_at = review.get("submitted_at") or review.get("created_at")
     if not created_at:
@@ -547,8 +547,8 @@ def is_blocking_review(
         if body.startswith(COPILOT_OVERVIEW_PREFIX):
             return False
         if (
-            issue_acknowledged_at is not None
-            and created_time <= issue_acknowledged_at
+            acknowledged_at is not None
+            and created_time <= acknowledged_at
         ):
             return False
         return True
@@ -614,7 +614,7 @@ def dedupe_reviews(reviews: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def filter_blocking_reviews(
     reviews: list[dict[str, Any]],
     review_requested_at: datetime | None,
-    issue_acknowledged_at: datetime | None = None,
+    review_ack_times: dict[int, datetime] | None = None,
     head_sha: str | None = None,
 ) -> list[dict[str, Any]]:
     scoped_reviews = [
@@ -642,7 +642,7 @@ def filter_blocking_reviews(
         if is_blocking_review(
             review,
             review_requested_at,
-            issue_acknowledged_at,
+            (review_ack_times or {}).get(review.get("id")),
         )
     ]
 
@@ -753,14 +753,14 @@ def raise_on_human_feedback(
             "and note in your root-level update.",
         )
         raise WatchExit(2)
-    issue_acknowledged_at = latest_codex_issue_reply_time(
+    review_ack_times = codex_issue_review_ack_times(
         issue_comments,
         acknowledger_login,
     )
     blocking_reviews = filter_blocking_reviews(
         reviews,
         review_request_at,
-        issue_acknowledged_at,
+        review_ack_times,
         head_sha,
     )
     if blocking_reviews:

@@ -100,14 +100,22 @@ while true; do
     | head -n 1)
   review_decision=$(gh pr view "$pr_number" --json reviewDecision \
     -q .reviewDecision)
-  latest_issue_ack_at=$(gh api \
-    repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
-    --jq ".[] | select(.user.login == \"$acknowledger_login\" and ((.body // \"\") | startswith(\"[codex]\"))) | .created_at" \
-    | sort | tail -n 1)
-  unacked_substantive_review=$(gh api \
+  substantive_reviews=$(gh api \
     repos/{owner}/{repo}/pulls/"$pr_number"/reviews --paginate \
-    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.state == \"COMMENTED\" or .state == \"APPROVED\") and ((.body // \"\") | length) > 0 and ((.body // \"\") | test(\"^[[:space:]]*### 💡 Codex Review\") | not) and ((.body // \"\") | startswith(\"## Pull request overview\") | not) and (\"$latest_issue_ack_at\" == \"\" or .submitted_at > \"$latest_issue_ack_at\")) | .id" \
-    | head -n 1)
+    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.state == \"COMMENTED\" or .state == \"APPROVED\") and ((.body // \"\") | length) > 0 and ((.body // \"\") | test(\"^[[:space:]]*### 💡 Codex Review\") | not) and ((.body // \"\") | startswith(\"## Pull request overview\") | not)) | [.id, .submitted_at] | @tsv"
+  )
+  substantive_reviews_all_acked=true
+  while IFS=$'\t' read -r substantive_review_id substantive_review_at; do
+    [ -z "$substantive_review_id" ] && continue
+    substantive_review_ack=$(gh api \
+      repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
+      --jq ".[] | select(.user.login == \"$acknowledger_login\" and .created_at > \"$substantive_review_at\" and ((.body // \"\") | startswith(\"[codex] Review $substantive_review_id:\"))) | .id" \
+      | head -n 1)
+    if [ -z "$substantive_review_ack" ]; then
+      substantive_reviews_all_acked=false
+      break
+    fi
+  done <<< "$substantive_reviews"
   review_comments=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/comments \
     --paginate \
     --jq ".[] | select(.in_reply_to_id == null and (.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.user.login != \"chatgpt-codex-connector[bot]\" or \"$latest_review_request_at\" == \"\" or .created_at > \"$latest_review_request_at\")) | [.id, (.updated_at // .created_at)] | @tsv"
@@ -126,7 +134,7 @@ while true; do
   done <<< "$review_comments"
   if [ -n "$review_found" ] && \
     [ "$review_decision" != "CHANGES_REQUESTED" ] && \
-    [ -z "$unacked_substantive_review" ] && \
+    $substantive_reviews_all_acked && \
     $review_comments_all_acked; then
     break
   fi
@@ -244,8 +252,9 @@ Exit codes:
   after acknowledgement, inspect the changed content and post a fresh exact-ID
   acknowledgement.
 - For a substantive top-level automated review body, acknowledge its findings
-  with a root-level `[codex]` issue comment. Generated Copilot “Pull request
-  overview” summaries are informational and do not require acknowledgement.
+  with a root-level `[codex] Review <review-id>: <disposition>` issue comment.
+  Generated Copilot “Pull request overview” summaries are informational and do
+  not require acknowledgement.
 - If feedback requires changes:
   - For inline review comments (human), reply with intended fixes
     (`[codex] ...`) **as an inline reply to the original review comment** using
