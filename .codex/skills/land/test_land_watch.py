@@ -1,5 +1,6 @@
 import asyncio
 import importlib.util
+import subprocess
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
@@ -7,6 +8,7 @@ from unittest.mock import patch
 
 
 MODULE_PATH = Path(__file__).with_name("land_watch.py")
+SKILL_PATH = Path(__file__).with_name("SKILL.md")
 SPEC = importlib.util.spec_from_file_location("land_watch", MODULE_PATH)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"Unable to load {MODULE_PATH}")
@@ -16,6 +18,10 @@ SPEC.loader.exec_module(LAND_WATCH)
 HEAD_SHA = "a" * 40
 ISSUE_REVIEW_BODY = (
     "## Codex Review — correctness\n\n"
+    f"**Reviewed commit:** `{HEAD_SHA[:10]}`"
+)
+CLEAN_ISSUE_REVIEW_BODY = (
+    "Codex Review: Didn't find any major issues. Bravo.\n\n"
     f"**Reviewed commit:** `{HEAD_SHA[:10]}`"
 )
 
@@ -331,6 +337,43 @@ class ReviewGateTests(unittest.TestCase):
         self.assertTrue(
             LAND_WATCH.is_codex_review_body(
                 "Codex Review: Didn't find any major issues. :tada:",
+            ),
+        )
+
+    def test_clean_current_head_issue_review_is_not_blocking(self) -> None:
+        comment = {
+            "id": 101,
+            "user": {
+                "login": "chatgpt-codex-connector[bot]",
+                "type": "Bot",
+            },
+            "body": CLEAN_ISSUE_REVIEW_BODY,
+            "created_at": "2026-07-17T04:01:00Z",
+        }
+        self.assertEqual(
+            [],
+            LAND_WATCH.filter_codex_comments(
+                [comment],
+                HEAD_SHA,
+                utc_time(4, 0),
+                "carl-stone",
+            ),
+        )
+        self.assertEqual(
+            [],
+            LAND_WATCH.filter_codex_review_issue_comments(
+                [comment],
+                HEAD_SHA,
+                utc_time(4, 0),
+                "carl-stone",
+            ),
+        )
+        self.assertTrue(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                [comment],
+                HEAD_SHA,
+                utc_time(4, 0),
+                "carl-stone",
             ),
         )
 
@@ -703,6 +746,36 @@ class ReviewGateTests(unittest.TestCase):
                 )
 
         asyncio.run(run())
+
+
+class LandingCommandTests(unittest.TestCase):
+    @staticmethod
+    def command_block() -> str:
+        skill = SKILL_PATH.read_text()
+        return skill.split("```\n", 1)[1].split("\n```", 1)[0]
+
+    def test_command_block_is_valid_bash(self) -> None:
+        result = subprocess.run(
+            ["bash", "-n"],
+            input=self.command_block(),
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        self.assertEqual("", result.stderr)
+        self.assertEqual(0, result.returncode)
+
+    def test_merge_and_cleanup_are_bound_to_watched_head(self) -> None:
+        commands = self.command_block()
+        self.assertIn("set -euo pipefail", commands)
+        self.assertIn('head_sha=$(gh pr view --json headRefOid -q .headRefOid)', commands)
+        self.assertIn('--match-head-commit "$head_sha"', commands)
+        self.assertIn('--body "$pr_body" || exit $?', commands)
+        merged_gate = 'test "$(gh pr view --json state -q .state)" = "MERGED" || exit 6'
+        self.assertIn(merged_gate, commands)
+        self.assertLess(commands.index(merged_gate), commands.index("git push origin --delete"))
+        self.assertIn('if [ "$branch_check_status" -ne 2 ]', commands)
+        self.assertIn("remote branch cleanup could not be verified", commands)
 
 
 if __name__ == "__main__":

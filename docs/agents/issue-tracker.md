@@ -1,6 +1,20 @@
-# Issue tracker: GitHub
+# Issue Tracking Surfaces
 
-Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
+Internal commaBot work and PRDs live in Linear project `commaKit Symphony`.
+Public bugs and external-contributor requests live in GitHub Issues. Code lands
+through GitHub pull requests regardless of where the work originated.
+
+## Internal Symphony work
+
+Use the repository `linear` skill and Symphony's `linear_graphql` tool for
+Linear reads and mutations. An `STO-...` key identifies a Linear issue. Keep
+worker state, decomposition, and Carl-facing task decisions in Linear; attach
+the resulting GitHub PR to that issue.
+
+## GitHub issues
+
+Use the `gh` CLI for public bug reports, accepted external requests, and
+external-contributor triage.
 
 ## Conventions
 
@@ -25,10 +39,16 @@ External PRs run through the same labels and states as issues, using the `gh pr`
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either. Resolve with `gh pr view 42` and fall back to `gh issue view 42`.
 
-## When a skill says "publish to the issue tracker"
+## Resolving generic tracker instructions
 
-Create a GitHub issue in `carl-stone/commaKit`.
+- For internal commaBot/Symphony work, publish to Linear project
+  `commaKit Symphony`.
+- For public bugs or external-contributor requests, create a GitHub issue in
+  `carl-stone/commaKit`.
+- An `STO-...` key is Linear; a GitHub `#<number>` is an issue or PR.
 
 ## When a skill says "fetch the relevant ticket"
 
-Run `gh issue view <number> --comments`, unless the ticket is known to be a PR; then use `gh pr view <number> --comments`.
+Use the `linear` skill for an `STO-...` key. For a GitHub number, run
+`gh issue view <number> --comments`; if it is a PR, use
+`gh pr view <number> --comments` instead.

@@ -57,11 +57,15 @@ supplement, rather than replace, the repository and directory-level
 
 ### Issue tracker
 
-Issues live in GitHub Issues for `carl-stone/commaKit`; external PRs are also a triage request surface. See `docs/agents/issue-tracker.md`.
+Internal commaBot work lives in Linear project `commaKit Symphony`. GitHub
+Issues remain the public bug and external-contributor tracker, and external PRs
+are also a triage request surface. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Use the canonical triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+Use the repository's current triage labels: `awaiting-factory-triage`,
+`needs-info`, `needs-decision`, `ready-for-agent`, `ready-for-human`, and
+`wontfix`. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 

@@ -15,12 +15,13 @@ description:
 - Squash-merge the PR once checks pass.
 - Do not yield to the user until the PR is merged; keep the watcher loop running
   unless blocked.
-- No need to delete remote branches after merge; the repo auto-deletes head
-  branches.
+- Verify that GitHub removed the same-repository head branch under the enabled
+  automatic cleanup setting. Fork branches remain owned by their source repos.
 
 ## Preconditions
 
 - `gh` CLI is authenticated.
+- The authenticated account has maintainer merge authority.
 - You are on the PR branch with a clean working tree.
 
 ## Steps
@@ -39,8 +40,8 @@ description:
 8. If checks fail, pull logs, fix the issue, commit with the `commit` skill,
    push with the `push` skill, and re-run checks.
 9. When all checks are green and review feedback is addressed, squash-merge
-   using the PR title/body for the merge subject/body. Let the repository's
-   configured post-merge behavior delete the remote head branch.
+   using the PR title/body for the merge subject/body, then verify the merged
+   state and configured same-repository branch cleanup.
 10. **Context guard:** Before implementing review feedback, confirm it does not
     conflict with the user’s stated intent or task context. If it conflicts,
     respond inline with a justification and ask the user before changing code.
@@ -60,130 +61,57 @@ description:
 ## Commands
 
 ```
+(
+set -euo pipefail
+
 # Ensure branch and PR context
-branch=$(git branch --show-current)
-pr_number=$(gh pr view --json number -q .number)
 pr_title=$(gh pr view --json title -q .title)
 pr_body=$(gh pr view --json body -q .body)
+head_ref=$(gh pr view --json headRefName -q .headRefName)
+head_sha=$(gh pr view --json headRefOid -q .headRefOid)
+is_cross_repo=$(gh pr view --json isCrossRepository -q .isCrossRepository)
 
 # Check mergeability and conflicts
 mergeable=$(gh pr view --json mergeable -q .mergeable)
 
 if [ "$mergeable" = "CONFLICTING" ]; then
-  # Run the `pull` skill to handle fetch + merge + conflict resolution.
-  # Then run the `push` skill to publish the updated branch.
+  echo "Run the pull skill, resolve conflicts, then publish with push." >&2
+  exit 5
 fi
 
-# Preferred: use the Async Watch Helper below. The manual loop is a fallback
-# when Python cannot run or the helper script is unavailable.
-# Wait for either a submitted Codex review or an exactly acknowledged Codex
-# issue-review result for the current PR head. Review comments and issue
-# comments remain blocking feedback and must be handled before merging.
-head_sha=$(gh pr view --json headRefOid -q .headRefOid)
-acknowledger_login=$(gh api user --jq .login)
-latest_review_request_at=$(
-  gh api repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
-    --jq '.[] | select((.user.login != "chatgpt-codex-connector[bot]" and .user.login != "github-actions[bot]" and .user.login != "codex-gc-app[bot]" and .user.login != "app/codex-gc-app") and ((.body // "") | contains("@codex review"))) | .created_at' \
-    | sort | tail -n 1
+# Run the single authoritative review/check gate. Stop if it is unavailable.
+python3 .codex/skills/land/land_watch.py || exit $?
+
+# Use the ordinary protected-branch path after the watcher proves readiness.
+gh pr merge --squash --match-head-commit "$head_sha" \
+  --subject "$pr_title" --body "$pr_body" || exit $?
+test "$(gh pr view --json state -q .state)" = "MERGED" || exit 6
+
+# GitHub normally removes same-repository heads under this repository's enabled
+# automatic cleanup setting. Verify that outcome and use an explicit fallback.
+# Fork branches belong to their source repositories and must not be deleted here.
+if [ "$is_cross_repo" = "false" ]; then
+  if git ls-remote --exit-code --heads origin "refs/heads/$head_ref" >/dev/null 2>&1; then
+    git push origin --delete "$head_ref" || {
+      echo "PR merged, but remote branch cleanup requires manual follow-up." >&2
+      exit 7
+    }
+  else
+    branch_check_status=$?
+    if [ "$branch_check_status" -ne 2 ]; then
+      echo "PR merged, but remote branch cleanup could not be verified." >&2
+      exit "$branch_check_status"
+    fi
+  fi
+fi
 )
-while true; do
-  head_check_at=$(gh api repos/{owner}/{repo}/commits/"$head_sha"/check-runs \
-    --method GET -f per_page=100 --paginate \
-    --jq '.check_runs[] | (.started_at // .created_at // .completed_at)' \
-    | sort | head -n 1)
-  issue_review_not_before=$(
-    printf '%s\n%s\n' "$head_check_at" "$latest_review_request_at" \
-      | sed '/^$/d' | sort | tail -n 1
-  )
-  review_found=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/reviews \
-    --paginate \
-    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\") and .commit_id == \"$head_sha\" and .submitted_at != null and (.state == \"APPROVED\" or .state == \"COMMENTED\") and (\"$latest_review_request_at\" == \"\" or .submitted_at > \"$latest_review_request_at\")) | .id" \
-    | head -n 1)
-  review_decision=$(gh pr view "$pr_number" --json reviewDecision \
-    -q .reviewDecision)
-  if [ "$review_decision" = "CHANGES_REQUESTED" ]; then
-    echo "Review changes requested. Address feedback before merge." >&2
-    exit 2
-  fi
-  substantive_reviews=$(gh api \
-    repos/{owner}/{repo}/pulls/"$pr_number"/reviews --paginate \
-    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.state == \"COMMENTED\" or .state == \"APPROVED\") and ((.body // \"\") | length) > 0 and ((.body // \"\") | test(\"^[[:space:]]*### 💡 Codex Review\") | not) and ((.body // \"\") | startswith(\"## Pull request overview\") | not)) | [.id, .submitted_at] | @tsv"
-  )
-  substantive_reviews_all_acked=true
-  while IFS=$'\t' read -r substantive_review_id substantive_review_at; do
-    [ -z "$substantive_review_id" ] && continue
-    substantive_review_ack=$(gh api \
-      repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
-      --jq ".[] | select(.user.login == \"$acknowledger_login\" and .created_at > \"$substantive_review_at\" and ((.body // \"\") | startswith(\"[codex] Review $substantive_review_id:\"))) | .id" \
-      | head -n 1)
-    if [ -z "$substantive_review_ack" ]; then
-      substantive_reviews_all_acked=false
-      break
-    fi
-  done <<< "$substantive_reviews"
-  review_comments=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/comments \
-    --paginate \
-    --jq ".[] | select(.in_reply_to_id == null and (.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and (.user.login == \"copilot-pull-request-reviewer[bot]\" or \"$latest_review_request_at\" == \"\" or .created_at > \"$latest_review_request_at\")) | [.id, (.updated_at // .created_at)] | @tsv"
-  )
-  review_comments_all_acked=true
-  while IFS=$'\t' read -r review_comment_id review_comment_at; do
-    [ -z "$review_comment_id" ] && continue
-    review_comment_ack=$(gh api \
-      repos/{owner}/{repo}/pulls/"$pr_number"/comments --paginate \
-      --jq ".[] | select(.in_reply_to_id == $review_comment_id and .user.login == \"$acknowledger_login\" and .created_at > \"$review_comment_at\" and ((.body // \"\") | startswith(\"[codex]\"))) | .id" \
-      | head -n 1)
-    if [ -z "$review_comment_ack" ]; then
-      review_comments_all_acked=false
-      break
-    fi
-  done <<< "$review_comments"
-  issue_reviews=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
-    --paginate \
-    --jq ".[] | ((.body // \"\") | split(\"**Reviewed commit:** \\u0060\") | (.[1]? // \"\") | split(\"\\u0060\") | (.[0]? // \"\")) as \$reviewed_sha | select(\"$head_check_at\" != \"\" and (.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\") and ((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and (\$reviewed_sha | test(\"^[0-9a-fA-F]{7,40}$\")) and (\"$head_sha\" | startswith(\$reviewed_sha)) and .created_at > \"$issue_review_not_before\") | [.id, (.updated_at // .created_at)] | @tsv"
-  )
-  issue_reviews_found=false
-  issue_reviews_all_acked=true
-  while IFS=$'\t' read -r issue_review_id issue_review_at; do
-    [ -z "$issue_review_id" ] && continue
-    issue_reviews_found=true
-    issue_ack=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
-      --paginate \
-      --jq ".[] | select(.user.login == \"$acknowledger_login\" and .created_at > \"$issue_review_at\" and ((.body // \"\") | startswith(\"[codex] Review $issue_review_id:\"))) | .id" \
-      | head -n 1)
-    if [ -z "$issue_ack" ]; then
-      issue_reviews_all_acked=false
-      break
-    fi
-  done <<< "$issue_reviews"
-  completion_found=false
-  [ -n "$review_found" ] && completion_found=true
-  $issue_reviews_found && completion_found=true
-  if $completion_found && $issue_reviews_all_acked && \
-    [ "$review_decision" != "CHANGES_REQUESTED" ] && \
-    $substantive_reviews_all_acked && \
-    $review_comments_all_acked; then
-    break
-  fi
-  sleep 10
-done
-
-# Watch checks
-if ! gh pr checks --watch; then
-  gh pr checks
-  # Identify failing run and inspect logs
-  # gh run list --branch "$branch"
-  # gh run view <run-id> --log
-  exit 1
-fi
-
-# Squash-merge (remote branches auto-delete on merge in this repo)
-gh pr merge --squash --subject "$pr_title" --body "$pr_body"
 ```
 
-## Async Watch Helper
+## Landing Watcher
 
-Preferred: use the asyncio watcher to monitor review comments, CI, and head
-updates in parallel:
+Use the tested asyncio watcher as the only supported review/check gate. If
+Python or the helper is unavailable, stop and report that environment blocker;
+do not substitute a reduced shell gate.
 
 ```
 python3 .codex/skills/land/land_watch.py
@@ -193,7 +121,7 @@ Exit codes:
 
 - 2: Review comments detected (address feedback)
 - 3: CI checks failed
-- 4: PR head updated (autofix commit detected)
+- 4: PR head updated (inspect and synchronize the new head)
 - 5: PR has merge conflicts (merge `origin/main`, resolve, and push)
 
 ## Failure Handling
@@ -201,22 +129,24 @@ Exit codes:
 - If checks fail, pull details with `gh pr checks` and `gh run view --log`, then
   fix locally, commit with the `commit` skill, push with the `push` skill, and
   re-run the watch.
-- Use judgment to identify flaky failures. If a failure is a flake (e.g., a
-  timeout on only one platform), you may proceed without fixing it.
-- If CI pushes an auto-fix commit (authored by GitHub Actions), it does not
-  trigger a fresh CI run. Detect the updated PR head, pull locally, merge
-  `origin/main` if needed, add a real author commit, and force-push to retrigger
-  CI, then restart the checks loop.
+- If the watcher exits 4, fetch and inspect the new PR head. Fast-forward the
+  clean local feature branch from its remote counterpart when possible; use
+  the `pull` skill for divergent history or conflicts. Re-run local validation
+  and restart the watcher against the synchronized head. Stop on an unexpected
+  or unauthenticated update.
 - If mergeability is `UNKNOWN`, wait and re-check.
 - Do not merge while review comments (human or Codex review) are outstanding.
 - Codex review jobs retry on failure and are non-blocking. Use a submitted Codex
   review for the current PR head as the completion signal, not job status;
   treat its issue and inline comments as blocking feedback.
-- Do not enable auto-merge; this repo has no required checks so auto-merge can
-  skip tests.
-- If the remote PR branch advanced due to your own prior force-push or merge,
-  avoid redundant merges; re-run the formatter locally if needed and
-  `git push --force-with-lease`.
+- Do not enable auto-merge unless the user requests it and the repository's
+  branch-protection behavior is understood.
+- Verify that GitHub signed the resulting squash commit. If an ordinary merge
+  fails solely because GitHub cannot satisfy the required-signature rule, first
+  reconfirm the current head, watcher result, and live protection settings; use
+  `gh pr merge --admin` only with explicit repository-administrator authority.
+- Verify same-repository head-branch deletion after merge. If automatic cleanup
+  fails, remove the merged remote branch explicitly; never delete a fork branch.
 
 ## Review Handling
 
