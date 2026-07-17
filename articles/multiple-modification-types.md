@@ -329,7 +329,7 @@ sessionInfo()
 #>  [75] gtools_3.9.5                glue_1.8.1                 
 #>  [77] tools_4.5.2                 BiocIO_1.20.0              
 #>  [79] data.table_1.18.4           GenomicAlignments_1.46.0   
-#>  [81] fs_2.1.0                    mvtnorm_1.4-1              
+#>  [81] fs_2.1.0                    mvtnorm_1.4-2              
 #>  [83] XML_3.99-0.23               grid_4.5.2                 
 #>  [85] bbmle_1.0.25.1              bdsmatrix_1.3-7            
 #>  [87] patchwork_1.3.2             nlme_3.1-168               
