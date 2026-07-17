@@ -96,13 +96,44 @@ issue_review_not_before=$(
 while true; do
   review_found=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/reviews \
     --paginate \
-    --jq ".[] | select(.user.login == \"chatgpt-codex-connector[bot]\" and .commit_id == \"$head_sha\" and .submitted_at != null and .state != \"DISMISSED\" and .state != \"PENDING\" and (\"$latest_review_request_at\" == \"\" or .submitted_at > \"$latest_review_request_at\")) | .id" \
+    --jq ".[] | select(.user.login == \"chatgpt-codex-connector[bot]\" and .commit_id == \"$head_sha\" and .submitted_at != null and (.state == \"APPROVED\" or (.state == \"COMMENTED\" and (((.body // \"\") | length) == 0 or ((.body // \"\") | test(\"^[[:space:]]*### 💡 Codex Review\"))))) and (\"$latest_review_request_at\" == \"\" or .submitted_at > \"$latest_review_request_at\")) | .id" \
     | head -n 1)
-  [ -n "$review_found" ] && break
+  review_decision=$(gh pr view "$pr_number" --json reviewDecision \
+    -q .reviewDecision)
+  latest_issue_ack_at=$(gh api \
+    repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
+    --jq ".[] | select(.user.login == \"$acknowledger_login\" and ((.body // \"\") | startswith(\"[codex]\"))) | .created_at" \
+    | sort | tail -n 1)
+  unacked_substantive_review=$(gh api \
+    repos/{owner}/{repo}/pulls/"$pr_number"/reviews --paginate \
+    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.state == \"COMMENTED\" or .state == \"APPROVED\") and ((.body // \"\") | length) > 0 and ((.body // \"\") | test(\"^[[:space:]]*### 💡 Codex Review\") | not) and ((.body // \"\") | startswith(\"## Pull request overview\") | not) and (\"$latest_issue_ack_at\" == \"\" or .submitted_at > \"$latest_issue_ack_at\")) | .id" \
+    | head -n 1)
+  review_comments=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/comments \
+    --paginate \
+    --jq ".[] | select(.in_reply_to_id == null and (.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.user.login != \"chatgpt-codex-connector[bot]\" or \"$latest_review_request_at\" == \"\" or .created_at > \"$latest_review_request_at\")) | [.id, (.updated_at // .created_at)] | @tsv"
+  )
+  review_comments_all_acked=true
+  while IFS=$'\t' read -r review_comment_id review_comment_at; do
+    [ -z "$review_comment_id" ] && continue
+    review_comment_ack=$(gh api \
+      repos/{owner}/{repo}/pulls/"$pr_number"/comments --paginate \
+      --jq ".[] | select(.in_reply_to_id == $review_comment_id and .user.login == \"$acknowledger_login\" and .created_at > \"$review_comment_at\" and ((.body // \"\") | startswith(\"[codex]\"))) | .id" \
+      | head -n 1)
+    if [ -z "$review_comment_ack" ]; then
+      review_comments_all_acked=false
+      break
+    fi
+  done <<< "$review_comments"
+  if [ -n "$review_found" ] && \
+    [ "$review_decision" != "CHANGES_REQUESTED" ] && \
+    [ -z "$unacked_substantive_review" ] && \
+    $review_comments_all_acked; then
+    break
+  fi
 
   issue_reviews=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
     --paginate \
-    --jq ".[] | select(((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and ((.body // \"\") | contains(\"**Reviewed commit:** \`$head_marker\`\")) and (\"$issue_review_not_before\" == \"\" or .created_at > \"$issue_review_not_before\")) | [.id, .created_at] | @tsv"
+    --jq ".[] | select(((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and ((.body // \"\") | contains(\"**Reviewed commit:** \`$head_marker\`\")) and (\"$issue_review_not_before\" == \"\" or .created_at > \"$issue_review_not_before\")) | [.id, (.updated_at // .created_at)] | @tsv"
   )
   issue_reviews_found=false
   issue_reviews_all_acked=true
@@ -207,9 +238,10 @@ Exit codes:
 - For a Codex review issue comment, acknowledge that exact result with a root
   issue comment of the form `[codex] Review <comment-id>: <disposition>`. State
   whether you will address the feedback now or defer it (include rationale).
-  The watcher accepts only results newer than the current head's first check
-  run and any later explicit review request. If the result body is edited after
-  acknowledgement, inspect the changed content and post a fresh exact-ID
+  The result must include a `Reviewed commit` SHA marker for the current head.
+  The watcher accepts only results newer than the current head's first
+  check run and any later explicit review request. If the result body is edited
+  after acknowledgement, inspect the changed content and post a fresh exact-ID
   acknowledgement.
 - For a substantive top-level automated review body, acknowledge its findings
   with a root-level `[codex]` issue comment. Generated Copilot “Pull request

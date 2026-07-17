@@ -175,6 +175,21 @@ class ReviewGateTests(unittest.TestCase):
             [],
         )
 
+    def test_prior_head_bot_change_request_is_nonblocking(self) -> None:
+        stale_request = codex_review(
+            commit_id="b" * 40,
+            state="CHANGES_REQUESTED",
+            body="Please fix this old correctness issue.",
+        )
+        self.assertEqual(
+            LAND_WATCH.filter_blocking_reviews(
+                [stale_request],
+                None,
+                head_sha=HEAD_SHA,
+            ),
+            [],
+        )
+
     def test_substantive_bot_review_requires_acknowledgement(self) -> None:
         review = {
             "user": {
@@ -220,6 +235,7 @@ class ReviewGateTests(unittest.TestCase):
         self.assertEqual(
             LAND_WATCH.filter_codex_comments(
                 [comment],
+                HEAD_SHA,
                 utc_time(4, 1),
                 "carl-stone",
             ),
@@ -281,6 +297,26 @@ class ReviewGateTests(unittest.TestCase):
             LAND_WATCH.is_codex_review_body(
                 "Codex Review: Didn't find any major issues. :tada:",
             ),
+        )
+
+    def test_markerless_issue_review_is_not_current_head_feedback(self) -> None:
+        comment = {
+            "id": 101,
+            "user": {
+                "login": "github-actions[bot]",
+                "type": "Bot",
+            },
+            "body": "Codex Review: Didn't find any major issues. :tada:",
+            "created_at": "2026-07-17T04:01:00Z",
+        }
+        self.assertEqual(
+            LAND_WATCH.filter_codex_comments(
+                [comment],
+                HEAD_SHA,
+                None,
+                "carl-stone",
+            ),
+            [],
         )
 
     def test_issue_review_must_be_newer_than_head(self) -> None:
@@ -417,6 +453,14 @@ class ReviewGateTests(unittest.TestCase):
                 "carl-stone",
             ),
         )
+        self.assertEqual(
+            LAND_WATCH.filter_codex_review_issue_comments(
+                comments,
+                HEAD_SHA,
+                "carl-stone",
+            ),
+            [],
+        )
 
     def test_newer_issue_review_also_requires_exact_ack(self) -> None:
         comments = [
@@ -483,6 +527,7 @@ class ReviewGateTests(unittest.TestCase):
         self.assertEqual(
             LAND_WATCH.filter_codex_review_issue_comments(
                 comments,
+                HEAD_SHA,
                 "carl-stone",
             ),
             [comments[1]],
@@ -510,6 +555,7 @@ class ReviewGateTests(unittest.TestCase):
         self.assertEqual(
             LAND_WATCH.filter_codex_comments(
                 comments,
+                HEAD_SHA,
                 None,
                 "carl-stone",
             ),

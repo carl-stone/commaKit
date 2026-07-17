@@ -256,6 +256,7 @@ def latest_review_request_at(comments: list[dict[str, Any]]) -> datetime | None:
 
 def filter_codex_comments(
     comments: list[dict[str, Any]],
+    head_sha: str,
     review_requested_at: datetime | None,
     acknowledger_login: str,
 ) -> list[dict[str, Any]]:
@@ -292,6 +293,13 @@ def filter_codex_comments(
         )
         if not is_threaded:
             body = (comment.get("body") or "").strip()
+            if is_codex_review_body(body):
+                reviewed_sha = reviewed_commit_sha(body)
+                if (
+                    reviewed_sha is None
+                    or not head_sha.lower().startswith(reviewed_sha)
+                ):
+                    continue
             acknowledged_at = issue_review_ack_times.get(comment.get("id"))
             if (
                 is_codex_review_body(body)
@@ -418,6 +426,7 @@ def filter_human_issue_comments(
 
 def filter_codex_review_issue_comments(
     comments: list[dict[str, Any]],
+    head_sha: str,
     acknowledger_login: str,
 ) -> list[dict[str, Any]]:
     acknowledged = codex_issue_review_ack_times(comments, acknowledger_login)
@@ -425,6 +434,9 @@ def filter_codex_review_issue_comments(
     for comment in comments:
         body = (comment.get("body") or "").strip()
         if not is_codex_review_body(body):
+            continue
+        reviewed_sha = reviewed_commit_sha(body)
+        if reviewed_sha is None or not head_sha.lower().startswith(reviewed_sha):
             continue
         created_at = comment_created_time(comment)
         acknowledged_at = acknowledged.get(comment.get("id"))
@@ -603,12 +615,23 @@ def filter_blocking_reviews(
     reviews: list[dict[str, Any]],
     review_requested_at: datetime | None,
     issue_acknowledged_at: datetime | None = None,
+    head_sha: str | None = None,
 ) -> list[dict[str, Any]]:
-    deduped_reviews = dedupe_reviews(reviews)
+    scoped_reviews = [
+        review
+        for review in reviews
+        if not (
+            head_sha is not None
+            and is_bot_user(review.get("user", {}))
+            and review.get("commit_id") is not None
+            and review.get("commit_id") != head_sha
+        )
+    ]
+    deduped_reviews = dedupe_reviews(scoped_reviews)
     deduped_object_ids = {id(review) for review in deduped_reviews}
     preserved_bot_bodies = [
         review
-        for review in reviews
+        for review in scoped_reviews
         if id(review) not in deduped_object_ids
         and review.get("state") in ("COMMENTED", "APPROVED")
         and has_substantive_bot_review_body(review)
@@ -706,6 +729,7 @@ def raise_on_human_feedback(
     issue_comments: list[dict[str, Any]],
     review_comments: list[dict[str, Any]],
     reviews: list[dict[str, Any]],
+    head_sha: str,
     review_request_at: datetime | None,
     acknowledger_login: str,
 ) -> None:
@@ -715,6 +739,7 @@ def raise_on_human_feedback(
     )
     codex_review_comments = filter_codex_review_issue_comments(
         issue_comments,
+        head_sha,
         acknowledger_login,
     )
     human_review_comments = filter_human_review_comments(
@@ -736,6 +761,7 @@ def raise_on_human_feedback(
         reviews,
         review_request_at,
         issue_acknowledged_at,
+        head_sha,
     )
     if blocking_reviews:
         print("Review states/comments detected. Address before merge.")
@@ -763,11 +789,13 @@ async def wait_for_codex(
         ) = await fetch_review_context(pr_number)
         bot_issue_comments = filter_codex_comments(
             issue_comments,
+            head_sha,
             review_request_at,
             acknowledger_login,
         )
         bot_review_comments = filter_codex_comments(
             review_comments,
+            head_sha,
             review_request_at,
             acknowledger_login,
         )
@@ -776,6 +804,7 @@ async def wait_for_codex(
             issue_comments,
             review_comments,
             reviews,
+            head_sha,
             review_request_at,
             acknowledger_login,
         )
