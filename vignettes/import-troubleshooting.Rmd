@@ -17,6 +17,13 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE
 )
+is_github_markdown_output <- function() {
+  pandoc_to <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+  if (is.null(pandoc_to)) {
+    return(FALSE)
+  }
+  any(grepl("gfm|markdown", pandoc_to))
+}
 ```
 
 # Overview
@@ -278,6 +285,6 @@ file parsing, sample metadata, genome information, or optional annotation.
 
 # Session Information
 
-```{r session-info}
+```{r session-info, eval = !is_github_markdown_output()}
 sessionInfo()
 ```
