@@ -20,7 +20,8 @@ A \code{data.frame} with columns:
 \describe{
 \item{\code{read_pos}}{1-based position in the read.}
 \item{\code{mod_type}}{Modification type string (e.g., \code{"6mA"}).}
-\item{\code{is_mod}}{Logical; \code{TRUE} when ML probability > 0.5.}
+\item{\code{is_mod}}{Logical; \code{TRUE} when ML probability is
+greater than the fixed \code{.DORADO_ML_THRESHOLD}.}
 }
 Returns \code{NULL} on parse failure.
 }

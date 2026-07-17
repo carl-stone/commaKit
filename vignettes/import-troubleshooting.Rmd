@@ -64,7 +64,13 @@ path for most Dorado-based workflows: call bases with Dorado, run
 Use `caller = "dorado"` only when you want commaKit to parse an aligned BAM file
 with MM/ML base modification tags directly. The BAM must contain modification
 tags and should be indexed. Direct BAM parsing does not provide motif context,
-so per-site `motif` values will be `NA`.
+so per-site `motif` values will be `NA` and `mod_context` will fall back to
+`mod_type`. The importer emits a warning about this representation choice and
+records it in `importProvenance(object)`.
+
+Dorado uses a fixed, named `ML > 0.5` threshold for classifying a call as
+modified. This threshold is not a public import argument; it is recorded in
+the same provenance record so downstream results can be audited.
 
 During direct BAM parsing, two kinds of information loss can occur and should
 not be confused:
@@ -81,7 +87,15 @@ not be confused:
 
 In other words, a read with a usable CIGAR and valid MM/ML tags may still lose
 some modified-base calls to call-level drops, but the read itself is not
-skipped.
+skipped. The counts by reason are available per sample:
+
+```{r dorado-accounting, eval = FALSE}
+provenance <- importProvenance(obj_dorado)
+provenance$threshold
+provenance$motif_context
+provenance$samples$ctrl_1$reads
+provenance$samples$ctrl_1$calls
+```
 
 Use `caller = "megalodon"` for legacy Megalodon per-read modification BED
 files. Megalodon files do not encode the modification type in a way commaKit

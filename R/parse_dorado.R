@@ -1,5 +1,57 @@
 # ─── Dorado BAM parser ────────────────────────────────────────────────────────
 
+# Dorado import policy: keep this threshold fixed and record it in import
+# provenance rather than exposing a user-configurable classification cutoff.
+.DORADO_ML_THRESHOLD <- 0.5
+
+.DORADO_MOTIF_CONTEXT_WARNING <- paste0(
+  "Direct Dorado BAM import does not provide motif context: imported motif ",
+  "values are NA and mod_context falls back to mod_type. Use modkit pileup ",
+  "or findMotifSites() if sequence-context analysis is required."
+)
+
+.makeDoradoAccounting <- function(read_count) {
+  list(
+    policy = "return_accounting",
+    ml_threshold = .DORADO_ML_THRESHOLD,
+    ml_threshold_rule = "ML > threshold",
+    reads = list(
+      total = as.integer(read_count),
+      skipped = 0L,
+      retained = 0L,
+      skipped_by_reason = setNames(
+        integer(5L),
+        c(
+          "missing_mm_ml",
+          "missing_alignment",
+          "empty_sequence",
+          "malformed_cigar",
+          "malformed_mm_ml"
+        )
+      )
+    ),
+    calls = list(
+      parsed = 0L,
+      retained = 0L,
+      dropped = 0L,
+      dropped_by_reason = setNames(
+        integer(2L),
+        c("read_position_out_of_range", "no_reference_coordinate")
+      )
+    ),
+    motif_context = list(
+      motif = NA_character_,
+      mod_context_fallback = "mod_type",
+      warning = .DORADO_MOTIF_CONTEXT_WARNING
+    )
+  )
+}
+
+.doradoResult <- function(data, accounting) {
+  attr(data, "dorado_accounting") <- accounting
+  data
+}
+
 #' Parse a Dorado BAM file with MM/ML base modification tags
 #'
 #' Reads a Dorado-aligned BAM file containing MM (base modification) and
@@ -14,7 +66,9 @@
 #' (as inter-base offsets); the parallel ML tag provides modification
 #' probabilities (0-255 scaled to 0-1).
 #'
-#' A base is called modified when its ML probability is \eqn{> 0.5}.
+#' A base is called modified when its ML probability is greater than the fixed
+#' named threshold \code{.DORADO_ML_THRESHOLD} (\eqn{> 0.5}). This threshold is
+#' not a public argument; it is recorded in Dorado import provenance.
 #' Per-site statistics are aggregated by counting modified reads
 #' (\eqn{n_{\text{mod}}}) and total reads at each genomic position
 #' (\eqn{n_{\text{total}}}). The beta value is
@@ -71,6 +125,10 @@
 #'     \item{\code{other_mod_counts}}{Always \code{NA}; direct Dorado BAM
 #'       parsing does not decompose non-target modified-read classes.}
 #'   }
+#'   The returned data frame has a \code{dorado_accounting} attribute containing
+#'   read-level skip and call-level drop counts by reason, the fixed ML threshold,
+#'   and the motif-context fallback policy. \code{commaData()} preserves this
+#'   information in \code{importProvenance(object)}.
 #'
 #' @keywords internal
 .parseDorado <- function(file,
@@ -108,47 +166,94 @@
   )
 
   n_reads <- length(reads$pos)
+  accounting <- .makeDoradoAccounting(n_reads)
   if (n_reads == 0L) {
     message("Note: BAM file '", file, "' contains no aligned reads.")
-    return(.emptyParseResult())
+    return(.doradoResult(.emptyParseResult(), accounting))
   }
 
   # ── Parse modifications from each read ────────────────────────────────────
   # Collect per-site modification calls as a list of data.frames
   site_records <- vector("list", n_reads)
+  mm_tags <- reads$tag$MM
+  ml_tags <- reads$tag$ML
 
   for (i in seq_len(n_reads)) {
-    mm_tag <- reads$tag$MM[[i]]
-    ml_tag <- reads$tag$ML[[i]]
+    mm_tag <- if (length(mm_tags) >= i) mm_tags[[i]] else NULL
+    ml_tag <- if (length(ml_tags) >= i) ml_tags[[i]] else NULL
 
-    # Skip reads without modification tags
-    if (is.null(mm_tag) || is.null(ml_tag) || nchar(mm_tag) == 0L) next
+    # Skip reads without modification tags, but retain the reason in the
+    # accounting returned with the parse result.
+    has_mm <- length(mm_tag) == 1L && !is.na(mm_tag) && nzchar(mm_tag)
+    has_ml <- length(ml_tag) > 0L
+    if (!has_mm || !has_ml) {
+      accounting$reads$skipped <- accounting$reads$skipped + 1L
+      accounting$reads$skipped_by_reason[["missing_mm_ml"]] <-
+        accounting$reads$skipped_by_reason[["missing_mm_ml"]] + 1L
+      next
+    }
 
     pos_ref <- reads$pos[[i]] # 1-based leftmost mapping position
     cigar_str <- reads$cigar[[i]]
     seq_bases <- as.character(reads$seq[[i]])
     strand <- as.character(reads$strand[[i]])
     chrom <- as.character(reads$rname[[i]])
-    flag <- reads$flag[[i]]
-
-    if (is.na(pos_ref) || is.na(cigar_str) || is.null(seq_bases)) next
-    if (nchar(seq_bases) == 0L) next
+    if (length(pos_ref) != 1L || is.na(pos_ref) ||
+      length(cigar_str) != 1L || is.na(cigar_str) ||
+      length(seq_bases) != 1L || is.na(seq_bases)) {
+      accounting$reads$skipped <- accounting$reads$skipped + 1L
+      accounting$reads$skipped_by_reason[["missing_alignment"]] <-
+        accounting$reads$skipped_by_reason[["missing_alignment"]] + 1L
+      next
+    }
+    if (nchar(seq_bases) == 0L) {
+      accounting$reads$skipped <- accounting$reads$skipped + 1L
+      accounting$reads$skipped_by_reason[["empty_sequence"]] <-
+        accounting$reads$skipped_by_reason[["empty_sequence"]] + 1L
+      next
+    }
 
     # Parse CIGAR → read-to-reference position map
     ref_positions <- .cigarToRefPos(cigar_str, pos_ref, seq_bases)
-    if (is.null(ref_positions)) next
+    if (is.null(ref_positions)) {
+      accounting$reads$skipped <- accounting$reads$skipped + 1L
+      accounting$reads$skipped_by_reason[["malformed_cigar"]] <-
+        accounting$reads$skipped_by_reason[["malformed_cigar"]] + 1L
+      next
+    }
 
     # Parse MM tag → list of modification calls (read position + mod_type)
     mod_calls <- .parseMmTag(mm_tag, ml_tag, seq_bases)
-    if (is.null(mod_calls) || nrow(mod_calls) == 0L) next
+    if (is.null(mod_calls) || nrow(mod_calls) == 0L) {
+      accounting$reads$skipped <- accounting$reads$skipped + 1L
+      accounting$reads$skipped_by_reason[["malformed_mm_ml"]] <-
+        accounting$reads$skipped_by_reason[["malformed_mm_ml"]] + 1L
+      next
+    }
+    accounting$calls$parsed <- accounting$calls$parsed + nrow(mod_calls)
 
     # Map read positions to reference positions
     valid <- mod_calls$read_pos %in% seq_along(ref_positions)
+    out_of_range <- sum(!valid)
+    if (out_of_range > 0L) {
+      accounting$calls$dropped <- accounting$calls$dropped + out_of_range
+      accounting$calls$dropped_by_reason[["read_position_out_of_range"]] <-
+        accounting$calls$dropped_by_reason[["read_position_out_of_range"]] +
+        out_of_range
+    }
     if (!any(valid)) next
     mod_calls <- mod_calls[valid, , drop = FALSE]
 
     ref_pos_for_mod <- ref_positions[mod_calls$read_pos]
     on_ref <- !is.na(ref_pos_for_mod)
+    unmappable <- sum(!on_ref)
+    if (unmappable > 0L) {
+      accounting$calls$dropped <- accounting$calls$dropped + unmappable
+      accounting$calls$dropped_by_reason[["no_reference_coordinate"]] <-
+        accounting$calls$dropped_by_reason[["no_reference_coordinate"]] +
+        unmappable
+    }
+    accounting$calls$retained <- accounting$calls$retained + sum(on_ref)
     if (!any(on_ref)) next
 
     site_records[[i]] <- data.frame(
@@ -161,6 +266,8 @@
     )
   }
 
+  accounting$reads$retained <- accounting$reads$total - accounting$reads$skipped
+
   # ── Aggregate per site ────────────────────────────────────────────────────
   all_records <- do.call(
     rbind,
@@ -169,7 +276,7 @@
 
   if (is.null(all_records) || nrow(all_records) == 0L) {
     message("Note: No modification records found in BAM '", file, "'.")
-    return(.emptyParseResult())
+    return(.doradoResult(.emptyParseResult(), accounting))
   }
 
   # Group by site key
@@ -209,12 +316,12 @@
   }
 
   if (nrow(agg_df) == 0L) {
-    return(.emptyParseResult())
+    return(.doradoResult(.emptyParseResult(), accounting))
   }
 
   # ── Return standard format ────────────────────────────────────────────────
   # motif is NA for Dorado BAM — motif context is not stored in MM/ML tags
-  data.frame(
+  .doradoResult(data.frame(
     chrom = as.character(agg_df$chrom),
     position = as.integer(agg_df$position),
     strand = as.character(agg_df$strand),
@@ -227,7 +334,7 @@
     other_mod_counts = NA_integer_,
     stringsAsFactors = FALSE,
     row.names = NULL
-  )
+  ), accounting)
 }
 
 # ─── Helper: CIGAR → reference position map ───────────────────────────────────
@@ -333,13 +440,19 @@
 #'   \describe{
 #'     \item{\code{read_pos}}{1-based position in the read.}
 #'     \item{\code{mod_type}}{Modification type string (e.g., \code{"6mA"}).}
-#'     \item{\code{is_mod}}{Logical; \code{TRUE} when ML probability > 0.5.}
+#'     \item{\code{is_mod}}{Logical; \code{TRUE} when ML probability is
+#'       greater than the fixed \code{.DORADO_ML_THRESHOLD}.}
 #'   }
 #'   Returns \code{NULL} on parse failure.
 #'
 #' @keywords internal
 .parseMmTag <- function(mm_tag, ml_tag, seq_bases) {
   if (is.null(mm_tag) || is.null(ml_tag)) {
+    return(NULL)
+  }
+  ml_values <- suppressWarnings(as.integer(ml_tag))
+  if (length(ml_values) == 0L || anyNA(ml_values) ||
+    any(ml_values < 0L | ml_values > 255L)) {
     return(NULL)
   }
 
@@ -427,8 +540,8 @@
       ml_offset <- ml_offset + n_mods_this_block
       next
     }
-    probs <- as.integer(ml_tag[ml_idx]) / 255.0
-    is_mod <- probs > 0.5
+    probs <- ml_values[ml_idx] / 255.0
+    is_mod <- probs > .DORADO_ML_THRESHOLD
 
     result_list[[b]] <- data.frame(
       read_pos = read_positions,

@@ -105,6 +105,9 @@ NULL
 #'   \item Assay-layer provenance and default roles are recorded in
 #'     \code{metadata(object)$assay_provenance} and
 #'     \code{metadata(object)$assay_defaults}.
+#'   \item Direct Dorado imports record read-skip and call-drop accounting,
+#'     the fixed ML threshold, and the motif-context policy in
+#'     \code{importProvenance(object)}.
 #'   \item Sites where coverage is below \code{min_coverage} in a sample have
 #'     their beta value set to \code{NA} (but coverage is preserved).
 #' }
@@ -219,6 +222,9 @@ commaData <- function(files,
     megalodon = .parseMegalodon,
     dorado = .parseDorado
   )
+  if (caller == "dorado") {
+    warning(.DORADO_MOTIF_CONTEXT_WARNING, call. = FALSE)
+  }
 
   # ── Parse each sample ───────────────────────────────────────────────────
   sample_names <- colData$sample_name
@@ -231,6 +237,8 @@ commaData <- function(files,
   )
   parsed_list <- vector("list", length(sample_names))
   names(parsed_list) <- sample_names
+  import_accounting <- vector("list", length(sample_names))
+  names(import_accounting) <- sample_names
 
   for (sn in sample_names) {
     .comma_log_event(
@@ -241,7 +249,7 @@ commaData <- function(files,
       file = unname(files[sn])
     )
     message("Parsing ", caller, " file for sample '", sn, "'...")
-    parsed_list[[sn]] <- withCallingHandlers(
+    parsed <- withCallingHandlers(
       parser_fn(
         file = files[sn],
         sample_name = sn,
@@ -262,6 +270,10 @@ commaData <- function(files,
         )
       }
     )
+    parsed_list[[sn]] <- parsed
+    if (caller == "dorado") {
+      import_accounting[[sn]] <- attr(parsed, "dorado_accounting")
+    }
     .comma_log_event(
       "sample_parse_finished",
       component = "commaData",
@@ -552,6 +564,26 @@ commaData <- function(files,
   # Store caller and min_coverage in metadata for reproducibility
   S4Vectors::metadata(obj)$caller <- caller
   S4Vectors::metadata(obj)$min_coverage <- min_coverage
+  S4Vectors::metadata(obj)$import_provenance <- if (caller == "dorado") {
+    list(
+      caller = caller,
+      accounting_policy = "return_accounting",
+      threshold = list(
+        value = .DORADO_ML_THRESHOLD,
+        rule = "ML > threshold",
+        fixed = TRUE
+      ),
+      motif_context = list(
+        available = FALSE,
+        motif = NA_character_,
+        fallback = "mod_type",
+        warning = .DORADO_MOTIF_CONTEXT_WARNING
+      ),
+      samples = import_accounting
+    )
+  } else {
+    list(caller = caller)
+  }
   count_provenance <- switch(caller,
     modkit = "observed_modkit_pileup",
     dorado = "observed_probability_threshold",

@@ -88,6 +88,12 @@ NULL
 #' \code{metadata(object)$assay_defaults}. Use \code{\link{assayLayers}} for a
 #' tabular summary.
 #'
+#' Import accounting and representation choices are stored in
+#' \code{metadata(object)$import_provenance} and retrieved with
+#' \code{\link{importProvenance}}. Direct Dorado imports record read-level
+#' skips, call-level drops, the fixed \code{ML > 0.5} threshold, and the
+#' fallback from missing motif to \code{mod_type} context.
+#'
 #' Differential methylation result layers are stored in
 #' \code{metadata(object)$diffMethyl_results} with provenance in
 #' \code{metadata(object)$diffMethyl_result_layers}. Use

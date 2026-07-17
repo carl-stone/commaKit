@@ -209,6 +209,38 @@ setMethod("assayProvenance", "commaData", function(object) {
   if (is.null(provenance)) list() else provenance
 })
 
+# ─── importProvenance() ───────────────────────────────────────────────────────
+
+#' Accessor for import accounting and representation provenance
+#'
+#' Returns the import policy and accounting recorded by the constructor. Direct
+#' Dorado imports include per-sample counts of skipped reads and dropped calls,
+#' the fixed ML threshold, and the motif-context fallback policy. Legacy objects
+#' without import provenance return an empty list.
+#'
+#' @param object A \code{commaData} object.
+#'
+#' @return A named \code{list} containing import accounting and representation
+#'   provenance, or an empty list for legacy objects.
+#'
+#' @seealso \code{\link{assayProvenance}}, \code{\link{commaData}}
+#'
+#' @examples
+#' data(comma_example_data)
+#' importProvenance(comma_example_data)
+#'
+#' @export
+setGeneric(
+  "importProvenance",
+  function(object) standardGeneric("importProvenance")
+)
+
+#' @rdname importProvenance
+setMethod("importProvenance", "commaData", function(object) {
+  provenance <- S4Vectors::metadata(object)$import_provenance
+  if (is.null(provenance)) list() else provenance
+})
+
 # ─── coverage() compatibility wrapper ────────────────────────────────────────
 
 #' Deprecated coverage accessor for commaData objects

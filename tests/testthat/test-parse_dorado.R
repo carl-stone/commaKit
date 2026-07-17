@@ -285,6 +285,16 @@ test_that("parseDorado: synthetic BAM reaches site aggregation path", {
   expect_equal(result$mod_counts, c(1L, 0L))
   expect_equal(result$canonical_counts, c(1L, 1L))
   expect_true(all(is.na(result$other_mod_counts)))
+
+  accounting <- attr(result, "dorado_accounting")
+  expect_equal(accounting$policy, "return_accounting")
+  expect_equal(accounting$ml_threshold, 0.5)
+  expect_equal(accounting$reads$total, 2L)
+  expect_equal(accounting$reads$skipped, 0L)
+  expect_equal(accounting$reads$retained, 2L)
+  expect_equal(accounting$calls$parsed, 3L)
+  expect_equal(accounting$calls$retained, 3L)
+  expect_equal(accounting$calls$dropped, 0L)
 })
 
 test_that("parseDorado: malformed MM/ML reads are skipped without recycling", {
@@ -318,6 +328,12 @@ test_that("parseDorado: malformed MM/ML reads are skipped without recycling", {
   expect_equal(result$coverage, 1L)
   expect_equal(result$mod_counts, 1L)
   expect_equal(result$canonical_counts, 0L)
+
+  accounting <- attr(result, "dorado_accounting")
+  expect_equal(accounting$reads$total, 2L)
+  expect_equal(accounting$reads$skipped, 1L)
+  expect_equal(accounting$reads$skipped_by_reason[["malformed_mm_ml"]], 1L)
+  expect_equal(accounting$calls$parsed, 1L)
 })
 
 test_that("parseDorado: malformed MM read is skipped", {
@@ -351,6 +367,10 @@ test_that("parseDorado: malformed MM read is skipped", {
   expect_equal(result$coverage, 1L)
   expect_equal(result$mod_counts, 1L)
   expect_equal(result$canonical_counts, 0L)
+
+  accounting <- attr(result, "dorado_accounting")
+  expect_equal(accounting$reads$skipped, 1L)
+  expect_equal(accounting$reads$skipped_by_reason[["malformed_mm_ml"]], 1L)
 })
 
 test_that("parseDorado: CIGAR-unmapped modification calls are dropped", {
@@ -384,6 +404,48 @@ test_that("parseDorado: CIGAR-unmapped modification calls are dropped", {
   expect_equal(result$coverage, 2L)
   expect_equal(result$mod_counts, 2L)
   expect_equal(result$canonical_counts, 0L)
+
+  accounting <- attr(result, "dorado_accounting")
+  expect_equal(accounting$reads$skipped, 0L)
+  expect_equal(accounting$calls$parsed, 3L)
+  expect_equal(accounting$calls$retained, 2L)
+  expect_equal(accounting$calls$dropped, 1L)
+  expect_equal(
+    accounting$calls$dropped_by_reason[["no_reference_coordinate"]],
+    1L
+  )
+})
+
+test_that("Dorado provenance warns and records motif and accounting policy", {
+  bam_file <- .make_dorado_test_bam(.make_sam_record(
+    qname = "read_provenance",
+    pos = 100L,
+    cigar = "4M",
+    seq = "ACGT",
+    mm = "A+a?,0;",
+    ml = 200L
+  ))
+
+  expect_warning(
+    obj <- commaKit::commaData(
+      files = c(sample1 = bam_file),
+      colData = data.frame(sample_name = "sample1", replicate = 1L),
+      genome = c(chr1 = 1000L),
+      caller = "dorado",
+      min_coverage = 1L
+    ),
+    regexp = "motif context.*mod_context falls back to mod_type"
+  )
+
+  provenance <- commaKit::importProvenance(obj)
+  expect_equal(provenance$accounting_policy, "return_accounting")
+  expect_true(provenance$threshold$fixed)
+  expect_equal(provenance$threshold$value, 0.5)
+  expect_false(provenance$motif_context$available)
+  expect_true(is.na(provenance$motif_context$motif))
+  expect_equal(provenance$motif_context$fallback, "mod_type")
+  expect_equal(provenance$samples$sample1$reads$total, 1L)
+  expect_equal(commaKit::modContexts(obj), "6mA")
 })
 
 # .cigarToRefPos() additional edge cases

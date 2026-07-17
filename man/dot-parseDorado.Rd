@@ -41,6 +41,10 @@ probability threshold.}
 \item{\code{other_mod_counts}}{Always \code{NA}; direct Dorado BAM
 parsing does not decompose non-target modified-read classes.}
 }
+The returned data frame has a \code{dorado_accounting} attribute containing
+read-level skip and call-level drop counts by reason, the fixed ML threshold,
+and the motif-context fallback policy. \code{commaData()} preserves this
+information in \code{importProvenance(object)}.
 }
 \description{
 Reads a Dorado-aligned BAM file containing MM (base modification) and
@@ -55,7 +59,9 @@ bases carry modifications and their positions within the read sequence
 (as inter-base offsets); the parallel ML tag provides modification
 probabilities (0-255 scaled to 0-1).
 
-A base is called modified when its ML probability is \eqn{> 0.5}.
+A base is called modified when its ML probability is greater than the fixed
+named threshold \code{.DORADO_ML_THRESHOLD} (\eqn{> 0.5}). This threshold is
+not a public argument; it is recorded in Dorado import provenance.
 Per-site statistics are aggregated by counting modified reads
 (\eqn{n_{\text{mod}}}) and total reads at each genomic position
 (\eqn{n_{\text{total}}}). The beta value is
