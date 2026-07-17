@@ -245,6 +245,7 @@ setValidity("commaData", function(object) {
       }
     }
   }
+  # styler: off
   if (all(c("mod_counts", "canonical_counts", "coverage") %in%
             assayNames(object))) {
     mod_counts <- SummarizedExperiment::assay(object, "mod_counts")
@@ -275,6 +276,7 @@ setValidity("commaData", function(object) {
       )
     }
   }
+  # styler: on
 
   if (length(errors) == 0) TRUE else errors
 })
