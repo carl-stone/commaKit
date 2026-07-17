@@ -321,7 +321,7 @@ def latest_codex_issue_reply_time(
         body = (comment.get("body") or "").strip()
         if not is_codex_reply_body(body):
             continue
-        created_time = comment_time(comment)
+        created_time = comment_created_time(comment)
         if created_time is None:
             continue
         if latest is None or created_time > latest:
@@ -384,6 +384,13 @@ def comment_time(comment: dict[str, Any]) -> datetime | None:
     return parse_time(timestamp)
 
 
+def comment_created_time(comment: dict[str, Any]) -> datetime | None:
+    timestamp = comment.get("created_at")
+    if not timestamp:
+        return None
+    return parse_time(timestamp)
+
+
 def latest_codex_reply_by_thread(
     comments: list[dict[str, Any]],
 ) -> dict[int, datetime]:
@@ -393,7 +400,7 @@ def latest_codex_reply_by_thread(
         if not is_codex_reply_body(body):
             continue
         thread_root = thread_root_id(comment)
-        created_time = comment_time(comment)
+        created_time = comment_created_time(comment)
         if thread_root is None or created_time is None:
             continue
         existing = latest.get(thread_root)
@@ -511,9 +518,19 @@ def filter_blocking_reviews(
     review_requested_at: datetime | None,
     issue_acknowledged_at: datetime | None = None,
 ) -> list[dict[str, Any]]:
+    bot_reviews = [
+        review
+        for review in reviews
+        if is_bot_user(review.get("user", {}))
+    ]
+    human_reviews = [
+        review
+        for review in reviews
+        if not is_bot_user(review.get("user", {}))
+    ]
     return [
         review
-        for review in dedupe_reviews(reviews)
+        for review in bot_reviews + dedupe_reviews(human_reviews)
         if is_blocking_review(
             review,
             review_requested_at,
@@ -542,6 +559,29 @@ def has_current_codex_review(
         if review.get("state") in ("DISMISSED", "PENDING"):
             continue
         return True
+    return False
+
+
+def has_acknowledged_codex_issue_review(
+    issue_comments: list[dict[str, Any]],
+    review_requested_at: datetime | None,
+) -> bool:
+    if review_requested_at is None:
+        return False
+    acknowledged_at = latest_codex_issue_reply_time(issue_comments)
+    if acknowledged_at is None:
+        return False
+    for comment in issue_comments:
+        if not is_codex_bot_user(comment.get("user", {})):
+            continue
+        body = (comment.get("body") or "").strip()
+        if not is_codex_review_body(body):
+            continue
+        created_at = comment_created_time(comment)
+        if created_at is None or created_at <= review_requested_at:
+            continue
+        if created_at <= acknowledged_at:
+            return True
     return False
 
 
@@ -631,10 +671,16 @@ async def wait_for_codex(
                 print("Automated reviewer left comments. Address before merge.")
                 print(body)
                 raise WatchExit(2)
-        review_observed = has_current_codex_review(
-            reviews,
-            head_sha,
-            review_request_at,
+        review_observed = (
+            has_current_codex_review(
+                reviews,
+                head_sha,
+                review_request_at,
+            )
+            or has_acknowledged_codex_issue_review(
+                issue_comments,
+                review_request_at,
+            )
         )
         if checks_done.is_set() and review_observed:
             print("Codex review observed for current PR head")

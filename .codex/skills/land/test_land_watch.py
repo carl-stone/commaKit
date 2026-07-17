@@ -139,6 +139,20 @@ class ReviewGateTests(unittest.TestCase):
             ),
         )
 
+    def test_later_wrapper_does_not_hide_substantive_bot_review(self) -> None:
+        finding = codex_review(body="Please fix this correctness issue.")
+        wrapper = codex_review(
+            body="### 💡 Codex Review\nAutomated review wrapper",
+            submitted_at="2026-07-17T04:02:00Z",
+        )
+        self.assertEqual(
+            LAND_WATCH.filter_blocking_reviews(
+                [finding, wrapper],
+                None,
+            ),
+            [finding],
+        )
+
     def test_substantive_bot_review_requires_acknowledgement(self) -> None:
         review = {
             "user": {
@@ -187,6 +201,47 @@ class ReviewGateTests(unittest.TestCase):
                 utc_time(4, 1),
             ),
             [comment],
+        )
+
+    def test_acknowledgement_uses_immutable_creation_time(self) -> None:
+        acknowledgement = {
+            "user": {"login": "carl-stone", "type": "User"},
+            "body": "[codex] acknowledged",
+            "created_at": "2026-07-17T04:00:00Z",
+            "updated_at": "2026-07-17T05:00:00Z",
+        }
+        self.assertEqual(
+            LAND_WATCH.latest_codex_issue_reply_time([acknowledgement]),
+            utc_time(4, 0),
+        )
+
+    def test_acknowledged_issue_review_can_complete_gate(self) -> None:
+        comments = [
+            {
+                "user": {
+                    "login": "github-actions[bot]",
+                    "type": "Bot",
+                },
+                "body": "## Codex Review — correctness",
+                "created_at": "2026-07-17T04:01:00Z",
+            },
+            {
+                "user": {"login": "carl-stone", "type": "User"},
+                "body": "[codex] acknowledged",
+                "created_at": "2026-07-17T04:02:00Z",
+            },
+        ]
+        self.assertTrue(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                comments,
+                utc_time(4, 0),
+            ),
+        )
+        self.assertFalse(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                comments[:1],
+                utc_time(4, 0),
+            ),
         )
 
     def test_green_checks_wait_for_current_head_review(self) -> None:
