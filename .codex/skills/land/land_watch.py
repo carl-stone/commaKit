@@ -308,6 +308,8 @@ def filter_codex_comments(
                     or not head_sha.lower().startswith(reviewed_sha)
                 ):
                     continue
+                if is_clean_codex_review_body(body):
+                    continue
             acknowledged_at = issue_review_ack_times.get(comment.get("id"))
             if (
                 is_codex_review_body(body)
@@ -357,6 +359,16 @@ def is_codex_reply_body(body: str) -> bool:
 
 def is_codex_review_body(body: str) -> bool:
     return body.startswith(("## Codex Review", "Codex Review:"))
+
+
+def is_clean_codex_review_body(body: str) -> bool:
+    return bool(
+        re.match(
+            r"^Codex Review:\s+Didn['’]t find any major issues\b",
+            body,
+            re.IGNORECASE,
+        ),
+    )
 
 
 def reviewed_commit_sha(body: str) -> str | None:
@@ -443,6 +455,8 @@ def filter_codex_review_issue_comments(
     for comment in comments:
         body = (comment.get("body") or "").strip()
         if not is_codex_review_body(body):
+            continue
+        if is_clean_codex_review_body(body):
             continue
         reviewed_sha = reviewed_commit_sha(body)
         if reviewed_sha is None or not head_sha.lower().startswith(reviewed_sha):
@@ -694,7 +708,7 @@ def has_acknowledged_codex_issue_review(
         issue_comments,
         acknowledger_login,
     )
-    relevant_reviews: list[tuple[int, datetime]] = []
+    relevant_reviews: list[tuple[int, datetime, bool]] = []
     for comment in issue_comments:
         if not is_codex_bot_user(comment.get("user", {})):
             continue
@@ -709,10 +723,12 @@ def has_acknowledged_codex_issue_review(
             continue
         comment_id = comment.get("id")
         if isinstance(comment_id, int):
-            relevant_reviews.append((comment_id, created_at))
+            relevant_reviews.append(
+                (comment_id, created_at, is_clean_codex_review_body(body)),
+            )
     return bool(relevant_reviews) and all(
-        acknowledged.get(review_id, created_at) > created_at
-        for review_id, created_at in relevant_reviews
+        is_clean or acknowledged.get(review_id, created_at) > created_at
+        for review_id, created_at, is_clean in relevant_reviews
     )
 
 

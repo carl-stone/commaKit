@@ -20,6 +20,10 @@ ISSUE_REVIEW_BODY = (
     "## Codex Review — correctness\n\n"
     f"**Reviewed commit:** `{HEAD_SHA[:10]}`"
 )
+CLEAN_ISSUE_REVIEW_BODY = (
+    "Codex Review: Didn't find any major issues. Bravo.\n\n"
+    f"**Reviewed commit:** `{HEAD_SHA[:10]}`"
+)
 
 
 def utc_time(hour: int, minute: int) -> datetime:
@@ -333,6 +337,43 @@ class ReviewGateTests(unittest.TestCase):
         self.assertTrue(
             LAND_WATCH.is_codex_review_body(
                 "Codex Review: Didn't find any major issues. :tada:",
+            ),
+        )
+
+    def test_clean_current_head_issue_review_is_not_blocking(self) -> None:
+        comment = {
+            "id": 101,
+            "user": {
+                "login": "chatgpt-codex-connector[bot]",
+                "type": "Bot",
+            },
+            "body": CLEAN_ISSUE_REVIEW_BODY,
+            "created_at": "2026-07-17T04:01:00Z",
+        }
+        self.assertEqual(
+            [],
+            LAND_WATCH.filter_codex_comments(
+                [comment],
+                HEAD_SHA,
+                utc_time(4, 0),
+                "carl-stone",
+            ),
+        )
+        self.assertEqual(
+            [],
+            LAND_WATCH.filter_codex_review_issue_comments(
+                [comment],
+                HEAD_SHA,
+                utc_time(4, 0),
+                "carl-stone",
+            ),
+        )
+        self.assertTrue(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                [comment],
+                HEAD_SHA,
+                utc_time(4, 0),
+                "carl-stone",
             ),
         )
 
