@@ -323,7 +323,7 @@ def is_codex_reply_body(body: str) -> bool:
 
 
 def is_codex_review_body(body: str) -> bool:
-    return body.startswith("## Codex Review")
+    return body.startswith(("## Codex Review", "Codex Review:"))
 
 
 def codex_issue_review_ack_times(

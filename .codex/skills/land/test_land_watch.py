@@ -246,6 +246,13 @@ class ReviewGateTests(unittest.TestCase):
             ),
         )
 
+    def test_clean_issue_review_variant_is_recognized(self) -> None:
+        self.assertTrue(
+            LAND_WATCH.is_codex_review_body(
+                "Codex Review: Didn't find any major issues. :tada:",
+            ),
+        )
+
     def test_issue_review_must_be_newer_than_head(self) -> None:
         comments = [
             {
