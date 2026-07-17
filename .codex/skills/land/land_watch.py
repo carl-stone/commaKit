@@ -253,7 +253,7 @@ def filter_codex_comments(
 ) -> list[dict[str, Any]]:
     latest_codex_reply = latest_codex_reply_by_thread(comments)
     latest_issue_ack = latest_codex_issue_reply_time(comments)
-    acknowledged_issue_reviews = acknowledged_codex_issue_review_ids(comments)
+    issue_review_ack_times = codex_issue_review_ack_times(comments)
     codex_comments = [
         c
         for c in comments
@@ -275,9 +275,11 @@ def filter_codex_comments(
         )
         if not is_threaded:
             body = (comment.get("body") or "").strip()
+            acknowledged_at = issue_review_ack_times.get(comment.get("id"))
             if (
                 is_codex_review_body(body)
-                and comment.get("id") in acknowledged_issue_reviews
+                and acknowledged_at is not None
+                and acknowledged_at > created_time
             ):
                 continue
             if (
@@ -324,17 +326,21 @@ def is_codex_review_body(body: str) -> bool:
     return body.startswith("## Codex Review")
 
 
-def acknowledged_codex_issue_review_ids(
+def codex_issue_review_ack_times(
     comments: list[dict[str, Any]],
-) -> set[int]:
-    acknowledged: set[int] = set()
+) -> dict[int, datetime]:
+    acknowledged: dict[int, datetime] = {}
     for comment in comments:
         if is_bot_user(comment.get("user", {})):
             continue
         body = (comment.get("body") or "").strip()
         match = re.match(r"^\[codex\]\s+Review\s+(\d+):", body)
-        if match:
-            acknowledged.add(int(match.group(1)))
+        created_at = comment_created_time(comment)
+        if match and created_at is not None:
+            review_id = int(match.group(1))
+            existing = acknowledged.get(review_id)
+            if existing is None or created_at > existing:
+                acknowledged[review_id] = created_at
     return acknowledged
 
 
@@ -381,13 +387,19 @@ def filter_human_issue_comments(comments: list[dict[str, Any]]) -> list[dict[str
 def filter_codex_review_issue_comments(
     comments: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    acknowledged = acknowledged_codex_issue_review_ids(comments)
+    acknowledged = codex_issue_review_ack_times(comments)
     filtered: list[dict[str, Any]] = []
     for comment in comments:
         body = (comment.get("body") or "").strip()
         if not is_codex_review_body(body):
             continue
-        if comment.get("id") in acknowledged:
+        created_at = comment_created_time(comment)
+        acknowledged_at = acknowledged.get(comment.get("id"))
+        if (
+            created_at is not None
+            and acknowledged_at is not None
+            and acknowledged_at > created_at
+        ):
             continue
         filtered.append(comment)
     return filtered
@@ -588,8 +600,8 @@ def has_acknowledged_codex_issue_review(
 ) -> bool:
     if review_requested_at is None:
         return False
-    acknowledged = acknowledged_codex_issue_review_ids(issue_comments)
-    relevant_review_ids: list[int] = []
+    acknowledged = codex_issue_review_ack_times(issue_comments)
+    relevant_reviews: list[tuple[int, datetime]] = []
     for comment in issue_comments:
         if not is_codex_bot_user(comment.get("user", {})):
             continue
@@ -601,9 +613,10 @@ def has_acknowledged_codex_issue_review(
             continue
         comment_id = comment.get("id")
         if isinstance(comment_id, int):
-            relevant_review_ids.append(comment_id)
-    return bool(relevant_review_ids) and all(
-        review_id in acknowledged for review_id in relevant_review_ids
+            relevant_reviews.append((comment_id, created_at))
+    return bool(relevant_reviews) and all(
+        acknowledged.get(review_id, created_at) > created_at
+        for review_id, created_at in relevant_reviews
     )
 
 

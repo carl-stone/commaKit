@@ -305,6 +305,35 @@ class ReviewGateTests(unittest.TestCase):
             ),
         )
 
+    def test_exact_ack_must_follow_issue_review(self) -> None:
+        comments = [
+            {
+                "id": 100,
+                "user": {"login": "carl-stone", "type": "User"},
+                "body": "[codex] Review 101: acknowledged",
+                "created_at": "2026-07-17T04:01:00Z",
+            },
+            {
+                "id": 101,
+                "user": {
+                    "login": "github-actions[bot]",
+                    "type": "Bot",
+                },
+                "body": "## Codex Review — correctness",
+                "created_at": "2026-07-17T04:02:00Z",
+            },
+        ]
+        self.assertFalse(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                comments,
+                utc_time(4, 0),
+            ),
+        )
+        self.assertEqual(
+            LAND_WATCH.filter_codex_review_issue_comments(comments),
+            [comments[1]],
+        )
+
     def test_green_checks_wait_for_current_head_review(self) -> None:
         async def run() -> None:
             calls = 0
