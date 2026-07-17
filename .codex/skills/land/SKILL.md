@@ -76,13 +76,13 @@ fi
 
 # Preferred: use the Async Watch Helper below. The manual loop is a fallback
 # when Python cannot run or the helper script is unavailable.
-# Wait for review feedback: Codex reviews arrive as issue comments that start
-# with "## Codex Review — <persona>". Treat them like reviewer feedback: reply
-# with a `[codex]` issue comment acknowledging the findings and whether you're
-# addressing or deferring them.
+# Wait for a submitted Codex review of the current PR head. Review comments and
+# issue comments remain blocking feedback and must be handled before merging.
+head_sha=$(gh pr view --json headRefOid -q .headRefOid)
 while true; do
-  review_found=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
-    --jq 'any(.[]; .body | startswith("## Codex Review"))')
+  review_found=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/reviews \
+    --paginate \
+    --jq "any(.[]; .user.login == \"chatgpt-codex-connector[bot]\" and .commit_id == \"$head_sha\" and .state != \"DISMISSED\")")
   [ "$review_found" = "true" ] && break
   sleep 10
 done
@@ -129,9 +129,9 @@ Exit codes:
   CI, then restart the checks loop.
 - If mergeability is `UNKNOWN`, wait and re-check.
 - Do not merge while review comments (human or Codex review) are outstanding.
-- Codex review jobs retry on failure and are non-blocking; use the presence of
-  `## Codex Review — <persona>` issue comments (not job status) as the signal
-  that review feedback is available.
+- Codex review jobs retry on failure and are non-blocking. Use a submitted Codex
+  review for the current PR head as the completion signal, not job status;
+  treat its issue and inline comments as blocking feedback.
 - Do not enable auto-merge; this repo has no required checks so auto-merge can
   skip tests.
 - If the remote PR branch advanced due to your own prior force-push or merge,
@@ -140,10 +140,9 @@ Exit codes:
 
 ## Review Handling
 
-- Codex reviews now arrive as issue comments posted by GitHub Actions. They
-  start with `## Codex Review — <persona>` and include the reviewer’s
-  methodology + guardrails used. Treat these as feedback that must be
-  acknowledged before merge.
+- Codex review results can include a submitted review plus inline comments, or
+  `## Codex Review — <persona>` issue comments posted by GitHub Actions. Treat
+  every finding as feedback that must be acknowledged before merge.
 - Human review comments are blocking and must be addressed (responded to and
   resolved) before requesting a new review or merging.
 - If multiple reviewers comment in the same thread, respond to each comment
@@ -200,7 +199,7 @@ Exit codes:
     ```
   - Only request a new review if there is at least one new commit since the
     previous request.
-  - Wait for the next Codex review comment before merging.
+  - Wait for the next Codex review result for the current head before merging.
 
 ## Scope + PR Metadata
 

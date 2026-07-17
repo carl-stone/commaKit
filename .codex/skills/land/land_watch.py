@@ -473,6 +473,27 @@ def filter_blocking_reviews(
     ]
 
 
+def has_current_codex_review(
+    reviews: list[dict[str, Any]],
+    head_sha: str,
+    review_requested_at: datetime | None,
+) -> bool:
+    for review in reviews:
+        if not is_codex_bot_user(review.get("user", {})):
+            continue
+        if review.get("commit_id") != head_sha:
+            continue
+        timestamp = review_timestamp(review)
+        if timestamp is None:
+            continue
+        if review_requested_at is not None and timestamp <= review_requested_at:
+            continue
+        if review.get("state") == "DISMISSED":
+            continue
+        return True
+    return False
+
+
 def is_merge_conflicting(pr: PrInfo) -> bool:
     return pr.mergeable == "CONFLICTING" or pr.merge_state == "DIRTY"
 
@@ -522,7 +543,11 @@ def raise_on_human_feedback(
         raise SystemExit(2)
 
 
-async def wait_for_codex(pr_number: int, checks_done: asyncio.Event) -> None:
+async def wait_for_codex(
+    pr_number: int,
+    head_sha: str,
+    checks_done: asyncio.Event,
+) -> None:
     print("Waiting for review feedback...", flush=True)
     while True:
         (
@@ -550,7 +575,13 @@ async def wait_for_codex(pr_number: int, checks_done: asyncio.Event) -> None:
                 print("Codex left comments. Address feedback before merge.")
                 print(body)
                 raise SystemExit(2)
-        if checks_done.is_set():
+        review_observed = has_current_codex_review(
+            reviews,
+            head_sha,
+            review_request_at,
+        )
+        if checks_done.is_set() and review_observed:
+            print("Codex review observed for current PR head")
             return
         await asyncio.sleep(POLL_SECONDS)
 
@@ -597,7 +628,9 @@ async def watch_pr() -> None:
         raise SystemExit(5)
     head_sha = pr.head_sha
     checks_done = asyncio.Event()
-    codex_task = asyncio.create_task(wait_for_codex(pr.number, checks_done))
+    codex_task = asyncio.create_task(
+        wait_for_codex(pr.number, head_sha, checks_done),
+    )
     checks_task = asyncio.create_task(wait_for_checks(head_sha, checks_done))
 
     async def head_monitor() -> None:
