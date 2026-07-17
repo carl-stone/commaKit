@@ -64,6 +64,8 @@ description:
 # Ensure branch and PR context
 pr_title=$(gh pr view --json title -q .title)
 pr_body=$(gh pr view --json body -q .body)
+head_ref=$(gh pr view --json headRefName -q .headRefName)
+is_cross_repo=$(gh pr view --json isCrossRepository -q .isCrossRepository)
 
 # Check mergeability and conflicts
 mergeable=$(gh pr view --json mergeable -q .mergeable)
@@ -74,11 +76,20 @@ if [ "$mergeable" = "CONFLICTING" ]; then
 fi
 
 # Run the single authoritative review/check gate. Stop if it is unavailable.
-python3 .codex/skills/land/land_watch.py
+python3 .codex/skills/land/land_watch.py || exit $?
 
-# Required signatures make the maintainer path necessary in this repository.
-gh pr merge --admin --squash --subject "$pr_title" --body "$pr_body"
+# Use the ordinary protected-branch path after the watcher proves readiness.
+gh pr merge --squash --subject "$pr_title" --body "$pr_body"
 test "$(gh pr view --json state -q .state)" = "MERGED"
+
+# GitHub normally removes same-repository heads under this repository's enabled
+# automatic cleanup setting. Verify that outcome and use an explicit fallback.
+# Fork branches belong to their source repositories and must not be deleted here.
+if [ "$is_cross_repo" = "false" ] && \
+   git ls-remote --exit-code --heads origin "refs/heads/$head_ref" >/dev/null 2>&1; then
+  git push origin --delete "$head_ref" || \
+    echo "PR merged, but remote branch cleanup requires manual follow-up." >&2
+fi
 ```
 
 ## Landing Watcher
@@ -115,8 +126,10 @@ Exit codes:
   treat its issue and inline comments as blocking feedback.
 - Do not enable auto-merge unless the user requests it and the repository's
   branch-protection behavior is understood.
-- After an administrator squash merge, verify that GitHub signed the resulting
-  commit.
+- Verify that GitHub signed the resulting squash commit. If an ordinary merge
+  fails solely because GitHub cannot satisfy the required-signature rule, first
+  reconfirm the current head, watcher result, and live protection settings; use
+  `gh pr merge --admin` only with explicit repository-administrator authority.
 - Verify same-repository head-branch deletion after merge. If automatic cleanup
   fails, remove the merged remote branch explicitly; never delete a fork branch.
 
