@@ -15,6 +15,7 @@ CODEX_BOTS = {
     "codex-gc-app[bot]",
     "app/codex-gc-app",
 }
+SUBMITTED_CODEX_REVIEW_BOTS = CODEX_BOTS - {"github-actions[bot]"}
 AUTOMATED_REVIEW_BOTS = CODEX_BOTS | {
     "copilot-pull-request-reviewer[bot]",
 }
@@ -262,7 +263,11 @@ def filter_codex_comments(
         created_time = comment_time(comment)
         if created_time is None:
             continue
-        if review_requested_at is not None and created_time <= review_requested_at:
+        if (
+            is_codex_bot_user(comment.get("user", {}))
+            and review_requested_at is not None
+            and created_time <= review_requested_at
+        ):
             continue
         is_threaded = bool(
             comment.get("in_reply_to_id") or comment.get("pull_request_review_id")
@@ -523,16 +528,18 @@ def has_current_codex_review(
     review_requested_at: datetime | None,
 ) -> bool:
     for review in reviews:
-        if not is_codex_bot_user(review.get("user", {})):
+        user_login = review.get("user", {}).get("login") or ""
+        if user_login not in SUBMITTED_CODEX_REVIEW_BOTS:
             continue
         if review.get("commit_id") != head_sha:
             continue
-        timestamp = review_timestamp(review)
-        if timestamp is None:
+        submitted_at = review.get("submitted_at")
+        if not submitted_at:
             continue
+        timestamp = parse_time(submitted_at)
         if review_requested_at is not None and timestamp <= review_requested_at:
             continue
-        if review.get("state") == "DISMISSED":
+        if review.get("state") in ("DISMISSED", "PENDING"):
             continue
         return True
     return False

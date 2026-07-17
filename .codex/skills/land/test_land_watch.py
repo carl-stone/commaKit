@@ -72,6 +72,32 @@ class ReviewGateTests(unittest.TestCase):
             ),
         )
 
+    def test_rejects_pending_unsubmitted_review(self) -> None:
+        review = codex_review(
+            state="PENDING",
+            submitted_at=None,
+            created_at="2026-07-17T04:01:00Z",
+        )
+        self.assertFalse(
+            LAND_WATCH.has_current_codex_review(
+                [review],
+                HEAD_SHA,
+                None,
+            ),
+        )
+
+    def test_generic_github_actions_review_cannot_complete_gate(self) -> None:
+        review = codex_review(
+            user={"login": "github-actions[bot]", "type": "Bot"},
+        )
+        self.assertFalse(
+            LAND_WATCH.has_current_codex_review(
+                [review],
+                HEAD_SHA,
+                None,
+            ),
+        )
+
     def test_review_request_uses_immutable_creation_time(self) -> None:
         request = {
             "user": {"login": "carl-stone", "type": "User"},
@@ -143,6 +169,25 @@ class ReviewGateTests(unittest.TestCase):
             "body": "Please fix this correctness issue.",
         }
         self.assertFalse(LAND_WATCH.is_blocking_review(review, None))
+
+    def test_codex_request_does_not_hide_older_copilot_comment(self) -> None:
+        comment = {
+            "id": 1,
+            "user": {
+                "login": "copilot-pull-request-reviewer[bot]",
+                "type": "Bot",
+            },
+            "created_at": "2026-07-17T04:00:00Z",
+            "body": "Please fix this correctness issue.",
+            "pull_request_review_id": 1,
+        }
+        self.assertEqual(
+            LAND_WATCH.filter_codex_comments(
+                [comment],
+                utc_time(4, 1),
+            ),
+            [comment],
+        )
 
     def test_green_checks_wait_for_current_head_review(self) -> None:
         async def run() -> None:
