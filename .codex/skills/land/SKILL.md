@@ -15,8 +15,8 @@ description:
 - Squash-merge the PR once checks pass.
 - Do not yield to the user until the PR is merged; keep the watcher loop running
   unless blocked.
-- Delete merged same-repository remote branches explicitly; this repository
-  does not auto-delete them. Do not attempt to delete fork branches.
+- Verify that GitHub removed the same-repository head branch under the enabled
+  automatic cleanup setting. Fork branches remain owned by their source repos.
 
 ## Preconditions
 
@@ -40,8 +40,8 @@ description:
 8. If checks fail, pull logs, fix the issue, commit with the `commit` skill,
    push with the `push` skill, and re-run checks.
 9. When all checks are green and review feedback is addressed, squash-merge
-   using the PR title/body for the merge subject/body, verify the merged state,
-   then delete the remote branch when it belongs to this repository.
+   using the PR title/body for the merge subject/body, then verify the merged
+   state and configured same-repository branch cleanup.
 10. **Context guard:** Before implementing review feedback, confirm it does not
     conflict with the user’s stated intent or task context. If it conflicts,
     respond inline with a justification and ask the user before changing code.
@@ -64,8 +64,6 @@ description:
 # Ensure branch and PR context
 pr_title=$(gh pr view --json title -q .title)
 pr_body=$(gh pr view --json body -q .body)
-head_ref=$(gh pr view --json headRefName -q .headRefName)
-is_cross_repo=$(gh pr view --json isCrossRepository -q .isCrossRepository)
 
 # Check mergeability and conflicts
 mergeable=$(gh pr view --json mergeable -q .mergeable)
@@ -81,13 +79,6 @@ python3 .codex/skills/land/land_watch.py
 # Required signatures make the maintainer path necessary in this repository.
 gh pr merge --admin --squash --subject "$pr_title" --body "$pr_body"
 test "$(gh pr view --json state -q .state)" = "MERGED"
-
-# Branch cleanup is post-merge and non-blocking. Fork branches belong to their
-# source repositories and must not be deleted here.
-if [ "$is_cross_repo" = "false" ]; then
-  git push origin --delete "$head_ref" || \
-    echo "PR merged, but remote branch cleanup requires manual follow-up." >&2
-fi
 ```
 
 ## Landing Watcher
@@ -126,6 +117,8 @@ Exit codes:
   branch-protection behavior is understood.
 - After an administrator squash merge, verify that GitHub signed the resulting
   commit.
+- Verify same-repository head-branch deletion after merge. If automatic cleanup
+  fails, remove the merged remote branch explicitly; never delete a fork branch.
 
 ## Review Handling
 
