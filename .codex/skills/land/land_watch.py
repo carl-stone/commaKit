@@ -19,6 +19,7 @@ AUTOMATED_REVIEW_BOTS = CODEX_BOTS | {
     "copilot-pull-request-reviewer[bot]",
 }
 COPILOT_OVERVIEW_PREFIX = "## Pull request overview"
+CODEX_REVIEW_WRAPPER_PREFIX = "### 💡 Codex Review"
 MAX_GH_RETRIES = 5
 BASE_GH_BACKOFF_SECONDS = 2
 
@@ -436,12 +437,18 @@ def is_blocking_review(
         return False
     body = (review.get("body") or "").strip()
     state = review.get("state")
-    if user_login in CODEX_BOTS:
-        return state == "CHANGES_REQUESTED"
     if is_bot_user(review.get("user", {})):
+        if state == "DISMISSED":
+            return False
         if state == "CHANGES_REQUESTED":
             return True
-        if not body or body.startswith(COPILOT_OVERVIEW_PREFIX):
+        if not body:
+            return False
+        if user_login in CODEX_BOTS and body.startswith(
+            CODEX_REVIEW_WRAPPER_PREFIX,
+        ):
+            return False
+        if body.startswith(COPILOT_OVERVIEW_PREFIX):
             return False
         if (
             issue_acknowledged_at is not None

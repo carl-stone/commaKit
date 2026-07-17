@@ -26,6 +26,7 @@ docs/*
 !.codex/skills/*/SKILL.md
 !.codex/skills/land/land_watch.py
 !.codex/skills/land/test_land_watch.py
+.codex/skills/land/__pycache__/
 droid-wiki/
 .letta/
 .lteams/

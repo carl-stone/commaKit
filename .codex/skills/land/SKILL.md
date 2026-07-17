@@ -79,10 +79,16 @@ fi
 # Wait for a submitted Codex review of the current PR head. Review comments and
 # issue comments remain blocking feedback and must be handled before merging.
 head_sha=$(gh pr view --json headRefOid -q .headRefOid)
+latest_review_request_at=$(
+  gh api repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
+    --jq '.[] | select(.user.login != "chatgpt-codex-connector[bot]" and ((.body // "") | contains("@codex review"))) | .created_at' \
+    | sort | tail -n 1
+)
 while true; do
   review_found=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/reviews \
     --paginate \
-    --jq "any(.[]; .user.login == \"chatgpt-codex-connector[bot]\" and .commit_id == \"$head_sha\" and .state != \"DISMISSED\")")
+    --jq ".[] | select(.user.login == \"chatgpt-codex-connector[bot]\" and .commit_id == \"$head_sha\" and .state != \"DISMISSED\" and (\"$latest_review_request_at\" == \"\" or .submitted_at > \"$latest_review_request_at\")) | true" \
+    | head -n 1)
   [ "$review_found" = "true" ] && break
   sleep 10
 done

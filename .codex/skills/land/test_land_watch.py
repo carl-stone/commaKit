@@ -29,7 +29,7 @@ def codex_review(**overrides: object) -> dict[str, object]:
         "commit_id": HEAD_SHA,
         "submitted_at": "2026-07-17T04:01:00Z",
         "state": "COMMENTED",
-        "body": "review complete",
+        "body": "",
     }
     review.update(overrides)
     return review
@@ -96,6 +96,23 @@ class ReviewGateTests(unittest.TestCase):
         }
         self.assertFalse(LAND_WATCH.is_blocking_review(review, None))
 
+    def test_codex_review_wrapper_is_informational(self) -> None:
+        review = codex_review(
+            body="### 💡 Codex Review\nAutomated review wrapper",
+        )
+        self.assertFalse(LAND_WATCH.is_blocking_review(review, None))
+
+    def test_substantive_codex_review_requires_acknowledgement(self) -> None:
+        review = codex_review(body="Please fix this correctness issue.")
+        self.assertTrue(LAND_WATCH.is_blocking_review(review, None))
+        self.assertFalse(
+            LAND_WATCH.is_blocking_review(
+                review,
+                None,
+                utc_time(4, 2),
+            ),
+        )
+
     def test_substantive_bot_review_requires_acknowledgement(self) -> None:
         review = {
             "user": {
@@ -114,6 +131,18 @@ class ReviewGateTests(unittest.TestCase):
                 utc_time(4, 2),
             ),
         )
+
+    def test_dismissed_bot_review_is_nonblocking(self) -> None:
+        review = {
+            "user": {
+                "login": "copilot-pull-request-reviewer[bot]",
+                "type": "Bot",
+            },
+            "submitted_at": "2026-07-17T04:01:00Z",
+            "state": "DISMISSED",
+            "body": "Please fix this correctness issue.",
+        }
+        self.assertFalse(LAND_WATCH.is_blocking_review(review, None))
 
     def test_green_checks_wait_for_current_head_review(self) -> None:
         async def run() -> None:
