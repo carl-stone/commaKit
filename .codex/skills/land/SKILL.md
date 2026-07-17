@@ -61,10 +61,14 @@ description:
 ## Commands
 
 ```
+(
+set -euo pipefail
+
 # Ensure branch and PR context
 pr_title=$(gh pr view --json title -q .title)
 pr_body=$(gh pr view --json body -q .body)
 head_ref=$(gh pr view --json headRefName -q .headRefName)
+head_sha=$(gh pr view --json headRefOid -q .headRefOid)
 is_cross_repo=$(gh pr view --json isCrossRepository -q .isCrossRepository)
 
 # Check mergeability and conflicts
@@ -79,8 +83,9 @@ fi
 python3 .codex/skills/land/land_watch.py || exit $?
 
 # Use the ordinary protected-branch path after the watcher proves readiness.
-gh pr merge --squash --subject "$pr_title" --body "$pr_body"
-test "$(gh pr view --json state -q .state)" = "MERGED"
+gh pr merge --squash --match-head-commit "$head_sha" \
+  --subject "$pr_title" --body "$pr_body" || exit $?
+test "$(gh pr view --json state -q .state)" = "MERGED" || exit 6
 
 # GitHub normally removes same-repository heads under this repository's enabled
 # automatic cleanup setting. Verify that outcome and use an explicit fallback.
@@ -90,6 +95,7 @@ if [ "$is_cross_repo" = "false" ] && \
   git push origin --delete "$head_ref" || \
     echo "PR merged, but remote branch cleanup requires manual follow-up." >&2
 fi
+)
 ```
 
 ## Landing Watcher
