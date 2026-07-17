@@ -76,14 +76,94 @@ fi
 
 # Preferred: use the Async Watch Helper below. The manual loop is a fallback
 # when Python cannot run or the helper script is unavailable.
-# Wait for review feedback: Codex reviews arrive as issue comments that start
-# with "## Codex Review — <persona>". Treat them like reviewer feedback: reply
-# with a `[codex]` issue comment acknowledging the findings and whether you're
-# addressing or deferring them.
+# Wait for either a submitted Codex review or an exactly acknowledged Codex
+# issue-review result for the current PR head. Review comments and issue
+# comments remain blocking feedback and must be handled before merging.
+head_sha=$(gh pr view --json headRefOid -q .headRefOid)
+acknowledger_login=$(gh api user --jq .login)
+latest_review_request_at=$(
+  gh api repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
+    --jq '.[] | select((.user.login != "chatgpt-codex-connector[bot]" and .user.login != "github-actions[bot]" and .user.login != "codex-gc-app[bot]" and .user.login != "app/codex-gc-app") and ((.body // "") | contains("@codex review"))) | .created_at' \
+    | sort | tail -n 1
+)
 while true; do
-  review_found=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
-    --jq 'any(.[]; .body | startswith("## Codex Review"))')
-  [ "$review_found" = "true" ] && break
+  head_check_at=$(gh api repos/{owner}/{repo}/commits/"$head_sha"/check-runs \
+    --method GET -f per_page=100 --paginate \
+    --jq '.check_runs[] | (.started_at // .created_at // .completed_at)' \
+    | sort | head -n 1)
+  issue_review_not_before=$(
+    printf '%s\n%s\n' "$head_check_at" "$latest_review_request_at" \
+      | sed '/^$/d' | sort | tail -n 1
+  )
+  review_found=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/reviews \
+    --paginate \
+    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\") and .commit_id == \"$head_sha\" and .submitted_at != null and (.state == \"APPROVED\" or .state == \"COMMENTED\") and (\"$latest_review_request_at\" == \"\" or .submitted_at > \"$latest_review_request_at\")) | .id" \
+    | head -n 1)
+  review_decision=$(gh pr view "$pr_number" --json reviewDecision \
+    -q .reviewDecision)
+  if [ "$review_decision" = "CHANGES_REQUESTED" ]; then
+    echo "Review changes requested. Address feedback before merge." >&2
+    exit 2
+  fi
+  substantive_reviews=$(gh api \
+    repos/{owner}/{repo}/pulls/"$pr_number"/reviews --paginate \
+    --jq ".[] | select((.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and .commit_id == \"$head_sha\" and (.state == \"COMMENTED\" or .state == \"APPROVED\") and ((.body // \"\") | length) > 0 and ((.body // \"\") | test(\"^[[:space:]]*### 💡 Codex Review\") | not) and ((.body // \"\") | startswith(\"## Pull request overview\") | not)) | [.id, .submitted_at] | @tsv"
+  )
+  substantive_reviews_all_acked=true
+  while IFS=$'\t' read -r substantive_review_id substantive_review_at; do
+    [ -z "$substantive_review_id" ] && continue
+    substantive_review_ack=$(gh api \
+      repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
+      --jq ".[] | select(.user.login == \"$acknowledger_login\" and .created_at > \"$substantive_review_at\" and ((.body // \"\") | startswith(\"[codex] Review $substantive_review_id:\"))) | .id" \
+      | head -n 1)
+    if [ -z "$substantive_review_ack" ]; then
+      substantive_reviews_all_acked=false
+      break
+    fi
+  done <<< "$substantive_reviews"
+  review_comments=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/comments \
+    --paginate \
+    --jq ".[] | select(.in_reply_to_id == null and (.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\" or .user.login == \"copilot-pull-request-reviewer[bot]\") and (.user.login == \"copilot-pull-request-reviewer[bot]\" or \"$latest_review_request_at\" == \"\" or .created_at > \"$latest_review_request_at\")) | [.id, (.updated_at // .created_at)] | @tsv"
+  )
+  review_comments_all_acked=true
+  while IFS=$'\t' read -r review_comment_id review_comment_at; do
+    [ -z "$review_comment_id" ] && continue
+    review_comment_ack=$(gh api \
+      repos/{owner}/{repo}/pulls/"$pr_number"/comments --paginate \
+      --jq ".[] | select(.in_reply_to_id == $review_comment_id and .user.login == \"$acknowledger_login\" and .created_at > \"$review_comment_at\" and ((.body // \"\") | startswith(\"[codex]\"))) | .id" \
+      | head -n 1)
+    if [ -z "$review_comment_ack" ]; then
+      review_comments_all_acked=false
+      break
+    fi
+  done <<< "$review_comments"
+  issue_reviews=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
+    --paginate \
+    --jq ".[] | ((.body // \"\") | split(\"**Reviewed commit:** \\u0060\") | (.[1]? // \"\") | split(\"\\u0060\") | (.[0]? // \"\")) as \$reviewed_sha | select(\"$head_check_at\" != \"\" and (.user.login == \"chatgpt-codex-connector[bot]\" or .user.login == \"github-actions[bot]\" or .user.login == \"codex-gc-app[bot]\" or .user.login == \"app/codex-gc-app\") and ((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and (\$reviewed_sha | test(\"^[0-9a-fA-F]{7,40}$\")) and (\"$head_sha\" | startswith(\$reviewed_sha)) and .created_at > \"$issue_review_not_before\") | [.id, (.updated_at // .created_at)] | @tsv"
+  )
+  issue_reviews_found=false
+  issue_reviews_all_acked=true
+  while IFS=$'\t' read -r issue_review_id issue_review_at; do
+    [ -z "$issue_review_id" ] && continue
+    issue_reviews_found=true
+    issue_ack=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
+      --paginate \
+      --jq ".[] | select(.user.login == \"$acknowledger_login\" and .created_at > \"$issue_review_at\" and ((.body // \"\") | startswith(\"[codex] Review $issue_review_id:\"))) | .id" \
+      | head -n 1)
+    if [ -z "$issue_ack" ]; then
+      issue_reviews_all_acked=false
+      break
+    fi
+  done <<< "$issue_reviews"
+  completion_found=false
+  [ -n "$review_found" ] && completion_found=true
+  $issue_reviews_found && completion_found=true
+  if $completion_found && $issue_reviews_all_acked && \
+    [ "$review_decision" != "CHANGES_REQUESTED" ] && \
+    $substantive_reviews_all_acked && \
+    $review_comments_all_acked; then
+    break
+  fi
   sleep 10
 done
 
@@ -129,9 +209,9 @@ Exit codes:
   CI, then restart the checks loop.
 - If mergeability is `UNKNOWN`, wait and re-check.
 - Do not merge while review comments (human or Codex review) are outstanding.
-- Codex review jobs retry on failure and are non-blocking; use the presence of
-  `## Codex Review — <persona>` issue comments (not job status) as the signal
-  that review feedback is available.
+- Codex review jobs retry on failure and are non-blocking. Use a submitted Codex
+  review for the current PR head as the completion signal, not job status;
+  treat its issue and inline comments as blocking feedback.
 - Do not enable auto-merge; this repo has no required checks so auto-merge can
   skip tests.
 - If the remote PR branch advanced due to your own prior force-push or merge,
@@ -140,10 +220,9 @@ Exit codes:
 
 ## Review Handling
 
-- Codex reviews now arrive as issue comments posted by GitHub Actions. They
-  start with `## Codex Review — <persona>` and include the reviewer’s
-  methodology + guardrails used. Treat these as feedback that must be
-  acknowledged before merge.
+- Codex review results can include a submitted review plus inline comments, or
+  `## Codex Review — <persona>` issue comments posted by GitHub Actions. Treat
+  every finding as feedback that must be acknowledged before merge.
 - Human review comments are blocking and must be addressed (responded to and
   resolved) before requesting a new review or merging.
 - If multiple reviewers comment in the same thread, respond to each comment
@@ -170,9 +249,18 @@ Exit codes:
 - A 404 on reply typically means the wrong endpoint (missing PR number) or
   insufficient scope; verify by listing comments first.
 - All GitHub comments generated by this agent must be prefixed with `[codex]`.
-- For Codex review issue comments, reply in the issue thread (not a review
-  thread) with `[codex]` and state whether you will address the feedback now or
-  defer it (include rationale).
+- For a Codex review issue comment, acknowledge that exact result with a root
+  issue comment of the form `[codex] Review <comment-id>: <disposition>`. State
+  whether you will address the feedback now or defer it (include rationale).
+  The result must include a `Reviewed commit` SHA marker for the current head.
+  The watcher accepts only results newer than the current head's first
+  check run and any later explicit review request. If the result body is edited
+  after acknowledgement, inspect the changed content and post a fresh exact-ID
+  acknowledgement.
+- For a substantive top-level automated review body, acknowledge its findings
+  with a root-level `[codex] Review <review-id>: <disposition>` issue comment.
+  Generated Copilot “Pull request overview” summaries are informational and do
+  not require acknowledgement.
 - If feedback requires changes:
   - For inline review comments (human), reply with intended fixes
     (`[codex] ...`) **as an inline reply to the original review comment** using
@@ -200,7 +288,7 @@ Exit codes:
     ```
   - Only request a new review if there is at least one new commit since the
     previous request.
-  - Wait for the next Codex review comment before merging.
+  - Wait for the next Codex review result for the current head before merging.
 
 ## Scope + PR Metadata
 
