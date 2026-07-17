@@ -9,6 +9,7 @@ from typing import Any
 
 POLL_SECONDS = 10
 CHECKS_APPEAR_TIMEOUT_SECONDS = 120
+REVIEW_APPEAR_TIMEOUT_SECONDS = 600
 CODEX_BOTS = {
     "chatgpt-codex-connector[bot]",
     "github-actions[bot]",
@@ -450,6 +451,13 @@ def dedupe_reviews(reviews: list[dict[str, Any]]) -> list[dict[str, Any]]:
         existing_timestamp = review_timestamp(existing)
         if timestamp is None:
             continue
+        existing_state = existing.get("state")
+        state = review.get("state")
+        if (
+            existing_state == "CHANGES_REQUESTED"
+            and state not in ("APPROVED", "DISMISSED", "CHANGES_REQUESTED")
+        ):
+            continue
         if existing_timestamp is None or timestamp > existing_timestamp:
             latest_by_user[user_login] = review
     return list(latest_by_user.values())
@@ -468,6 +476,10 @@ def filter_blocking_reviews(
 
 def is_merge_conflicting(pr: PrInfo) -> bool:
     return pr.mergeable == "CONFLICTING" or pr.merge_state == "DIRTY"
+
+
+def is_mergeability_pending(pr: PrInfo) -> bool:
+    return pr.mergeable in (None, "UNKNOWN") or pr.merge_state in (None, "UNKNOWN")
 
 
 async def fetch_review_context(
@@ -513,6 +525,7 @@ def raise_on_human_feedback(
 
 async def wait_for_codex(pr_number: int, checks_done: asyncio.Event) -> None:
     print("Waiting for review feedback...", flush=True)
+    completed_checks_wait_seconds = 0
     while True:
         (
             issue_comments,
@@ -540,7 +553,10 @@ async def wait_for_codex(pr_number: int, checks_done: asyncio.Event) -> None:
                 print(body)
                 raise SystemExit(2)
         if checks_done.is_set():
-            return
+            completed_checks_wait_seconds += POLL_SECONDS
+            if completed_checks_wait_seconds >= REVIEW_APPEAR_TIMEOUT_SECONDS:
+                print("No Codex review detected after checks completed")
+                raise SystemExit(2)
         await asyncio.sleep(POLL_SECONDS)
 
 
@@ -574,10 +590,14 @@ async def wait_for_checks(head_sha: str, checks_done: asyncio.Event) -> None:
 
 async def watch_pr() -> None:
     pr = await get_pr_info()
+    while is_mergeability_pending(pr):
+        print("Waiting for GitHub to determine mergeability...", flush=True)
+        await asyncio.sleep(POLL_SECONDS)
+        pr = await get_pr_info()
     if is_merge_conflicting(pr):
         print(
-            "PR has merge conflicts. Resolve/rebase against main and push before "
-            "running land_watch again.",
+            "PR has merge conflicts. Merge origin/main, resolve conflicts, and "
+            "push before running land_watch again.",
         )
         raise SystemExit(5)
     head_sha = pr.head_sha
@@ -588,10 +608,13 @@ async def watch_pr() -> None:
     async def head_monitor() -> None:
         while True:
             current = await get_pr_info()
+            if is_mergeability_pending(current):
+                await asyncio.sleep(POLL_SECONDS)
+                continue
             if is_merge_conflicting(current):
                 print(
-                    "PR has merge conflicts. Resolve/rebase against main and push "
-                    "before running land_watch again.",
+                    "PR has merge conflicts. Merge origin/main, resolve conflicts, "
+                    "and push before running land_watch again.",
                 )
                 raise SystemExit(5)
             if current.head_sha != head_sha:

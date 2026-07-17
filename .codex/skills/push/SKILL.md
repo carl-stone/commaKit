@@ -91,17 +91,19 @@ fi
 
 # Write a clear, human-friendly title that summarizes the shipped change.
 pr_title="<clear PR title written for this change>"
+# Prepare the complete template-based body before creating or editing the PR.
+pr_body_file="/tmp/pr_body.md"
 if [ -z "$pr_state" ]; then
-  gh pr create --title "$pr_title"
+  gh pr create --title "$pr_title" --body-file "$pr_body_file"
 else
   # Reconsider title on every branch update; edit if scope shifted.
-  gh pr edit --title "$pr_title"
+  gh pr edit --title "$pr_title" --body-file "$pr_body_file"
 fi
 
 # Write/edit PR body to match .github/pull_request_template.md before validation.
 # Example workflow:
 # 1) open the template and draft body content for this PR
-# 2) gh pr edit --body-file /tmp/pr_body.md
+# 2) create or edit the PR with `--body-file /tmp/pr_body.md`
 # 3) for branch updates, re-check that title/body still match current diff
 
 gh pr view --json title,body,url

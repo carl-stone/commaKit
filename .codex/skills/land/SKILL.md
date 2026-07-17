@@ -38,8 +38,9 @@ description:
 7. Watch checks until complete.
 8. If checks fail, pull logs, fix the issue, commit with the `commit` skill,
    push with the `push` skill, and re-run checks.
-9. When all checks are green and review feedback is addressed, squash-merge and
-   delete the branch using the PR title/body for the merge subject/body.
+9. When all checks are green and review feedback is addressed, squash-merge
+   using the PR title/body for the merge subject/body. Let the repository's
+   configured post-merge behavior delete the remote head branch.
 10. **Context guard:** Before implementing review feedback, confirm it does not
     conflict with the user’s stated intent or task context. If it conflicts,
     respond inline with a justification and ask the user before changing code.
@@ -80,9 +81,9 @@ fi
 # with a `[codex]` issue comment acknowledging the findings and whether you're
 # addressing or deferring them.
 while true; do
-  gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
-    --jq '.[] | select(.body | startswith("## Codex Review")) | .id' | rg -q '.' \
-    && break
+  review_found=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
+    --jq 'any(.[]; .body | startswith("## Codex Review"))')
+  [ "$review_found" = "true" ] && break
   sleep 10
 done
 
@@ -113,6 +114,7 @@ Exit codes:
 - 2: Review comments detected (address feedback)
 - 3: CI checks failed
 - 4: PR head updated (autofix commit detected)
+- 5: PR has merge conflicts (merge `origin/main`, resolve, and push)
 
 ## Failure Handling
 
