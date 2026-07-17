@@ -15,6 +15,9 @@ CODEX_BOTS = {
     "codex-gc-app[bot]",
     "app/codex-gc-app",
 }
+AUTOMATED_REVIEW_BOTS = CODEX_BOTS | {
+    "copilot-pull-request-reviewer[bot]",
+}
 MAX_GH_RETRIES = 5
 BASE_GH_BACKOFF_SECONDS = 2
 
@@ -240,7 +243,11 @@ def filter_codex_comments(
 ) -> list[dict[str, Any]]:
     latest_codex_reply = latest_codex_reply_by_thread(comments)
     latest_issue_ack = latest_codex_issue_reply_time(comments)
-    codex_comments = [c for c in comments if is_codex_bot_user(c.get("user", {}))]
+    codex_comments = [
+        c
+        for c in comments
+        if is_automated_review_bot_user(c.get("user", {}))
+    ]
     filtered: list[dict[str, Any]] = []
     for comment in codex_comments:
         created_time = comment_time(comment)
@@ -268,6 +275,11 @@ def filter_codex_comments(
 def is_codex_bot_user(user: dict[str, Any]) -> bool:
     login = user.get("login") or ""
     return login in CODEX_BOTS
+
+
+def is_automated_review_bot_user(user: dict[str, Any]) -> bool:
+    login = user.get("login") or ""
+    return login in AUTOMATED_REVIEW_BOTS
 
 
 def is_bot_user(user: dict[str, Any]) -> bool:
@@ -416,6 +428,8 @@ def is_blocking_review(
     body = (review.get("body") or "").strip()
     state = review.get("state")
     if user_login in CODEX_BOTS:
+        return state == "CHANGES_REQUESTED"
+    if is_bot_user(review.get("user", {})):
         return state == "CHANGES_REQUESTED"
     if body.startswith("[codex]") or state in ("APPROVED", "DISMISSED"):
         return False
@@ -572,7 +586,7 @@ async def wait_for_codex(
             )
             body = sanitize_terminal_output(latest.get("body") or "").strip()
             if body:
-                print("Codex left comments. Address feedback before merge.")
+                print("Automated reviewer left comments. Address before merge.")
                 print(body)
                 raise SystemExit(2)
         review_observed = has_current_codex_review(
