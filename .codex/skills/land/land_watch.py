@@ -950,7 +950,10 @@ async def watch_pr() -> None:
                 )
                 raise WatchExit(5)
             if current.head_sha != head_sha:
-                print("PR head updated; pull/amend/force-push to retrigger CI")
+                print(
+                    "PR head updated; synchronize locally, revalidate, and "
+                    "restart the watcher",
+                )
                 raise WatchExit(4)
             await asyncio.sleep(POLL_SECONDS)
 
