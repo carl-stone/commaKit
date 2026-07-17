@@ -1,6 +1,9 @@
 import asyncio
 import importlib.util
+import os
 import subprocess
+import tempfile
+import textwrap
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
@@ -776,6 +779,77 @@ class LandingCommandTests(unittest.TestCase):
         self.assertLess(commands.index(merged_gate), commands.index("git push origin --delete"))
         self.assertIn('if [ "$branch_check_status" -ne 2 ]', commands)
         self.assertIn("remote branch cleanup could not be verified", commands)
+
+    def run_cleanup_scenario(self, branch_mode: str) -> subprocess.CompletedProcess[str]:
+        with tempfile.TemporaryDirectory() as directory:
+            fake_bin = Path(directory)
+            count_file = fake_bin / "ls-remote-count"
+            gh = fake_bin / "gh"
+            gh.write_text(
+                textwrap.dedent(
+                    """\
+                    #!/usr/bin/env bash
+                    case "$*" in
+                      "pr view --json title -q .title") echo title ;;
+                      "pr view --json body -q .body") echo body ;;
+                      "pr view --json headRefName -q .headRefName") echo feature ;;
+                      "pr view --json headRefOid -q .headRefOid") echo abc123 ;;
+                      "pr view --json isCrossRepository -q .isCrossRepository") echo false ;;
+                      "pr view --json mergeable -q .mergeable") echo MERGEABLE ;;
+                      "pr view --json state -q .state") echo MERGED ;;
+                      "pr merge"*) exit 0 ;;
+                      *) echo "unexpected gh call: $*" >&2; exit 99 ;;
+                    esac
+                    """,
+                ),
+            )
+            git = fake_bin / "git"
+            git.write_text(
+                textwrap.dedent(
+                    """\
+                    #!/usr/bin/env bash
+                    if [ "$1" = "ls-remote" ]; then
+                      count=$(cat "$COUNT_FILE" 2>/dev/null || echo 0)
+                      if [ "$BRANCH_MODE" = "vanish" ] && [ "$count" -gt 0 ]; then
+                        exit 2
+                      fi
+                      echo $((count + 1)) > "$COUNT_FILE"
+                      echo abc123 refs/heads/feature
+                      exit 0
+                    fi
+                    if [ "$1" = "push" ]; then
+                      exit 1
+                    fi
+                    exit 99
+                    """,
+                ),
+            )
+            python = fake_bin / "python3"
+            python.write_text("#!/usr/bin/env bash\nexit 0\n")
+            for executable in (gh, git, python):
+                executable.chmod(0o755)
+            environment = os.environ | {
+                "BRANCH_MODE": branch_mode,
+                "COUNT_FILE": str(count_file),
+                "PATH": f"{fake_bin}:{os.environ['PATH']}",
+            }
+            return subprocess.run(
+                ["bash"],
+                input=self.command_block(),
+                capture_output=True,
+                check=False,
+                env=environment,
+                text=True,
+            )
+
+    def test_cleanup_accepts_automatic_branch_deletion_race(self) -> None:
+        result = self.run_cleanup_scenario("vanish")
+        self.assertEqual(0, result.returncode, result.stderr)
+
+    def test_cleanup_fails_when_branch_survives_delete_failure(self) -> None:
+        result = self.run_cleanup_scenario("persist")
+        self.assertEqual(7, result.returncode)
+        self.assertIn("manual follow-up", result.stderr)
 
 
 if __name__ == "__main__":

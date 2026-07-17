@@ -92,10 +92,19 @@ test "$(gh pr view --json state -q .state)" = "MERGED" || exit 6
 # Fork branches belong to their source repositories and must not be deleted here.
 if [ "$is_cross_repo" = "false" ]; then
   if git ls-remote --exit-code --heads origin "refs/heads/$head_ref" >/dev/null 2>&1; then
-    git push origin --delete "$head_ref" || {
-      echo "PR merged, but remote branch cleanup requires manual follow-up." >&2
-      exit 7
-    }
+    if ! git push origin --delete "$head_ref"; then
+      # Automatic cleanup can win the race after the initial branch check.
+      if git ls-remote --exit-code --heads origin "refs/heads/$head_ref" >/dev/null 2>&1; then
+        echo "PR merged, but remote branch cleanup requires manual follow-up." >&2
+        exit 7
+      else
+        branch_check_status=$?
+        if [ "$branch_check_status" -ne 2 ]; then
+          echo "PR merged, but remote branch cleanup could not be verified." >&2
+          exit "$branch_check_status"
+        fi
+      fi
+    fi
   else
     branch_check_status=$?
     if [ "$branch_check_status" -ne 2 ]; then
