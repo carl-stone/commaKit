@@ -35,6 +35,12 @@ class RateLimitError(RuntimeError):
     pass
 
 
+class WatchExit(RuntimeError):
+    def __init__(self, code: int) -> None:
+        super().__init__(f"landing watcher exited with status {code}")
+        self.code = code
+
+
 def is_rate_limit_error(error: str) -> bool:
     return "HTTP 429" in error or "rate limit" in error.lower()
 
@@ -546,7 +552,7 @@ def raise_on_human_feedback(
             "Reminder: decide whether feedback stays in scope; defer if needed "
             "and note in your root-level update.",
         )
-        raise SystemExit(2)
+        raise WatchExit(2)
     blocking_reviews = filter_blocking_reviews(reviews, review_request_at)
     if blocking_reviews:
         print("Review states/comments detected. Address before merge.")
@@ -554,7 +560,7 @@ def raise_on_human_feedback(
             "Reminder: keep PR title/description aligned with the full scope "
             "when changes expand.",
         )
-        raise SystemExit(2)
+        raise WatchExit(2)
 
 
 async def wait_for_codex(
@@ -588,7 +594,7 @@ async def wait_for_codex(
             if body:
                 print("Automated reviewer left comments. Address before merge.")
                 print(body)
-                raise SystemExit(2)
+                raise WatchExit(2)
         review_observed = has_current_codex_review(
             reviews,
             head_sha,
@@ -611,7 +617,7 @@ async def wait_for_checks(head_sha: str, checks_done: asyncio.Event) -> None:
                 print(
                     "No checks detected after 120s; check CI configuration",
                 )
-                raise SystemExit(3)
+                raise WatchExit(3)
             await asyncio.sleep(POLL_SECONDS)
             continue
         empty_seconds = 0
@@ -620,7 +626,7 @@ async def wait_for_checks(head_sha: str, checks_done: asyncio.Event) -> None:
             print("Checks failed:")
             for failure in failures:
                 print(f"- {failure}")
-            raise SystemExit(3)
+            raise WatchExit(3)
         if not pending:
             print("Checks passed")
             checks_done.set()
@@ -639,7 +645,7 @@ async def watch_pr() -> None:
             "PR has merge conflicts. Merge origin/main, resolve conflicts, and "
             "push before running land_watch again.",
         )
-        raise SystemExit(5)
+        raise WatchExit(5)
     head_sha = pr.head_sha
     checks_done = asyncio.Event()
     codex_task = asyncio.create_task(
@@ -658,10 +664,10 @@ async def watch_pr() -> None:
                     "PR has merge conflicts. Merge origin/main, resolve conflicts, "
                     "and push before running land_watch again.",
                 )
-                raise SystemExit(5)
+                raise WatchExit(5)
             if current.head_sha != head_sha:
                 print("PR head updated; pull/amend/force-push to retrigger CI")
-                raise SystemExit(4)
+                raise WatchExit(4)
             await asyncio.sleep(POLL_SECONDS)
 
     monitor_task = asyncio.create_task(head_monitor())
@@ -673,6 +679,8 @@ async def watch_pr() -> None:
     )
     for task in pending:
         task.cancel()
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
     for task in done:
         exc = task.exception()
         if exc:
@@ -682,5 +690,5 @@ async def watch_pr() -> None:
 if __name__ == "__main__":
     try:
         asyncio.run(watch_pr())
-    except SystemExit as exc:
+    except WatchExit as exc:
         raise SystemExit(exc.code) from None
