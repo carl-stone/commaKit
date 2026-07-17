@@ -334,6 +334,7 @@ test_that("parseDorado: malformed MM/ML reads are skipped without recycling", {
   expect_equal(accounting$reads$skipped, 1L)
   expect_equal(accounting$reads$skipped_by_reason[["malformed_mm_ml"]], 1L)
   expect_equal(accounting$calls$parsed, 1L)
+  expect_equal(accounting$motif_context$fallback, "mod_type")
 })
 
 test_that("parseDorado: malformed MM read is skipped", {

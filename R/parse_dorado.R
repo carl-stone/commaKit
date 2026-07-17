@@ -41,7 +41,7 @@
     ),
     motif_context = list(
       motif = NA_character_,
-      mod_context_fallback = "mod_type",
+      fallback = "mod_type",
       warning = .DORADO_MOTIF_CONTEXT_WARNING
     )
   )
