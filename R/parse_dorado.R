@@ -199,6 +199,7 @@
     seq_bases <- as.character(reads$seq[[i]])
     strand <- as.character(reads$strand[[i]])
     chrom <- as.character(reads$rname[[i]])
+    # styler: off
     if (length(pos_ref) != 1L || is.na(pos_ref) ||
           length(cigar_str) != 1L || is.na(cigar_str) ||
           length(seq_bases) != 1L || is.na(seq_bases)) {
@@ -207,6 +208,7 @@
         accounting$reads$skipped_by_reason[["missing_alignment"]] + 1L
       next
     }
+    # styler: on
     if (nchar(seq_bases) == 0L) {
       accounting$reads$skipped <- accounting$reads$skipped + 1L
       accounting$reads$skipped_by_reason[["empty_sequence"]] <-
@@ -452,10 +454,12 @@
     return(NULL)
   }
   ml_values <- suppressWarnings(as.integer(ml_tag))
+  # styler: off
   if (length(ml_values) == 0L || anyNA(ml_values) ||
         any(ml_values < 0L | ml_values > 255L)) {
     return(NULL)
   }
+  # styler: on
 
   seq_vec <- strsplit(seq_bases, "")[[1L]]
   n_bases <- length(seq_vec)
