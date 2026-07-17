@@ -172,6 +172,9 @@ Exit codes:
 - For Codex review issue comments, reply in the issue thread (not a review
   thread) with `[codex]` and state whether you will address the feedback now or
   defer it (include rationale).
+- For a substantive top-level automated review body, acknowledge its findings
+  with a root-level `[codex]` issue comment. Generated Copilot “Pull request
+  overview” summaries are informational and do not require acknowledgement.
 - If feedback requires changes:
   - For inline review comments (human), reply with intended fixes
     (`[codex] ...`) **as an inline reply to the original review comment** using

@@ -18,6 +18,7 @@ CODEX_BOTS = {
 AUTOMATED_REVIEW_BOTS = CODEX_BOTS | {
     "copilot-pull-request-reviewer[bot]",
 }
+COPILOT_OVERVIEW_PREFIX = "## Pull request overview"
 MAX_GH_RETRIES = 5
 BASE_GH_BACKOFF_SECONDS = 2
 
@@ -235,9 +236,10 @@ def latest_review_request_at(comments: list[dict[str, Any]]) -> datetime | None:
         body = comment.get("body") or ""
         if "@codex review" not in body:
             continue
-        timestamp = comment_time(comment)
-        if timestamp is None:
+        created_at = comment.get("created_at")
+        if not created_at:
             continue
+        timestamp = parse_time(created_at)
         if latest is None or timestamp > latest:
             latest = timestamp
     return latest
@@ -419,6 +421,7 @@ def filter_human_review_comments(
 def is_blocking_review(
     review: dict[str, Any],
     review_requested_at: datetime | None,
+    issue_acknowledged_at: datetime | None = None,
 ) -> bool:
     created_at = review.get("submitted_at") or review.get("created_at")
     if not created_at:
@@ -436,7 +439,16 @@ def is_blocking_review(
     if user_login in CODEX_BOTS:
         return state == "CHANGES_REQUESTED"
     if is_bot_user(review.get("user", {})):
-        return state == "CHANGES_REQUESTED"
+        if state == "CHANGES_REQUESTED":
+            return True
+        if not body or body.startswith(COPILOT_OVERVIEW_PREFIX):
+            return False
+        if (
+            issue_acknowledged_at is not None
+            and created_time <= issue_acknowledged_at
+        ):
+            return False
+        return True
     if body.startswith("[codex]") or state in ("APPROVED", "DISMISSED"):
         return False
     blocking = False
@@ -485,11 +497,16 @@ def dedupe_reviews(reviews: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def filter_blocking_reviews(
     reviews: list[dict[str, Any]],
     review_requested_at: datetime | None,
+    issue_acknowledged_at: datetime | None = None,
 ) -> list[dict[str, Any]]:
     return [
         review
         for review in dedupe_reviews(reviews)
-        if is_blocking_review(review, review_requested_at)
+        if is_blocking_review(
+            review,
+            review_requested_at,
+            issue_acknowledged_at,
+        )
     ]
 
 
@@ -553,7 +570,12 @@ def raise_on_human_feedback(
             "and note in your root-level update.",
         )
         raise WatchExit(2)
-    blocking_reviews = filter_blocking_reviews(reviews, review_request_at)
+    issue_acknowledged_at = latest_codex_issue_reply_time(issue_comments)
+    blocking_reviews = filter_blocking_reviews(
+        reviews,
+        review_request_at,
+        issue_acknowledged_at,
+    )
     if blocking_reviews:
         print("Review states/comments detected. Address before merge.")
         print(
