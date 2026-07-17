@@ -9,7 +9,6 @@ from typing import Any
 
 POLL_SECONDS = 10
 CHECKS_APPEAR_TIMEOUT_SECONDS = 120
-REVIEW_APPEAR_TIMEOUT_SECONDS = 600
 CODEX_BOTS = {
     "chatgpt-codex-connector[bot]",
     "github-actions[bot]",
@@ -525,7 +524,6 @@ def raise_on_human_feedback(
 
 async def wait_for_codex(pr_number: int, checks_done: asyncio.Event) -> None:
     print("Waiting for review feedback...", flush=True)
-    completed_checks_wait_seconds = 0
     while True:
         (
             issue_comments,
@@ -553,10 +551,7 @@ async def wait_for_codex(pr_number: int, checks_done: asyncio.Event) -> None:
                 print(body)
                 raise SystemExit(2)
         if checks_done.is_set():
-            completed_checks_wait_seconds += POLL_SECONDS
-            if completed_checks_wait_seconds >= REVIEW_APPEAR_TIMEOUT_SECONDS:
-                print("No Codex review detected after checks completed")
-                raise SystemExit(2)
+            return
         await asyncio.sleep(POLL_SECONDS)
 
 
