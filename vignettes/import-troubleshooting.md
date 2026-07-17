@@ -1,0 +1,278 @@
+Troubleshooting Data Import
+================
+
+# Overview
+
+Most import problems come from one of four places:
+
+1.  The file format does not match the selected `caller`.
+2.  Sample names in `files` and `colData$sample_name` do not match
+    exactly.
+3.  Genome information is missing, unnamed, or uses chromosome names
+    that do not match the methylation files.
+4.  Annotation files are missing optional dependencies or use an
+    unexpected file extension.
+
+Start by checking that each input sample can be parsed with the same
+caller and that the sample names are identical across `files` and
+`colData`.
+
+``` r
+library(commaKit)
+
+files <- c(
+  ctrl_1 = "ctrl_1.modkit.bed",
+  treat_1 = "treat_1.modkit.bed"
+)
+
+col_data <- data.frame(
+  sample_name = c("ctrl_1", "treat_1"),
+  condition = c("control", "treatment"),
+  replicate = c(1L, 1L)
+)
+
+obj <- commaData(
+  files = files,
+  colData = col_data,
+  genome = c(chr1 = 4641652L),
+  caller = "modkit"
+)
+```
+
+# Choosing The Caller
+
+Use `caller = "modkit"` for modkit pileup BED files. This is the
+recommended path for most Dorado-based workflows: call bases with
+Dorado, run `modkit pileup`, then import the resulting BED files into
+commaKit.
+
+Use `caller = "dorado"` only when you want commaKit to parse an aligned
+BAM file with MM/ML base modification tags directly. The BAM must
+contain modification tags and should be indexed. Direct BAM parsing does
+not provide motif context, so per-site `motif` values will be `NA` and
+`mod_context` will fall back to `mod_type`. The importer emits a warning
+about this representation choice and records it in
+`importProvenance(object)`.
+
+Dorado uses a fixed, named `ML > 0.5` threshold for classifying a call
+as modified. This threshold is not a public import argument; it is
+recorded in the same provenance record so downstream results can be
+audited.
+
+During direct BAM parsing, two kinds of information loss can occur and
+should not be confused:
+
+1.  **Read-level skips.** An entire read is skipped when it cannot be
+    parsed at all. This happens when the CIGAR string is malformed or
+    the MM/ML tags are missing or truncated. No modified-base calls from
+    that read contribute to any site.
+2.  **Call-level drops.** Individual modified-base calls whose read
+    positions cannot be mapped to reference sites are dropped *before*
+    site aggregation. This happens when the call falls on an inserted or
+    soft-clipped read position that has no corresponding reference
+    coordinate. The rest of the read is still used; only the unmappable
+    call is discarded.
+
+In other words, a read with a usable CIGAR and valid MM/ML tags may
+still lose some modified-base calls to call-level drops, but the read
+itself is not skipped. The counts by reason are available per sample:
+
+``` r
+provenance <- importProvenance(obj_dorado)
+provenance$threshold
+provenance$motif_context
+provenance$samples$ctrl_1$reads
+provenance$samples$ctrl_1$calls
+```
+
+Use `caller = "megalodon"` for legacy Megalodon per-read modification
+BED files. Megalodon files do not encode the modification type in a way
+commaKit can infer, so provide exactly one `mod_type` value.
+
+``` r
+# Recommended path for Dorado runs after modkit pileup
+obj_modkit <- commaData(files, col_data,
+  genome = c(chr1 = 4641652L),
+  caller = "modkit"
+)
+
+# Direct Dorado BAM import
+obj_dorado <- commaData(bam_files, col_data,
+  genome = c(chr1 = 4641652L),
+  caller = "dorado"
+)
+
+# Legacy Megalodon import requires a single explicit modification type
+obj_megalodon <- commaData(megalodon_files, col_data,
+  genome = c(chr1 = 4641652L),
+  caller = "megalodon",
+  mod_type = "5mC"
+)
+```
+
+# Modkit BED Format Problems
+
+commaKit expects modkit pileup bedMethyl output with at least 18 columns
+and no header row. The parser uses the first 18 fields:
+
+- columns 1 to 3: chromosome, 0-based start, and end
+- column 4: modification code, often `code,motif,position`
+- column 6: strand
+- column 10: valid coverage
+- column 11: percent modified (non-authoritative; beta is computed from
+  count fields)
+
+The parser converts 0-based BED starts to 1-based genomic positions and
+computes beta from authoritative count fields (`Nmod / Nvalid_cov`)
+rather than the `fraction_modified` percent column. Zero-valid-coverage
+rows with missing or undefined `fraction_modified` are dropped by the
+coverage filter rather than failing import.
+
+Common symptoms and fixes:
+
+| Symptom                         | Likely cause                                                                                        | Fix                                                                                                        |
+|---------------------------------|-----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `expected at least 18`          | The file is not modkit pileup bedMethyl output, or it was truncated.                                | Re-run `modkit pileup` and pass the BED output, not the BAM.                                               |
+| Unknown `mod_code` warning      | Column 4 contains codes outside the supported modkit map.                                           | Confirm the file is a methylation pileup and decide whether the code should map to `6mA`, `5mC`, or `4mC`. |
+| Missing required fields         | One or more rows are partial or malformed after parsing the first 18 bedMethyl columns.             | Inspect the reported row, then regenerate or filter the pileup before import.                              |
+| No sites remain                 | Coverage or `mod_type` filtering removed every row.                                                 | Lower `min_coverage`, check `mod_type`, and inspect the input file for nonzero coverage.                   |
+| Duplicate methylation site rows | The file has repeated rows for the same chromosome, position, strand, modification type, and motif. | Aggregate or regenerate the per-sample pileup before importing.                                            |
+
+If the modkit `mod_code` field includes motif context, such as
+`a,GATC,1`, commaKit stores `mod_type = "6mA"` and `motif = "GATC"`.
+Older or derived files without motif context can still import, but
+`motif` will be `NA`.
+
+``` r
+first_rows <- read.table("ctrl_1.modkit.bed", nrows = 5, fill = TRUE)
+ncol(first_rows)
+first_rows[, c(1, 2, 3, 4, 6, 10, 11)]
+```
+
+# Sample Metadata Problems
+
+`files` must be a named character vector, and its names must match
+`colData$sample_name`. The constructor requires `sample_name` and
+`replicate` columns in `colData`; `condition` is optional sample
+metadata used by grouping and design workflows when present.
+
+``` r
+setdiff(names(files), col_data$sample_name)
+setdiff(col_data$sample_name, names(files))
+```
+
+If either result is non-empty, fix the names before calling
+`commaData()`. Additional sample metadata columns are allowed and are
+preserved in `sampleInfo(object)`.
+
+# Genome Size Problems
+
+Genome information is strongly recommended because it becomes the
+`Seqinfo` attached to methylation sites. Use one of these forms:
+
+- a named integer or numeric vector of chromosome sizes
+- a FASTA file path
+- a named `Biostrings::DNAStringSet`
+- a whole `BSgenome` object
+
+``` r
+# Named vector: simplest and robust for one bacterial chromosome
+genome <- c(NC_000913 = 4641652L)
+
+# FASTA path: names come from FASTA sequence headers
+genome <- "E_coli_K12.fa"
+
+# Whole BSgenome object: pass the object, not one chromosome extracted with $
+genome <- BSgenome.Ecoli.NCBI.20080805::BSgenome.Ecoli.NCBI.20080805
+```
+
+Do not pass a single unnamed sequence such as
+`BSgenomeObject$NC_000913`. That creates a `DNAString` without a
+chromosome name, so commaKit cannot attach the sequence length to
+methylation sites. Use the whole `BSgenome` object or a named vector
+instead.
+
+Chromosome names must match the methylation files. If the BED file uses
+`chr1` but the genome vector is named `NC_000913`, rename one side
+before import. commaKit stops with a clear error when methylation data
+contain chromosomes that are absent from `genome`, because it cannot
+attach valid `Seqinfo` for those sites. Extra chromosomes in the genome
+input are dropped with a message when they are not present in the
+methylation data.
+
+``` r
+bed_chroms <- unique(read.table("ctrl_1.modkit.bed", nrows = 1000)[[1]])
+names(genome)
+setdiff(bed_chroms, names(genome))
+```
+
+# Annotation File Problems
+
+Annotation is optional. Use `annotation = NULL` while debugging
+methylation file import, then add annotation once the `commaData` object
+can be constructed.
+
+commaKit accepts annotation as a `GRanges` object or as a GFF, GFF3, or
+BED file path. Loading annotation files requires the Bioconductor
+package `rtracklayer`.
+
+``` r
+if (requireNamespace("rtracklayer", quietly = TRUE)) {
+  genes <- loadAnnotation("genes.gff3", feature_types = "gene")
+  obj <- commaData(files, col_data,
+    genome = c(chr1 = 4641652L),
+    annotation = genes, caller = "modkit"
+  )
+}
+```
+
+Common symptoms and fixes:
+
+| Symptom                             | Likely cause                                                                              | Fix                                                                             |
+|-------------------------------------|-------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `Package 'rtracklayer' is required` | The optional annotation dependency is not installed.                                      | Install with `BiocManager::install("rtracklayer")`, or set `annotation = NULL`. |
+| `Annotation file not found`         | The path is wrong relative to the R working directory.                                    | Use `normalizePath()` or an absolute path to confirm the file.                  |
+| Unsupported extension               | The file extension is not `.gff`, `.gff3`, or `.bed` after removing compression suffixes. | Rename or convert the file, or import it yourself as `GRanges`.                 |
+| No requested feature types          | `feature_types` does not match the standardized feature type column.                      | Inspect `table(mcols(loadAnnotation(file))$feature_type)`.                      |
+
+# Quick Checklist
+
+Before opening an issue or debugging further, collect these facts:
+
+``` r
+file.exists(files)
+names(files)
+col_data$sample_name
+
+first_rows <- read.table(files[[1]], nrows = 5, fill = TRUE)
+dim(first_rows)
+first_rows[, seq_len(min(18, ncol(first_rows)))]
+
+genome
+```
+
+Then try a minimal constructor call without annotation or motif
+scanning:
+
+``` r
+obj <- commaData(
+  files = files,
+  colData = col_data,
+  genome = c(chr1 = 4641652L),
+  annotation = NULL,
+  motif = NULL,
+  caller = "modkit",
+  min_coverage = 1L
+)
+```
+
+If this works, add filters, annotation, motif scanning, and higher
+`min_coverage` one at a time. That usually isolates whether the failure
+is in file parsing, sample metadata, genome information, or optional
+annotation.
+
+# Session Information
+
+``` r
+sessionInfo()
+```

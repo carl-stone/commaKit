@@ -125,9 +125,10 @@
 #'     \item{\code{other_mod_counts}}{Always \code{NA}; direct Dorado BAM
 #'       parsing does not decompose non-target modified-read classes.}
 #'   }
-#'   The returned data frame has a \code{dorado_accounting} attribute containing
-#'   read-level skip and call-level drop counts by reason, the fixed ML threshold,
-#'   and the motif-context fallback policy. \code{commaData()} preserves this
+#'   The returned data frame has a \code{dorado_accounting} attribute
+#'   containing read-level skip and call-level drop counts by reason, the fixed
+#'   ML threshold, and the motif-context fallback policy. \code{commaData()}
+#'   preserves this
 #'   information in \code{importProvenance(object)}.
 #'
 #' @keywords internal
@@ -199,8 +200,8 @@
     strand <- as.character(reads$strand[[i]])
     chrom <- as.character(reads$rname[[i]])
     if (length(pos_ref) != 1L || is.na(pos_ref) ||
-      length(cigar_str) != 1L || is.na(cigar_str) ||
-      length(seq_bases) != 1L || is.na(seq_bases)) {
+          length(cigar_str) != 1L || is.na(cigar_str) ||
+          length(seq_bases) != 1L || is.na(seq_bases)) {
       accounting$reads$skipped <- accounting$reads$skipped + 1L
       accounting$reads$skipped_by_reason[["missing_alignment"]] <-
         accounting$reads$skipped_by_reason[["missing_alignment"]] + 1L
@@ -452,7 +453,7 @@
   }
   ml_values <- suppressWarnings(as.integer(ml_tag))
   if (length(ml_values) == 0L || anyNA(ml_values) ||
-    any(ml_values < 0L | ml_values > 255L)) {
+        any(ml_values < 0L | ml_values > 255L)) {
     return(NULL)
   }
 
