@@ -733,6 +733,8 @@ class LandingCommandTests(unittest.TestCase):
         merged_gate = 'test "$(gh pr view --json state -q .state)" = "MERGED" || exit 6'
         self.assertIn(merged_gate, commands)
         self.assertLess(commands.index(merged_gate), commands.index("git push origin --delete"))
+        self.assertIn('if [ "$branch_check_status" -ne 2 ]', commands)
+        self.assertIn("remote branch cleanup could not be verified", commands)
 
 
 if __name__ == "__main__":
