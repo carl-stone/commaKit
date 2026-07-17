@@ -41,6 +41,20 @@ Read [dev/knowledge/project-status.md](dev/knowledge/project-status.md) for the 
 
 ## Agent skills
 
+Repository-owned Codex procedures live under `.codex/skills/`:
+
+- `linear`: query and mutate the active Linear issue through Symphony's
+  `linear_graphql` tool.
+- `pull`: merge the latest remote branch and `origin/main` without rebasing.
+- `commit`: stage intentional paths and create a scoped, validated commit.
+- `push`: publish the branch and create or refresh its pull request.
+- `land`: resolve feedback and conflicts, watch checks, and squash-merge only
+  when the PR is ready.
+
+Load the matching skill before performing any of these procedures. The skills
+supplement, rather than replace, the repository and directory-level
+`AGENTS.md` instructions.
+
 ### Issue tracker
 
 Issues live in GitHub Issues for `carl-stone/commaKit`; external PRs are also a triage request surface. See `docs/agents/issue-tracker.md`.
