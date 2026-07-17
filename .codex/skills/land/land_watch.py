@@ -91,6 +91,13 @@ async def get_pr_info() -> PrInfo:
     )
 
 
+async def get_authenticated_login() -> str:
+    login = (await run_gh("api", "user", "--jq", ".login")).strip()
+    if not login:
+        raise RuntimeError("Unable to determine authenticated GitHub login")
+    return login
+
+
 async def get_paginated_list(endpoint: str) -> list[dict[str, Any]]:
     page = 1
     items: list[dict[str, Any]] = []
@@ -250,10 +257,20 @@ def latest_review_request_at(comments: list[dict[str, Any]]) -> datetime | None:
 def filter_codex_comments(
     comments: list[dict[str, Any]],
     review_requested_at: datetime | None,
+    acknowledger_login: str,
 ) -> list[dict[str, Any]]:
-    latest_codex_reply = latest_codex_reply_by_thread(comments)
-    latest_issue_ack = latest_codex_issue_reply_time(comments)
-    issue_review_ack_times = codex_issue_review_ack_times(comments)
+    latest_codex_reply = latest_codex_reply_by_thread(
+        comments,
+        acknowledger_login,
+    )
+    latest_issue_ack = latest_codex_issue_reply_time(
+        comments,
+        acknowledger_login,
+    )
+    issue_review_ack_times = codex_issue_review_ack_times(
+        comments,
+        acknowledger_login,
+    )
     codex_comments = [
         c
         for c in comments
@@ -326,11 +343,22 @@ def is_codex_review_body(body: str) -> bool:
     return body.startswith(("## Codex Review", "Codex Review:"))
 
 
+def reviewed_commit_sha(body: str) -> str | None:
+    match = re.search(
+        r"\*\*Reviewed commit:\*\*\s*`([0-9a-fA-F]{7,40})`",
+        body,
+    )
+    return match.group(1).lower() if match else None
+
+
 def codex_issue_review_ack_times(
     comments: list[dict[str, Any]],
+    acknowledger_login: str,
 ) -> dict[int, datetime]:
     acknowledged: dict[int, datetime] = {}
     for comment in comments:
+        if comment.get("user", {}).get("login") != acknowledger_login:
+            continue
         body = (comment.get("body") or "").strip()
         match = re.match(r"^\[codex\]\s+Review\s+(\d+):", body)
         created_at = comment_created_time(comment)
@@ -344,9 +372,12 @@ def codex_issue_review_ack_times(
 
 def latest_codex_issue_reply_time(
     comments: list[dict[str, Any]],
+    acknowledger_login: str,
 ) -> datetime | None:
     latest: datetime | None = None
     for comment in comments:
+        if comment.get("user", {}).get("login") != acknowledger_login:
+            continue
         body = (comment.get("body") or "").strip()
         if not is_codex_reply_body(body):
             continue
@@ -358,8 +389,11 @@ def latest_codex_issue_reply_time(
     return latest
 
 
-def filter_human_issue_comments(comments: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    latest_ack = latest_codex_issue_reply_time(comments)
+def filter_human_issue_comments(
+    comments: list[dict[str, Any]],
+    acknowledger_login: str,
+) -> list[dict[str, Any]]:
+    latest_ack = latest_codex_issue_reply_time(comments, acknowledger_login)
     filtered: list[dict[str, Any]] = []
     for comment in comments:
         if is_bot_user(comment.get("user", {})):
@@ -384,8 +418,9 @@ def filter_human_issue_comments(comments: list[dict[str, Any]]) -> list[dict[str
 
 def filter_codex_review_issue_comments(
     comments: list[dict[str, Any]],
+    acknowledger_login: str,
 ) -> list[dict[str, Any]]:
-    acknowledged = codex_issue_review_ack_times(comments)
+    acknowledged = codex_issue_review_ack_times(comments, acknowledger_login)
     filtered: list[dict[str, Any]] = []
     for comment in comments:
         body = (comment.get("body") or "").strip()
@@ -423,9 +458,12 @@ def comment_created_time(comment: dict[str, Any]) -> datetime | None:
 
 def latest_codex_reply_by_thread(
     comments: list[dict[str, Any]],
+    acknowledger_login: str,
 ) -> dict[int, datetime]:
     latest: dict[int, datetime] = {}
     for comment in comments:
+        if comment.get("user", {}).get("login") != acknowledger_login:
+            continue
         body = (comment.get("body") or "").strip()
         if not is_codex_reply_body(body):
             continue
@@ -441,8 +479,12 @@ def latest_codex_reply_by_thread(
 
 def filter_human_review_comments(
     comments: list[dict[str, Any]],
+    acknowledger_login: str,
 ) -> list[dict[str, Any]]:
-    latest_codex_reply = latest_codex_reply_by_thread(comments)
+    latest_codex_reply = latest_codex_reply_by_thread(
+        comments,
+        acknowledger_login,
+    )
     filtered: list[dict[str, Any]] = []
     for comment in comments:
         if is_bot_user(comment.get("user", {})):
@@ -510,6 +552,20 @@ def is_blocking_review(
     return blocking
 
 
+def has_substantive_bot_review_body(review: dict[str, Any]) -> bool:
+    if not is_bot_user(review.get("user", {})):
+        return False
+    body = (review.get("body") or "").strip()
+    if not body:
+        return False
+    user_login = review.get("user", {}).get("login")
+    if user_login in CODEX_BOTS and body.startswith(
+        CODEX_REVIEW_WRAPPER_PREFIX,
+    ):
+        return False
+    return not body.startswith(COPILOT_OVERVIEW_PREFIX)
+
+
 def review_timestamp(review: dict[str, Any]) -> datetime | None:
     created_at = review.get("submitted_at") or review.get("created_at")
     if not created_at:
@@ -548,19 +604,18 @@ def filter_blocking_reviews(
     review_requested_at: datetime | None,
     issue_acknowledged_at: datetime | None = None,
 ) -> list[dict[str, Any]]:
-    bot_reviews = [
+    deduped_reviews = dedupe_reviews(reviews)
+    deduped_object_ids = {id(review) for review in deduped_reviews}
+    preserved_bot_bodies = [
         review
         for review in reviews
-        if is_bot_user(review.get("user", {}))
-    ]
-    human_reviews = [
-        review
-        for review in reviews
-        if not is_bot_user(review.get("user", {}))
+        if id(review) not in deduped_object_ids
+        and review.get("state") in ("COMMENTED", "APPROVED")
+        and has_substantive_bot_review_body(review)
     ]
     return [
         review
-        for review in bot_reviews + dedupe_reviews(human_reviews)
+        for review in deduped_reviews + preserved_bot_bodies
         if is_blocking_review(
             review,
             review_requested_at,
@@ -594,15 +649,23 @@ def has_current_codex_review(
 
 def has_acknowledged_codex_issue_review(
     issue_comments: list[dict[str, Any]],
+    head_sha: str,
     not_before_at: datetime,
+    acknowledger_login: str,
 ) -> bool:
-    acknowledged = codex_issue_review_ack_times(issue_comments)
+    acknowledged = codex_issue_review_ack_times(
+        issue_comments,
+        acknowledger_login,
+    )
     relevant_reviews: list[tuple[int, datetime]] = []
     for comment in issue_comments:
         if not is_codex_bot_user(comment.get("user", {})):
             continue
         body = (comment.get("body") or "").strip()
         if not is_codex_review_body(body):
+            continue
+        reviewed_sha = reviewed_commit_sha(body)
+        if reviewed_sha is None or not head_sha.lower().startswith(reviewed_sha):
             continue
         created_at = comment_created_time(comment)
         if created_at is None or created_at <= not_before_at:
@@ -644,10 +707,20 @@ def raise_on_human_feedback(
     review_comments: list[dict[str, Any]],
     reviews: list[dict[str, Any]],
     review_request_at: datetime | None,
+    acknowledger_login: str,
 ) -> None:
-    human_issue_comments = filter_human_issue_comments(issue_comments)
-    codex_review_comments = filter_codex_review_issue_comments(issue_comments)
-    human_review_comments = filter_human_review_comments(review_comments)
+    human_issue_comments = filter_human_issue_comments(
+        issue_comments,
+        acknowledger_login,
+    )
+    codex_review_comments = filter_codex_review_issue_comments(
+        issue_comments,
+        acknowledger_login,
+    )
+    human_review_comments = filter_human_review_comments(
+        review_comments,
+        acknowledger_login,
+    )
     if human_issue_comments or human_review_comments or codex_review_comments:
         print("Review comments detected. Address before merge.")
         print(
@@ -655,7 +728,10 @@ def raise_on_human_feedback(
             "and note in your root-level update.",
         )
         raise WatchExit(2)
-    issue_acknowledged_at = latest_codex_issue_reply_time(issue_comments)
+    issue_acknowledged_at = latest_codex_issue_reply_time(
+        issue_comments,
+        acknowledger_login,
+    )
     blocking_reviews = filter_blocking_reviews(
         reviews,
         review_request_at,
@@ -675,6 +751,7 @@ async def wait_for_codex(
     head_sha: str,
     head_review_boundary: asyncio.Future[datetime],
     checks_done: asyncio.Event,
+    acknowledger_login: str,
 ) -> None:
     print("Waiting for review feedback...", flush=True)
     while True:
@@ -684,14 +761,23 @@ async def wait_for_codex(
             reviews,
             review_request_at,
         ) = await fetch_review_context(pr_number)
-        bot_issue_comments = filter_codex_comments(issue_comments, review_request_at)
-        bot_review_comments = filter_codex_comments(review_comments, review_request_at)
+        bot_issue_comments = filter_codex_comments(
+            issue_comments,
+            review_request_at,
+            acknowledger_login,
+        )
+        bot_review_comments = filter_codex_comments(
+            review_comments,
+            review_request_at,
+            acknowledger_login,
+        )
         bot_comments = bot_issue_comments + bot_review_comments
         raise_on_human_feedback(
             issue_comments,
             review_comments,
             reviews,
             review_request_at,
+            acknowledger_login,
         )
         if bot_comments:
             latest = max(
@@ -718,7 +804,9 @@ async def wait_for_codex(
                 issue_review_boundary = review_request_at
             issue_review_observed = has_acknowledged_codex_issue_review(
                 issue_comments,
+                head_sha,
                 issue_review_boundary,
+                acknowledger_login,
             )
         review_observed = submitted_review_observed or issue_review_observed
         if checks_done.is_set() and review_observed:
@@ -780,6 +868,7 @@ async def watch_pr() -> None:
         )
         raise WatchExit(5)
     head_sha = pr.head_sha
+    acknowledger_login = await get_authenticated_login()
     checks_done = asyncio.Event()
     head_review_boundary: asyncio.Future[datetime] = (
         asyncio.get_running_loop().create_future()
@@ -790,6 +879,7 @@ async def watch_pr() -> None:
             head_sha,
             head_review_boundary,
             checks_done,
+            acknowledger_login,
         ),
     )
     checks_task = asyncio.create_task(

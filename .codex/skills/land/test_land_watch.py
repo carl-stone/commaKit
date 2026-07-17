@@ -14,6 +14,10 @@ LAND_WATCH = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(LAND_WATCH)
 
 HEAD_SHA = "a" * 40
+ISSUE_REVIEW_BODY = (
+    "## Codex Review — correctness\n\n"
+    f"**Reviewed commit:** `{HEAD_SHA[:10]}`"
+)
 
 
 def utc_time(hour: int, minute: int) -> datetime:
@@ -153,6 +157,24 @@ class ReviewGateTests(unittest.TestCase):
             [finding],
         )
 
+    def test_later_bot_approval_clears_change_request(self) -> None:
+        change_request = codex_review(
+            state="CHANGES_REQUESTED",
+            body="Please fix this correctness issue.",
+        )
+        approval = codex_review(
+            state="APPROVED",
+            body="",
+            submitted_at="2026-07-17T04:02:00Z",
+        )
+        self.assertEqual(
+            LAND_WATCH.filter_blocking_reviews(
+                [change_request, approval],
+                None,
+            ),
+            [],
+        )
+
     def test_substantive_bot_review_requires_acknowledgement(self) -> None:
         review = {
             "user": {
@@ -199,6 +221,7 @@ class ReviewGateTests(unittest.TestCase):
             LAND_WATCH.filter_codex_comments(
                 [comment],
                 utc_time(4, 1),
+                "carl-stone",
             ),
             [comment],
         )
@@ -211,7 +234,10 @@ class ReviewGateTests(unittest.TestCase):
             "updated_at": "2026-07-17T05:00:00Z",
         }
         self.assertEqual(
-            LAND_WATCH.latest_codex_issue_reply_time([acknowledgement]),
+            LAND_WATCH.latest_codex_issue_reply_time(
+                [acknowledgement],
+                "carl-stone",
+            ),
             utc_time(4, 0),
         )
 
@@ -223,7 +249,7 @@ class ReviewGateTests(unittest.TestCase):
                     "login": "github-actions[bot]",
                     "type": "Bot",
                 },
-                "body": "## Codex Review — correctness",
+                "body": ISSUE_REVIEW_BODY,
                 "created_at": "2026-07-17T04:01:00Z",
             },
             {
@@ -236,13 +262,17 @@ class ReviewGateTests(unittest.TestCase):
         self.assertTrue(
             LAND_WATCH.has_acknowledged_codex_issue_review(
                 comments,
+                HEAD_SHA,
                 utc_time(4, 0),
+                "carl-stone",
             ),
         )
         self.assertFalse(
             LAND_WATCH.has_acknowledged_codex_issue_review(
                 comments[:1],
+                HEAD_SHA,
                 utc_time(4, 0),
+                "carl-stone",
             ),
         )
 
@@ -261,7 +291,7 @@ class ReviewGateTests(unittest.TestCase):
                     "login": "github-actions[bot]",
                     "type": "Bot",
                 },
-                "body": "## Codex Review — correctness",
+                "body": ISSUE_REVIEW_BODY,
                 "created_at": "2026-07-17T04:01:00Z",
             },
             {
@@ -274,7 +304,9 @@ class ReviewGateTests(unittest.TestCase):
         self.assertFalse(
             LAND_WATCH.has_acknowledged_codex_issue_review(
                 comments,
+                HEAD_SHA,
                 utc_time(4, 3),
+                "carl-stone",
             ),
         )
 
@@ -286,7 +318,7 @@ class ReviewGateTests(unittest.TestCase):
                     "login": "github-actions[bot]",
                     "type": "Bot",
                 },
-                "body": "## Codex Review — correctness",
+                "body": ISSUE_REVIEW_BODY,
                 "created_at": "2026-07-17T04:01:00Z",
             },
             {
@@ -299,7 +331,9 @@ class ReviewGateTests(unittest.TestCase):
         self.assertTrue(
             LAND_WATCH.has_acknowledged_codex_issue_review(
                 comments,
+                HEAD_SHA,
                 utc_time(4, 0),
+                "landing-agent[bot]",
             ),
         )
 
@@ -311,7 +345,7 @@ class ReviewGateTests(unittest.TestCase):
                     "login": "github-actions[bot]",
                     "type": "Bot",
                 },
-                "body": "## Codex Review — correctness",
+                "body": ISSUE_REVIEW_BODY,
                 "created_at": "2026-07-17T04:01:00Z",
             },
             {
@@ -324,7 +358,63 @@ class ReviewGateTests(unittest.TestCase):
         self.assertFalse(
             LAND_WATCH.has_acknowledged_codex_issue_review(
                 comments,
+                HEAD_SHA,
                 utc_time(4, 0),
+                "carl-stone",
+            ),
+        )
+
+    def test_untrusted_author_cannot_acknowledge_issue_review(self) -> None:
+        comments = [
+            {
+                "id": 101,
+                "user": {
+                    "login": "github-actions[bot]",
+                    "type": "Bot",
+                },
+                "body": ISSUE_REVIEW_BODY,
+                "created_at": "2026-07-17T04:01:00Z",
+            },
+            {
+                "id": 102,
+                "user": {"login": "mallory", "type": "User"},
+                "body": "[codex] Review 101: acknowledged",
+                "created_at": "2026-07-17T04:02:00Z",
+            },
+        ]
+        self.assertFalse(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                comments,
+                HEAD_SHA,
+                utc_time(4, 0),
+                "carl-stone",
+            ),
+        )
+
+    def test_prior_head_marker_cannot_complete_issue_review(self) -> None:
+        comments = [
+            {
+                "id": 101,
+                "user": {
+                    "login": "github-actions[bot]",
+                    "type": "Bot",
+                },
+                "body": ISSUE_REVIEW_BODY.replace("a" * 10, "b" * 10),
+                "created_at": "2026-07-17T04:01:00Z",
+            },
+            {
+                "id": 102,
+                "user": {"login": "carl-stone", "type": "User"},
+                "body": "[codex] Review 101: acknowledged",
+                "created_at": "2026-07-17T04:02:00Z",
+            },
+        ]
+        self.assertFalse(
+            LAND_WATCH.has_acknowledged_codex_issue_review(
+                comments,
+                HEAD_SHA,
+                utc_time(4, 0),
+                "carl-stone",
             ),
         )
 
@@ -336,7 +426,7 @@ class ReviewGateTests(unittest.TestCase):
                     "login": "github-actions[bot]",
                     "type": "Bot",
                 },
-                "body": "## Codex Review — correctness",
+                "body": ISSUE_REVIEW_BODY,
                 "created_at": "2026-07-17T04:01:00Z",
             },
             {
@@ -351,14 +441,16 @@ class ReviewGateTests(unittest.TestCase):
                     "login": "github-actions[bot]",
                     "type": "Bot",
                 },
-                "body": "## Codex Review — security",
+                "body": ISSUE_REVIEW_BODY.replace("correctness", "security"),
                 "created_at": "2026-07-17T04:03:00Z",
             },
         ]
         self.assertFalse(
             LAND_WATCH.has_acknowledged_codex_issue_review(
                 comments,
+                HEAD_SHA,
                 utc_time(4, 0),
+                "carl-stone",
             ),
         )
 
@@ -376,19 +468,52 @@ class ReviewGateTests(unittest.TestCase):
                     "login": "github-actions[bot]",
                     "type": "Bot",
                 },
-                "body": "## Codex Review — correctness",
+                "body": ISSUE_REVIEW_BODY,
                 "created_at": "2026-07-17T04:02:00Z",
             },
         ]
         self.assertFalse(
             LAND_WATCH.has_acknowledged_codex_issue_review(
                 comments,
+                HEAD_SHA,
                 utc_time(4, 0),
+                "carl-stone",
             ),
         )
         self.assertEqual(
-            LAND_WATCH.filter_codex_review_issue_comments(comments),
+            LAND_WATCH.filter_codex_review_issue_comments(
+                comments,
+                "carl-stone",
+            ),
             [comments[1]],
+        )
+
+    def test_issue_review_edit_after_ack_requires_fresh_ack(self) -> None:
+        comments = [
+            {
+                "id": 101,
+                "user": {
+                    "login": "github-actions[bot]",
+                    "type": "Bot",
+                },
+                "body": ISSUE_REVIEW_BODY,
+                "created_at": "2026-07-17T04:01:00Z",
+                "updated_at": "2026-07-17T04:03:00Z",
+            },
+            {
+                "id": 102,
+                "user": {"login": "carl-stone", "type": "User"},
+                "body": "[codex] Review 101: acknowledged",
+                "created_at": "2026-07-17T04:02:00Z",
+            },
+        ]
+        self.assertEqual(
+            LAND_WATCH.filter_codex_comments(
+                comments,
+                None,
+                "carl-stone",
+            ),
+            [comments[0]],
         )
 
     def test_green_checks_wait_for_current_head_review(self) -> None:
@@ -421,6 +546,7 @@ class ReviewGateTests(unittest.TestCase):
                         HEAD_SHA,
                         head_review_boundary,
                         checks_done,
+                        "carl-stone",
                     ),
                     timeout=0.2,
                 )
@@ -437,7 +563,7 @@ class ReviewGateTests(unittest.TestCase):
                         "login": "github-actions[bot]",
                         "type": "Bot",
                     },
-                    "body": "## Codex Review — correctness",
+                    "body": ISSUE_REVIEW_BODY,
                     "created_at": "2026-07-17T04:01:00Z",
                 },
                 {
@@ -468,6 +594,7 @@ class ReviewGateTests(unittest.TestCase):
                         HEAD_SHA,
                         head_review_boundary,
                         checks_done,
+                        "carl-stone",
                     ),
                     timeout=0.2,
                 )

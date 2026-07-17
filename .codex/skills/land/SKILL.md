@@ -76,13 +76,22 @@ fi
 
 # Preferred: use the Async Watch Helper below. The manual loop is a fallback
 # when Python cannot run or the helper script is unavailable.
-# Wait for a submitted Codex review of the current PR head. Review comments and
-# issue comments remain blocking feedback and must be handled before merging.
+# Wait for either a submitted Codex review or an exactly acknowledged Codex
+# issue-review result for the current PR head. Review comments and issue
+# comments remain blocking feedback and must be handled before merging.
 head_sha=$(gh pr view --json headRefOid -q .headRefOid)
+head_marker=${head_sha:0:10}
+acknowledger_login=$(gh api user --jq .login)
 latest_review_request_at=$(
   gh api repos/{owner}/{repo}/issues/"$pr_number"/comments --paginate \
     --jq '.[] | select(.user.login != "chatgpt-codex-connector[bot]" and ((.body // "") | contains("@codex review"))) | .created_at' \
     | sort | tail -n 1
+)
+head_check_at=$(gh api repos/{owner}/{repo}/commits/"$head_sha"/check-runs \
+  --paginate --jq '.check_runs[].created_at' | sort | head -n 1)
+issue_review_not_before=$(
+  printf '%s\n%s\n' "$head_check_at" "$latest_review_request_at" \
+    | sed '/^$/d' | sort | tail -n 1
 )
 while true; do
   review_found=$(gh api repos/{owner}/{repo}/pulls/"$pr_number"/reviews \
@@ -90,6 +99,20 @@ while true; do
     --jq ".[] | select(.user.login == \"chatgpt-codex-connector[bot]\" and .commit_id == \"$head_sha\" and .submitted_at != null and .state != \"DISMISSED\" and .state != \"PENDING\" and (\"$latest_review_request_at\" == \"\" or .submitted_at > \"$latest_review_request_at\")) | .id" \
     | head -n 1)
   [ -n "$review_found" ] && break
+
+  issue_review=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
+    --paginate \
+    --jq ".[] | select(((.body // \"\") | (startswith(\"## Codex Review\") or startswith(\"Codex Review:\"))) and ((.body // \"\") | contains(\"**Reviewed commit:** \`$head_marker\`\")) and (\"$issue_review_not_before\" == \"\" or .created_at > \"$issue_review_not_before\")) | [.id, .created_at] | @tsv" \
+    | tail -n 1)
+  if [ -n "$issue_review" ]; then
+    issue_review_id=${issue_review%%$'\t'*}
+    issue_review_at=${issue_review#*$'\t'}
+    issue_ack=$(gh api repos/{owner}/{repo}/issues/"$pr_number"/comments \
+      --paginate \
+      --jq ".[] | select(.user.login == \"$acknowledger_login\" and .created_at > \"$issue_review_at\" and ((.body // \"\") | startswith(\"[codex] Review $issue_review_id:\"))) | .id" \
+      | head -n 1)
+    [ -n "$issue_ack" ] && break
+  fi
   sleep 10
 done
 
@@ -179,7 +202,9 @@ Exit codes:
   issue comment of the form `[codex] Review <comment-id>: <disposition>`. State
   whether you will address the feedback now or defer it (include rationale).
   The watcher accepts only results newer than the current head's first check
-  run and any later explicit review request.
+  run and any later explicit review request. If the result body is edited after
+  acknowledgement, inspect the changed content and post a fresh exact-ID
+  acknowledgement.
 - For a substantive top-level automated review body, acknowledge its findings
   with a root-level `[codex]` issue comment. Generated Copilot “Pull request
   overview” summaries are informational and do not require acknowledgement.
