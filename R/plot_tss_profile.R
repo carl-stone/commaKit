@@ -1,4 +1,7 @@
-#' @importFrom ggplot2 ggplot aes geom_point geom_smooth geom_vline scale_x_continuous scale_y_continuous facet_wrap labs theme_bw
+#' @importFrom ggplot2 ggplot aes geom_point
+#' @importFrom ggplot2 geom_smooth geom_vline
+#' @importFrom ggplot2 scale_x_continuous scale_y_continuous
+#' @importFrom ggplot2 facet_wrap labs theme_bw
 #' @importFrom GenomicRanges GRanges findOverlaps mcols
 #' @importFrom IRanges IRanges
 #' @importFrom S4Vectors queryHits subjectHits
