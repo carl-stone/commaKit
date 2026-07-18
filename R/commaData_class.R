@@ -239,8 +239,11 @@ setValidity("commaData", function(object) {
       }
     }
   }
-  if (all(c("mod_counts", "canonical_counts", "coverage") %in%
-            assayNames(object))) {
+  count_assays_present <- all(
+    c("mod_counts", "canonical_counts", "coverage") %in%
+      assayNames(object)
+  )
+  if (count_assays_present) {
     mod_counts <- SummarizedExperiment::assay(object, "mod_counts")
     canonical_counts <- SummarizedExperiment::assay(object, "canonical_counts")
     cov <- SummarizedExperiment::assay(object, "coverage")
