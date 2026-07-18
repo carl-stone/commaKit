@@ -236,6 +236,6 @@ genomic methylation-site substrate.
 
 # Session information
 
-```{r session-info}
+```{r session-info, eval = knitr::is_html_output(), include = knitr::is_html_output()}
 sessionInfo()
 ```
