@@ -399,21 +399,11 @@ assayLayers(comma_example_data)
 #> 3          NA           0.2.0
 #> 4          NA           0.2.0
 result_layers <- resultLayers(cd_dm)
-result_layers$timestamp <- NULL
-result_layers
-#> DataFrame with 1 row and 17 columns
+result_layers[, c("name", "role", "type", "source", "is_default")]
+#> DataFrame with 1 row and 5 columns
 #>          name        role                   type      source is_default
 #>   <character> <character>            <character> <character>  <logical>
 #> 1  diffMethyl  diffMethyl differential_methyla..  diffMethyl       TRUE
-#>        method     formula   reference   treatment     mod_context
-#>   <character> <character> <character> <character> <CharacterList>
-#> 1   methylkit  ~condition     control   treatment                
-#>          mod_type           motif p_adjust_method min_coverage     alpha
-#>   <CharacterList> <CharacterList>     <character>    <integer> <numeric>
-#> 1             6mA                              BH            5       0.5
-#>                                 result_cols package_version
-#>                             <CharacterList>     <character>
-#> 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,...           0.2.0
 ```
 
 Raw evidence assays are treated as canonical input evidence.

@@ -312,8 +312,7 @@ enr_kegg <- enrichMethylation(
 ```{r assay-and-result-layers}
 assayLayers(comma_example_data)
 result_layers <- resultLayers(cd_dm)
-result_layers$timestamp <- NULL
-result_layers
+result_layers[, c("name", "role", "type", "source", "is_default")]
 ```
 
 Raw evidence assays are treated as canonical input evidence. Transformations,
