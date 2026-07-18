@@ -253,8 +253,10 @@ test_that("show_smooth = TRUE renders a smooth profile", {
   expect_s3_class(p, "ggplot")
   built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
   rendered_smooth <- Filter(
-    function(layer) all(c("x", "y") %in% names(layer)) &&
-      nrow(layer) > nrow(p$data),
+    function(layer) {
+      all(c("x", "y") %in% names(layer)) &&
+        nrow(layer) > nrow(p$data)
+    },
     built_data
   )
   expect_length(rendered_smooth, 1L)
@@ -325,8 +327,10 @@ test_that("sparse smoothing preserves the raw points", {
   expect_s3_class(p, "ggplot")
   built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
   raw_points <- Filter(
-    function(layer) all(c("x", "y") %in% names(layer)) &&
-      nrow(layer) == nrow(p$data),
+    function(layer) {
+      all(c("x", "y") %in% names(layer)) &&
+        nrow(layer) == nrow(p$data)
+    },
     built_data
   )
   expect_length(raw_points, 1L)
@@ -360,8 +364,10 @@ test_that(
     expect_s3_class(p$facet, "FacetWrap")
     built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
     rendered_smooth <- Filter(
-      function(layer) all(c("x", "y") %in% names(layer)) &&
-        nrow(layer) > nrow(p$data),
+      function(layer) {
+        all(c("x", "y") %in% names(layer)) &&
+          nrow(layer) > nrow(p$data)
+      },
       built_data
     )
     expect_length(rendered_smooth, 1L)
@@ -384,8 +390,10 @@ test_that(
     expect_s3_class(p, "ggplot")
     built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
     rendered_smooth <- Filter(
-      function(layer) all(c("x", "y", "PANEL") %in% names(layer)) &&
-        nrow(layer) > nrow(p$data),
+      function(layer) {
+        all(c("x", "y", "PANEL") %in% names(layer)) &&
+          nrow(layer) > nrow(p$data)
+      },
       built_data
     )
     expect_length(rendered_smooth, 1L)
