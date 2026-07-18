@@ -61,13 +61,19 @@ NULL
     target = "promoter", regulator = "none", role_type = NA_character_
   ),
   minus_10_signal = list(
-    target = "promoter", regulator = "sigma_factor", role_type = "sigma_factor"
+    target = "promoter",
+    regulator = "sigma_factor",
+    role_type = "sigma_factor"
   ),
   minus_35_signal = list(
-    target = "promoter", regulator = "sigma_factor", role_type = "sigma_factor"
+    target = "promoter",
+    regulator = "sigma_factor",
+    role_type = "sigma_factor"
   ),
   transcription_factor_binding_site = list(
-    target = "promoter", regulator = "sigma_factor", role_type = "sigma_factor"
+    target = "promoter",
+    regulator = "sigma_factor",
+    role_type = "sigma_factor"
   ),
   protein_binding_site = list(
     target = "protein_binding", regulator = "protein", role_type = "TF_protein"
