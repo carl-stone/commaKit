@@ -27,6 +27,6 @@ compatibility period.
 }
 \examples{
 data(comma_example_data)
-genome(comma_example_data)
+genomeSizes(comma_example_data)
 
 }

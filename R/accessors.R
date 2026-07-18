@@ -481,7 +481,7 @@ setMethod("genomeSizes", "commaData", function(object) {
 #'
 #' @examples
 #' data(comma_example_data)
-#' genome(comma_example_data)
+#' genomeSizes(comma_example_data)
 #'
 #' @export
 setMethod("genome", "commaData", function(x) {
@@ -663,6 +663,8 @@ filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
 #' @inheritParams filterSites
 #' @return A \code{commaData} object containing only the selected sites and
 #'   samples.
+#' @usage \method{subset}{commaData}(x, mod_type = NULL, condition = NULL,
+#'   chrom = NULL, motif = NULL, mod_context = NULL, ...)
 #' @export
 subset.commaData <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
                              motif = NULL, mod_context = NULL, ...) {

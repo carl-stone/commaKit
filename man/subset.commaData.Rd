@@ -4,15 +4,8 @@
 \alias{subset.commaData}
 \title{Deprecated subset method for commaData objects}
 \usage{
-subset.commaData(
-  x,
-  mod_type = NULL,
-  condition = NULL,
-  chrom = NULL,
-  motif = NULL,
-  mod_context = NULL,
-  ...
-)
+\method{subset}{commaData}(x, mod_type = NULL, condition = NULL,
+  chrom = NULL, motif = NULL, mod_context = NULL, ...)
 }
 \arguments{
 \item{x}{A \code{commaData} object.}
