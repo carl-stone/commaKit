@@ -180,7 +180,7 @@ NULL
     mk_united <- mk_united[keep_united, ]
   }
 
-  mk_warn_counts <- list()
+  mk_warn_counts <- new.env(parent = emptyenv())
   mk_diff <- tryCatch(
     withCallingHandlers(
       # suppress only the "group: 0/1" message we've replaced
@@ -190,7 +190,7 @@ NULL
       warning = function(w) {
         key <- trimws(conditionMessage(w))
         n_prev <- mk_warn_counts[[key]]
-        mk_warn_counts[[key]] <<- (if (is.null(n_prev)) 0L else n_prev) + 1L
+        mk_warn_counts[[key]] <- (if (is.null(n_prev)) 0L else n_prev) + 1L
         invokeRestart("muffleWarning")
       }
     ),
@@ -198,7 +198,7 @@ NULL
       stop("methylKit::calculateDiffMeth() failed: ", e$message)
     }
   )
-  .emitMethylKitWarnings(mk_warn_counts)
+  .emitMethylKitWarnings(as.list(mk_warn_counts))
 
   # ── Extract results and standardise format ────────────────────────────────
   diff_df <- as.data.frame(mk_diff)
