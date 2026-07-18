@@ -139,8 +139,10 @@ plot_tss_profile <- function(object,
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
-  if (!is.character(feature_type) || length(feature_type) != 1L ||
-        is.na(feature_type)) {
+  valid_feature_type <- is.character(feature_type) &&
+    length(feature_type) == 1L &&
+    !is.na(feature_type)
+  if (!valid_feature_type) {
     stop("'feature_type' must be a single non-NA character string.")
   }
   window <- as.integer(window)
@@ -149,16 +151,26 @@ plot_tss_profile <- function(object,
   }
   color_by <- match.arg(color_by)
   facet_by <- match.arg(facet_by)
-  if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha) ||
-        alpha <= 0 || alpha > 1) {
+  valid_alpha <- is.numeric(alpha) &&
+    length(alpha) == 1L &&
+    !is.na(alpha) &&
+    alpha > 0 &&
+    alpha <= 1
+  if (!valid_alpha) {
     stop("'alpha' must be a single numeric value in (0, 1].")
   }
-  if (!is.logical(show_smooth) || length(show_smooth) != 1L ||
-        is.na(show_smooth)) {
+  valid_show_smooth <- is.logical(show_smooth) &&
+    length(show_smooth) == 1L &&
+    !is.na(show_smooth)
+  if (!valid_show_smooth) {
     stop("'show_smooth' must be TRUE or FALSE.")
   }
-  if (!is.numeric(smooth_span) || length(smooth_span) != 1L ||
-        is.na(smooth_span) || smooth_span <= 0 || smooth_span > 1) {
+  valid_smooth_span <- is.numeric(smooth_span) &&
+    length(smooth_span) == 1L &&
+    !is.na(smooth_span) &&
+    smooth_span > 0 &&
+    smooth_span <= 1
+  if (!valid_smooth_span) {
     stop("'smooth_span' must be a single numeric value in (0, 1].")
   }
   if (color_by == "regulatory_element" && is.null(regulatory_feature_types)) {
