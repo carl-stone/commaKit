@@ -21,7 +21,8 @@ supplied explicitly.}
 \value{
 A \code{data.frame} with columns: \code{chrom}, \code{position}
 (1-based), \code{strand}, \code{mod_type}, \code{motif} (always
-\code{NA} — Megalodon files do not encode motif context), \code{beta},
+\code{NA} because Megalodon files do not encode motif context),
+\code{beta},
 \code{coverage}, \code{mod_counts}, \code{canonical_counts}, and
 \code{other_mod_counts}. Count columns are \code{NA} because this parser
 aggregates probabilities rather than observed calls.
