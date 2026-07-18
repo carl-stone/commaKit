@@ -191,6 +191,22 @@ trim_trailing_whitespace <- function(lines) {
   sub("[[:space:]]+$", "", lines)
 }
 
+report_render_diff <- function(expected_path, actual_path) {
+  diff <- suppressWarnings(system2(
+    "diff",
+    c(
+      "-u", "--label", expected_path, expected_path,
+      "--label", actual_path, actual_path
+    ),
+    stdout = TRUE,
+    stderr = TRUE
+  ))
+  if (length(diff) > 0L) {
+    message("Rendered-output diff:")
+    message(paste(diff, collapse = "\n"))
+  }
+}
+
 check_rmarkdown_rendered <- function(files) {
   require_package("rmarkdown")
 
@@ -234,6 +250,7 @@ check_rmarkdown_rendered <- function(files) {
     actual <- trim_trailing_whitespace(readLines(rendered, warn = FALSE))
     if (!identical(expected, actual)) {
       stale <- c(stale, paste0(file, " -> ", output_file))
+      report_render_diff(output_file, rendered)
     }
   }
 
