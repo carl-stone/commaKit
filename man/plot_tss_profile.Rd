@@ -71,11 +71,12 @@ colour. Useful when \code{facet_by} provides sufficient grouping.}
 \item{alpha}{Numeric in \eqn{(0, 1]}. Point transparency. Default
 \code{0.4}.}
 
-\item{show_smooth}{Logical. If \code{TRUE}, a loess smoothing line is
-overlaid per colour group. Default \code{FALSE}.}
+\item{show_smooth}{Logical. If \code{TRUE}, a ggplot2 loess smoothing line
+is overlaid per colour group within each facet. Sparse or unstable groups
+follow ggplot2's native smoothing behavior. Default \code{FALSE}.}
 
 \item{smooth_span}{Numeric in \eqn{(0, 1]}. Loess span parameter passed
-to \code{\link[stats]{loess}}. Default \code{0.3}.}
+to ggplot2's smoothing statistic. Default \code{0.3}.}
 }
 \value{
 A \code{\link[ggplot2]{ggplot}} object. The x-axis shows signed
@@ -108,6 +109,13 @@ If \code{color_by = "regulatory_element"} and none of the specified
 \code{regulatory_feature_types} are found in \code{annotation(object)},
 the function issues a message and falls back to \code{color_by = "sample"}
 so the plot still renders.
+
+Colour mappings use ggplot2's default discrete scale. This keeps colour
+assignment and smoothing grouping in one ggplot2-native contract; colours
+are not lightened or darkened separately for points and smooths. When
+\code{show_smooth = TRUE}, \code{geom_smooth()} fits a loess curve for each
+mapped colour group in each facet. Sparse or numerically unstable groups
+are handled by ggplot2 and may produce a warning or no rendered curve.
 }
 \examples{
 data(comma_example_data)

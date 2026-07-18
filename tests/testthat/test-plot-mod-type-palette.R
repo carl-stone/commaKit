@@ -38,20 +38,3 @@ test_that("plot_genome_track applies shared mod_type colors", {
   expect_equal(pal[["6mA"]], "#e41a1c")
   expect_equal(pal[["5mC"]], "#377eb8")
 })
-
-test_that("plot_tss_profile applies shared mod_type colors", {
-  data(comma_example_data)
-
-  p <- suppressWarnings(plot_tss_profile(
-    comma_example_data,
-    feature_type = "gene",
-    color_by = "mod_type",
-    facet_by = "none"
-  ))
-  color_scale <- p$scales$get_scales("colour")
-  pal <- color_scale$palette(3L)
-
-  expect_s3_class(p, "ggplot")
-  expect_equal(pal[["6mA"]], "#e41a1c")
-  expect_equal(pal[["5mC"]], "#377eb8")
-})

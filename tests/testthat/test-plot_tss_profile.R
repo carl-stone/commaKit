@@ -174,12 +174,13 @@ test_that("x-axis data values are within [-window, +window]", {
 test_that("geom_vline at x = 0 is present", {
   obj <- .make_tss_data()
   p <- plot_tss_profile(obj, feature_type = "gene", window = 500L)
-  ## Find geom_vline layer(s)
-  layer_classes <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
-  expect_true(any(layer_classes == "GeomVline"))
-  ## Confirm the intercept is 0
-  vline_data <- p$layers[[which(layer_classes == "GeomVline")[1]]]$data
-  expect_equal(vline_data$xintercept, 0L)
+  built_data <- ggplot2::ggplot_build(p)$data
+  vline_data <- Filter(
+    function(layer) "xintercept" %in% names(layer),
+    built_data
+  )
+  expect_length(vline_data, 1L)
+  expect_equal(vline_data[[1L]]$xintercept, 0L)
 })
 
 ## ── color_by modes ───────────────────────────────────────────────────────────
@@ -241,33 +242,38 @@ test_that("facet_by = 'mod_type' produces FacetWrap layer", {
 
 ## ── smooth overlay ───────────────────────────────────────────────────────────
 
-test_that("show_smooth = TRUE adds a geom_line layer", {
+test_that("show_smooth = TRUE renders a smooth profile", {
   obj <- .make_tss_data()
-  p <- suppressWarnings(
-    plot_tss_profile(obj,
-      feature_type = "gene",
-      window = 500L, show_smooth = TRUE,
-      smooth_span = 0.5
-    )
+  p <- plot_tss_profile(
+    obj,
+    feature_type = "gene",
+    window = 500L, show_smooth = TRUE,
+    smooth_span = 0.5
   )
   expect_s3_class(p, "ggplot")
-  layer_classes <- vapply(p$layers, function(l) class(l$geom)[1], character(1))
-  expect_true(any(layer_classes == "GeomLine"))
-})
-
-test_that("show_smooth = TRUE warns on numerically unstable LOESS fit", {
-  obj <- .make_tss_data()
-  expect_warning(
-    plot_tss_profile(obj,
-      feature_type = "gene",
-      window = 500L, show_smooth = TRUE,
-      smooth_span = 0.5
-    ),
-    "LOESS.*numerical instability"
+  built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
+  rendered_smooth <- Filter(
+    function(layer) all(c("x", "y") %in% names(layer)) &&
+      nrow(layer) > nrow(p$data),
+    built_data
   )
+  expect_length(rendered_smooth, 1L)
+  expect_true(all(is.finite(rendered_smooth[[1L]]$y)))
 })
 
-test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
+test_that("unstable smoothing follows ggplot2's native warning behavior", {
+  obj <- .make_tss_data()
+  p <- plot_tss_profile(
+    obj,
+    feature_type = "gene",
+    window = 500L, show_smooth = TRUE,
+    smooth_span = 0.05
+  )
+  expect_s3_class(p, "ggplot")
+  expect_warning(ggplot2::ggplot_build(p), "Failed to fit group")
+})
+
+test_that("sparse smoothing preserves the raw points", {
   ## Make object with very few sites so each sample group has < 10 points
   positions <- c(950L, 1050L)
   beta_mat <- matrix(c(0.8, 0.9, 0.3, 0.2),
@@ -311,14 +317,20 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
   S4Vectors::metadata(tiny_obj)$annotation <- annot_gr
   S4Vectors::metadata(tiny_obj)$motifSites <- GenomicRanges::GRanges()
 
-  expect_warning(
-    p <- plot_tss_profile(tiny_obj,
-      feature_type = "gene",
-      window = 500L, show_smooth = TRUE
-    ),
-    "Fewer than 10 data points"
+  p <- plot_tss_profile(
+    tiny_obj,
+    feature_type = "gene",
+    window = 500L, show_smooth = TRUE
   )
   expect_s3_class(p, "ggplot")
+  built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
+  raw_points <- Filter(
+    function(layer) all(c("x", "y") %in% names(layer)) &&
+      nrow(layer) == nrow(p$data),
+    built_data
+  )
+  expect_length(raw_points, 1L)
+  expect_equal(nrow(raw_points[[1L]]), nrow(p$data))
 })
 
 test_that("color_by = 'none' returns ggplot with no colour aesthetic", {
@@ -346,13 +358,13 @@ test_that(
     expect_false("colour" %in% names(p$mapping))
     # Verify faceted
     expect_s3_class(p$facet, "FacetWrap")
-    # Verify smooth layer present
-    layer_classes <- vapply(
-      p$layers,
-      function(l) class(l$geom)[1],
-      character(1)
+    built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
+    rendered_smooth <- Filter(
+      function(layer) all(c("x", "y") %in% names(layer)) &&
+        nrow(layer) > nrow(p$data),
+      built_data
     )
-    expect_true(any(layer_classes == "GeomLine"))
+    expect_length(rendered_smooth, 1L)
   }
 )
 
@@ -363,27 +375,21 @@ test_that(
   ),
   {
     obj <- .make_tss_data()
-    p <- suppressWarnings(
-      plot_tss_profile(obj,
-        feature_type = "gene",
-        facet_by = "sample", show_smooth = TRUE,
-        smooth_span = 0.5
-      )
+    p <- plot_tss_profile(
+      obj,
+      feature_type = "gene",
+      facet_by = "sample", show_smooth = TRUE,
+      smooth_span = 0.5
     )
     expect_s3_class(p, "ggplot")
-    ## Find the geom_line layer (smooth)
-    layer_classes <- vapply(
-      p$layers,
-      function(l) class(l$geom)[1],
-      character(1)
+    built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
+    rendered_smooth <- Filter(
+      function(layer) all(c("x", "y", "PANEL") %in% names(layer)) &&
+        nrow(layer) > nrow(p$data),
+      built_data
     )
-    line_idx <- which(layer_classes == "GeomLine")[1]
-    expect_true(!is.na(line_idx))
-    ## The smooth data must include sample_name so ggplot can route per-panel
-    smooth_data <- p$layers[[line_idx]]$data
-    expect_true("sample_name" %in% names(smooth_data))
-    ## One row set per sample
-    expect_gte(length(unique(smooth_data$sample_name)), 1L)
+    expect_length(rendered_smooth, 1L)
+    expect_equal(length(unique(rendered_smooth[[1L]]$PANEL)), 2L)
   }
 )
 

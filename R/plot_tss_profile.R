@@ -1,10 +1,8 @@
-#' @importFrom ggplot2 ggplot aes geom_point geom_line geom_vline scale_x_continuous scale_y_continuous scale_color_manual facet_wrap labs theme_bw after_scale stage
+#' @importFrom ggplot2 ggplot aes geom_point geom_smooth geom_vline scale_x_continuous scale_y_continuous facet_wrap labs theme_bw
 #' @importFrom GenomicRanges GRanges findOverlaps mcols
 #' @importFrom IRanges IRanges
 #' @importFrom S4Vectors queryHits subjectHits
 #' @importFrom SummarizedExperiment rowData
-#' @importFrom stats loess predict na.exclude
-#' @importFrom grDevices hcl col2rgb rgb
 #' @importFrom methods is
 NULL
 
@@ -57,10 +55,11 @@ NULL
 #'   \code{"mod_context"}.
 #' @param alpha Numeric in \eqn{(0, 1]}. Point transparency. Default
 #'   \code{0.4}.
-#' @param show_smooth Logical. If \code{TRUE}, a loess smoothing line is
-#'   overlaid per colour group. Default \code{FALSE}.
+#' @param show_smooth Logical. If \code{TRUE}, a ggplot2 loess smoothing line
+#'   is overlaid per colour group within each facet. Sparse or unstable groups
+#'   follow ggplot2's native smoothing behavior. Default \code{FALSE}.
 #' @param smooth_span Numeric in \eqn{(0, 1]}. Loess span parameter passed
-#'   to \code{\link[stats]{loess}}. Default \code{0.3}.
+#'   to ggplot2's smoothing statistic. Default \code{0.3}.
 #'
 #' @details
 #' Unlike \code{\link{plot_metagene}}, which normalises positions to
@@ -81,6 +80,13 @@ NULL
 #' \code{regulatory_feature_types} are found in \code{annotation(object)},
 #' the function issues a message and falls back to \code{color_by = "sample"}
 #' so the plot still renders.
+#'
+#' Colour mappings use ggplot2's default discrete scale. This keeps colour
+#' assignment and smoothing grouping in one ggplot2-native contract; colours
+#' are not lightened or darkened separately for points and smooths. When
+#' \code{show_smooth = TRUE}, \code{geom_smooth()} fits a loess curve for each
+#' mapped colour group in each facet. Sparse or numerically unstable groups
+#' are handled by ggplot2 and may produce a warning or no rendered curve.
 #'
 #' @return A \code{\link[ggplot2]{ggplot}} object. The x-axis shows signed
 #'   position relative to the TSS in base pairs; the y-axis shows methylation
@@ -325,14 +331,6 @@ plot_tss_profile <- function(object,
     none               = NULL
   )
 
-  ## Map facet variable name (used in smooth grouping below)
-  facet_col <- switch(facet_by,
-    none        = NULL,
-    sample      = "sample_name",
-    mod_type    = "mod_type",
-    mod_context = "mod_context"
-  )
-
   ## ── I. Build ggplot ───────────────────────────────────────────────────────
   base_aes <- if (!is.null(color_var)) {
     ggplot2::aes(
@@ -348,18 +346,6 @@ plot_tss_profile <- function(object,
   }
   p <- ggplot2::ggplot(df, base_aes) +
     ggplot2::geom_point(
-      mapping = if (!is.null(color_var)) {
-        ggplot2::aes(color = ggplot2::stage(
-          start = .data[[color_var]],
-          after_scale = {
-            m <- grDevices::col2rgb(color) / 255
-            m <- m + (1 - m) * 0.4
-            grDevices::rgb(t(m))
-          }
-        ))
-      } else {
-        NULL
-      },
       alpha = alpha, size = 0.8,
       color = if (is.null(color_var)) "black" else NULL
     ) +
@@ -403,153 +389,16 @@ plot_tss_profile <- function(object,
     ) +
     ggplot2::theme_bw()
 
-  ## Colour scale for modification types and regulatory elements.
-  if (color_by == "mod_type") {
-    p <- p + ggplot2::scale_color_manual(
-      values = .modTypePalette(df$mod_type)
-    )
-  } else if (color_by == "regulatory_element" &&
-    "regulatory_element" %in% names(df)) {
-    lvls <- levels(df$regulatory_element)
-    n_reg <- sum(lvls != "None")
-    if (n_reg > 0L) {
-      ## Generate ggplot2-style hue colours using base R grDevices
-      pal_colors <- grDevices::hcl(
-        h = seq(15, 375, length.out = n_reg + 1L)[seq_len(n_reg)],
-        c = 100, l = 65
-      )
-      pal <- c(pal_colors, "grey70")
-    } else {
-      pal <- "grey70"
-    }
-    names(pal) <- lvls
-    p <- p + ggplot2::scale_color_manual(values = pal)
-  }
-
   ## ── J. Optional loess smooth overlay ─────────────────────────────────────
   if (show_smooth) {
-    ## Build grouping columns: color variable (if any) + facet column (if any).
-    ## This ensures each panel gets its own smooth line(s).
-    group_cols <- c(
-      if (!is.null(color_var)) color_var,
-      if (!is.null(facet_col)) facet_col
+    p <- p + ggplot2::geom_smooth(
+      method = "loess",
+      formula = y ~ x,
+      span = smooth_span,
+      se = FALSE,
+      na.rm = TRUE,
+      linewidth = 1.0
     )
-
-    if (length(group_cols) == 0L) {
-      ## No color, no facet — one global smooth
-      group_combos <- data.frame(.dummy = "all", stringsAsFactors = FALSE)
-    } else {
-      group_combos <- unique(df[, group_cols, drop = FALSE])
-      rownames(group_combos) <- NULL
-    }
-
-    sparse_groups <- character(0L)
-    unstable_groups <- character(0L)
-
-    smooth_rows <- lapply(seq_len(nrow(group_combos)), function(i) {
-      ## Filter df to this combination of grouping values
-      mask <- rep(TRUE, nrow(df))
-      for (col in group_cols) {
-        mask <- mask & (df[[col]] == group_combos[[col]][i])
-      }
-      sub <- df[mask & !is.na(df$beta), ]
-
-      g_label <- paste(unlist(group_combos[i, , drop = FALSE]),
-        collapse = "/"
-      )
-
-      if (nrow(sub) < 10L) {
-        sparse_groups <<- c(sparse_groups, g_label)
-        return(NULL)
-      }
-      loess_warns <- character(0L)
-      fit <- withCallingHandlers(
-        stats::loess(beta ~ rel_pos,
-          data = sub,
-          span = smooth_span,
-          na.action = stats::na.exclude
-        ),
-        warning = function(w) {
-          loess_warns <<- c(loess_warns, conditionMessage(w))
-          invokeRestart("muffleWarning")
-        }
-      )
-      xseq <- seq(-window, window, length.out = 200L)
-      yhat <- withCallingHandlers(
-        stats::predict(fit, newdata = data.frame(rel_pos = xseq)),
-        warning = function(w) {
-          loess_warns <<- c(loess_warns, conditionMessage(w))
-          invokeRestart("muffleWarning")
-        }
-      )
-      if (length(loess_warns) > 0L) {
-        unstable_groups <<- c(unstable_groups, g_label)
-      }
-      out <- data.frame(
-        rel_pos = xseq,
-        beta_smooth = as.numeric(yhat),
-        stringsAsFactors = FALSE
-      )
-      ## Attach grouping columns so ggplot routes lines to correct panels
-      for (col in group_cols) out[[col]] <- group_combos[[col]][i]
-      out
-    })
-    smooth_df <- do.call(rbind, Filter(Negate(is.null), smooth_rows))
-
-    if (length(sparse_groups) > 0L) {
-      warning(
-        "Fewer than 10 data points for group(s) ",
-        paste0("'", sparse_groups, "'", collapse = ", "),
-        "; loess smooth not drawn for these group(s)."
-      )
-    }
-    if (length(unstable_groups) > 0L) {
-      warning(
-        "LOESS smooth for group(s) ",
-        paste0("'", unstable_groups, "'", collapse = ", "),
-        " encountered numerical instability; the smooth may be unreliable. ",
-        "Consider adjusting smooth_span or increasing data density ",
-        "near this feature."
-      )
-    }
-
-    if (!is.null(smooth_df) && nrow(smooth_df) > 0L) {
-      if (is.null(color_var)) {
-        ## color_by = "none": points are black, smooth is red
-        smooth_aes <- ggplot2::aes(
-          x = .data[["rel_pos"]],
-          y = .data[["beta_smooth"]]
-        )
-        p <- p + ggplot2::geom_line(
-          data        = smooth_df,
-          smooth_aes,
-          color       = "red",
-          linewidth   = 1.0,
-          inherit.aes = FALSE
-        )
-      } else {
-        ## color_by != "none": points are lightened, smooth lines are
-        ## the same hue but darkened so they stand out above the points
-        smooth_aes <- ggplot2::aes(
-          x = .data[["rel_pos"]],
-          y = .data[["beta_smooth"]],
-          color = ggplot2::stage(
-            start = .data[[color_var]],
-            after_scale = {
-              m <- grDevices::col2rgb(color) / 255
-              m <- m * (1 - 0.3)
-              grDevices::rgb(t(m))
-            }
-          )
-        )
-        p <- p + ggplot2::geom_line(
-          data        = smooth_df,
-          smooth_aes,
-          linewidth   = 1.0,
-          inherit.aes = FALSE
-        )
-      }
-    }
   }
 
   ## ── K. Faceting ──────────────────────────────────────────────────────────
