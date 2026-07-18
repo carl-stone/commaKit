@@ -111,6 +111,39 @@ test_that("summarizeRegions() applies min_sites and keeps empty regions", {
   expect_true(is.na(empty_a$region_methylation))
 })
 
+test_that(
+  "summarizeRegions() keeps the permissive default and honors stricter values",
+  {
+    obj <- .make_region_summary_fixture()
+    regions <- .make_regions()
+
+    default_out <- summarizeRegions(
+      obj,
+      regions,
+      mod_context = "5mC_CCWGG"
+    )
+    strict_out <- summarizeRegions(
+      obj,
+      regions,
+      min_sites = 2L,
+      mod_context = "5mC_CCWGG"
+    )
+
+    default_first_s2 <- default_out[
+      default_out$region_id == "region_1" &
+        default_out$sample_name == "s2",
+    ]
+    strict_first_s2 <- strict_out[
+      strict_out$region_id == "region_1" &
+        strict_out$sample_name == "s2",
+    ]
+    expect_equal(default_first_s2$n_sites, 1L)
+    expect_equal(default_first_s2$region_methylation, 14 / 20)
+    expect_equal(strict_first_s2$n_sites, 1L)
+    expect_true(is.na(strict_first_s2$region_methylation))
+  }
+)
+
 test_that("summarizeRegions() respects modification site filters", {
   obj <- .make_region_summary_fixture()
   regions <- .make_regions()

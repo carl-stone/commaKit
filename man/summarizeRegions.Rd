@@ -20,9 +20,12 @@ summarizeRegions(
 regions to summarize.}
 
 \item{min_sites}{Integer. Minimum number of overlapping sites with usable
-count evidence and positive valid coverage required before
-\code{region_methylation} is reported. Regions with fewer usable sites
-return \code{NA} methylation for that sample. Default: \code{1L}.}
+count evidence and positive valid coverage required for each region and
+sample before \code{region_methylation} is reported. Regions with fewer
+usable sites return \code{NA} methylation for that sample. The default
+\code{1L} is intentionally permissive and can produce a summary from a
+single site. Use a higher, study-specific value when summaries will inform
+biological interpretation. Default: \code{1L}.}
 
 \item{mod_type, motif, mod_context}{Optional site filters. If provided, only
 sites matching these modification annotations are summarized.
@@ -54,6 +57,14 @@ this corresponds to \code{Nvalid_cov = Nmod + Nother_mod + Ncanonical}.
 default. Beta-only/reconstructed-count import paths should record provenance
 and message when counts are reconstructed; regional summaries consume the
 count assays present in the \code{commaData} object.
+
+The default \code{min_sites = 1L} is intended for descriptive summaries and
+preserves results for sparse regions. A result supported by one usable site
+can be unstable and should not be treated as robust biological evidence.
+For biological interpretation, set \code{min_sites} to a higher threshold
+justified by the study design, site density, and coverage. No universal
+threshold is imposed, and this filter does not provide an uncertainty
+estimate or establish statistical support.
 }
 \examples{
 data(comma_example_data)
@@ -61,6 +72,9 @@ regions <- GenomicRanges::GRanges(
   seqnames = "chr_sim",
   ranges = IRanges::IRanges(start = 1, end = 5000)
 )
-summarizeRegions(comma_example_data, regions, mod_type = "6mA")
+# Use a higher, study-specific threshold when interpreting regions
+# biologically; 5L is illustrative rather than universal.
+summarizeRegions(comma_example_data, regions, min_sites = 5L,
+                 mod_type = "6mA")
 
 }

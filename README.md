@@ -283,6 +283,13 @@ plot_heatmap(res, cd_dm, n_sites = 30L)
 Use `summarizeRegions()` when site-level methylation should be
 aggregated over features, windows, or other genomic intervals.
 
+The default `min_sites = 1L` is intentionally permissive: a region can be
+reported when only one site has usable count evidence. This is useful for
+descriptive summaries of sparse regions, but a single site can produce an
+unstable result. When summaries will inform biological interpretation, use a
+higher threshold justified by the study design, site density, and coverage.
+The value below is illustrative rather than a universal recommendation.
+
 ``` r
 regions <- GenomicRanges::GRanges(
   seqnames = "chr_sim",
@@ -290,7 +297,7 @@ regions <- GenomicRanges::GRanges(
   region_id = c("left_half", "right_half")
 )
 
-region_summary <- summarizeRegions(comma_example_data, regions)
+region_summary <- summarizeRegions(comma_example_data, regions, min_sites = 5L)
 head(region_summary)
 #>   region_id seqnames start   end width strand region_region_id sample_name
 #> 1  region_1  chr_sim     1 50000 50000      *        left_half      ctrl_1
