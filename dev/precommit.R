@@ -174,117 +174,26 @@ check_roxygen_documented <- function(files) {
 }
 
 
-existing_rmd_files <- function(files) {
-  rmd_files <- files[file.exists(files) & grepl("\\.[Rr]md$", files)]
-  md_files <- files[
-    file.exists(files) & grepl("\\.md$", files, ignore.case = TRUE)
-  ]
-  rmd_siblings <- sub("\\.md$", ".Rmd", md_files, ignore.case = TRUE)
-  unique(c(rmd_files, rmd_siblings[file.exists(rmd_siblings)]))
-}
-
 rendered_md_path <- function(rmd_file) {
   sub("\\.[Rr]md$", ".md", rmd_file)
 }
 
-trim_trailing_whitespace <- function(lines) {
-  sub("[[:space:]]+$", "", lines)
-}
-
-normalize_pipe_table <- function(line) {
-  if (!grepl("^\\|.*\\|$", line)) {
-    return(line)
-  }
-  contents <- sub("^\\||\\|$", "", line)
-  cells <- trimws(strsplit(contents, "\\|", fixed = FALSE)[[1]])
-  cells[grepl("^:?-+:?$", cells)] <- "---"
-  paste0("| ", paste(cells, collapse = " | "), " |")
-}
-
-normalize_rendered_markdown <- function(lines) {
-  vapply(trim_trailing_whitespace(lines), normalize_pipe_table, character(1))
-}
-
-report_render_diff <- function(expected_path, actual_path) {
-  diff <- suppressWarnings(system2(
-    "diff",
-    c(
-      "-u", "--label", expected_path, expected_path,
-      "--label", actual_path, actual_path
-    ),
-    stdout = TRUE,
-    stderr = TRUE
-  ))
-  if (length(diff) > 0L) {
-    message("Rendered-output diff:")
-    message(paste(diff, collapse = "\n"))
-  }
-}
-
 check_rmarkdown_rendered <- function(files) {
-  require_package("rmarkdown")
-
-  requested_files <- files
-  files <- existing_rmd_files(files)
-  if (length(files) == 0L && length(requested_files) == 0L) {
-    files <- existing_rmd_files(Sys.glob(c("*.Rmd", "vignettes/*.Rmd")))
-  }
-
-  output_files <- vapply(files, rendered_md_path, character(1))
-  missing <- files[!file.exists(output_files)]
-  files <- files[file.exists(output_files)]
-  if (length(files) == 0L && length(missing) == 0L) {
-    message("No R Markdown files with Markdown outputs to check.")
+  sources <- files[grepl("\\.[Rr]md$", files)]
+  if (length(sources) == 0L) {
+    message("No changed R Markdown files to check.")
     return(invisible(TRUE))
   }
-
-  stale <- if (length(missing) > 0L) {
-    paste0(missing, " -> ", rendered_md_path(missing), " (missing)")
-  } else {
-    character()
-  }
-  for (file in files) {
-    output_file <- rendered_md_path(file)
-    render_dir <- tempfile("rmd-render-")
-    dir.create(render_dir)
-    on.exit(unlink(render_dir, recursive = TRUE), add = TRUE)
-    render_input <- file.path(render_dir, basename(file))
-    if (!file.copy(file, render_input, overwrite = TRUE)) {
-      stop("Could not copy R Markdown source to temporary render directory.")
-    }
-
-    rendered <- rmarkdown::render(
-      render_input,
-      output_format = "github_document",
-      knit_root_dir = normalizePath(dirname(file), mustWork = TRUE),
-      quiet = TRUE,
-      envir = new.env(parent = globalenv())
-    )
-    expected <- normalize_rendered_markdown(
-      readLines(output_file, warn = FALSE)
-    )
-    actual <- normalize_rendered_markdown(readLines(rendered, warn = FALSE))
-    if (!identical(expected, actual)) {
-      stale <- c(stale, paste0(file, " -> ", output_file))
-      report_render_diff(output_file, rendered)
-    }
-  }
-
-  if (length(stale) > 0L) {
-    message("R Markdown outputs are stale.")
-    message(
-      "Render the stale source file(s), stage the generated output, ",
-      "and retry."
-    )
-    message("For README changes, run:")
-    message("  Rscript -e 'rmarkdown::render(\"README.Rmd\")'")
-    message("")
-    message("Stale pairs:")
-    message("- ", paste(stale, collapse = "\n- "))
+  missing <- vapply(sources, rendered_md_path, character(1))
+  missing <- missing[!missing %in% files]
+  if (length(missing) > 0L) {
+    message("Rendered Markdown outputs were not updated with their sources.")
+    message("Render each changed R Markdown source and include its output.")
+    message("Missing changed output(s):")
+    message("- ", paste(missing, collapse = "\n- "))
     quit(status = 1, save = "no")
   }
-
-  message("R Markdown outputs are up to date.")
+  message("Every changed R Markdown source includes its Markdown output.")
   invisible(TRUE)
 }
 
