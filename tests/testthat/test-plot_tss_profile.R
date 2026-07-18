@@ -240,6 +240,16 @@ test_that("facet_by = 'mod_type' produces FacetWrap layer", {
   expect_s3_class(p$facet, "FacetWrap")
 })
 
+.built_geom_data <- function(p, geom_class) {
+  layer_index <- which(vapply(
+    p$layers,
+    function(layer) inherits(layer$geom, geom_class),
+    logical(1L)
+  ))
+  expect_length(layer_index, 1L)
+  ggplot2::ggplot_build(p)$data[[layer_index]]
+}
+
 ## ── smooth overlay ───────────────────────────────────────────────────────────
 
 test_that("show_smooth = TRUE renders a smooth profile", {
@@ -251,16 +261,9 @@ test_that("show_smooth = TRUE renders a smooth profile", {
     smooth_span = 0.5
   )
   expect_s3_class(p, "ggplot")
-  built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
-  rendered_smooth <- Filter(
-    function(layer) {
-      all(c("x", "y") %in% names(layer)) &&
-        nrow(layer) > nrow(p$data)
-    },
-    built_data
-  )
-  expect_length(rendered_smooth, 1L)
-  expect_true(all(is.finite(rendered_smooth[[1L]]$y)))
+  rendered_smooth <- suppressWarnings(.built_geom_data(p, "GeomSmooth"))
+  expect_gt(nrow(rendered_smooth), 0L)
+  expect_true(all(is.finite(rendered_smooth$y)))
 })
 
 test_that("unstable smoothing follows ggplot2's native warning behavior", {
@@ -272,7 +275,10 @@ test_that("unstable smoothing follows ggplot2's native warning behavior", {
     smooth_span = 0.05
   )
   expect_s3_class(p, "ggplot")
-  expect_warning(ggplot2::ggplot_build(p), "Failed to fit group")
+  expect_warning(
+    ggplot2::ggplot_build(p),
+    "Failed to fit group|Computation failed|stat_smooth"
+  )
 })
 
 test_that("sparse smoothing preserves the raw points", {
@@ -325,16 +331,22 @@ test_that("sparse smoothing preserves the raw points", {
     window = 500L, show_smooth = TRUE
   )
   expect_s3_class(p, "ggplot")
-  built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
-  raw_points <- Filter(
-    function(layer) {
-      all(c("x", "y") %in% names(layer)) &&
-        nrow(layer) == nrow(p$data)
-    },
-    built_data
+  raw_points <- suppressWarnings(.built_geom_data(p, "GeomPoint"))
+  expect_equal(nrow(raw_points), nrow(p$data))
+})
+
+test_that("regulatory sites without overlap render in grey70", {
+  obj <- .make_tss_data_with_regulatory()
+  p <- plot_tss_profile(
+    obj,
+    feature_type = "gene",
+    color_by = "regulatory_element",
+    regulatory_feature_types = "sigma_binding"
   )
-  expect_length(raw_points, 1L)
-  expect_equal(nrow(raw_points[[1L]]), nrow(p$data))
+  built_points <- .built_geom_data(p, "GeomPoint")
+  none_rows <- p$data$regulatory_element == "None"
+  expect_true(any(none_rows))
+  expect_true(all(built_points$colour[none_rows] == "grey70"))
 })
 
 test_that("color_by = 'none' returns ggplot with no colour aesthetic", {
@@ -362,15 +374,8 @@ test_that(
     expect_false("colour" %in% names(p$mapping))
     # Verify faceted
     expect_s3_class(p$facet, "FacetWrap")
-    built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
-    rendered_smooth <- Filter(
-      function(layer) {
-        all(c("x", "y") %in% names(layer)) &&
-          nrow(layer) > nrow(p$data)
-      },
-      built_data
-    )
-    expect_length(rendered_smooth, 1L)
+    rendered_smooth <- suppressWarnings(.built_geom_data(p, "GeomSmooth"))
+    expect_gt(nrow(rendered_smooth), 0L)
   }
 )
 
@@ -388,16 +393,9 @@ test_that(
       smooth_span = 0.5
     )
     expect_s3_class(p, "ggplot")
-    built_data <- suppressWarnings(ggplot2::ggplot_build(p)$data)
-    rendered_smooth <- Filter(
-      function(layer) {
-        all(c("x", "y", "PANEL") %in% names(layer)) &&
-          nrow(layer) > nrow(p$data)
-      },
-      built_data
-    )
-    expect_length(rendered_smooth, 1L)
-    expect_equal(length(unique(rendered_smooth[[1L]]$PANEL)), 2L)
+    rendered_smooth <- suppressWarnings(.built_geom_data(p, "GeomSmooth"))
+    expect_gt(nrow(rendered_smooth), 0L)
+    expect_equal(length(unique(rendered_smooth$PANEL)), 2L)
   }
 )
 

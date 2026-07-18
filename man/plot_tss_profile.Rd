@@ -56,8 +56,10 @@ included.}
 \item{\code{"sample"}}{One colour per sample (default).}
 \item{\code{"regulatory_element"}}{Sites coloured by the first
 regulatory feature they overlap (from \code{regulatory_feature_types});
-sites with no overlap are labelled \code{"None"} and shown in grey.
-Requires \code{regulatory_feature_types}.}
+sites with no overlap are labelled \code{"None"} and shown in
+\code{"grey70"}. This neutral colour is retained as a documented
+exception to the ggplot2 default discrete palette. Requires
+\code{regulatory_feature_types}.}
 \item{\code{"mod_type"}}{One colour per modification type.}
 \item{\code{"mod_context"}}{One colour per modification context.}
 \item{\code{"none"}}{No colour mapping; all points drawn in the default
@@ -110,12 +112,15 @@ If \code{color_by = "regulatory_element"} and none of the specified
 the function issues a message and falls back to \code{color_by = "sample"}
 so the plot still renders.
 
-Colour mappings use ggplot2's default discrete scale. This keeps colour
-assignment and smoothing grouping in one ggplot2-native contract; colours
-are not lightened or darkened separately for points and smooths. When
-\code{show_smooth = TRUE}, \code{geom_smooth()} fits a loess curve for each
-mapped colour group in each facet. Sparse or numerically unstable groups
-are handled by ggplot2 and may produce a warning or no rendered curve.
+Colour mappings use ggplot2's default discrete scale. The
+\code{"regulatory_element"} mapping retains \code{"grey70"} for
+unmatched sites because that neutral background colour is part of its
+documented public contract; named regulatory feature types use the
+default ggplot2 hue sequence. Colours are not lightened or darkened
+separately for points and smooths. When \code{show_smooth = TRUE},
+\code{geom_smooth()} fits a loess curve for each mapped colour group in
+each facet. Sparse or numerically unstable groups are handled by ggplot2
+and may produce a warning or no rendered curve.
 }
 \examples{
 data(comma_example_data)

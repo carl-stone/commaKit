@@ -1,5 +1,4 @@
-#' @importFrom ggplot2 ggplot aes geom_point geom_smooth geom_vline
-#'   scale_x_continuous scale_y_continuous facet_wrap labs theme_bw
+#' @importFrom ggplot2 ggplot aes geom_point geom_smooth geom_vline scale_x_continuous scale_y_continuous facet_wrap labs theme_bw
 #' @importFrom GenomicRanges GRanges findOverlaps mcols
 #' @importFrom IRanges IRanges
 #' @importFrom S4Vectors queryHits subjectHits
@@ -44,8 +43,10 @@ NULL
 #'     \item{\code{"sample"}}{One colour per sample (default).}
 #'     \item{\code{"regulatory_element"}}{Sites coloured by the first
 #'       regulatory feature they overlap (from \code{regulatory_feature_types});
-#'       sites with no overlap are labelled \code{"None"} and shown in grey.
-#'       Requires \code{regulatory_feature_types}.}
+#'       sites with no overlap are labelled \code{"None"} and shown in
+#'       \code{"grey70"}. This neutral colour is retained as a documented
+#'       exception to the ggplot2 default discrete palette. Requires
+#'       \code{regulatory_feature_types}.}
 #'     \item{\code{"mod_type"}}{One colour per modification type.}
 #'     \item{\code{"mod_context"}}{One colour per modification context.}
 #'     \item{\code{"none"}}{No colour mapping; all points drawn in the default
@@ -82,12 +83,15 @@ NULL
 #' the function issues a message and falls back to \code{color_by = "sample"}
 #' so the plot still renders.
 #'
-#' Colour mappings use ggplot2's default discrete scale. This keeps colour
-#' assignment and smoothing grouping in one ggplot2-native contract; colours
-#' are not lightened or darkened separately for points and smooths. When
-#' \code{show_smooth = TRUE}, \code{geom_smooth()} fits a loess curve for each
-#' mapped colour group in each facet. Sparse or numerically unstable groups
-#' are handled by ggplot2 and may produce a warning or no rendered curve.
+#' Colour mappings use ggplot2's default discrete scale. The
+#' \code{"regulatory_element"} mapping retains \code{"grey70"} for
+#' unmatched sites because that neutral background colour is part of its
+#' documented public contract; named regulatory feature types use the
+#' default ggplot2 hue sequence. Colours are not lightened or darkened
+#' separately for points and smooths. When \code{show_smooth = TRUE},
+#' \code{geom_smooth()} fits a loess curve for each mapped colour group in
+#' each facet. Sparse or numerically unstable groups are handled by ggplot2
+#' and may produce a warning or no rendered curve.
 #'
 #' @return A \code{\link[ggplot2]{ggplot}} object. The x-axis shows signed
 #'   position relative to the TSS in base pairs; the y-axis shows methylation
@@ -357,11 +361,13 @@ plot_tss_profile <- function(object,
       y = .data[["beta"]]
     )
   }
+  point_layer <- if (is.null(color_var)) {
+    ggplot2::geom_point(alpha = alpha, size = 0.8, color = "black")
+  } else {
+    ggplot2::geom_point(alpha = alpha, size = 0.8)
+  }
   p <- ggplot2::ggplot(df, base_aes) +
-    ggplot2::geom_point(
-      alpha = alpha, size = 0.8,
-      color = if (is.null(color_var)) "black" else NULL
-    ) +
+    point_layer +
     ggplot2::geom_vline(
       xintercept = 0L,
       linetype   = "dashed",
@@ -401,6 +407,28 @@ plot_tss_profile <- function(object,
       }
     ) +
     ggplot2::theme_bw()
+
+  ## Regulatory plots retain the documented neutral colour for sites without
+  ## a regulatory overlap. The remaining colours reproduce ggplot2's default
+  ## hue sequence; this exception is intentionally limited to this mapping.
+  if (color_by == "regulatory_element") {
+    regulatory_levels <- levels(df$regulatory_element)
+    n_regulatory_types <- length(regulatory_levels) - 1L
+    regulatory_colors <- if (n_regulatory_types > 0L) {
+      grDevices::hcl(
+        h = seq(15, 375, length.out = n_regulatory_types + 1L)[
+          seq_len(n_regulatory_types)
+        ],
+        c = 100,
+        l = 65
+      )
+    } else {
+      character()
+    }
+    regulatory_colors <- c(regulatory_colors, "grey70")
+    names(regulatory_colors) <- regulatory_levels
+    p <- p + ggplot2::scale_color_manual(values = regulatory_colors)
+  }
 
   ## ── J. Optional loess smooth overlay ─────────────────────────────────────
   if (show_smooth) {
