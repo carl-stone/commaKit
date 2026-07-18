@@ -37,7 +37,7 @@ NULL
 #   rna                  parse the first gene-like word from feature_names.
 #
 # Feature types not listed here retain the historical identity-target and
-# no-regulator behavior through .COMMA_DEFAULT_FEATURE_ROLE_RULE.
+# no-regulator behavior through .COMMA_DEFAULT_ROLE_RULE.
 .COMMA_FEATURE_ROLE_RULES <- list(
   gene = list(
     target = "identity", regulator = "none", role_type = NA_character_
@@ -95,7 +95,7 @@ NULL
   )
 )
 
-.COMMA_DEFAULT_FEATURE_ROLE_RULE <- list(
+.COMMA_DEFAULT_ROLE_RULE <- list(
   target = "identity",
   regulator = "none",
   role_type = NA_character_
@@ -106,7 +106,7 @@ NULL
     stop("'feature_type' must be a single non-NA string.")
   }
   rule <- .COMMA_FEATURE_ROLE_RULES[[feature_type]]
-  if (is.null(rule)) .COMMA_DEFAULT_FEATURE_ROLE_RULE else rule
+  if (is.null(rule)) .COMMA_DEFAULT_ROLE_RULE else rule
 }
 
 .asEnrichmentList <- function(x) {
@@ -123,7 +123,9 @@ NULL
 
 .filterFeatureTypeOverlaps <- function(type_indices, rel_positions) {
   Map(function(indices, positions) {
-    if (length(indices) == 0L) return(integer(0L))
+    if (length(indices) == 0L) {
+      return(integer(0L))
+    }
     inside <- vapply(indices, function(index) {
       length(positions) >= index &&
         !is.na(positions[index]) &&
@@ -135,7 +137,8 @@ NULL
 
 .extractFeatureValues <- function(values, type_indices) {
   value_lists <- .asEnrichmentList(values)
-  Map(function(value, indices) as.character(value[indices]),
+  Map(
+    function(value, indices) as.character(value[indices]),
     value_lists, type_indices
   )
 }
