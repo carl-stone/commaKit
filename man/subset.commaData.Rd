@@ -46,7 +46,9 @@ A \code{commaData} object containing only the selected sites and
 samples.
 }
 \description{
-\code{subset(commaData)} is deprecated to avoid package-level masking of
-\code{base::subset()}. Use \code{\link{filterSites}} for common
+\code{subset.commaData()} and the registered S4
+\code{subset(commaData)} method remain available as deprecated compatibility
+wrappers until the next planned breaking release. They avoid package-level
+masking of \code{base::subset()}; use \code{\link{filterSites}} for common
 commaData filters or \code{[} for index-based subsetting.
 }

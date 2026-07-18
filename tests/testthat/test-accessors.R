@@ -256,14 +256,18 @@ test_that("modTypes() returns only unique values", {
 
 test_that("genome() returns a named integer vector", {
   obj <- .make_two_modtype()
-  g <- genome(obj)
+  g <- NULL
+  expect_warning(g <- genome(obj), regexp = "deprecated.*genomeSizes")
   expect_true(is.integer(g))
   expect_false(is.null(names(g)))
 })
 
 test_that("genome() returns correct chromosome sizes", {
   obj <- .make_two_modtype()
-  expect_equal(genome(obj), c(chr_sim = 100000L))
+  expect_warning(
+    expect_equal(genome(obj), c(chr_sim = 100000L)),
+    regexp = "deprecated.*genomeSizes"
+  )
 })
 
 test_that(
@@ -271,7 +275,10 @@ test_that(
   {
     obj <- .make_two_modtype()
     expect_equal(genomeSizes(obj), c(chr_sim = 100000L))
-    expect_equal(genome(obj), genomeSizes(obj))
+    expect_warning(
+      expect_equal(genome(obj), genomeSizes(obj)),
+      regexp = "deprecated.*genomeSizes"
+    )
   }
 )
 
@@ -280,7 +287,7 @@ test_that("genome() returns NULL when no Seqinfo", {
   rr <- rowRanges(obj)
   GenomeInfoDb::seqlengths(rr) <- NA_integer_
   rowRanges(obj) <- rr
-  expect_null(genome(obj))
+  expect_warning(expect_null(genome(obj)), regexp = "deprecated.*genomeSizes")
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -331,7 +338,7 @@ test_that("[ subsetting preserves commaData class", {
 test_that("[ subsetting keeps custom slots intact", {
   obj <- .make_two_modtype()
   sub <- obj[1:3, ]
-  expect_equal(genome(sub), genome(obj))
+  expect_equal(genomeSizes(sub), genomeSizes(obj))
   expect_equal(length(annotation(sub)), length(annotation(obj)))
 })
 
@@ -498,7 +505,7 @@ test_that("comma_example_data loads and accessors work correctly", {
   expect_equal(sort(modTypes(comma_example_data)), c("5mC", "6mA"))
   expect_equal(ncol(comma_example_data), 6L)
   expect_equal(nrow(comma_example_data), 588L)
-  expect_equal(genome(comma_example_data), c(chr_sim = 100000L))
+  expect_equal(genomeSizes(comma_example_data), c(chr_sim = 100000L))
   expect_equal(colnames(comma_example_data), expected_samples)
 
   samples <- sampleInfo(comma_example_data)
@@ -638,7 +645,7 @@ test_that("coverage() compatibility wrapper warns and returns siteCoverage", {
   obj <- .make_two_modtype()
   expect_warning(
     cov <- coverage(obj),
-    regexp = "deprecated"
+    regexp = "deprecated.*siteCoverage"
   )
   expect_equal(cov, siteCoverage(obj))
 })
@@ -658,9 +665,36 @@ test_that(
   {
     obj <- .make_two_modtype()
     expect_warning(
-      sub <- subset(obj, mod_type = "6mA"),
-      regexp = "deprecated"
+      sub <- subset.commaData(obj, mod_type = "6mA"),
+      regexp = "deprecated.*filterSites"
     )
     expect_equal(sub, filterSites(obj, mod_type = "6mA"))
   }
 )
+
+test_that("S4 subset compatibility method warns and returns filterSites", {
+  obj <- .make_two_modtype()
+  expect_warning(
+    sub <- subset(obj, mod_type = "6mA"),
+    regexp = "deprecated.*filterSites"
+  )
+  expect_equal(sub, filterSites(obj, mod_type = "6mA"))
+})
+
+test_that("[ subsetting preserves assays, ranges, metadata, and validity", {
+  obj <- .make_two_modtype()
+  sub <- obj[1:3, 1:2]
+
+  expect_equal(
+    assay(sub, "methylation"),
+    assay(obj, "methylation")[1:3, 1:2]
+  )
+  expect_equal(
+    siteCoverage(sub),
+    siteCoverage(obj)[1:3, 1:2]
+  )
+  expect_equal(rowRanges(sub), rowRanges(obj)[1:3])
+  expect_equal(colData(sub), colData(obj)[1:2, , drop = FALSE])
+  expect_equal(S4Vectors::metadata(sub), S4Vectors::metadata(obj))
+  expect_true(validObject(sub))
+})

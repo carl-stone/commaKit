@@ -2,7 +2,7 @@
 % Please edit documentation in R/accessors.R
 \name{genome,commaData-method}
 \alias{genome,commaData-method}
-\title{GenomeInfoDb genome accessor compatibility method for commaData}
+\title{Deprecated GenomeInfoDb genome accessor compatibility method}
 \usage{
 \S4method{genome}{commaData}(x)
 }
@@ -14,10 +14,16 @@ A named integer vector of chromosome sizes, or \code{NULL} if no
 size information was provided at construction.
 }
 \description{
+\code{genome(commaData)} remains available as a compatibility wrapper until
+the next planned breaking release. It emits a deprecation warning; use
+\code{genomeSizes()} for chromosome lengths instead.
+}
+\details{
 Historically, \code{genome(commaData)} returned chromosome sizes. New code
 should use \code{\link{genomeSizes}} for chromosome lengths and
 \code{GenomeInfoDb::genome(seqinfo(object))} for genome build/name metadata.
-This method preserves the historical size-vector behavior for compatibility.
+This method preserves the historical size-vector behavior during the
+compatibility period.
 }
 \examples{
 data(comma_example_data)

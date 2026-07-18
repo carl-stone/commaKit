@@ -462,12 +462,17 @@ setMethod("genomeSizes", "commaData", function(object) {
   if (length(sl) == 0 || all(is.na(sl))) NULL else sl
 })
 
-#' GenomeInfoDb genome accessor compatibility method for commaData
+#' Deprecated GenomeInfoDb genome accessor compatibility method
+#'
+#' \code{genome(commaData)} remains available as a compatibility wrapper until
+#' the next planned breaking release. It emits a deprecation warning; use
+#' \code{genomeSizes()} for chromosome lengths instead.
 #'
 #' Historically, \code{genome(commaData)} returned chromosome sizes. New code
 #' should use \code{\link{genomeSizes}} for chromosome lengths and
 #' \code{GenomeInfoDb::genome(seqinfo(object))} for genome build/name metadata.
-#' This method preserves the historical size-vector behavior for compatibility.
+#' This method preserves the historical size-vector behavior during the
+#' compatibility period.
 #'
 #' @param x A \code{commaData} object.
 #'
@@ -480,6 +485,7 @@ setMethod("genomeSizes", "commaData", function(object) {
 #'
 #' @export
 setMethod("genome", "commaData", function(x) {
+  .Deprecated("genomeSizes")
   genomeSizes(x)
 })
 
@@ -648,8 +654,10 @@ filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
 
 #' Deprecated subset method for commaData objects
 #'
-#' \code{subset(commaData)} is deprecated to avoid package-level masking of
-#' \code{base::subset()}. Use \code{\link{filterSites}} for common
+#' \code{subset.commaData()} and the registered S4
+#' \code{subset(commaData)} method remain available as deprecated compatibility
+#' wrappers until the next planned breaking release. They avoid package-level
+#' masking of \code{base::subset()}; use \code{\link{filterSites}} for common
 #' commaData filters or \code{[} for index-based subsetting.
 #'
 #' @inheritParams filterSites
@@ -658,10 +666,7 @@ filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
 #' @export
 subset.commaData <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
                              motif = NULL, mod_context = NULL, ...) {
-  warning(
-    "subset.commaData() is deprecated; use filterSites() instead.",
-    call. = FALSE
-  )
+  .Deprecated("filterSites")
   filterSites(x,
     mod_type = mod_type, condition = condition, chrom = chrom,
     motif = motif, mod_context = mod_context, ...

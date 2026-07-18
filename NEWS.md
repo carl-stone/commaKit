@@ -70,6 +70,13 @@
 
 ## Package improvements
 
+* **Legacy wrapper lifecycle policy** — `coverage(commaData)`,
+  `genome(commaData)`, `subset.commaData()`, and the registered S4
+  `subset(commaData)` method remain supported compatibility paths until the
+  next planned breaking release. Each emits a deprecation warning. Use
+  `siteCoverage()`, `genomeSizes()`, `filterSites()`, or `[` respectively for
+  new code.
+
 * Added `siteCoverage()` as the preferred package-specific coverage matrix
   accessor. `coverage(commaData)` remains as deprecated compatibility because
   `coverage()` already has an established Bioconductor meaning.

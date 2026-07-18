@@ -261,6 +261,34 @@ updates, and tests proving the public result-column contract.
 
 ---
 
+## D-016: Legacy accessors remain deprecated through the next breaking release
+
+**Decision:** Retain `coverage(commaData)`, `genome(commaData)`,
+`subset.commaData()`, and the registered S4 `subset(commaData)` method as
+deprecated compatibility wrappers until the next planned breaking release.
+Each wrapper must warn and name its replacement:
+
+| Legacy entry point | Replacement |
+|---|---|
+| `coverage(commaData)` | `siteCoverage()` |
+| `genome(commaData)` | `genomeSizes()` for chromosome lengths; use `GenomeInfoDb::genome(seqinfo(object))` for build/name metadata |
+| `subset.commaData()` | `filterSites()` for named filters; `[` for index-based selection |
+| S4 `subset(commaData)` | `filterSites()` for named filters; `[` for index-based selection |
+
+**Rationale:** These wrappers have existing users and preserve historical
+behavior, but their generic names overlap with established base or Bioconductor
+APIs. A warning provides a migration path while avoiding an immediate breaking
+release.
+
+**Consequence:** Compatibility behavior and deprecation warnings are covered by
+accessor/subsetting tests. Removal, if desired, belongs in the next planned
+breaking release and requires a release-note update.
+
+**Do not change without:** An explicit API compatibility decision and migration
+notes for downstream users.
+
+---
+
 ## How to Add New Decisions
 
 When making a significant design or API decision:
