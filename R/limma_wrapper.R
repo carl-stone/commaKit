@@ -29,9 +29,23 @@ NULL
 #' t-statistic with posterior degrees of freedom
 #' \eqn{d_0 + df_{\mathrm{residual}}}.
 #'
+#' Coverage is not used as a precision weight in this backend. It affects
+#' inference indirectly through the count-derived M-values and the
+#' \code{min_coverage} eligibility filter, but the OLS fit is unweighted.
+#' Users for whom coverage is scientifically material should prefer the
+#' count-aware \code{quasi_f} backend or another coverage-aware method.
+#'
 #' Only sites where all samples have non-NA M-values (i.e., non-zero coverage
-#' after \code{min_coverage} thresholding) are passed to limma. Sites with any
-#' \code{NA} retain \code{NA} in all result columns.
+#' after \code{min_coverage} thresholding) are passed to limma. This is a
+#' complete-case policy applied independently within each \code{mod_context}.
+#' Sites with any missing sample retain \code{NA} p-values and adjusted
+#' p-values; their available beta-scale group summaries may still be reported.
+#' If fewer than two complete sites remain in a context, that context is not
+#' fitted and all of its p-values are \code{NA}.
+#'
+#' The returned data frame has a \code{limma_diagnostics} attribute containing
+#' the complete-case counts and a summary of coverage heterogeneity. These
+#' diagnostics are stored in the result-layer parameters by \code{diffMethyl}.
 #'
 #' Effect sizes (\code{delta_beta}) and per-group means are reported on the
 #' original beta (0–1) scale for interpretability, not back-transformed from
@@ -61,7 +75,8 @@ NULL
 #'   \code{methyl_mat}), containing:
 #'   \describe{
 #'     \item{\code{pvalue}}{Moderated t-test p-value from \code{eBayes}.
-#'       \code{NA} for sites with any missing data.}
+#'       \code{NA} for sites with any missing data or for an untestable
+#'       context.}
 #'     \item{\code{delta_beta}}{Effect size (treatment mean beta minus
 #'       reference mean beta) on the 0–1 scale. \code{NA} where group means
 #'       cannot be computed.}
@@ -140,10 +155,21 @@ NULL
   # ── Identify complete-case sites ──────────────────────────────────────────
   complete_sites <- which(apply(!is.na(m_mat), 1L, all))
   pvalue_vec <- rep(NA_real_, n_sites)
+  diagnostics <- .limmaCoverageDiagnostics(
+    m_mat,
+    coverage_mat,
+    complete_sites
+  )
 
   if (length(complete_sites) < 2L) {
     # Not enough sites with complete data to estimate the eBayes prior
-    return(.assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels))
+    result <- .assembleDiffMethylResult(
+      pvalue_vec,
+      group_stats,
+      cond_levels
+    )
+    attr(result, "limma_diagnostics") <- diagnostics
+    return(result)
   }
 
   m_complete <- m_mat[complete_sites, , drop = FALSE]
@@ -178,5 +204,68 @@ NULL
   pvalue_vec[complete_sites] <- fit$p.value[, contrast_col]
 
   # ── Assemble result ───────────────────────────────────────────────────────
-  .assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels)
+  result <- .assembleDiffMethylResult(pvalue_vec, group_stats, cond_levels)
+  attr(result, "limma_diagnostics") <- diagnostics
+  result
+}
+
+.limmaCoverageDiagnostics <- function(m_mat, coverage_mat, complete_sites) {
+  coverage_values <- as.numeric(coverage_mat)
+  coverage_values <- coverage_values[
+    is.finite(coverage_values) & coverage_values >= 0
+  ]
+  coverage_mean <- if (length(coverage_values) > 0L) {
+    mean(coverage_values)
+  } else {
+    NA_real_
+  }
+  coverage_sd <- if (length(coverage_values) > 1L) {
+    stats::sd(coverage_values)
+  } else {
+    0
+  }
+  n_sites <- nrow(m_mat)
+  n_complete_sites <- length(complete_sites)
+
+  list(
+    coverage_weighting = "none",
+    incomplete_site_policy = "complete_case",
+    inference_status = if (n_complete_sites >= 2L) {
+      "tested"
+    } else {
+      "insufficient_complete_sites"
+    },
+    n_sites = n_sites,
+    n_tested_sites = n_complete_sites,
+    n_complete_sites = n_complete_sites,
+    n_incomplete_sites = n_sites - n_complete_sites,
+    incomplete_fraction = if (n_sites > 0L) {
+      (n_sites - n_complete_sites) / n_sites
+    } else {
+      0
+    },
+    coverage_min = if (length(coverage_values) > 0L) {
+      min(coverage_values)
+    } else {
+      NA_real_
+    },
+    coverage_median = if (length(coverage_values) > 0L) {
+      stats::median(coverage_values)
+    } else {
+      NA_real_
+    },
+    coverage_mean = coverage_mean,
+    coverage_sd = coverage_sd,
+    coverage_max = if (length(coverage_values) > 0L) {
+      max(coverage_values)
+    } else {
+      NA_real_
+    },
+    coverage_cv = if (is.finite(coverage_mean) && coverage_mean > 0) {
+      coverage_sd / coverage_mean
+    } else {
+      NA_real_
+    },
+    coverage_heterogeneous = length(unique(coverage_values)) > 1L
+  )
 }

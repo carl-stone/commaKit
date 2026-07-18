@@ -52,7 +52,8 @@ A \code{data.frame} with one row per site (same row order as
 \code{methyl_mat}), containing:
 \describe{
 \item{\code{pvalue}}{Moderated t-test p-value from \code{eBayes}.
-\code{NA} for sites with any missing data.}
+\code{NA} for sites with any missing data or for an untestable
+context.}
 \item{\code{delta_beta}}{Effect size (treatment mean beta minus
 reference mean beta) on the 0–1 scale. \code{NA} where group means
 cannot be computed.}
@@ -85,9 +86,23 @@ estimate toward the genome-wide mean. P-values are derived from a moderated
 t-statistic with posterior degrees of freedom
 \eqn{d_0 + df_{\mathrm{residual}}}.
 
+Coverage is not used as a precision weight in this backend. It affects
+inference indirectly through the count-derived M-values and the
+\code{min_coverage} eligibility filter, but the OLS fit is unweighted.
+Users for whom coverage is scientifically material should prefer the
+count-aware \code{quasi_f} backend or another coverage-aware method.
+
 Only sites where all samples have non-NA M-values (i.e., non-zero coverage
-after \code{min_coverage} thresholding) are passed to limma. Sites with any
-\code{NA} retain \code{NA} in all result columns.
+after \code{min_coverage} thresholding) are passed to limma. This is a
+complete-case policy applied independently within each \code{mod_context}.
+Sites with any missing sample retain \code{NA} p-values and adjusted
+p-values; their available beta-scale group summaries may still be reported.
+If fewer than two complete sites remain in a context, that context is not
+fitted and all of its p-values are \code{NA}.
+
+The returned data frame has a \code{limma_diagnostics} attribute containing
+the complete-case counts and a summary of coverage heterogeneity. These
+diagnostics are stored in the result-layer parameters by \code{diffMethyl}.
 
 Effect sizes (\code{delta_beta}) and per-group means are reported on the
 original beta (0–1) scale for interpretability, not back-transformed from

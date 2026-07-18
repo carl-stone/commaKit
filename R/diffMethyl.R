@@ -39,9 +39,10 @@ NULL
 #' then \code{\link[limma]{lmFit}} fits an OLS model per site and
 #' \code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage,
 #' borrowing information across all sites to stabilize the per-site variance
-#' estimate. Recommended when replicates are few (n < 3 per group). Requires
-#' \pkg{limma} (\code{BiocManager::install("limma")}). Effect sizes are
-#' reported on the original beta scale.
+#' estimate. Coverage is not used as a precision weight, so this method is
+#' recommended only for complete data when replicates are few (n < 3 per
+#' group). Requires \pkg{limma} (\code{BiocManager::install("limma")}). Effect
+#' sizes are reported on the original beta scale.
 #'
 #' \strong{Method selection guidance:}
 #' Use the default \code{"methylkit"} backend when you want compatibility with
@@ -53,10 +54,18 @@ NULL
 #' often a good first alternative if methylKit convergence warnings,
 #' zero-variance sites, or runtime become distracting. Use \code{"limma"} when
 #' you want the familiar \pkg{limma} empirical-Bayes linear-model workflow on
-#' M-values,
-#' especially for complete datasets with few replicates per group. All three
-#' backends report \code{dm_delta_beta} on the original beta scale, so effect
-#' sizes remain comparable even when p-values differ.
+#' M-values, especially for complete datasets with few replicates per group.
+#' The limma fit is unweighted OLS: coverage affects the count-derived
+#' M-values and the \code{min_coverage} filter, but not the precision weight of
+#' an observation. Within each \code{mod_context}, sites with any incomplete
+#' sample are excluded from limma inference under a complete-case policy and
+#' retain \code{NA} p-values and adjusted p-values. Available beta summaries
+#' may still be returned for those sites. Per-context counts, coverage
+#' heterogeneity, and the status of sparse contexts are recorded in
+#' \code{metadata(object)$diffMethyl_params$limma_diagnostics}; the same
+#' diagnostics are stored in the corresponding named result-layer parameters.
+#' All three backends report \code{dm_delta_beta} on the original beta scale,
+#' so effect sizes remain comparable even when p-values differ.
 #'
 #' \strong{Multiple mod contexts:} When \code{mod_context = NULL} (default),
 #' all modification contexts (mod_type x motif combinations) present in the
@@ -113,8 +122,10 @@ NULL
 #'   count-data EB), making it a good general-purpose alternative for bacterial
 #'   methylomes. Requires \pkg{limma}.
 #'   \code{"limma"} applies empirical Bayes variance shrinkage via
-#'   \code{\link[limma]{eBayes}} on M-value-transformed data; recommended when
-#'   replicates are few (n < 3 per group). Requires \pkg{limma}.
+#'   \code{\link[limma]{eBayes}} on M-value-transformed data with unweighted
+#'   OLS and complete-case inference within each \code{mod_context}; it is
+#'   recommended only for complete data when replicates are few (n < 3 per
+#'   group). Requires \pkg{limma}.
 #' @param alpha Positive numeric pseudocount used to compute M-values when
 #'   \code{method = "limma"}:
 #'   \eqn{M = \log_2((n_{\mathrm{mod}} + \alpha) /
@@ -378,6 +389,15 @@ diffMethyl <- function(
   delta_beta_all <- rep(NA_real_, n_sites_all)
   mean_beta_cols <- lapply(cond_levels, function(lv) rep(NA_real_, n_sites_all))
   names(mean_beta_cols) <- paste0("dm_mean_beta_", cond_levels)
+  limma_diagnostics <- if (method == "limma") {
+    list(
+      coverage_weighting = "none",
+      incomplete_site_policy = "complete_case",
+      by_context = list()
+    )
+  } else {
+    NULL
+  }
 
   # -- Report comparison direction -------------------------------------------
   message(
@@ -451,6 +471,33 @@ diffMethyl <- function(
 
     if (is.null(res_sub)) next
 
+    if (method == "limma") {
+      context_diagnostics <- attr(
+        res_sub,
+        "limma_diagnostics",
+        exact = TRUE
+      )
+      if (!is.null(context_diagnostics)) {
+        limma_diagnostics$by_context[[mc]] <- context_diagnostics
+        if (context_diagnostics$n_incomplete_sites > 0L) {
+          warning(
+            "diffMethyl() limma: mod_context = '", mc,
+            "' has ", context_diagnostics$n_incomplete_sites,
+            " incomplete site(s); limma uses complete-case inference and ",
+            "leaves their p-values as NA.",
+            if (context_diagnostics$inference_status ==
+                "insufficient_complete_sites") {
+              " Fewer than two complete sites remain, so this context is "
+              "not testable."
+            } else {
+              ""
+            },
+            call. = FALSE
+          )
+        }
+      }
+    }
+
     # Write back to full-object vectors
     pvalue_all[site_idx] <- res_sub$pvalue
     has_methylkit_qvalue <- !is.null(methylkit_qvalue_all) &&
@@ -510,6 +557,11 @@ diffMethyl <- function(
     alpha           = alpha,
     timestamp       = Sys.time()
   )
+  if (method == "limma") {
+    params$coverage_weighting <- "none"
+    params$incomplete_site_policy <- "complete_case"
+    params$limma_diagnostics <- limma_diagnostics
+  }
 
   .addDiffMethylResultLayer(
     object = object,

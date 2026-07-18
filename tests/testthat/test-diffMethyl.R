@@ -507,6 +507,119 @@ test_that("diffMethyl: method='limma' records alpha in metadata", {
 })
 
 test_that(
+  "diffMethyl: limma records unweighted coverage diagnostics",
+  {
+    skip_if_not_installed("limma")
+    sample_names <- c("ctrl_1", "ctrl_2", "treat_1", "treat_2")
+    beta <- matrix(
+      rep(c(0.2, 0.2, 0.8, 0.8), 6L),
+      nrow = 6L,
+      byrow = TRUE,
+      dimnames = list(NULL, sample_names)
+    )
+    coverage <- matrix(
+      rep(c(5L, 10L, 25L, 50L), each = 6L),
+      nrow = 6L,
+      dimnames = dimnames(beta)
+    )
+    sample_info <- data.frame(
+      sample_name = sample_names,
+      condition = c("control", "control", "treatment", "treatment"),
+      replicate = 1:4,
+      stringsAsFactors = FALSE
+    )
+    obj <- .make_commaData_fixture(
+      beta = beta,
+      coverage = coverage,
+      sample_info = sample_info,
+      positions = seq_len(nrow(beta)) * 100L
+    )
+
+    dm <- diffMethyl(obj, formula = ~condition, method = "limma")
+    params <- S4Vectors::metadata(dm)$diffMethyl_params
+    diagnostics <- params$limma_diagnostics
+    context <- diagnostics$by_context[["6mA_GATC"]]
+
+    expect_equal(params$coverage_weighting, "none")
+    expect_equal(params$incomplete_site_policy, "complete_case")
+    expect_equal(diagnostics$coverage_weighting, "none")
+    expect_equal(context$inference_status, "tested")
+    expect_equal(context$n_complete_sites, nrow(beta))
+    expect_equal(context$n_incomplete_sites, 0L)
+    expect_true(context$coverage_heterogeneous)
+    expect_equal(context$coverage_min, 5)
+    expect_equal(context$coverage_max, 50)
+    expect_gt(context$coverage_cv, 0)
+  }
+)
+
+test_that(
+  "diffMethyl: limma reports incomplete and untestable contexts",
+  {
+    skip_if_not_installed("limma")
+    sample_names <- c("ctrl_1", "ctrl_2", "treat_1", "treat_2")
+    beta <- matrix(
+      c(
+        rep(c(0.2, 0.2, 0.8, 0.8), 2L),
+        0.2, 0.2, NA_real_, 0.8,
+        0.2, 0.2, NA_real_, NA_real_,
+        0.3, 0.3, NA_real_, NA_real_
+      ),
+      nrow = 5L,
+      byrow = TRUE,
+      dimnames = list(NULL, sample_names)
+    )
+    coverage <- matrix(
+      c(
+        rep(c(20L, 20L, 20L, 20L), 2L),
+        20L, 20L, 0L, 20L,
+        20L, 20L, 0L, 0L,
+        20L, 20L, 0L, 0L
+      ),
+      nrow = 5L,
+      byrow = TRUE,
+      dimnames = dimnames(beta)
+    )
+    sample_info <- data.frame(
+      sample_name = sample_names,
+      condition = c("control", "control", "treatment", "treatment"),
+      replicate = 1:4,
+      stringsAsFactors = FALSE
+    )
+    obj <- .make_commaData_fixture(
+      beta = beta,
+      coverage = coverage,
+      sample_info = sample_info,
+      positions = seq_len(nrow(beta)) * 100L,
+      mod_type = c(rep("6mA", 3L), rep("5mC", 2L)),
+      motif = c(rep("GATC", 3L), rep("CCWGG", 2L))
+    )
+
+    expect_warning(
+      dm <- diffMethyl(obj, formula = ~condition, method = "limma"),
+      "complete-case inference"
+    )
+    rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+    params <- S4Vectors::metadata(dm)$diffMethyl_params
+    diagnostics <- params$limma_diagnostics$by_context
+
+    expect_true(all(!is.na(rd$dm_pvalue[1:2])))
+    expect_true(is.na(rd$dm_pvalue[3]))
+    expect_true(all(is.na(rd$dm_pvalue[4:5])))
+    expect_equal(diagnostics[["6mA_GATC"]]$inference_status, "tested")
+    expect_equal(diagnostics[["6mA_GATC"]]$n_complete_sites, 2L)
+    expect_equal(diagnostics[["6mA_GATC"]]$n_incomplete_sites, 1L)
+    expect_equal(
+      diagnostics[["5mC_CCWGG"]]$inference_status,
+      "insufficient_complete_sites"
+    )
+    expect_equal(diagnostics[["5mC_CCWGG"]]$n_tested_sites, 0L)
+    expect_equal(diagnostics[["5mC_CCWGG"]]$n_incomplete_sites, 2L)
+    expect_true(all(is.na(rd$dm_padj[3:5])))
+  }
+)
+
+test_that(
   "diffMethyl: method='limma' errors with informative message if limma absent",
   {
     skip_if(

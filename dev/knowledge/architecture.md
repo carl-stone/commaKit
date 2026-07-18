@@ -4,7 +4,7 @@ title: commaKit Core Architecture
 description: Current data structures, user-facing API groups, and behavioral contracts agents must preserve.
 resource: R
 tags: [architecture, r, bioconductor, commaData, mod_context, assays, results]
-timestamp: 2026-06-15T00:00:00Z
+timestamp: 2026-07-17T00:00:00Z
 status: current
 owner: Carl Stone
 ---
@@ -95,6 +95,11 @@ Metadata passthrough columns become `{column}_values` list-columns. Intergenic/n
 - Keep `dm_padj` as commaKit's backend-independent adjusted p-value. methylKit
   q-values are backend-specific evidence and, when present, live in
   `dm_methylkit_qvalue` only on methylKit result layers.
+- The `limma` backend uses unweighted OLS on count-derived M-values. Coverage
+  affects M-value construction and `min_coverage` eligibility, but is not a
+  precision weight. Limma uses complete-case inference within each
+  `mod_context`; incomplete and insufficiently populated contexts are reported
+  through `metadata(object)$diffMethyl_params$limma_diagnostics`.
 - The default backend is `methylkit` for compatibility with established methylKit workflows. `quasi_f` is the preferred package-native alternative when users want count-aware empirical-Bayes shrinkage and genome-wide multiple-testing correction handled inside commaKit.
 - Formula support is one-sided with 2+ levels; multi-level formulas must fail clearly.
 

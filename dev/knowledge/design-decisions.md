@@ -4,14 +4,14 @@ title: Design Decisions
 description: Architectural and API decisions that explain why commaKit behaves the way it does.
 resource: dev/knowledge/design-decisions.md
 tags: [architecture, decisions, api, statistics, bioconductor]
-timestamp: 2026-06-15T00:00:00Z
+timestamp: 2026-07-17T00:00:00Z
 status: current
 owner: Carl Stone
 ---
 
 # Design Decisions — Why We Made These Choices
 
-**Last updated:** 2026-07-05
+**Last updated:** 2026-07-17
 **Maintained by:** commaBot
 
 This document records significant architectural and API decisions. When you're tempted to change something, check here first to understand why it was designed this way.
@@ -260,6 +260,30 @@ full testing family.
 updates, and tests proving the public result-column contract.
 
 ---
+
+## D-016: limma uses unweighted complete-case M-value OLS
+
+**Decision:** The `limma` backend fits unweighted OLS to count-derived
+M-values. Coverage is used for M-value construction and the `min_coverage`
+eligibility filter, but is not passed to limma as a precision weight. Within
+each `mod_context`, a site with any incomplete sample is excluded from limma
+inference. Its p-values and adjusted p-values remain `NA`; available beta-scale
+group summaries may still be reported.
+
+**Rationale:** This preserves the familiar limma workflow while making its
+scientific limitation explicit. Coverage heterogeneity can materially change
+the reliability of methylation estimates, and an unweighted M-value model does
+not represent that precision. The count-aware `quasi_f` backend is the
+preferred alternative when coverage is central to the inference.
+
+**Consequence:** Each limma result layer records `coverage_weighting`,
+`incomplete_site_policy`, and per-`mod_context` diagnostics including complete
+site counts, coverage heterogeneity, and whether a sparse context was
+testable. Limma warns when incomplete sites are excluded.
+
+**Do not change without:** A documented weighting contract, simulation or
+real-data evidence, and tests covering both coverage heterogeneity and
+incomplete contexts.
 
 ## How to Add New Decisions
 

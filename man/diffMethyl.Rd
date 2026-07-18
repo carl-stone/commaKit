@@ -53,8 +53,10 @@ dispersions via \code{\link[limma]{squeezeVar}} (quasi-likelihood F-test;
 count-data EB), making it a good general-purpose alternative for bacterial
 methylomes. Requires \pkg{limma}.
 \code{"limma"} applies empirical Bayes variance shrinkage via
-\code{\link[limma]{eBayes}} on M-value-transformed data; recommended when
-replicates are few (n < 3 per group). Requires \pkg{limma}.}
+\code{\link[limma]{eBayes}} on M-value-transformed data with unweighted
+OLS and complete-case inference within each \code{mod_context}; it is
+recommended only for complete data when replicates are few (n < 3 per
+group). Requires \pkg{limma}.}
 
 \item{mod_context}{Character vector or \code{NULL}. Modification context(s)
 to test (e.g., \code{"6mA_GATC"}, \code{c("6mA_GATC", "5mC_CCWGG")}).
@@ -149,9 +151,10 @@ Beta values are transformed to M-values via
 then \code{\link[limma]{lmFit}} fits an OLS model per site and
 \code{\link[limma]{eBayes}} applies empirical Bayes variance shrinkage,
 borrowing information across all sites to stabilize the per-site variance
-estimate. Recommended when replicates are few (n < 3 per group). Requires
-\pkg{limma} (\code{BiocManager::install("limma")}). Effect sizes are
-reported on the original beta scale.
+estimate. Coverage is not used as a precision weight, so this method is
+recommended only for complete data when replicates are few (n < 3 per
+group). Requires \pkg{limma} (\code{BiocManager::install("limma")}). Effect
+sizes are reported on the original beta scale.
 
 \strong{Method selection guidance:}
 Use the default \code{"methylkit"} backend when you want compatibility with
@@ -163,10 +166,18 @@ multiple-testing correction handled entirely inside \pkg{commaKit}. It is
 often a good first alternative if methylKit convergence warnings,
 zero-variance sites, or runtime become distracting. Use \code{"limma"} when
 you want the familiar \pkg{limma} empirical-Bayes linear-model workflow on
-M-values,
-especially for complete datasets with few replicates per group. All three
-backends report \code{dm_delta_beta} on the original beta scale, so effect
-sizes remain comparable even when p-values differ.
+M-values, especially for complete datasets with few replicates per group.
+The limma fit is unweighted OLS: coverage affects the count-derived
+M-values and the \code{min_coverage} filter, but not the precision weight of
+an observation. Within each \code{mod_context}, sites with any incomplete
+sample are excluded from limma inference under a complete-case policy and
+retain \code{NA} p-values and adjusted p-values. Available beta summaries
+may still be returned for those sites. Per-context counts, coverage
+heterogeneity, and the status of sparse contexts are recorded in
+\code{metadata(object)$diffMethyl_params$limma_diagnostics}; the same
+diagnostics are stored in the corresponding named result-layer parameters.
+All three backends report \code{dm_delta_beta} on the original beta scale,
+so effect sizes remain comparable even when p-values differ.
 
 \strong{Multiple mod contexts:} When \code{mod_context = NULL} (default),
 all modification contexts (mod_type x motif combinations) present in the
