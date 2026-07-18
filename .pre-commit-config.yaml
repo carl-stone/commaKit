@@ -71,11 +71,3 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-push]
-
-      - id: r-test-timing
-        name: Run per-file test timing before push
-        entry: env RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/test-timing.R
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [pre-push]
