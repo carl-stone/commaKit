@@ -34,7 +34,7 @@ library(GenomicRanges)
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# methylation()
+# methylation accessor tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("methylation() returns a numeric matrix", {
@@ -59,7 +59,7 @@ test_that("methylation() values are in [0, 1] range (ignoring NA)", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# siteCoverage()
+# siteCoverage accessor tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("siteCoverage() returns a numeric matrix", {
@@ -128,7 +128,7 @@ test_that(
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sampleInfo()
+# sampleInfo accessor tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("sampleInfo() returns a data.frame", {
@@ -159,7 +159,7 @@ test_that("filterSites() errors clearly when filtering by absent condition", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# siteInfo()
+# siteInfo accessor tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("siteInfo() returns a DataFrame", {
@@ -229,7 +229,7 @@ test_that(
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# modTypes()
+# modTypes accessor tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("modTypes() returns a character vector", {
@@ -251,7 +251,7 @@ test_that("modTypes() returns only unique values", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# genome()
+# genome accessor tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("genome() returns a named integer vector", {
@@ -291,7 +291,7 @@ test_that("genome() returns NULL when no Seqinfo", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# annotation()
+# annotation accessor tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("annotation() returns a GRanges", {
@@ -305,7 +305,7 @@ test_that("annotation() returns correct number of features", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# motifSites()
+# motifSites accessor tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("motifSites() returns a GRanges", {
