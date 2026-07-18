@@ -52,6 +52,8 @@ NULL
 #' @param methyl_mat Numeric matrix (sites × samples) of beta values.
 #'   \code{NA} indicates below-coverage sites.
 #' @param coverage_mat Integer matrix (sites × samples) of read depths.
+#' @param design_info Precomputed design information from
+#'   \code{.resolveDiffMethylDesign()}.
 #' @param mod_counts_mat Optional integer matrix of observed modified-read
 #'   counts. If supplied, these counts are preferred over reconstructing from
 #'   beta values.
@@ -60,8 +62,6 @@ NULL
 #' @param other_mod_counts_mat Optional integer matrix of observed non-target
 #'   modified-read counts. When present with \code{canonical_counts_mat}, these
 #'   counts are included in the non-target denominator so it matches coverage.
-#' @param design_info Precomputed design information from
-#'   \code{.resolveDiffMethylDesign()}.
 #'
 #' @return A \code{data.frame} with one row per site (same row order as
 #'   \code{methyl_mat}), containing:
@@ -81,6 +81,7 @@ NULL
   # ── Use validated two-level design and group statistics ───────────────────
   primary_var <- design_info$primary_var
   ref_level <- design_info$ref_level
+  treat_level <- design_info$treat_level
   cond_levels <- design_info$cond_levels
   cond <- design_info$cond
 

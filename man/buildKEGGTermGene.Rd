@@ -49,7 +49,8 @@ your annotation data).}
 description).}
 }
 Pass these to \code{\link{enrichMethylation}()} as
-\code{kegg_term2gene = result$term2gene, kegg_term2name = result$term2name}.
+\code{kegg_term2gene = result$term2gene,
+  kegg_term2name = result$term2name}.
 }
 \description{
 Fetches all KEGG pathway-gene associations for an organism using only two
@@ -70,7 +71,8 @@ names.
 \examples{
 \donttest{
 if (requireNamespace("KEGGREST", quietly = TRUE)) {
-  # Fetch once and cache to disk (use tempdir() so check directory stays clean)
+  # Fetch once and cache to disk
+  # (use tempdir() so check directory stays clean)
   kegg_file <- file.path(tempdir(), "eco_kegg.rds")
   kegg <- buildKEGGTermGene("eco", file = kegg_file)
 

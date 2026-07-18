@@ -4,7 +4,7 @@ title: Agent Harness for commaKit
 description: How coding agents should gather context, edit, validate, and report work in this repository.
 resource: AGENTS.md
 tags: [agents, codex, claude, harness, validation, progressive-disclosure]
-timestamp: 2026-06-15T00:00:00Z
+timestamp: 2026-07-17T00:00:00Z
 status: current
 owner: Carl Stone
 ---
@@ -41,8 +41,10 @@ When a fact gets repeated in several tool-specific files, move it into one knowl
 
 - `AGENTS.md`: durable repo and directory rules that many agents can read.
 - `CLAUDE.md`: Claude-facing entry point; keep it as a pointer to shared guidance.
-- `.claude/rules/*.md`: Claude on-demand hints; keep them thin and linked.
-- `.agents/skills/*/SKILL.md`: Codex repo skills for reusable workflows when the directory is writable.
+- `.agents/skills/*/SKILL.md`: portable project-development skills shared by
+  interactive agents.
+- `.codex/skills/*/SKILL.md`: Symphony/Codex delivery procedures for Linear,
+  branch synchronization, commits, pushes, and landing.
 - `dev/knowledge/`: OKF-style durable concepts.
 
 # Editing Discipline

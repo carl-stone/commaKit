@@ -41,13 +41,31 @@ Read [dev/knowledge/project-status.md](dev/knowledge/project-status.md) for the 
 
 ## Agent skills
 
+Repository-owned Codex procedures live under `.codex/skills/`:
+
+- `linear`: query and mutate the active Linear issue through Symphony's
+  `linear_graphql` tool.
+- `pull`: merge the latest remote branch and `origin/main` without rebasing.
+- `commit`: stage intentional paths and create a scoped, validated commit.
+- `push`: publish the branch and create or refresh its pull request.
+- `land`: resolve feedback and conflicts, watch checks, and squash-merge only
+  when the PR is ready.
+
+Load the matching skill before performing any of these procedures. The skills
+supplement, rather than replace, the repository and directory-level
+`AGENTS.md` instructions.
+
 ### Issue tracker
 
-Issues live in GitHub Issues for `carl-stone/commaKit`; external PRs are also a triage request surface. See `docs/agents/issue-tracker.md`.
+Internal commaBot work lives in Linear project `commaKit Symphony`. GitHub
+Issues remain the public bug and external-contributor tracker, and external PRs
+are also a triage request surface. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Use the canonical triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+Use the repository's current triage labels: `awaiting-factory-triage`,
+`needs-info`, `needs-decision`, `ready-for-agent`, `ready-for-human`, and
+`wontfix`. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
@@ -79,7 +97,7 @@ Rscript -e "devtools::check(build_args = c('--no-build-vignettes'))"
 Rscript -e "devtools::check()"
 ```
 
-Use the narrowest command that proves the change. Run `styler::style_pkg()` before committing to keep code formatted (CI enforces the tidyverse style guide with 2-space indentation and 80-char line width). Run the narrowest relevant tests before committing (for example `Rscript -e "testthat::test_file('tests/testthat/test-annotateSites.R')"` or `Rscript -e "devtools::test()"` for broader changes). Run `Rscript dev/test-timing.R` to check per-file test duration (CI uploads a timing report as an artifact on every push and PR). Escalate to `devtools::document()` for roxygen edits, and to check-level validation for package metadata, examples, vignettes, dependencies, or broad API changes.
+Use the narrowest command that proves the change. Run `styler::style_pkg()` before committing to keep code formatted (CI enforces the tidyverse style guide with 2-space indentation and 80-char line width). Run the narrowest relevant tests before committing (for example `Rscript -e "testthat::test_file('tests/testthat/test-annotateSites.R')" or `Rscript -e "devtools::test()"` for broader changes). The repository's `pre-push` hook runs both `devtools::test()` and `dev/test-timing.R`; do not bypass it. CI uploads the timing report as an artifact on every push and PR. Escalate to `devtools::document()` for roxygen edits, and to check-level validation for package metadata, examples, vignettes, dependencies, or broad API changes.
 
 ## Knowledge Format
 

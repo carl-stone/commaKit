@@ -1,4 +1,4 @@
-#' @importFrom stats model.matrix relevel
+#' @importFrom stats model.matrix
 NULL
 
 # ─── limma eBayes wrapper ─────────────────────────────────────────────────────
@@ -40,6 +40,8 @@ NULL
 #' @param methyl_mat Numeric matrix (sites × samples) of beta values.
 #'   \code{NA} indicates below-coverage sites.
 #' @param coverage_mat Integer matrix (sites × samples) of read depths.
+#' @param design_info Precomputed design information from
+#'   \code{.resolveDiffMethylDesign()}.
 #' @param mod_counts_mat Optional integer matrix of observed modified-read
 #'   counts. If supplied, these counts are preferred over reconstructing from
 #'   beta values.
@@ -48,8 +50,6 @@ NULL
 #' @param other_mod_counts_mat Optional integer matrix of observed non-target
 #'   modified-read counts. When present with \code{canonical_counts_mat}, these
 #'   counts are included in the non-target denominator so it matches coverage.
-#' @param design_info Precomputed design information from
-#'   \code{.resolveDiffMethylDesign()}.
 #' @param alpha Positive numeric pseudocount added to modified and unmodified
 #'   read counts before log-transformation. Default \code{0.5}.
 #'

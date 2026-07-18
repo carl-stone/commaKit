@@ -842,58 +842,6 @@ test_that("diffMethyl: factor condition uses first factor level as reference", {
   expect_equal(params$reference, "WT")
 })
 
-test_that(
-  "diffMethyl: public design validation passes reference direction to backends",
-  {
-    obj <- .make_ref_test_data(as_factor = TRUE)
-    methods <- c("quasi_f", "limma")
-    for (method in methods) {
-      skip_if_not_installed("limma")
-      dm <- diffMethyl(
-        obj,
-        formula = ~condition,
-        reference = "WT",
-        method = method
-      )
-      rd <- as.data.frame(SummarizedExperiment::rowData(dm))
-      db <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
-      expect_true(all(c(
-        "dm_pvalue", "dm_padj", "dm_delta_beta",
-        "dm_mean_beta_WT", "dm_mean_beta_HNS"
-      ) %in% names(rd)))
-      expect_true(
-        mean(db) > 0,
-        info = paste("Expected HNS - WT direction for", method)
-      )
-      expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$reference, "WT")
-      expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$treatment, "HNS")
-    }
-
-    if (requireNamespace("methylKit", quietly = TRUE)) {
-      dm <- suppressWarnings(
-        diffMethyl(
-          obj,
-          formula = ~condition,
-          reference = "WT",
-          method = "methylkit"
-        )
-      )
-      rd <- as.data.frame(SummarizedExperiment::rowData(dm))
-      db <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
-      expect_true(all(c(
-        "dm_pvalue", "dm_padj", "dm_delta_beta",
-        "dm_mean_beta_WT", "dm_mean_beta_HNS", "dm_methylkit_qvalue"
-      ) %in% names(rd)))
-      expect_true(
-        mean(db) > 0,
-        info = "Expected HNS - WT direction for methylkit"
-      )
-      expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$reference, "WT")
-      expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$treatment, "HNS")
-    }
-  }
-)
-
 test_that("diffMethyl: reference argument overrides alphabetical default", {
   # Without reference, alphabetical ordering picks HNS as ref (H < W).
   # With reference = "WT", delta_beta should be positive (HNS - WT).
@@ -910,6 +858,72 @@ test_that("diffMethyl: reference argument overrides alphabetical default", {
   params <- S4Vectors::metadata(dm)$diffMethyl_params
   expect_equal(params$reference, "WT")
 })
+
+test_that(
+  "diffMethyl: public design validation controls backend direction",
+  {
+    skip_if_not_installed("limma")
+    obj <- .make_ref_test_data(as_factor = TRUE)
+
+    for (method in c("quasi_f", "limma")) {
+      dm <- diffMethyl(
+        obj,
+        formula = ~condition,
+        reference = "WT",
+        method = method
+      )
+      rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+      db <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
+
+      expect_true(all(c(
+        "dm_pvalue", "dm_padj", "dm_delta_beta",
+        "dm_mean_beta_WT", "dm_mean_beta_HNS"
+      ) %in% colnames(rd)))
+      expect_true(
+        mean(db) > 0,
+        info = paste("Expected HNS - WT direction for", method)
+      )
+      expect_equal(
+        S4Vectors::metadata(dm)$diffMethyl_params$reference,
+        "WT"
+      )
+      expect_equal(
+        S4Vectors::metadata(dm)$diffMethyl_params$treatment,
+        "HNS"
+      )
+    }
+
+    if (requireNamespace("methylKit", quietly = TRUE)) {
+      dm <- suppressWarnings(
+        diffMethyl(
+          obj,
+          formula = ~condition,
+          reference = "WT",
+          method = "methylkit"
+        )
+      )
+      rd <- as.data.frame(SummarizedExperiment::rowData(dm))
+      db <- rd$dm_delta_beta[!is.na(rd$dm_delta_beta)]
+
+      expect_true(all(c(
+        "dm_pvalue", "dm_padj", "dm_delta_beta",
+        "dm_mean_beta_WT", "dm_mean_beta_HNS", "dm_methylkit_qvalue"
+      ) %in% colnames(rd)))
+      expect_true(
+        mean(db) > 0,
+        info = "Expected HNS - WT direction for methylkit"
+      )
+      expect_equal(
+        S4Vectors::metadata(dm)$diffMethyl_params$reference,
+        "WT"
+      )
+      expect_equal(
+        S4Vectors::metadata(dm)$diffMethyl_params$treatment,
+        "HNS"
+      )
+    }
+  }
+)
 
 test_that("diffMethyl: invalid reference value produces informative error", {
   obj <- .make_ref_test_data(as_factor = FALSE)

@@ -112,7 +112,7 @@ NULL
 
   # ── Build methylKit objects per sample ─────────────────────────────────────
   # Construct methylRaw objects directly — bypasses methRead() which only
-  # accepts file paths, not in-memory data frames.
+  # accepts file paths, not in-memory data frames
   sample_list <- lapply(seq_len(ncol(methyl_mat)), function(j) {
     beta_j <- methyl_mat[keep_idx, j]
     n_meth <- as.integer(count_mats$modified[keep_idx, j])
@@ -120,7 +120,7 @@ NULL
     cov_j <- n_meth + n_unmeth
 
     # Replace NA with 0 coverage for methylKit (it handles 0-coverage sites
-    # via unite() with min.per.group).
+    # via unite() with min.per.group)
     cov_j[is.na(cov_j)] <- 0L
     n_meth[is.na(n_meth)] <- 0L
     n_unmeth[is.na(n_unmeth)] <- 0L
@@ -139,7 +139,7 @@ NULL
       stringsAsFactors = FALSE
     )
 
-    # methylRaw extends data.frame; pass df as first positional arg.
+    # methylRaw extends data.frame; pass df as first positional arg
     methods::new("methylRaw", df,
       sample.id  = colnames(methyl_mat)[[j]],
       assembly   = "custom",
