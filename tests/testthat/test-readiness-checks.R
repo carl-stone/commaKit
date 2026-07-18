@@ -189,8 +189,27 @@ test_that("dead-code check searches beyond explicit definition files", {
   )
   old <- setwd(root)
   on.exit(setwd(old), add = TRUE)
-  system2("git", "init", stdout = FALSE, stderr = FALSE)
-  system2("git", c("add", "R/helpers.R", "R/caller.R"), stdout = FALSE)
+  old_git_dir <- Sys.getenv("GIT_DIR", unset = NA_character_)
+  old_git_work_tree <- Sys.getenv("GIT_WORK_TREE", unset = NA_character_)
+  Sys.unsetenv(c("GIT_DIR", "GIT_WORK_TREE"))
+  on.exit(
+    {
+      if (is.na(old_git_dir)) {
+        Sys.unsetenv("GIT_DIR")
+      } else {
+        Sys.setenv(GIT_DIR = old_git_dir)
+      }
+      if (is.na(old_git_work_tree)) {
+        Sys.unsetenv("GIT_WORK_TREE")
+      } else {
+        Sys.setenv(GIT_WORK_TREE = old_git_work_tree)
+      }
+    },
+    add = TRUE
+  )
+  git <- c("-u", "GIT_DIR", "-u", "GIT_WORK_TREE", "git", "-C", root)
+  system2("env", c(git, "init"), stdout = FALSE, stderr = FALSE)
+  system2("env", c(git, "add", "R/helpers.R", "R/caller.R"), stdout = FALSE)
 
   expect_true(readiness_env$readiness_check_dead_code(
     files = "R/helpers.R",
