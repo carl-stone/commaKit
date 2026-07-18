@@ -97,7 +97,7 @@ Rscript -e "devtools::check(build_args = c('--no-build-vignettes'))"
 Rscript -e "devtools::check()"
 ```
 
-Use the narrowest command that proves the change. Run `styler::style_pkg()` before committing to keep code formatted (CI enforces the tidyverse style guide with 2-space indentation and 80-char line width). Run the narrowest relevant tests before committing (for example `Rscript -e "testthat::test_file('tests/testthat/test-annotateSites.R')"` or `Rscript -e "devtools::test()"` for broader changes). Run `Rscript dev/test-timing.R` to check per-file test duration (CI uploads a timing report as an artifact on every push and PR). Escalate to `devtools::document()` for roxygen edits, and to check-level validation for package metadata, examples, vignettes, dependencies, or broad API changes.
+Use the narrowest command that proves the change. Run `styler::style_pkg()` before committing to keep code formatted (CI enforces the tidyverse style guide with 2-space indentation and 80-char line width). Run the narrowest relevant tests before committing (for example `Rscript -e "testthat::test_file('tests/testthat/test-annotateSites.R')" or `Rscript -e "devtools::test()"` for broader changes). The repository's `pre-push` hook runs both `devtools::test()` and `dev/test-timing.R`; do not bypass it. CI uploads the timing report as an artifact on every push and PR. Escalate to `devtools::document()` for roxygen edits, and to check-level validation for package metadata, examples, vignettes, dependencies, or broad API changes.
 
 ## Knowledge Format
 
