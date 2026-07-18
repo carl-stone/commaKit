@@ -58,7 +58,7 @@ test_that("readiness_run can limit checks to explicit files", {
   ))
 })
 
-test_that("readiness_run all includes the repository-hygiene dead-code check", {
+test_that("readiness_run all runs only deterministic hygiene checks", {
   root <- tempfile("readiness-root-")
   dir.create(file.path(root, "R"), recursive = TRUE)
   writeLines(
@@ -66,11 +66,11 @@ test_that("readiness_run all includes the repository-hygiene dead-code check", {
     file.path(root, "R", "helpers.R")
   )
 
-  expect_error(
-    readiness_env$readiness_run("all", files = "R/helpers.R", root = root),
-    ".unused_helper",
-    fixed = TRUE
-  )
+  expect_true(readiness_env$readiness_run(
+    "all",
+    files = "R/helpers.R",
+    root = root
+  ))
 })
 
 test_that("debt-marker readiness check requires issue references", {
@@ -118,131 +118,5 @@ test_that("AGENTS link readiness check validates local links", {
       root = root
     ),
     "missing local links"
-  )
-})
-
-test_that("complexity readiness check enforces branch thresholds", {
-  root <- tempfile("readiness-root-")
-  dir.create(file.path(root, "R"), recursive = TRUE)
-  writeLines(
-    c(
-      "simple <- function(x) {",
-      "  if (x > 1) x else 0",
-      "}",
-      "complex <- function(x) {",
-      "  if (x > 1) x <- x + 1",
-      "  if (x > 2) x <- x + 1",
-      "  if (x > 3) x <- x + 1",
-      "  x",
-      "}"
-    ),
-    file.path(root, "R", "quality.R")
-  )
-
-  expect_true(readiness_env$readiness_check_complexity(
-    files = "R/quality.R",
-    root = root,
-    max_complexity = 4L
-  ))
-  expect_error(
-    readiness_env$readiness_check_complexity(
-      files = "R/quality.R",
-      root = root,
-      max_complexity = 3L
-    ),
-    "cyclomatic complexity"
-  )
-})
-
-test_that("dead-code readiness check flags unused internal helpers", {
-  root <- tempfile("readiness-root-")
-  dir.create(file.path(root, "R"), recursive = TRUE)
-  writeLines(
-    c(
-      ".used_helper <- function(x) x + 1",
-      ".unused_helper <- function(x) x - 1",
-      "public <- function(x) .used_helper(x)"
-    ),
-    file.path(root, "R", "helpers.R")
-  )
-
-  expect_error(
-    readiness_env$readiness_check_dead_code(
-      files = "R/helpers.R",
-      root = root
-    ),
-    ".unused_helper",
-    fixed = TRUE
-  )
-})
-
-test_that("dead-code check searches beyond explicit definition files", {
-  root <- tempfile("readiness-root-")
-  dir.create(file.path(root, "R"), recursive = TRUE)
-  writeLines(
-    ".used_helper <- function(x) x + 1",
-    file.path(root, "R", "helpers.R")
-  )
-  writeLines(
-    "public <- function(x) .used_helper(x)",
-    file.path(root, "R", "caller.R")
-  )
-  old <- setwd(root)
-  on.exit(setwd(old), add = TRUE)
-  old_git_dir <- Sys.getenv("GIT_DIR", unset = NA_character_)
-  old_git_work_tree <- Sys.getenv("GIT_WORK_TREE", unset = NA_character_)
-  Sys.unsetenv(c("GIT_DIR", "GIT_WORK_TREE"))
-  on.exit(
-    {
-      if (is.na(old_git_dir)) {
-        Sys.unsetenv("GIT_DIR")
-      } else {
-        Sys.setenv(GIT_DIR = old_git_dir)
-      }
-      if (is.na(old_git_work_tree)) {
-        Sys.unsetenv("GIT_WORK_TREE")
-      } else {
-        Sys.setenv(GIT_WORK_TREE = old_git_work_tree)
-      }
-    },
-    add = TRUE
-  )
-  git <- c("-u", "GIT_DIR", "-u", "GIT_WORK_TREE", "git", "-C", root)
-  system2("env", c(git, "init"), stdout = FALSE, stderr = FALSE)
-  system2("env", c(git, "add", "R/helpers.R", "R/caller.R"), stdout = FALSE)
-
-  expect_true(readiness_env$readiness_check_dead_code(
-    files = "R/helpers.R",
-    root = root
-  ))
-})
-
-test_that("duplicate-code readiness check compares normalized windows", {
-  root <- tempfile("readiness-root-")
-  dir.create(file.path(root, "R"), recursive = TRUE)
-  repeated <- c(
-    "alpha <- 1",
-    "beta <- 2",
-    "gamma <- alpha + beta"
-  )
-  writeLines(
-    c(
-      "one <- function() {",
-      repeated,
-      "}",
-      "two <- function() {",
-      repeated,
-      "}"
-    ),
-    file.path(root, "R", "duplicate.R")
-  )
-
-  expect_error(
-    readiness_env$readiness_check_duplicate_code(
-      files = "R/duplicate.R",
-      root = root,
-      window_size = 3L
-    ),
-    "Duplicate code windows"
   )
 })

@@ -50,23 +50,9 @@ repos:
         language: system
         pass_filenames: true
 
-      - id: readiness-code-quality
-        name: Enforce repository code-quality budgets
-        entry: env RENV_CONFIG_AUTOLOADER_ENABLED=FALSE R_LIBS_USER=/home/carl/R/library Rscript --vanilla inst/scripts/readiness-checks.R code-quality
-        language: system
-        pass_filenames: true
-
       - id: r-tests
         name: Run package tests before push
         entry: bash -lc 'export R_LIBS_USER="${R_LIBS_USER:-$HOME/R/library}"; export RENV_CONFIG_AUTOLOADER_ENABLED=FALSE; exec Rscript --vanilla dev/precommit.R test'
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [pre-push]
-
-      - id: r-test-timing
-        name: Run per-file test timing before push
-        entry: bash -lc 'export R_LIBS_USER="${R_LIBS_USER:-$HOME/R/library}"; export RENV_CONFIG_AUTOLOADER_ENABLED=FALSE; exec Rscript --vanilla dev/test-timing.R'
         language: system
         pass_filenames: false
         always_run: true

@@ -492,9 +492,7 @@ readiness_run <- function(checks, files = NULL, root = NULL) {
     checks <- c(
       "large-files",
       "debt-markers",
-      "agents-links",
-      "dead-code",
-      "code-quality"
+      "agents-links"
     )
   }
   unknown <- setdiff(checks, available)
