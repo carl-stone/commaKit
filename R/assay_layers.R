@@ -4,33 +4,9 @@
 #' @importFrom IRanges CharacterList
 NULL
 
-.ASSAY_LAYER_DEFAULT_ROLES <- c(
-  methylation = "methylation",
-  coverage = "coverage",
-  mod_counts = "mod_counts",
-  canonical_counts = "canonical_counts",
-  other_mod_counts = "other_mod_counts"
-)
-
-.ASSAY_LAYER_DEFAULT_TYPES <- c(
-  methylation = "filtered_beta",
-  coverage = "observed_total_coverage",
-  mod_counts = "observed_counts",
-  canonical_counts = "observed_counts",
-  other_mod_counts = "observed_counts"
-)
-
-.ASSAY_LAYER_DEFAULT_SOURCES <- c(
-  methylation = "unknown",
-  coverage = "unknown",
-  mod_counts = "unknown",
-  canonical_counts = "unknown",
-  other_mod_counts = "unknown"
-)
-
 .validateAssayLayerName <- function(assay_name) {
   if (!is.character(assay_name) || length(assay_name) != 1L ||
-    is.na(assay_name) || !nzchar(assay_name)) {
+    is.na(assay_name) || !nzchar(assay_name)) { # nolint: indentation_linter
     stop("'assay_name' must be a single non-empty character string.")
   }
   if (!grepl("^[A-Za-z][A-Za-z0-9_.:-]*$", assay_name)) {
@@ -57,7 +33,7 @@ NULL
     stop("'type' must be a single non-empty character string.")
   }
   if (is.null(source) || length(source) != 1L ||
-    is.na(source) || !nzchar(source)) {
+    is.na(source) || !nzchar(source)) { # nolint: indentation_linter
     stop("'source' must be a single non-empty character string.")
   }
   if (!is.list(params)) {
@@ -89,29 +65,18 @@ NULL
   }
 
   type <- record$type
-  if (is.null(type) || length(type) == 0L || is.na(type) || !nzchar(type)) {
-    type <- .ASSAY_LAYER_DEFAULT_TYPES[[assay_name]]
-  }
-  if (is.null(type) || length(type) == 0L || is.na(type) || !nzchar(type)) {
-    type <- "derived"
+  if (is.null(type) || length(type) == 0L) {
+    type <- NA_character_
   }
 
   source <- record$source
-  if (is.null(source) || length(source) == 0L ||
-    is.na(source) || !nzchar(source)) {
-    source <- .ASSAY_LAYER_DEFAULT_SOURCES[[assay_name]]
-  }
-  if (is.null(source) || length(source) == 0L ||
-    is.na(source) || !nzchar(source)) {
-    source <- "unknown"
+  if (is.null(source) || length(source) == 0L) {
+    source <- NA_character_
   }
 
   role <- record$role
-  if (is.null(role) || length(role) == 0L || is.na(role) || !nzchar(role)) {
-    role <- .ASSAY_LAYER_DEFAULT_ROLES[[assay_name]]
-  }
-  if (is.null(role) || length(role) == 0L || is.na(role) || !nzchar(role)) {
-    role <- "derived"
+  if (is.null(role) || length(role) == 0L) {
+    role <- NA_character_
   }
   role <- as.character(role[[1L]])
 
@@ -171,7 +136,7 @@ NULL
   defaults <- defaults[nzchar(names(defaults)) & nzchar(defaults)]
 
   provenance <- md$assay_provenance
-  if (!is.null(provenance)) {
+  if (is.list(provenance)) {
     for (assay_name in names(provenance)) {
       default_for <- provenance[[assay_name]]$default_for
       default_for <- as.character(default_for)
@@ -182,11 +147,6 @@ NULL
   }
 
   present <- SummarizedExperiment::assayNames(object)
-  inferred_roles <- .ASSAY_LAYER_DEFAULT_ROLES[
-    names(.ASSAY_LAYER_DEFAULT_ROLES) %in% present
-  ]
-  missing_roles <- setdiff(names(inferred_roles), names(defaults))
-  defaults <- c(defaults, inferred_roles[missing_roles])
   defaults[defaults %in% present]
 }
 
@@ -212,6 +172,11 @@ NULL
 #'     assays.
 #'   \item Filtering returns a subset \code{commaData} object with all assay
 #'     layers subset to the same rows/samples. There are no hidden lazy views.
+#'   \item Legacy loading reads only the named \code{assay_provenance} record
+#'     list and named \code{assay_defaults} role map. An explicit
+#'     \code{default_for} in a provenance record may fill a missing role-map
+#'     entry. Assay names alone do not infer metadata or defaults; missing
+#'     metadata is reported as \code{NA}.
 #' }
 #'
 #' @param object A \code{commaData} object.
@@ -236,7 +201,7 @@ setGeneric("assayLayers", function(object) standardGeneric("assayLayers"))
 setMethod("assayLayers", "commaData", function(object) {
   assay_names <- SummarizedExperiment::assayNames(object)
   provenance <- S4Vectors::metadata(object)$assay_provenance
-  if (is.null(provenance)) {
+  if (!is.list(provenance)) {
     provenance <- list()
   }
   defaults <- .assayLayerDefaults(object)
@@ -300,7 +265,7 @@ setMethod("assayLayers", "commaData", function(object) {
     stop("'value' must have the same dimensions as 'object'.")
   }
   if (assay_name %in% SummarizedExperiment::assayNames(object) &&
-    !isTRUE(overwrite)) {
+    !isTRUE(overwrite)) { # nolint: indentation_linter
     stop(
       "Assay layer '", assay_name, "' already exists. Use a new assay ",
       "name for another version, or set overwrite = TRUE explicitly."

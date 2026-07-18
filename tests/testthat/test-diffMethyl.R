@@ -68,24 +68,26 @@ test_that("diffMethyl: per-condition mean_beta columns added", {
   expect_true("dm_mean_beta_treatment" %in% rd)
 })
 
-test_that("diffMethyl: metadata records result_cols", {
+test_that("diffMethyl: resultLayers records result columns", {
   obj <- .make_dm_data()
   dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
-  md <- S4Vectors::metadata(dm)
-  expect_true(!is.null(md$diffMethyl_result_cols))
-  expect_true("dm_pvalue" %in% md$diffMethyl_result_cols)
-  expect_true("dm_padj" %in% md$diffMethyl_result_cols)
+  layers <- resultLayers(dm)
+  result_cols <- as.character(layers$result_cols[[1L]])
+  expect_true("dm_pvalue" %in% result_cols)
+  expect_true("dm_padj" %in% result_cols)
+  expect_true(is.null(S4Vectors::metadata(dm)$diffMethyl_result_cols))
 })
 
-test_that("diffMethyl: metadata params recorded correctly", {
+test_that("diffMethyl: resultLayers records analysis parameters", {
   obj <- .make_dm_data()
   dm <- diffMethyl(obj,
     formula = ~condition, method = "quasi_f",
     p_adjust_method = "BH"
   )
-  params <- S4Vectors::metadata(dm)$diffMethyl_params
-  expect_equal(params$method, "quasi_f")
-  expect_equal(params$p_adjust_method, "BH")
+  layers <- resultLayers(dm)
+  expect_equal(layers$method, "quasi_f")
+  expect_equal(layers$p_adjust_method, "BH")
+  expect_true(is.null(S4Vectors::metadata(dm)$diffMethyl_params))
 })
 
 test_that("diffMethyl: existing rowData columns preserved", {
@@ -447,7 +449,7 @@ test_that("diffMethyl: methylKit q-values stay separate from dm_padj", {
   expect_true(any(ok))
   expected_padj <- stats::p.adjust(
     rd$dm_pvalue,
-    method = S4Vectors::metadata(dm)$diffMethyl_params$p_adjust_method
+    method = resultLayers(dm)$p_adjust_method
   )
   expect_equal(rd$dm_padj[ok], expected_padj[ok], tolerance = 1e-12)
 })
@@ -499,11 +501,11 @@ test_that(
   }
 )
 
-test_that("diffMethyl: method='limma' records alpha in metadata", {
+test_that("diffMethyl: resultLayers records limma alpha", {
   skip_if_not_installed("limma")
   obj <- .make_dm_data()
   dm <- diffMethyl(obj, formula = ~condition, method = "limma", alpha = 1.0)
-  expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$alpha, 1.0)
+  expect_equal(resultLayers(dm)$alpha, 1.0)
 })
 
 test_that(
@@ -552,11 +554,11 @@ test_that("diffMethyl: quasi_f recovers majority of ground-truth diff sites", {
   expect_gte(n_detected, floor(n_true_diff * 0.5))
 })
 
-test_that("diffMethyl: method='quasi_f' records method in metadata", {
+test_that("diffMethyl: resultLayers records method", {
   skip_if_not_installed("limma")
   obj <- .make_dm_data()
   dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
-  expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$method, "quasi_f")
+  expect_equal(resultLayers(dm)$method, "quasi_f")
 })
 
 test_that("diffMethyl: method='quasi_f' errors informatively if limma absent", {
@@ -778,14 +780,16 @@ test_that("diffMethyl: loops separately over each mod_context", {
   expect_true(has_five_mc)
 })
 
-test_that("diffMethyl: mod_context stored in metadata params", {
+test_that("diffMethyl: resultLayers stores mod_context", {
   data(comma_example_data)
   dm <- diffMethyl(comma_example_data,
     formula = ~condition,
     mod_context = "6mA_GATC", method = "quasi_f"
   )
-  params <- S4Vectors::metadata(dm)$diffMethyl_params
-  expect_equal(params$mod_context, "6mA_GATC")
+  expect_equal(
+    as.character(resultLayers(dm)$mod_context[[1L]]),
+    "6mA_GATC"
+  )
 })
 
 # ─── reference argument and factor-level tests ───────────────────────────────
@@ -837,9 +841,7 @@ test_that("diffMethyl: factor condition uses first factor level as reference", {
   expect_true(mean(db) > 0,
     info = "Expected delta_beta > 0 (HNS - WT) with factor levels"
   )
-  # Verify reference recorded in metadata
-  params <- S4Vectors::metadata(dm)$diffMethyl_params
-  expect_equal(params$reference, "WT")
+  expect_equal(resultLayers(dm)$reference, "WT")
 })
 
 test_that("diffMethyl: reference argument overrides alphabetical default", {
@@ -855,8 +857,7 @@ test_that("diffMethyl: reference argument overrides alphabetical default", {
   expect_true(mean(db) > 0,
     info = "Expected delta_beta > 0 (HNS - WT) with reference = 'WT'"
   )
-  params <- S4Vectors::metadata(dm)$diffMethyl_params
-  expect_equal(params$reference, "WT")
+  expect_equal(resultLayers(dm)$reference, "WT")
 })
 
 test_that("diffMethyl: invalid reference value produces informative error", {
@@ -920,11 +921,8 @@ test_that(
     # Factor reference is treatment, so delta is control - treatment; first
     # sites have control high and treatment low.
     expect_true(all(rd$dm_delta_beta[1:5] > 0, na.rm = TRUE))
-    expect_equal(
-      S4Vectors::metadata(dm)$diffMethyl_params$reference,
-      "treatment"
-    )
-    expect_equal(S4Vectors::metadata(dm)$diffMethyl_params$treatment, "control")
+    expect_equal(resultLayers(dm)$reference, "treatment")
+    expect_equal(resultLayers(dm)$treatment, "control")
   }
 )
 

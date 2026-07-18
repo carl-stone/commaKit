@@ -51,13 +51,25 @@ Core assays:
 
 `coverage(object)` is deprecated for `commaData`; use `siteCoverage(object)`.
 
-Assay layer metadata lives in `metadata(object)$assay_provenance` and `metadata(object)$assay_defaults`. Use `assayLayers(object)` and `assayProvenance(object)` rather than ad hoc metadata inspection in user-facing code.
+Assay layer metadata lives in the named
+`metadata(object)$assay_provenance` record list and named
+`metadata(object)$assay_defaults` role map. An explicit `default_for` in a
+provenance record may fill a missing role-map entry when loading older objects.
+Assay names alone do not infer layer metadata or defaults; absent metadata is
+reported as `NA`. Use `assayLayers(object)` and `assayProvenance(object)`
+rather than ad hoc metadata inspection in user-facing code.
 
 # Result Layers
 
 `diffMethyl()` stores named result layers in `metadata(object)$diffMethyl_results`, with provenance in `metadata(object)$diffMethyl_result_layers` and an active/default result in `metadata(object)$diffMethyl_default_result`.
 
-The active result is mirrored into bare `dm_*` row metadata columns for backward compatibility. Use `resultLayers(object)` to inspect named runs. `results()` and `filterResults()` can retrieve named result layers.
+The supported result shape is the three named registries above: result tables,
+layer records, and the explicit active layer name. The active result is
+mirrored into bare `dm_*` row metadata columns for backward compatibility. The
+older `diffMethyl_result_cols` and `diffMethyl_params` fields, inferred
+default names, and row metadata without a named layer are not used to
+reconstruct results. Use `resultLayers(object)` to inspect named runs.
+`results()` and `filterResults()` can retrieve named result layers.
 
 # Pipeline
 

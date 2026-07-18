@@ -22,6 +22,10 @@ Returns a registry of named differential methylation analyses stored in a
 \code{\link{commaData}} object. Each call to \code{\link{diffMethyl}} can
 write a named result layer, allowing multiple analysis runs to coexist while
 the default layer remains available through \code{\link{results}}.
+Only explicitly named \code{diffMethyl_results},
+\code{diffMethyl_result_layers}, and \code{diffMethyl_default_result}
+metadata are loaded. Legacy result-column fields, inferred default names,
+and bare \code{dm_*} row metadata do not reconstruct a result layer.
 }
 \examples{
 data(comma_example_data)

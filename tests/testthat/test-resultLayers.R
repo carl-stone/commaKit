@@ -1,3 +1,46 @@
+test_that("resultLayers() loads explicit named registries", {
+  obj <- .make_diff_methyl_fixture(n_sites = 5L, n_ctrl = 2L, n_treat = 2L)
+  result_data <- S4Vectors::DataFrame(
+    dm_pvalue = seq(0.01, 0.05, length.out = nrow(obj)),
+    dm_padj = seq(0.02, 0.1, length.out = nrow(obj)),
+    dm_delta_beta = rep(0.2, nrow(obj))
+  )
+  result_record <- list(
+    name = "legacy.v1",
+    role = "diffMethyl",
+    type = "differential_methylation",
+    source = "diffMethyl",
+    result_cols = colnames(result_data),
+    params = list(
+      method = "quasi_f",
+      formula = "~condition",
+      reference = "control",
+      treatment = "treatment",
+      p_adjust_method = "BH",
+      min_coverage = 5L,
+      alpha = 0.5
+    ),
+    timestamp = as.POSIXct(NA_real_, origin = "1970-01-01", tz = "UTC"),
+    package_version = "0.2.0"
+  )
+  md <- S4Vectors::metadata(obj)
+  md$diffMethyl_results <- list(legacy.v1 = result_data)
+  md$diffMethyl_result_layers <- list(legacy.v1 = result_record)
+  md$diffMethyl_default_result <- "legacy.v1"
+  md$diffMethyl_result_cols <- NULL
+  md$diffMethyl_params <- NULL
+  S4Vectors::metadata(obj) <- md
+
+  layers <- resultLayers(obj)
+  expect_equal(layers$name, "legacy.v1")
+  expect_true(layers$is_default)
+  expect_equal(layers$method, "quasi_f")
+  expect_equal(
+    results(obj)$dm_delta_beta,
+    result_data$dm_delta_beta
+  )
+})
+
 test_that("resultLayers() lists the default diffMethyl result layer", {
   skip_if_not_installed("limma")
   obj <- .make_diff_methyl_fixture(n_sites = 12L, n_ctrl = 2L, n_treat = 2L)
@@ -337,17 +380,28 @@ test_that(
   }
 )
 
-test_that("resultLayers() infers a legacy diffMethyl result row", {
-  skip_if_not_installed("limma")
+test_that("resultLayers() does not infer from old fields or bare mirrors", {
   obj <- .make_diff_methyl_fixture(n_sites = 8L, n_ctrl = 2L, n_treat = 2L)
-  dm <- diffMethyl(obj, formula = ~condition, method = "quasi_f")
-  S4Vectors::metadata(dm)$diffMethyl_results <- NULL
-  S4Vectors::metadata(dm)$diffMethyl_result_layers <- NULL
-  S4Vectors::metadata(dm)$diffMethyl_default_result <- NULL
+  rr <- SummarizedExperiment::rowRanges(obj)
+  GenomicRanges::mcols(rr)$dm_pvalue <- seq_len(nrow(obj)) / nrow(obj)
+  GenomicRanges::mcols(rr)$dm_padj <- seq_len(nrow(obj)) / nrow(obj)
+  GenomicRanges::mcols(rr)$dm_delta_beta <- rep(0.2, nrow(obj))
+  SummarizedExperiment::rowRanges(obj) <- rr
 
-  layers <- resultLayers(dm)
-  expect_equal(layers$name, "diffMethyl")
-  expect_true(layers$is_default)
-  expect_true("dm_padj" %in% as.character(layers$result_cols[[1L]]))
-  expect_s3_class(results(dm), "data.frame")
+  md <- S4Vectors::metadata(obj)
+  md$diffMethyl_results <- list(diffMethyl = S4Vectors::DataFrame(
+    dm_pvalue = rep(0.1, nrow(obj)),
+    dm_padj = rep(0.1, nrow(obj)),
+    dm_delta_beta = rep(0.2, nrow(obj))
+  ))
+  md$diffMethyl_result_layers <- NULL
+  md$diffMethyl_default_result <- NULL
+  md$diffMethyl_result_cols <- c(
+    "dm_pvalue", "dm_padj", "dm_delta_beta"
+  )
+  md$diffMethyl_params <- list(result_name = "diffMethyl")
+  S4Vectors::metadata(obj) <- md
+
+  expect_equal(nrow(resultLayers(obj)), 0L)
+  expect_error(results(obj), "No differential methylation results")
 })

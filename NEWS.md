@@ -199,8 +199,9 @@ provenance. They are not the current package version sequence.
 
   New `rowData` columns: `dm_pvalue`, `dm_padj` (Benjamini-Hochberg by
   default), `dm_delta_beta` (effect size: treatment minus control mean beta),
-  and one `dm_mean_beta_<condition>` column per condition level. Analysis
-  parameters are stored in `metadata(object)$diffMethyl_params`.
+  and one `dm_mean_beta_<condition>` column per condition level. Named result
+  tables and provenance are stored in the result-layer registries and exposed
+  through `resultLayers()`.
 
 * **`results()`** — S4 method to extract differential methylation results from
   a `commaData` object as a tidy `data.frame`. Supports optional `mod_type`

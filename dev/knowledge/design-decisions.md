@@ -261,6 +261,38 @@ updates, and tests proving the public result-column contract.
 
 ---
 
+## D-016: Legacy layer loading uses explicit named registries
+
+**Decision:** Load assay metadata only from the named
+`metadata(object)$assay_provenance` record list and named
+`metadata(object)$assay_defaults` role map. Load differential-methylation
+results only from the named `diffMethyl_results`,
+`diffMethyl_result_layers`, and explicit `diffMethyl_default_result`
+metadata. An explicit assay-record `default_for` may fill a missing assay
+role-map entry. The active named result is mirrored into bare `dm_*` row
+metadata columns.
+
+**Rationale:** These are the documented layer registries and compatibility
+surface. Inferring defaults from assay names, reconstructing result layers from
+old result-column or parameter fields, and treating bare row metadata as a
+standalone result layer silently turns incomplete objects into apparently
+complete analyses.
+
+**Consequence:**
+- Missing assay metadata remains visible as `NA`; assay names do not create
+  provenance or default roles.
+- A result registry without an explicit default has no default result, but
+  named layers remain available through `results(..., result_name = ...)`.
+- `diffMethyl_result_cols`, `diffMethyl_params`, inferred default names, and
+  bare `dm_*` columns without named registries are unsupported legacy shapes.
+- Tests should assert public registry and mirror behavior rather than these
+  removed fallback fields.
+
+**Do not change without:** A compatibility review covering saved
+`commaData` objects and named-layer/mirror behavior.
+
+---
+
 ## How to Add New Decisions
 
 When making a significant design or API decision:

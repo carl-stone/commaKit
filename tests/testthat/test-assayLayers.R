@@ -1,4 +1,4 @@
-test_that("assayLayers() lists core assays and inferred defaults", {
+test_that("assayLayers() lists explicit assay metadata and defaults", {
   obj <- .make_two_modtype_fixture()
   layers <- assayLayers(obj)
 
@@ -28,7 +28,7 @@ test_that("assayLayers() lists core assays and inferred defaults", {
   )
 })
 
-test_that("assayLayers() infers registry rows for legacy objects", {
+test_that("assayLayers() does not infer metadata from assay names", {
   obj <- .make_two_modtype_fixture()
   S4Vectors::metadata(obj)$assay_provenance <- NULL
   S4Vectors::metadata(obj)$assay_defaults <- NULL
@@ -36,8 +36,23 @@ test_that("assayLayers() infers registry rows for legacy objects", {
   layers <- assayLayers(obj)
 
   expect_equal(layers$assay, SummarizedExperiment::assayNames(obj))
-  expect_equal(layers$type[layers$assay == "methylation"], "filtered_beta")
-  expect_true(layers$is_default[layers$assay == "coverage"])
+  expect_false(any(layers$is_default))
+  expect_true(all(is.na(layers$role)))
+  expect_true(all(is.na(layers$type)))
+  expect_true(all(is.na(layers$source)))
+})
+
+test_that("assayLayers() loads explicit provenance defaults", {
+  obj <- .make_two_modtype_fixture()
+  S4Vectors::metadata(obj)$assay_defaults <- NULL
+
+  layers <- assayLayers(obj)
+
+  expect_true(layers$is_default[layers$assay == "methylation"])
+  expect_equal(
+    as.character(layers$default_for[layers$assay == "methylation"][[1L]]),
+    "methylation"
+  )
 })
 
 test_that(
@@ -111,7 +126,7 @@ test_that("commaKit:::.addAssayLayer() allows multiple explicit versions", {
 
   expect_true(
     all(c("methylation_norm.v1", "methylation_norm.v2") %in%
-      SummarizedExperiment::assayNames(obj))
+      SummarizedExperiment::assayNames(obj)) # nolint: indentation_linter
   )
   expect_false(any(duplicated(SummarizedExperiment::assayNames(obj))))
 })

@@ -40,6 +40,11 @@ layers with provenance and parent assays rather than replacing raw
 assays.
 \item Filtering returns a subset \code{commaData} object with all assay
 layers subset to the same rows/samples. There are no hidden lazy views.
+\item Legacy loading reads only the named \code{assay_provenance} record
+list and named \code{assay_defaults} role map. An explicit
+\code{default_for} in a provenance record may fill a missing role-map
+entry. Assay names alone do not infer metadata or defaults; missing
+metadata is reported as \code{NA}.
 }
 }
 \examples{

@@ -113,8 +113,8 @@ The input \code{commaData} object with additional columns in
 \code{rowData}: \code{dm_pvalue}, \code{dm_padj}, \code{dm_delta_beta},
 and one \code{dm_mean_beta_<condition>} column per condition level. The
 methylKit backend also adds \code{dm_methylkit_qvalue}. The
-\code{metadata} slot is updated with analysis parameters, result column
-names, and a named result layer registry.
+\code{metadata} slot is updated with named result data, provenance, and
+the active result name.
 }
 \description{
 The main function for differential methylation analysis in \pkg{commaKit}.
@@ -194,14 +194,15 @@ values indicate hypermethylation in treatment.}
 (named after the actual condition values), containing the per-group
 mean beta value for each site.}
 }
-Analysis parameters and result column names are stored in
-\code{metadata(object)$diffMethyl_params} and
-\code{metadata(object)$diffMethyl_result_cols}.
-Named result layers are stored in
-\code{metadata(object)$diffMethyl_results} and listed by
-\code{\link{resultLayers}()}. By default, the active result layer is also
-mirrored into the legacy \code{dm_*} columns in \code{rowData} so existing
-\code{\link{results}()} and plotting workflows keep working.
+Named result tables and their provenance are stored in the named
+\code{metadata(object)$diffMethyl_results} and
+\code{metadata(object)$diffMethyl_result_layers} registries, with the active
+layer named by \code{metadata(object)$diffMethyl_default_result}. The public
+\code{\link{resultLayers}()} accessor is the supported way to inspect this
+metadata. By default, the active result layer is also mirrored into bare
+\code{dm_*} columns in \code{rowData} so existing \code{\link{results}()}
+and plotting workflows keep working. Older result-column and inferred
+default metadata fields are not used to reconstruct layers.
 }
 \examples{
 data(comma_example_data)

@@ -5,17 +5,11 @@
 #' @importFrom GenomicRanges mcols "mcols<-"
 NULL
 
-.DIFFMETHYL_DEFAULT_RESULT_NAME <- "diffMethyl"
-
-.DIFFMETHYL_CORE_RESULT_COLS <- c(
-  "dm_pvalue",
-  "dm_padj",
-  "dm_delta_beta"
-)
+.DIFFMETHYL_DEFAULT_NAME <- "diffMethyl"
 
 .validateResultLayerName <- function(result_name) {
   if (!is.character(result_name) || length(result_name) != 1L ||
-    is.na(result_name) || !nzchar(result_name)) {
+    is.na(result_name) || !nzchar(result_name)) { # nolint: indentation_linter
     stop("'result_name' must be a single non-empty character string.")
   }
   if (!grepl("^[A-Za-z][A-Za-z0-9_.:-]*$", result_name)) {
@@ -39,7 +33,7 @@ NULL
                                         )) {
   .validateResultLayerName(result_name)
   if (!is.character(result_cols) || length(result_cols) == 0L ||
-    any(is.na(result_cols) | !nzchar(result_cols))) {
+    any(is.na(result_cols) | !nzchar(result_cols))) { # nolint: indentation_linter
     stop("'result_cols' must be a non-empty character vector.")
   }
   if (!is.list(params)) {
@@ -61,33 +55,10 @@ NULL
 .diffMethylResultRegistry <- function(object) {
   md <- S4Vectors::metadata(object)
   registry <- md$diffMethyl_result_layers
-  if (is.null(registry)) {
+  if (!is.list(registry)) {
     registry <- list()
   }
-
-  result_data <- md$diffMethyl_results
-  if (!is.null(result_data)) {
-    missing_records <- setdiff(names(result_data), names(registry))
-    for (nm in missing_records) {
-      registry[[nm]] <- .makeDiffMethylResultRecord(
-        result_name = nm,
-        result_cols = colnames(result_data[[nm]]),
-        params = md$diffMethyl_params %||% list(),
-        timestamp = NA
-      )
-    }
-  }
-
-  if (length(registry) == 0L && !is.null(md$diffMethyl_result_cols)) {
-    registry[[.DIFFMETHYL_DEFAULT_RESULT_NAME]] <- .makeDiffMethylResultRecord(
-      result_name = .DIFFMETHYL_DEFAULT_RESULT_NAME,
-      result_cols = md$diffMethyl_result_cols,
-      params = md$diffMethyl_params %||% list(),
-      timestamp = NA
-    )
-  }
-
-  registry
+  registry[nzchar(names(registry))]
 }
 
 `%||%` <- function(x, y) {
@@ -98,23 +69,8 @@ NULL
   md <- S4Vectors::metadata(object)
   default_name <- md$diffMethyl_default_result
   if (!is.null(default_name) && length(default_name) == 1L &&
-    !is.na(default_name) && nzchar(default_name)) {
+    !is.na(default_name) && nzchar(default_name)) { # nolint: indentation_linter
     return(as.character(default_name))
-  }
-
-  registry <- .diffMethylResultRegistry(object)
-  if (!is.null(md$diffMethyl_result_cols)) {
-    params_name <- md$diffMethyl_params$result_name
-    if (!is.null(params_name) && length(params_name) == 1L &&
-      !is.na(params_name) && params_name %in% names(registry)) {
-      return(as.character(params_name))
-    }
-    if (.DIFFMETHYL_DEFAULT_RESULT_NAME %in% names(registry)) {
-      return(.DIFFMETHYL_DEFAULT_RESULT_NAME)
-    }
-    if (length(registry) == 1L) {
-      return(names(registry))
-    }
   }
 
   NA_character_
@@ -152,21 +108,18 @@ NULL
   result_name
 }
 
-.knownDiffMethylResultColsFromMetadata <- function(md) {
+.knownDmColsFromMetadata <- function(md) {
   cols <- character()
-  if (!is.null(md$diffMethyl_result_cols)) {
-    cols <- c(cols, md$diffMethyl_result_cols)
-  }
 
   registry <- md$diffMethyl_result_layers
-  if (!is.null(registry)) {
+  if (is.list(registry)) {
     for (record in registry) {
       cols <- c(cols, record$result_cols)
     }
   }
 
   result_data <- md$diffMethyl_results
-  if (!is.null(result_data)) {
+  if (is.list(result_data)) {
     for (df in result_data) {
       cols <- c(cols, colnames(df))
     }
@@ -177,7 +130,7 @@ NULL
 }
 
 .knownDiffMethylResultCols <- function(object) {
-  .knownDiffMethylResultColsFromMetadata(S4Vectors::metadata(object))
+  .knownDmColsFromMetadata(S4Vectors::metadata(object))
 }
 
 .diffMethylResultData <- function(object, result_name) {
@@ -185,15 +138,6 @@ NULL
   result_data <- md$diffMethyl_results
   if (!is.null(result_data) && result_name %in% names(result_data)) {
     return(result_data[[result_name]])
-  }
-
-  if (result_name == .DIFFMETHYL_DEFAULT_RESULT_NAME &&
-    !is.null(md$diffMethyl_result_cols)) {
-    rd <- SummarizedExperiment::rowData(object)
-    result_cols <- intersect(md$diffMethyl_result_cols, colnames(rd))
-    if (length(result_cols) == length(md$diffMethyl_result_cols)) {
-      return(S4Vectors::DataFrame(rd[, result_cols, drop = FALSE]))
-    }
   }
 
   NULL
@@ -246,6 +190,8 @@ NULL
   }
 
   md <- S4Vectors::metadata(object)
+  md$diffMethyl_result_cols <- NULL
+  md$diffMethyl_params <- NULL
   if (is.null(md$diffMethyl_results)) {
     md$diffMethyl_results <- list()
   }
@@ -278,8 +224,6 @@ NULL
     object <- .setActiveDiffMethylResult(object, result_data, result_cols)
     md <- S4Vectors::metadata(object)
     md$diffMethyl_default_result <- result_name
-    md$diffMethyl_result_cols <- result_cols
-    md$diffMethyl_params <- params
     S4Vectors::metadata(object) <- md
   }
 
@@ -309,6 +253,10 @@ NULL
 #' \code{\link{commaData}} object. Each call to \code{\link{diffMethyl}} can
 #' write a named result layer, allowing multiple analysis runs to coexist while
 #' the default layer remains available through \code{\link{results}}.
+#' Only explicitly named \code{diffMethyl_results},
+#' \code{diffMethyl_result_layers}, and \code{diffMethyl_default_result}
+#' metadata are loaded. Legacy result-column fields, inferred default names,
+#' and bare \code{dm_*} row metadata do not reconstruct a result layer.
 #'
 #' @param object A \code{commaData} object.
 #'
