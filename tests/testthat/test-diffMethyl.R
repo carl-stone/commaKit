@@ -18,6 +18,23 @@ test_that("diffMethyl: returns a commaData object", {
   expect_s4_class(dm, "commaData")
 })
 
+test_that("diffMethyl: default method selects the methylkit backend", {
+  obj <- .make_dm_data()
+
+  if (requireNamespace("methylKit", quietly = TRUE)) {
+    dm <- suppressWarnings(diffMethyl(obj, formula = ~condition))
+    expect_equal(
+      S4Vectors::metadata(dm)$diffMethyl_params$method,
+      "methylkit"
+    )
+  } else {
+    expect_error(
+      diffMethyl(obj, formula = ~condition),
+      "Package 'methylKit' is required for method = \\\"methylkit\\\""
+    )
+  }
+})
+
 test_that("diffMethyl: condition is required only when requested by formula", {
   obj <- .make_dm_data()
   SummarizedExperiment::colData(obj)$group <-
@@ -320,7 +337,7 @@ test_that("diffMethyl: error when formula is not a formula", {
 test_that("diffMethyl: error when formula variable not in colData", {
   obj <- .make_dm_data()
   expect_error(
-    diffMethyl(obj, formula = ~nonexistent_col),
+    diffMethyl(obj, formula = ~nonexistent_col, method = "quasi_f"),
     "not found in sample"
   )
 })
@@ -354,7 +371,10 @@ test_that("diffMethyl: rejects transformed RHS terms before v1", {
 
 test_that("diffMethyl: error when mod_type not present in object", {
   obj <- .make_dm_data()
-  expect_error(diffMethyl(obj, mod_type = "4mC"), "not found in object")
+  expect_error(
+    diffMethyl(obj, mod_type = "4mC", method = "quasi_f"),
+    "not found in object"
+  )
 })
 
 test_that("diffMethyl: method argument must be valid", {
@@ -862,7 +882,12 @@ test_that("diffMethyl: reference argument overrides alphabetical default", {
 test_that("diffMethyl: invalid reference value produces informative error", {
   obj <- .make_ref_test_data(as_factor = FALSE)
   expect_error(
-    diffMethyl(obj, formula = ~condition, reference = "CTRL"),
+    diffMethyl(
+      obj,
+      formula = ~condition,
+      reference = "CTRL",
+      method = "quasi_f"
+    ),
     regexp = "'reference' value 'CTRL' not found"
   )
 })

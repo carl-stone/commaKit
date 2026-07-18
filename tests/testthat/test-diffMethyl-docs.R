@@ -1,47 +1,93 @@
-test_that("diffMethyl method docs preserve default and practical guidance", {
+.diffMethylDocPath <- function(...) {
+  relative_path <- file.path(...)
   source_dir <- Sys.getenv("COMMAKIT_SOURCE_DIR", unset = "")
-  source_path <- c(
+  candidates <- c(
     if (nzchar(source_dir)) {
-      file.path(source_dir, "R", "diffMethyl.R")
+      file.path(source_dir, relative_path)
     } else {
       character()
     },
-    test_path("..", "..", "R", "diffMethyl.R"),
-    test_path("..", "..", "00_pkg_src", "commaKit", "R", "diffMethyl.R")
+    testthat::test_path("..", "..", relative_path),
+    testthat::test_path("..", "..", "00_pkg_src", "commaKit", relative_path)
   )
-  source <- paste(
-    readLines(source_path[file.exists(source_path)][1]),
-    collapse = "\n"
-  )
+  found <- candidates[file.exists(candidates)]
+  if (length(found)) found[1] else NA_character_
+}
 
-  vignette_path <- c(
-    if (nzchar(source_dir)) {
-      file.path(source_dir, "vignettes", "getting-started.Rmd")
-    } else {
-      character()
-    },
-    test_path("..", "..", "vignettes", "getting-started.Rmd"),
-    test_path(
-      "..", "..", "00_pkg_src", "commaKit",
-      "vignettes", "getting-started.Rmd"
+.renderDiffMethylRd <- function(path) {
+  rendered_path <- tempfile(fileext = ".txt")
+  on.exit(unlink(rendered_path), add = TRUE)
+
+  tools::Rd2txt(
+    tools::parse_Rd(path),
+    out = rendered_path
+  )
+  paste(readLines(rendered_path, warn = FALSE), collapse = "\n")
+}
+
+test_that(
+  "docs-lint: diffMethyl preserves method and limitation guidance",
+  {
+    source_path <- .diffMethylDocPath("R", "diffMethyl.R")
+    skip_if(
+      is.na(source_path),
+      "diffMethyl source is unavailable in this build"
+    )
+    source <- paste(readLines(source_path, warn = FALSE), collapse = "\n")
+
+    # These are high-value user guidance, not implementation contracts.
+    expect_match(source, "Default method")
+    expect_match(source, "quasi_f")
+    expect_match(source, "general-purpose alternative")
+    expect_match(source, "Small-sample note")
+    expect_match(source, "extremely low statistical power")
+    expect_match(source, "exploratory only")
+  }
+)
+
+test_that("rendered docs: diffMethyl Rd keeps method guidance", {
+  rd_path <- .diffMethylDocPath("man", "diffMethyl.Rd")
+  skip_if(
+    is.na(rd_path),
+    "diffMethyl Rd is unavailable in this build"
+  )
+  rendered <- .renderDiffMethylRd(rd_path)
+
+  expect_match(rendered, "Default method")
+  expect_match(rendered, "methylkit")
+  expect_match(rendered, "quasi_f")
+  expect_match(rendered, "general-purpose alternative")
+  expect_match(rendered, "Small-sample note")
+  expect_match(rendered, "exploratory only")
+})
+
+test_that("rendered vignette: diffMethyl keeps method guidance", {
+  vignette_path <- .diffMethylDocPath(
+    "vignettes",
+    "getting-started.Rmd"
+  )
+  skip_if(
+    is.na(vignette_path),
+    "getting-started vignette source is unavailable in this build"
+  )
+  skip_if_not_installed("knitr")
+
+  output_path <- tempfile(fileext = ".md")
+  on.exit(unlink(output_path), add = TRUE)
+  expect_no_error(
+    knitr::knit(
+      input = vignette_path,
+      output = output_path,
+      quiet = TRUE,
+      envir = new.env(parent = globalenv())
     )
   )
-  vignette <- paste(
-    readLines(vignette_path[file.exists(vignette_path)][1]),
-    collapse = "\n"
-  )
+  rendered <- paste(readLines(output_path, warn = FALSE), collapse = "\n")
 
-  expect_match(source, 'method\\s*=\\s*c\\("methylkit", "limma", "quasi_f"\\)')
-  expect_match(
-    source,
-    'Default method \\(\\\\code\\{method = "methylkit"\\}\\)'
-  )
-  expect_match(source, "quasi_f.*general-purpose alternative")
-
-  expect_match(vignette, 'keeps `method = "methylkit"` as the default')
-  expect_match(
-    vignette,
-    '`method = "quasi_f"` is a good general-purpose alternative'
-  )
-  expect_match(vignette, '`method = "limma"` uses limma')
+  expect_match(rendered, 'method = "methylkit"')
+  expect_match(rendered, "default")
+  expect_match(rendered, 'method = "quasi_f"')
+  expect_match(rendered, "general-purpose alternative")
+  expect_match(rendered, 'method = "limma"')
+  expect_match(rendered, "M-values")
 })
