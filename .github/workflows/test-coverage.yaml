@@ -15,7 +15,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
-      COMMAKIT_MIN_COVERAGE: "50"
+      COMMAKIT_MIN_COVERAGE: "80"
       COMMAKIT_SOURCE_DIR: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v5
@@ -34,7 +34,7 @@ jobs:
         run: |
           coverage <- covr::package_coverage(type = "tests")
           percent <- covr::percent_coverage(coverage)
-          threshold <- as.numeric(Sys.getenv("COMMAKIT_MIN_COVERAGE", "50"))
+          threshold <- as.numeric(Sys.getenv("COMMAKIT_MIN_COVERAGE", "80"))
           message(sprintf("Coverage: %.2f%%, threshold: %.2f%%", percent, threshold))
           if (percent < threshold) {
             stop(sprintf(
