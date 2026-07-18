@@ -430,8 +430,8 @@ modTypes(comma_example_data)
 modContexts(comma_example_data)
 #> [1] "5mC_CCWGG" "6mA_GATC"
 
-obj_6mA <- filterSites(comma_example_data, mod_context = "6mA_GATC")
-obj_6mA
+obj_6ma <- filterSites(comma_example_data, mod_context = "6mA_GATC")
+obj_6ma
 #> class: commaData
 #> sites: 393 | samples: 6
 #> mod types: 6mA
