@@ -212,8 +212,18 @@ NULL
 .limmaCoverageDiagnostics <- function(m_mat, coverage_mat, complete_sites) {
   coverage_values <- as.numeric(coverage_mat)
   coverage_values <- coverage_values[
-    is.finite(coverage_values) & coverage_values >= 0
+    is.finite(coverage_values) & coverage_values > 0
   ]
+  coverage_min <- if (length(coverage_values) > 0L) {
+    min(coverage_values)
+  } else {
+    NA_real_
+  }
+  coverage_max <- if (length(coverage_values) > 0L) {
+    max(coverage_values)
+  } else {
+    NA_real_
+  }
   coverage_mean <- if (length(coverage_values) > 0L) {
     mean(coverage_values)
   } else {
@@ -221,22 +231,29 @@ NULL
   }
   coverage_sd <- if (length(coverage_values) > 1L) {
     stats::sd(coverage_values)
-  } else {
+  } else if (length(coverage_values) == 1L) {
     0
+  } else {
+    NA_real_
   }
   n_sites <- nrow(m_mat)
   n_complete_sites <- length(complete_sites)
+  inference_status <- if (n_complete_sites >= 2L) {
+    "tested"
+  } else {
+    "insufficient_complete_sites"
+  }
 
   list(
     coverage_weighting = "none",
     incomplete_site_policy = "complete_case",
-    inference_status = if (n_complete_sites >= 2L) {
-      "tested"
-    } else {
-      "insufficient_complete_sites"
-    },
+    inference_status = inference_status,
     n_sites = n_sites,
-    n_tested_sites = n_complete_sites,
+    n_tested_sites = if (inference_status == "tested") {
+      n_complete_sites
+    } else {
+      0L
+    },
     n_complete_sites = n_complete_sites,
     n_incomplete_sites = n_sites - n_complete_sites,
     incomplete_fraction = if (n_sites > 0L) {
@@ -244,11 +261,7 @@ NULL
     } else {
       0
     },
-    coverage_min = if (length(coverage_values) > 0L) {
-      min(coverage_values)
-    } else {
-      NA_real_
-    },
+    coverage_min = coverage_min,
     coverage_median = if (length(coverage_values) > 0L) {
       stats::median(coverage_values)
     } else {
@@ -256,16 +269,12 @@ NULL
     },
     coverage_mean = coverage_mean,
     coverage_sd = coverage_sd,
-    coverage_max = if (length(coverage_values) > 0L) {
-      max(coverage_values)
-    } else {
-      NA_real_
-    },
+    coverage_max = coverage_max,
     coverage_cv = if (is.finite(coverage_mean) && coverage_mean > 0) {
       coverage_sd / coverage_mean
     } else {
       NA_real_
     },
-    coverage_heterogeneous = length(unique(coverage_values)) > 1L
+    coverage_heterogeneous = isTRUE(coverage_min < coverage_max)
   )
 }

@@ -479,23 +479,24 @@ diffMethyl <- function(
       )
       if (!is.null(context_diagnostics)) {
         limma_diagnostics$by_context[[mc]] <- context_diagnostics
-        if (context_diagnostics$n_incomplete_sites > 0L) {
-          incomplete_message <- if (
-            context_diagnostics$inference_status ==
-              "insufficient_complete_sites"
-          ) {
+        insufficient_complete_sites <- context_diagnostics$inference_status ==
+          "insufficient_complete_sites"
+        if (context_diagnostics$n_incomplete_sites > 0L ||
+          insufficient_complete_sites) {
+          incomplete_message <- if (context_diagnostics$n_incomplete_sites > 0L) {
             paste0(
-              " Fewer than two complete sites remain, so this context is ",
-              "not testable."
+              " has ", context_diagnostics$n_incomplete_sites,
+              " incomplete site(s); limma uses complete-case inference and ",
+              "leaves their p-values as NA."
             )
           } else {
-            ""
+            paste0(
+              " has fewer than two complete sites; limma cannot test this ",
+              "context and all p-values are NA."
+            )
           }
           warning(
-            "diffMethyl() limma: mod_context = '", mc,
-            "' has ", context_diagnostics$n_incomplete_sites,
-            " incomplete site(s); limma uses complete-case inference and ",
-            "leaves their p-values as NA.",
+            "diffMethyl() limma: mod_context = '", mc, "'",
             incomplete_message,
             call. = FALSE
           )

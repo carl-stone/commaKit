@@ -615,7 +615,50 @@ test_that(
     )
     expect_equal(diagnostics[["5mC_CCWGG"]]$n_tested_sites, 0L)
     expect_equal(diagnostics[["5mC_CCWGG"]]$n_incomplete_sites, 2L)
+    expect_equal(diagnostics[["5mC_CCWGG"]]$coverage_min, 20)
     expect_true(all(is.na(rd$dm_padj[3:5])))
+  }
+)
+
+test_that(
+  "diffMethyl: limma warns for contexts with fewer than two complete sites",
+  {
+    skip_if_not_installed("limma")
+    sample_names <- c("ctrl_1", "ctrl_2", "treat_1", "treat_2")
+    beta <- matrix(
+      c(0.2, 0.2, 0.8, 0.8),
+      nrow = 1L,
+      dimnames = list(NULL, sample_names)
+    )
+    coverage <- matrix(
+      20L,
+      nrow = 1L,
+      ncol = length(sample_names),
+      dimnames = dimnames(beta)
+    )
+    sample_info <- data.frame(
+      sample_name = sample_names,
+      condition = c("control", "control", "treatment", "treatment"),
+      replicate = 1:4,
+      stringsAsFactors = FALSE
+    )
+    obj <- .make_commaData_fixture(
+      beta = beta,
+      coverage = coverage,
+      sample_info = sample_info,
+      positions = 100L
+    )
+
+    expect_warning(
+      dm <- diffMethyl(obj, formula = ~condition, method = "limma"),
+      "fewer than two complete sites"
+    )
+    diagnostics <- S4Vectors::metadata(dm)$diffMethyl_params$
+      limma_diagnostics$by_context[["6mA_GATC"]]
+    expect_equal(diagnostics$inference_status, "insufficient_complete_sites")
+    expect_equal(diagnostics$n_complete_sites, 1L)
+    expect_equal(diagnostics$n_incomplete_sites, 0L)
+    expect_equal(diagnostics$n_tested_sites, 0L)
   }
 )
 
