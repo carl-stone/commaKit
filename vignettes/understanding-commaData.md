@@ -279,15 +279,9 @@ object, which keeps distinct modification-plus-context units separate.
 dm <- diffMethyl(annotated, formula = ~condition, method = "quasi_f")
 dm_cols <- setdiff(colnames(siteInfo(dm)), colnames(siteInfo(annotated)))
 dm_cols
-#> [1] "dm_pvalue"              "dm_padj"                "dm_delta_beta"
-#> [4] "dm_mean_beta_control"   "dm_mean_beta_treatment"
 
 result_layers <- resultLayers(dm)
 result_layers[, c("name", "method", "p_adjust_method")]
-#> DataFrame with 1 row and 3 columns
-#>          name      method p_adjust_method
-#>   <character> <character>     <character>
-#> 1  diffMethyl     quasi_f              BH
 ```
 
 `results()` exposes the active result layer as a tidy data frame while
@@ -302,20 +296,6 @@ head(res[, c(
   "chrom", "position", "strand", "mod_type", "motif",
   "mod_context", "dm_padj", "dm_delta_beta"
 )])
-#>       chrom position strand mod_type motif mod_context      dm_padj
-#> 64  chr_sim    16504      +      6mA  GATC    6mA_GATC 6.309184e-07
-#> 196 chr_sim    50176      -      6mA  GATC    6mA_GATC 6.309184e-07
-#> 287 chr_sim    70003      -      6mA  GATC    6mA_GATC 6.309184e-07
-#> 347 chr_sim    86016      +      6mA  GATC    6mA_GATC 6.309184e-07
-#> 249 chr_sim    61440      +      6mA  GATC    6mA_GATC 8.942641e-07
-#> 63  chr_sim    16384      -      6mA  GATC    6mA_GATC 1.248983e-06
-#>     dm_delta_beta
-#> 64     -0.6142911
-#> 196    -0.7336497
-#> 287    -0.7050844
-#> 347    -0.6743832
-#> 249    -0.7090099
-#> 63     -0.7178796
 ```
 
 The important pattern is that downstream functions do not replace the
@@ -323,56 +303,3 @@ central object model. They add, expose, or interpret layers attached to
 the same genomic methylation-site substrate.
 
 # Session information
-
-``` r
-sessionInfo()
-#> R version 4.5.0 (2025-04-11)
-#> Platform: x86_64-pc-linux-gnu
-#> Running under: Debian GNU/Linux 13 (trixie)
-#>
-#> Matrix products: default
-#> BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.12.1
-#> LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.1;  LAPACK version 3.12.0
-#>
-#> locale:
-#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8
-#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8
-#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C
-#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C
-#>
-#> time zone: America/Chicago
-#> tzcode source: system (glibc)
-#>
-#> attached base packages:
-#> [1] stats     graphics  grDevices utils     datasets  methods   base
-#>
-#> other attached packages:
-#> [1] commaKit_0.2.0
-#>
-#> loaded via a namespace (and not attached):
-#>  [1] Matrix_1.7-3                limma_3.66.0
-#>  [3] gtable_0.3.6                jsonlite_2.0.0
-#>  [5] compiler_4.5.0              SummarizedExperiment_1.40.0
-#>  [7] Biobase_2.70.0              GenomicRanges_1.62.1
-#>  [9] IRanges_2.44.0              Seqinfo_1.0.0
-#> [11] scales_1.4.0                statmod_1.5.2
-#> [13] yaml_2.3.12                 fastmap_1.2.0
-#> [15] lattice_0.22-7              ggplot2_4.0.3
-#> [17] R6_2.6.1                    XVector_0.50.0
-#> [19] S4Arrays_1.10.1             generics_0.1.4
-#> [21] GenomeInfoDb_1.46.2         knitr_1.51
-#> [23] BiocGenerics_0.56.0         DelayedArray_0.36.1
-#> [25] MatrixGenerics_1.22.0       RColorBrewer_1.1-3
-#> [27] rlang_1.3.0                 xfun_0.60
-#> [29] S7_0.2.2                    otel_0.2.0
-#> [31] SparseArray_1.10.10         cli_3.6.6
-#> [33] digest_0.6.39               grid_4.5.0
-#> [35] lifecycle_1.0.5             vctrs_0.7.3
-#> [37] S4Vectors_0.48.1            evaluate_1.0.5
-#> [39] glue_1.8.1                  farver_2.1.2
-#> [41] zoo_1.8-15                  abind_1.4-8
-#> [43] stats4_4.5.0                rmarkdown_2.31
-#> [45] httr_1.4.8                  matrixStats_1.5.0
-#> [47] tools_4.5.0                 htmltools_0.5.9
-#> [49] UCSC.utils_1.6.1
-```

@@ -208,7 +208,7 @@ Differential methylation adds a statistical result layer. By default,
 `diffMethyl()` works over the modification contexts present in the object,
 which keeps distinct modification-plus-context units separate.
 
-```{r diff-layer}
+```{r diff-layer, results = if (knitr::is_html_output(excludes = c("markdown", "gfm"))) "markup" else "hide"}
 dm <- diffMethyl(annotated, formula = ~condition, method = "quasi_f")
 dm_cols <- setdiff(colnames(siteInfo(dm)), colnames(siteInfo(annotated)))
 dm_cols
@@ -221,7 +221,7 @@ result_layers[, c("name", "method", "p_adjust_method")]
 preserving the site metadata needed to interpret each row. When you keep
 multiple named runs, pass `result` or `result_name` to retrieve an older layer.
 
-```{r results-layer}
+```{r results-layer, results = if (knitr::is_html_output(excludes = c("markdown", "gfm"))) "markup" else "hide"}
 res <- results(dm)
 res <- res[order(res$dm_padj), ]
 head(res[, c(
@@ -236,6 +236,6 @@ genomic methylation-site substrate.
 
 # Session information
 
-```{r session-info, eval = knitr::is_html_output(), include = knitr::is_html_output()}
+```{r session-info, eval = knitr::is_html_output(excludes = c("markdown", "gfm")), include = knitr::is_html_output(excludes = c("markdown", "gfm"))}
 sessionInfo()
 ```
