@@ -954,6 +954,15 @@ test_that("enrichment feature-role policy is explicit for supported types", {
     unname(unlist(default_rule)),
     c("identity", "none", NA_character_)
   )
+
+  expect_error(
+    commaKit:::.enrichmentFeatureRoleRule(1),
+    "single non-NA string"
+  )
+  expect_error(
+    commaKit:::.enrichmentFeatureRoleRule(factor("gene")),
+    "single non-NA string"
+  )
 })
 
 # ── .extractGeneRoles() ───────────────────────────────────────────────────────
@@ -987,6 +996,18 @@ test_that(".extractGeneRoles returns NULL when no sites match ft", {
   df <- make_role_res_df(list(c("promoter")), list(c("geneAp1")))
   out <- commaKit:::.extractGeneRoles(df, "gene", "feature_names")
   expect_null(out)
+})
+
+test_that(".extractGeneRoles rejects invalid feature types", {
+  df <- make_role_res_df(list(c("gene")), list(c("geneA")))
+  expect_error(
+    commaKit:::.extractGeneRoles(df, NULL, "feature_names"),
+    "single non-NA string"
+  )
+  expect_error(
+    commaKit:::.extractGeneRoles(df, NA_character_, "feature_names"),
+    "single non-NA string"
+  )
 })
 
 test_that(".extractGeneRoles gene type: target only, identity", {

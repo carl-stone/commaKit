@@ -102,6 +102,9 @@ NULL
 )
 
 .enrichmentFeatureRoleRule <- function(feature_type) {
+  if (!is.character(feature_type)) {
+    stop("'feature_type' must be a single non-NA string.")
+  }
   if (length(feature_type) != 1L || is.na(feature_type)) {
     stop("'feature_type' must be a single non-NA string.")
   }
@@ -427,7 +430,7 @@ NULL
 #   gene_id, role, role_type, site_key, dm_padj, dm_delta_beta
 #
 # @param res_df           data.frame from results()
-# @param ft               single feature type string (or NULL for all)
+# @param ft               single feature type string
 # @param gene_col         column in res_df with feature_names CharacterList
 # @param overlap_only     logical: restrict to rel_position==0 hits
 # @param rel_position_col name of the rel_position column
@@ -435,6 +438,10 @@ NULL
 .extractGeneRoles <- function(res_df, ft, gene_col,
                               overlap_only = FALSE,
                               rel_position_col = "rel_position") {
+  if (!is.character(ft) || length(ft) != 1L || is.na(ft)) {
+    stop("'ft' must be a single non-NA string.")
+  }
+
   if (!gene_col %in% colnames(res_df)) {
     stop("Column '", gene_col, "' not found. Run annotateSites() first.")
   }
