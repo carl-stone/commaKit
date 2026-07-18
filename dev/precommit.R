@@ -191,6 +191,20 @@ trim_trailing_whitespace <- function(lines) {
   sub("[[:space:]]+$", "", lines)
 }
 
+normalize_pipe_table <- function(line) {
+  if (!grepl("^\\|.*\\|$", line)) {
+    return(line)
+  }
+  contents <- sub("^\\||\\|$", "", line)
+  cells <- trimws(strsplit(contents, "\\|", fixed = FALSE)[[1]])
+  cells[grepl("^:?-+:?$", cells)] <- "---"
+  paste0("| ", paste(cells, collapse = " | "), " |")
+}
+
+normalize_rendered_markdown <- function(lines) {
+  vapply(trim_trailing_whitespace(lines), normalize_pipe_table, character(1))
+}
+
 report_render_diff <- function(expected_path, actual_path) {
   diff <- suppressWarnings(system2(
     "diff",
@@ -246,8 +260,10 @@ check_rmarkdown_rendered <- function(files) {
       quiet = TRUE,
       envir = new.env(parent = globalenv())
     )
-    expected <- trim_trailing_whitespace(readLines(output_file, warn = FALSE))
-    actual <- trim_trailing_whitespace(readLines(rendered, warn = FALSE))
+    expected <- normalize_rendered_markdown(
+      readLines(output_file, warn = FALSE)
+    )
+    actual <- normalize_rendered_markdown(readLines(rendered, warn = FALSE))
     if (!identical(expected, actual)) {
       stale <- c(stale, paste0(file, " -> ", output_file))
       report_render_diff(output_file, rendered)
