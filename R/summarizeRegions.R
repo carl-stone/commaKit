@@ -55,8 +55,10 @@
 #' )
 #' # Use a higher, study-specific threshold when interpreting regions
 #' # biologically; 5L is illustrative rather than universal.
-#' summarizeRegions(comma_example_data, regions, min_sites = 5L,
-#'                  mod_type = "6mA")
+#' summarizeRegions(comma_example_data, regions,
+#'   min_sites = 5L,
+#'   mod_type = "6mA"
+#' )
 #'
 #' @export
 summarizeRegions <- function(object, regions, min_sites = 1L,

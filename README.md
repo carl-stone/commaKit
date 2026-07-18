@@ -283,12 +283,13 @@ plot_heatmap(res, cd_dm, n_sites = 30L)
 Use `summarizeRegions()` when site-level methylation should be
 aggregated over features, windows, or other genomic intervals.
 
-The default `min_sites = 1L` is intentionally permissive: a region can be
-reported when only one site has usable count evidence. This is useful for
-descriptive summaries of sparse regions, but a single site can produce an
-unstable result. When summaries will inform biological interpretation, use a
-higher threshold justified by the study design, site density, and coverage.
-The value below is illustrative rather than a universal recommendation.
+The default `min_sites = 1L` is intentionally permissive: a region can
+be reported when only one site has usable count evidence. This is useful
+for descriptive summaries of sparse regions, but a single site can
+produce an unstable result. When summaries will inform biological
+interpretation, use a higher threshold justified by the study design,
+site density, and coverage. The value below is illustrative rather than
+a universal recommendation.
 
 ``` r
 regions <- GenomicRanges::GRanges(
@@ -397,8 +398,10 @@ assayLayers(comma_example_data)
 #> 2          NA           0.2.0
 #> 3          NA           0.2.0
 #> 4          NA           0.2.0
-resultLayers(cd_dm)
-#> DataFrame with 1 row and 18 columns
+result_layers <- resultLayers(cd_dm)
+result_layers$timestamp <- NULL
+result_layers
+#> DataFrame with 1 row and 17 columns
 #>          name        role                   type      source is_default
 #>   <character> <character>            <character> <character>  <logical>
 #> 1  diffMethyl  diffMethyl differential_methyla..  diffMethyl       TRUE
@@ -408,9 +411,9 @@ resultLayers(cd_dm)
 #>          mod_type           motif p_adjust_method min_coverage     alpha
 #>   <CharacterList> <CharacterList>     <character>    <integer> <numeric>
 #> 1             6mA                              BH            5       0.5
-#>                           result_cols              timestamp package_version
-#>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-03 07:08:14 ..           0.2.0
+#>                                 result_cols package_version
+#>                             <CharacterList>     <character>
+#> 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,...           0.2.0
 ```
 
 Raw evidence assays are treated as canonical input evidence.
@@ -470,26 +473,26 @@ Vignettes:
 
 ## Current status and limitations
 
-| Area | Status |
-|----|----|
-| Package version | `0.2.0` development baseline |
-| Distribution | GitHub only; not yet submitted to Bioconductor |
-| Primary input | modkit pileup bedMethyl |
-| Optional inputs | Dorado BAM with MM/ML tags; Megalodon legacy output |
-| Differential methylation | One two-level design variable for v1 |
-| Example data | Synthetic, deterministic, useful for tests and tutorials |
-| Real-data validation | Planned; depends on selecting a redistributable bacterial dataset |
-| Performance evidence | Planned before broader release confidence |
+| Area                     | Status                                                            |
+|--------------------------|-------------------------------------------------------------------|
+| Package version          | `0.2.0` development baseline                                      |
+| Distribution             | GitHub only; not yet submitted to Bioconductor                    |
+| Primary input            | modkit pileup bedMethyl                                           |
+| Optional inputs          | Dorado BAM with MM/ML tags; Megalodon legacy output               |
+| Differential methylation | One two-level design variable for v1                              |
+| Example data             | Synthetic, deterministic, useful for tests and tutorials          |
+| Real-data validation     | Planned; depends on selecting a redistributable bacterial dataset |
+| Performance evidence     | Planned before broader release confidence                         |
 
 Roadmap:
 
-| Version | Phase | Status |
-|----|----|----|
-| 0.2.0 | Schema v2, commaKit rename, result layers, assay provenance | Done |
-| 0.2.x | Test quality, parser hardening, docs synchronization | In progress |
-| 0.x.y | Real-data examples, performance benchmarks, Bioconductor hardening | Planned |
-| 0.99.0 | Bioconductor submission version | Future |
-| 1.0.0 | Stable public release after external confidence | Future |
+| Version | Phase                                                              | Status      |
+|---------|--------------------------------------------------------------------|-------------|
+| 0.2.0   | Schema v2, commaKit rename, result layers, assay provenance        | Done        |
+| 0.2.x   | Test quality, parser hardening, docs synchronization               | In progress |
+| 0.x.y   | Real-data examples, performance benchmarks, Bioconductor hardening | Planned     |
+| 0.99.0  | Bioconductor submission version                                    | Future      |
+| 1.0.0   | Stable public release after external confidence                    | Future      |
 
 ## Support
 
