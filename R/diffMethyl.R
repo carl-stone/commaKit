@@ -481,9 +481,9 @@ diffMethyl <- function(
         limma_diagnostics$by_context[[mc]] <- context_diagnostics
         insufficient_complete_sites <- context_diagnostics$inference_status ==
           "insufficient_complete_sites"
-        if (context_diagnostics$n_incomplete_sites > 0L ||
-          insufficient_complete_sites) {
-          incomplete_message <- if (context_diagnostics$n_incomplete_sites > 0L) {
+        context_incomplete <- context_diagnostics$n_incomplete_sites > 0L
+        if (context_incomplete || insufficient_complete_sites) {
+          incomplete_message <- if (context_incomplete) {
             paste0(
               " has ", context_diagnostics$n_incomplete_sites,
               " incomplete site(s); limma uses complete-case inference and ",
