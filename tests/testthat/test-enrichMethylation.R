@@ -908,6 +908,54 @@ test_that(".parseRegulatorGenes RNA_binding_site returns NA for riboswitches", {
   expect_true(is.na(res_no[[1]]))
 })
 
+# ── Feature-role policy
+
+test_that("enrichment feature-role policy is explicit for supported types", {
+  feature_types <- c(
+    "gene", "CDS", "mRNA", "tRNA", "rRNA", "ncRNA", "promoter",
+    "minus_10_signal", "minus_35_signal",
+    "transcription_factor_binding_site", "protein_binding_site",
+    "RNA_binding_site", "terminator", "operon", "repeat_region", "prophage",
+    "region", "insertion_sequence"
+  )
+  expected <- data.frame(
+    feature_type = feature_types,
+    target = c(
+      rep("identity", 6L), "promoter", "promoter", "promoter", "promoter",
+      "protein_binding", "rna_binding", "terminator", rep("identity", 5L)
+    ),
+    regulator = c(
+      rep("none", 7L), rep("sigma_factor", 3L), "protein", "rna",
+      rep("none", 6L)
+    ),
+    role_type = c(
+      rep(NA_character_, 7L), rep("sigma_factor", 3L), "TF_protein",
+      "RNA_regulator", rep(NA_character_, 6L)
+    ),
+    stringsAsFactors = FALSE
+  )
+  actual <- do.call(rbind, lapply(feature_types, function(ft) {
+    rule <- commaKit:::.enrichmentFeatureRoleRule(ft)
+    data.frame(
+      feature_type = ft,
+      target = rule$target,
+      regulator = rule$regulator,
+      role_type = rule$role_type,
+      stringsAsFactors = FALSE
+    )
+  }))
+  rownames(actual) <- NULL
+
+  expect_equal(actual, expected)
+
+  # Unlisted annotation types retain the historical generic target rule.
+  default_rule <- commaKit:::.enrichmentFeatureRoleRule("custom_feature")
+  expect_equal(
+    unname(unlist(default_rule)),
+    c("identity", "none", NA_character_)
+  )
+})
+
 # ── .extractGeneRoles() ───────────────────────────────────────────────────────
 
 # Helper: build a minimal res_df with feature_types and feature_names lists
@@ -1027,6 +1075,48 @@ test_that(
   }
 )
 
+test_that(".extractGeneRoles keeps list-column associations aligned", {
+  df <- make_role_res_df(
+    list(c(
+      "gene", "transcription_factor_binding_site", "protein_binding_site",
+      "RNA_binding_site"
+    )),
+    list(c(
+      "geneA", "acrRp", "AcrR DNA-binding-site",
+      "ArcZ mRNA-binding-site regulating eptB"
+    )),
+    subtype_values_list = list(c(
+      NA_character_, "Sigma70", NA_character_, NA_character_
+    )),
+    tu_values_list = list(c(
+      NA_character_, NA_character_, "acrAB", "eptB"
+    ))
+  )
+
+  out <- commaKit:::.extractGeneRoles(
+    df, "transcription_factor_binding_site", "feature_names"
+  )
+
+  expect_identical(
+    names(out),
+    c("gene_id", "role", "role_type", "site_key", "dm_padj", "dm_delta_beta")
+  )
+  expect_equal(out$gene_id[out$role == "target"], "acrR")
+  expect_equal(out$gene_id[out$role == "regulator"], "rpoD")
+  expect_equal(out$role_type[out$role == "regulator"], "sigma_factor")
+})
+
+test_that(".extractGeneRoles preserves NULL for empty and NA associations", {
+  empty_df <- make_role_res_df(
+    list(character(0L), NA_character_),
+    list(character(0L), NA_character_)
+  )
+  expect_null(commaKit:::.extractGeneRoles(empty_df, "gene", "feature_names"))
+
+  no_name_df <- make_role_res_df(list("gene"), list(character(0L)))
+  expect_null(commaKit:::.extractGeneRoles(no_name_df, "gene", "feature_names"))
+})
+
 test_that(".extractGeneRoles overlap_only=TRUE filters by rel_position", {
   # Two sites: one inside (rel_position=0), one outside (rel_position=-20)
   df <- make_role_res_df(
@@ -1046,6 +1136,10 @@ test_that(".extractGeneRoles overlap_only=TRUE filters by rel_position", {
   expect_true("geneB" %in% out_all$gene_id)
   expect_true("geneA" %in% out_ovlp$gene_id)
   expect_false("geneB" %in% out_ovlp$gene_id)
+  expect_identical(
+    names(out_ovlp),
+    c("gene_id", "role", "role_type", "site_key", "dm_padj", "dm_delta_beta")
+  )
 })
 
 # ── enrichMethylation() — gene_role parameter ─────────────────────────────────

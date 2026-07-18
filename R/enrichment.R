@@ -20,6 +20,126 @@ NULL
   Sigma19 = "fecI"
 )
 
+# Feature-role policy used by enrichment parsing. The target parser names are:
+#
+#   identity             use the feature name unchanged;
+#   promoter             remove a p/pN suffix and split operons on "-";
+#   protein_binding      prefer transcription_unit_values, then the "of" name;
+#   rna_binding          prefer transcription_unit_values, then the
+#                        "regulating" name;
+#   terminator           remove the trailing " terminator" suffix.
+#
+# The regulator parser names are:
+#
+#   none                 no regulator association;
+#   sigma_factor         map feature_subtype_values through the sigma map;
+#   protein              parse the binding-protein name from feature_names;
+#   rna                  parse the first gene-like word from feature_names.
+#
+# Feature types not listed here retain the historical identity-target and
+# no-regulator behavior through .COMMA_DEFAULT_FEATURE_ROLE_RULE.
+.COMMA_FEATURE_ROLE_RULES <- list(
+  gene = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  ),
+  CDS = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  ),
+  mRNA = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  ),
+  tRNA = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  ),
+  rRNA = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  ),
+  ncRNA = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  ),
+  promoter = list(
+    target = "promoter", regulator = "none", role_type = NA_character_
+  ),
+  minus_10_signal = list(
+    target = "promoter", regulator = "sigma_factor", role_type = "sigma_factor"
+  ),
+  minus_35_signal = list(
+    target = "promoter", regulator = "sigma_factor", role_type = "sigma_factor"
+  ),
+  transcription_factor_binding_site = list(
+    target = "promoter", regulator = "sigma_factor", role_type = "sigma_factor"
+  ),
+  protein_binding_site = list(
+    target = "protein_binding", regulator = "protein", role_type = "TF_protein"
+  ),
+  RNA_binding_site = list(
+    target = "rna_binding", regulator = "rna", role_type = "RNA_regulator"
+  ),
+  terminator = list(
+    target = "terminator", regulator = "none", role_type = NA_character_
+  ),
+  operon = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  ),
+  repeat_region = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  ),
+  prophage = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  ),
+  region = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  ),
+  insertion_sequence = list(
+    target = "identity", regulator = "none", role_type = NA_character_
+  )
+)
+
+.COMMA_DEFAULT_FEATURE_ROLE_RULE <- list(
+  target = "identity",
+  regulator = "none",
+  role_type = NA_character_
+)
+
+.enrichmentFeatureRoleRule <- function(feature_type) {
+  if (length(feature_type) != 1L || is.na(feature_type)) {
+    stop("'feature_type' must be a single non-NA string.")
+  }
+  rule <- .COMMA_FEATURE_ROLE_RULES[[feature_type]]
+  if (is.null(rule)) .COMMA_DEFAULT_FEATURE_ROLE_RULE else rule
+}
+
+.asEnrichmentList <- function(x) {
+  as.list(x)
+}
+
+.featureTypeIndices <- function(feature_types, feature_type) {
+  type_lists <- .asEnrichmentList(feature_types)
+  lapply(type_lists, function(types) {
+    types <- as.character(types)
+    which(!is.na(types) & types == feature_type)
+  })
+}
+
+.filterFeatureTypeOverlaps <- function(type_indices, rel_positions) {
+  Map(function(indices, positions) {
+    if (length(indices) == 0L) return(integer(0L))
+    inside <- vapply(indices, function(index) {
+      length(positions) >= index &&
+        !is.na(positions[index]) &&
+        positions[index] == 0L
+    }, logical(1L))
+    indices[inside]
+  }, type_indices, rel_positions)
+}
+
+.extractFeatureValues <- function(values, type_indices) {
+  value_lists <- .asEnrichmentList(values)
+  Map(function(value, indices) as.character(value[indices]),
+    value_lists, type_indices
+  )
+}
+
 # --- Existing internal helpers ------------------------------------------------
 
 # Map differential methylation results from sites to genes.
@@ -144,26 +264,20 @@ NULL
 # @return list of character vectors
 .parseTargetGenes <- function(feature_names, feature_type, tu_values = NULL) {
   n <- length(feature_names)
+  target_rule <- .enrichmentFeatureRoleRule(feature_type)$target
 
-  switch(feature_type,
-    gene = ,
-    CDS = ,
-    tRNA = ,
-    rRNA = ,
-    ncRNA = {
+  switch(target_rule,
+    identity = {
       # Identity: feature name is already the gene symbol
       as.list(feature_names)
     },
-    promoter = ,
-    minus_10_signal = ,
-    minus_35_signal = ,
-    transcription_factor_binding_site = {
+    promoter = {
       # Strip promoter number suffix (p, p1, p2, ...) then split on "-"
       # e.g. "geneA-geneBp1" -> c("geneA","geneB"); "aaeRp" -> "aaeR"
       stripped <- sub("p\\d*$", "", feature_names, perl = TRUE)
       strsplit(stripped, "-", fixed = TRUE)
     },
-    protein_binding_site = {
+    protein_binding = {
       result <- vector("list", n)
       for (i in seq_len(n)) {
         nm <- feature_names[i]
@@ -186,7 +300,7 @@ NULL
       }
       result
     },
-    RNA_binding_site = {
+    rna_binding = {
       result <- vector("list", n)
       for (i in seq_len(n)) {
         nm <- feature_names[i]
@@ -212,8 +326,7 @@ NULL
       as.list(stripped)
     },
     {
-      # Default: identity (insertion_sequence, repeat_region, etc.)
-      as.list(feature_names)
+      stop("Unknown target parser rule: ", target_rule)
     }
   )
 }
@@ -232,11 +345,14 @@ NULL
                                  subtype_values = NULL) {
   n <- length(feature_names)
   na_list <- as.list(rep(NA_character_, n))
+  regulator_rule <- .enrichmentFeatureRoleRule(feature_type)$regulator
 
-  switch(feature_type,
-    transcription_factor_binding_site = ,
-    minus_10_signal = ,
-    minus_35_signal = {
+  switch(regulator_rule,
+    none = {
+      # This feature type has no regulator association.
+      na_list
+    },
+    sigma_factor = {
       # Regulator: sigma factor gene from feature_subtype_values
       if (is.null(subtype_values)) {
         return(na_list)
@@ -249,7 +365,7 @@ NULL
       }
       result
     },
-    protein_binding_site = {
+    protein = {
       # Extract binding protein name before " binding site" or
       # " DNA-binding-site"; lowercase first character only
       result <- vector("list", n)
@@ -270,7 +386,7 @@ NULL
       }
       result
     },
-    RNA_binding_site = {
+    rna = {
       # Extract first word; if it matches a bacterial gene-name pattern,
       # lowercase first char and use as regulator gene.
       # Gene name pattern: 3-6 chars, first letter uppercase, rest
@@ -295,8 +411,7 @@ NULL
       result
     },
     {
-      # No regulator for this feature type (gene, terminator, IS, etc.)
-      na_list
+      stop("Unknown regulator parser rule: ", regulator_rule)
     }
   )
 }
@@ -327,15 +442,7 @@ NULL
   }
 
   # -- Step 1: Find per-site indices matching ft ------------------------------
-  ft_lists <- if (is(res_df[[ft_col]], "CharacterList")) {
-    as.list(res_df[[ft_col]])
-  } else {
-    res_df[[ft_col]]
-  }
-
-  type_idx <- lapply(ft_lists, function(x) {
-    if (length(x) == 0L || all(is.na(x))) integer(0L) else which(x == ft)
-  })
+  type_idx <- .featureTypeIndices(res_df[[ft_col]], ft)
   has_match <- lengths(type_idx) > 0L
 
   if (!any(has_match)) {
@@ -347,21 +454,9 @@ NULL
 
   # -- Step 2: Optional overlap_only filter ----------------------------------
   if (isTRUE(overlap_only) && rel_position_col %in% colnames(res_df)) {
-    rp_all <- if (is(res_sub[[rel_position_col]], "IntegerList")) {
-      as.list(res_sub[[rel_position_col]])
-    } else {
-      res_sub[[rel_position_col]]
-    }
-    # Keep only ft-indices where rel_position == 0
-    type_idx_sub <- mapply(function(tidx, rp) {
-      if (length(tidx) == 0L) {
-        return(integer(0L))
-      }
-      inside_ft <- vapply(tidx, function(j) {
-        length(rp) >= j && !is.na(rp[j]) && rp[j] == 0L
-      }, logical(1L))
-      tidx[inside_ft]
-    }, type_idx_sub, rp_all, SIMPLIFY = FALSE)
+    rp_all <- .asEnrichmentList(res_sub[[rel_position_col]])
+    # Keep only ft-indices where rel_position == 0.
+    type_idx_sub <- .filterFeatureTypeOverlaps(type_idx_sub, rp_all)
 
     still_match <- lengths(type_idx_sub) > 0L
     if (!any(still_match)) {
@@ -372,15 +467,7 @@ NULL
   }
 
   # -- Step 3: Extract raw feature names for this ft -------------------------
-  gn_lists <- if (is(res_sub[[gene_col]], "CharacterList")) {
-    as.list(res_sub[[gene_col]])
-  } else {
-    res_sub[[gene_col]]
-  }
-  raw_per_site <- mapply(function(nms, idx) as.character(nms[idx]),
-    gn_lists, type_idx_sub,
-    SIMPLIFY = FALSE
-  )
+  raw_per_site <- .extractFeatureValues(res_sub[[gene_col]], type_idx_sub)
 
   # -- Step 4: Extract optional metadata columns ------------------------------
   sub_col <- "feature_subtype_values"
@@ -389,29 +476,13 @@ NULL
   has_tu <- tu_col %in% colnames(res_sub)
 
   subtype_per_site <- if (has_subtype) {
-    st_lists <- if (is(res_sub[[sub_col]], "CharacterList")) {
-      as.list(res_sub[[sub_col]])
-    } else {
-      res_sub[[sub_col]]
-    }
-    mapply(function(st, idx) as.character(st[idx]),
-      st_lists, type_idx_sub,
-      SIMPLIFY = FALSE
-    )
+    .extractFeatureValues(res_sub[[sub_col]], type_idx_sub)
   } else {
     NULL
   }
 
   tu_per_site <- if (has_tu) {
-    tu_lists <- if (is(res_sub[[tu_col]], "CharacterList")) {
-      as.list(res_sub[[tu_col]])
-    } else {
-      res_sub[[tu_col]]
-    }
-    mapply(function(tu, idx) as.character(tu[idx]),
-      tu_lists, type_idx_sub,
-      SIMPLIFY = FALSE
-    )
+    .extractFeatureValues(res_sub[[tu_col]], type_idx_sub)
   } else {
     NULL
   }
@@ -446,15 +517,8 @@ NULL
     reg_genes <- reg_genes[!is.na(reg_genes) & nzchar(reg_genes)]
     reg_genes <- unique(reg_genes) # deduplicate (e.g. autoregulatory sites)
 
-    # role_type for this feature_type
-    reg_type <- switch(ft,
-      transcription_factor_binding_site = ,
-      minus_10_signal = ,
-      minus_35_signal = "sigma_factor",
-      protein_binding_site = "TF_protein",
-      RNA_binding_site = "RNA_regulator",
-      NA_character_
-    )
+    # role_type is part of the same feature policy as the regulator parser.
+    reg_type <- .enrichmentFeatureRoleRule(ft)$role_type
 
     site_rows <- list()
     if (length(tgt_genes) > 0L) {
