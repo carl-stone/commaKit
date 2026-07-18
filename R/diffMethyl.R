@@ -486,7 +486,7 @@ diffMethyl <- function(
             " incomplete site(s); limma uses complete-case inference and ",
             "leaves their p-values as NA.",
             if (context_diagnostics$inference_status ==
-                "insufficient_complete_sites") {
+                  "insufficient_complete_sites") {
               " Fewer than two complete sites remain, so this context is "
               "not testable."
             } else {
