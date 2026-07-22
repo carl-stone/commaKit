@@ -1,9 +1,7 @@
 # Accessor for observed modified-read counts
 
 Retrieves the sites × samples matrix of observed reads called as the
-target modification. This assay is available for callers that report
-count-like methylation evidence directly, such as modkit pileup. Older
-objects or probability-only callers may contain `NA` values.
+target modification reported by modkit pileup.
 
 ## Usage
 

@@ -21,7 +21,6 @@
 <url><loc>https://carl-stone.github.io/commaKit/reference/assayProvenance.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/buildKEGGGeneIDMap.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/buildKEGGTermGene.html</loc></url>
-<url><loc>https://carl-stone.github.io/commaKit/reference/caller.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/canonicalCounts.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/commaData-class.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/commaData.html</loc></url>
@@ -31,15 +30,11 @@
 <url><loc>https://carl-stone.github.io/commaKit/reference/coverageDepth.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/diffMethyl.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/dot-annotationFileExt.html</loc></url>
-<url><loc>https://carl-stone.github.io/commaKit/reference/dot-cigarToRefPos.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/dot-computeDiffMethylGroupStats.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/dot-emitMethylKitWarnings.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/dot-emptyParseResult.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/dot-loadGenomeSequences.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/dot-makeSeqinfo.html</loc></url>
-<url><loc>https://carl-stone.github.io/commaKit/reference/dot-parseDorado.html</loc></url>
-<url><loc>https://carl-stone.github.io/commaKit/reference/dot-parseMegalodon.html</loc></url>
-<url><loc>https://carl-stone.github.io/commaKit/reference/dot-parseMmTag.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/dot-parseModkit.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/dot-resolveDiffMethylDesign.html</loc></url>
 <url><loc>https://carl-stone.github.io/commaKit/reference/dot-runLimma.html</loc></url>

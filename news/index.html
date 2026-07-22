@@ -48,7 +48,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
-<ul><li><p><strong><code>mod_context</code> is derived on demand</strong> — <code>mod_context</code> is computed from <code>mod_type</code> and <code>motif</code> (e.g. <code>"6mA_GATC"</code>, <code>"5mC_CCWGG"</code>) by <code><a href="../reference/modContexts.html">modContexts()</a></code> and <code><a href="../reference/siteInfo.html">siteInfo()</a></code> rather than stored as a persistent <code>rowData</code> column. When <code>motif</code> is <code>NA</code> (Dorado/Megalodon callers), the fallback is the <code>mod_type</code> string alone (never <code>"6mA_NA"</code>).</p></li>
+<ul><li><p><strong><code>mod_context</code> is derived on demand</strong> — <code>mod_context</code> is computed from <code>mod_type</code> and <code>motif</code> (e.g. <code>"6mA_GATC"</code>, <code>"5mC_CCWGG"</code>) by <code><a href="../reference/modContexts.html">modContexts()</a></code> and <code><a href="../reference/siteInfo.html">siteInfo()</a></code> rather than stored as a persistent <code>rowData</code> column. When <code>motif</code> is <code>NA</code>, the fallback is the <code>mod_type</code> string alone (never <code>"6mA_NA"</code>).</p></li>
 <li><p><strong><code><a href="../reference/modContexts.html">modContexts()</a></code></strong> — new exported S4 accessor that returns sorted unique modification context strings from a <code>commaData</code> object.</p></li>
 <li><p><strong><code>expected_mod_contexts</code> constructor parameter</strong> — <code><a href="../reference/commaData.html">commaData()</a></code> now accepts <code>expected_mod_contexts</code>, a named list mapping mod types to allowed motifs (e.g. <code>list("6mA" = c("GATC", "ACCACC"), "5mC" = "CCWGG")</code>). Sites with unexpected mod_type × motif combinations are dropped at construction time with an informative message per mod type.</p></li>
 <li><p><strong><code>filterSites(object, mod_context = ...)</code> filter</strong> — <code><a href="../reference/filterSites.html">filterSites()</a></code> gains a <code>mod_context</code> parameter for filtering by modification context. <code><a href="../reference/subset.commaData.html">subset.commaData()</a></code> remains as deprecated compatibility and forwards to <code><a href="../reference/filterSites.html">filterSites()</a></code>.</p></li>
@@ -57,8 +57,9 @@
 </ul></div>
 <div class="section level3">
 <h3 id="breaking-changes-0-2-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h3>
-<ul><li>
-<strong>Old <code>commaData</code> objects should be recreated</strong> — the Schema v2 data model moved genomic positions into <code>rowRanges()</code>, stores <code>mod_type</code>/<code>motif</code> as row-range metadata, derives <code>mod_context</code> on demand, and stores caller and minimum-coverage metadata in <code>metadata(object)</code>. Objects created with earlier informal versions should be recreated from source files using the updated constructor.</li>
+<ul><li><p><strong>Only modkit pileup bedMethyl input is supported.</strong> Direct Dorado BAM and legacy Megalodon import paths, their optional dependencies, and the <code>caller</code> constructor argument/accessor have been removed.</p></li>
+<li><p>The experimental logging and remote error-tracking subsystem has been removed.</p></li>
+<li><p><strong>Old <code>commaData</code> objects should be recreated</strong> — the Schema v2 data model moved genomic positions into <code>rowRanges()</code>, stores <code>mod_type</code>/<code>motif</code> as row-range metadata, derives <code>mod_context</code> on demand, and stores minimum-coverage metadata in <code>metadata(object)</code>. Objects created with earlier informal versions should be recreated from source files using the updated constructor.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-2-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-2-0"></a></h3>

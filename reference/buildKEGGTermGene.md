@@ -94,7 +94,8 @@ pathways. `buildKEGGTermGene` retrieves the same data in two bulk calls
 ``` r
 # \donttest{
 if (requireNamespace("KEGGREST", quietly = TRUE)) {
-  # Fetch once and cache to disk (use tempdir() so check directory stays clean)
+  # Fetch once and cache to disk
+  # (use tempdir() so check directory stays clean)
   kegg_file <- file.path(tempdir(), "eco_kegg.rds")
   kegg <- buildKEGGTermGene("eco", file = kegg_file)
 
@@ -108,7 +109,7 @@ if (requireNamespace("KEGGREST", quietly = TRUE)) {
   #             kegg_term2gene = kegg$term2gene,
   #             kegg_term2name = kegg$term2name)
 }
-#> Loading KEGG data from cache: /tmp/Rtmpvl5Ydc/eco_kegg.rds
-#> Loading KEGG data from cache: /tmp/Rtmpvl5Ydc/eco_kegg.rds
+#> Loading KEGG data from cache: /tmp/RtmpW1cUjD/eco_kegg.rds
+#> Loading KEGG data from cache: /tmp/RtmpW1cUjD/eco_kegg.rds
 # }
 ```

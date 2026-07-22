@@ -2,10 +2,9 @@
 
 Constructor for the
 [`commaData-class`](https://carl-stone.github.io/commaKit/reference/commaData-class.md)
-S4 class. Parses one or more methylation calling output files (modkit,
-Megalodon, or Dorado), merges them into a sites × samples matrix
-representation, and optionally loads genomic annotation and motif site
-positions.
+S4 class. Parses one or more modkit pileup bedMethyl files, merges them
+into a sites × samples matrix representation, and optionally loads
+genomic annotation and motif positions.
 
 ## Usage
 
@@ -18,8 +17,7 @@ commaData(
   mod_type = NULL,
   motif = NULL,
   expected_mod_contexts = NULL,
-  min_coverage = 5L,
-  caller = "modkit"
+  min_coverage = 5L
 )
 ```
 
@@ -79,8 +77,7 @@ commaData(
   vector). If `NULL`, the `motifSites` slot is left empty. *Note:* this
   argument is distinct from `rowData(object)$motif`, which stores the
   per-site sequence context extracted automatically from the modkit
-  `mod_code` field (e.g., `"a,GATC,1"` → `motif = "GATC"`) and is `NA`
-  for Dorado and Megalodon callers.
+  `mod_code` field (e.g., `"a,GATC,1"` → `motif = "GATC"`).
 
 - expected_mod_contexts:
 
@@ -92,23 +89,13 @@ commaData(
   pair are dropped before the object is assembled. A message is emitted
   reporting the number of sites dropped per modification type. Use
   `NULL` (default) to retain all sites. Example:
-  `list("6mA" = "GATC", "5mC" = c("CCWGG", "CCGG"))`. *Note:* for
-  Dorado/Megalodon callers where `motif` is `NA`, the `mod_context`
-  falls back to just `mod_type` (e.g., `"6mA"`), so those sites are only
-  retained if you include `NA` in the motif vector for that type (e.g.,
-  `list("6mA" = NA)`).
+  `list("6mA" = "GATC", "5mC" = c("CCWGG", "CCGG"))`.
 
 - min_coverage:
 
   Integer. Minimum read depth to include a site. Sites present in a
   sample with coverage below this threshold have their beta value set to
   `NA`. Sites absent from a sample entirely are also `NA`. Default `5`.
-
-- caller:
-
-  Character string specifying the methylation caller that produced the
-  input files. One of `"modkit"` (default), `"megalodon"`, or
-  `"dorado"`.
 
 ## Value
 
@@ -131,8 +118,7 @@ The constructor uses a parse-then-merge strategy:
 
 5.  Observed modified, canonical, and non-target modified read counts
     are preserved as `mod_counts`, `canonical_counts`, and
-    `other_mod_counts` assays when reported by the caller;
-    probability-only callers store `NA` in those assays.
+    `other_mod_counts` assays.
 
 6.  Assay-layer provenance and default roles are recorded in
     `metadata(object)$assay_provenance` and
@@ -171,7 +157,6 @@ comma_example_data
 #> genome: 1 chromosome (100,000 bp total)
 #> annotation: 5 features
 #> motif sites: none
-#> caller: modkit
 #> min_coverage: 5
 
 if (FALSE) { # \dontrun{
@@ -187,8 +172,7 @@ cd <- commaData(
     replicate   = c(1L, 1L)
   ),
   genome = c(chr1 = 4641652L),
-  annotation = "MG1655.gff3",
-  caller = "modkit"
+  annotation = "MG1655.gff3"
 )
 cd
 } # }

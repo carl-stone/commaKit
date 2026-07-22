@@ -25,7 +25,6 @@ comma_example_data
 #> genome: 1 chromosome (100,000 bp total)
 #> annotation: 5 features
 #> motif sites: none
-#> caller: modkit
 #> min_coverage: 5
 ```
 
@@ -83,13 +82,13 @@ Sample metadata live in `colData()` and are also available through
 ``` r
 
 sampleInfo(comma_example_data)
-#>         sample_name condition replicate caller
-#> ctrl_1       ctrl_1   control         1 modkit
-#> ctrl_2       ctrl_2   control         2 modkit
-#> ctrl_3       ctrl_3   control         3 modkit
-#> treat_1     treat_1 treatment         1 modkit
-#> treat_2     treat_2 treatment         2 modkit
-#> treat_3     treat_3 treatment         3 modkit
+#>         sample_name condition replicate
+#> ctrl_1       ctrl_1   control         1
+#> ctrl_2       ctrl_2   control         2
+#> ctrl_3       ctrl_3   control         3
+#> treat_1     treat_1 treatment         1
+#> treat_2     treat_2 treatment         2
+#> treat_3     treat_3 treatment         3
 ```
 
 ## Genomic row identity
@@ -205,8 +204,8 @@ external files.
 
 md <- S4Vectors::metadata(comma_example_data)
 names(md)
-#> [1] "annotation"       "motifSites"       "caller"           "min_coverage"    
-#> [5] "assay_defaults"   "assay_provenance"
+#> [1] "annotation"       "motifSites"       "min_coverage"     "assay_defaults"  
+#> [5] "assay_provenance"
 
 c(
   annotation_features = length(annotation(comma_example_data)),
@@ -216,10 +215,10 @@ c(
 #>                   5                   0
 
 vapply(md, function(x) paste(class(x), collapse = "/"), character(1))
-#>       annotation       motifSites           caller     min_coverage 
-#>        "GRanges"        "GRanges"      "character"        "integer" 
-#>   assay_defaults assay_provenance 
-#>           "list"           "list"
+#>       annotation       motifSites     min_coverage   assay_defaults 
+#>        "GRanges"        "GRanges"        "integer"           "list" 
+#> assay_provenance 
+#>           "list"
 ```
 
 ## Analysis layers
@@ -314,7 +313,7 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-22 22:22:11 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-22 23:23:20 ..           0.2.0
 ```
 
 [`results()`](https://carl-stone.github.io/commaKit/reference/results.md)

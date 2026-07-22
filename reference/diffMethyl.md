@@ -80,7 +80,8 @@ diffMethyl(
   Character vector or `NULL`. Modification context(s) to test (e.g.,
   `"6mA_GATC"`, `c("6mA_GATC", "5mC_CCWGG")`). A `mod_context` value is
   `paste(mod_type, motif, sep = "_")` when motif information is
-  available, or just `mod_type` for Dorado/Megalodon data. Use
+  available, or just `mod_type` when motif information is unavailable.
+  Use
   [`modContexts`](https://carl-stone.github.io/commaKit/reference/modContexts.md)`(object)`
   to see which contexts are present. If `NULL` (default), all contexts
   present in `object` are tested independently. When provided, takes

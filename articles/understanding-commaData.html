@@ -92,7 +92,6 @@ to the same biological coordinates.</p>
 <span><span class="co">#&gt; genome: 1 chromosome (100,000 bp total)</span></span>
 <span><span class="co">#&gt; annotation: 5 features</span></span>
 <span><span class="co">#&gt; motif sites: none</span></span>
-<span><span class="co">#&gt; caller: modkit</span></span>
 <span><span class="co">#&gt; min_coverage: 5</span></span></code></pre></div>
 <p>The built-in example data are synthetic, but they exercise the same
 object model used for real data. They contain multiple modification
@@ -145,13 +144,13 @@ read depths.</p>
 through <code><a href="../reference/sampleInfo.html">sampleInfo()</a></code>.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sampleInfo.html">sampleInfo</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span>
-<span><span class="co">#&gt;         sample_name condition replicate caller</span></span>
-<span><span class="co">#&gt; ctrl_1       ctrl_1   control         1 modkit</span></span>
-<span><span class="co">#&gt; ctrl_2       ctrl_2   control         2 modkit</span></span>
-<span><span class="co">#&gt; ctrl_3       ctrl_3   control         3 modkit</span></span>
-<span><span class="co">#&gt; treat_1     treat_1 treatment         1 modkit</span></span>
-<span><span class="co">#&gt; treat_2     treat_2 treatment         2 modkit</span></span>
-<span><span class="co">#&gt; treat_3     treat_3 treatment         3 modkit</span></span></code></pre></div>
+<span><span class="co">#&gt;         sample_name condition replicate</span></span>
+<span><span class="co">#&gt; ctrl_1       ctrl_1   control         1</span></span>
+<span><span class="co">#&gt; ctrl_2       ctrl_2   control         2</span></span>
+<span><span class="co">#&gt; ctrl_3       ctrl_3   control         3</span></span>
+<span><span class="co">#&gt; treat_1     treat_1 treatment         1</span></span>
+<span><span class="co">#&gt; treat_2     treat_2 treatment         2</span></span>
+<span><span class="co">#&gt; treat_3     treat_3 treatment         3</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="genomic-row-identity">Genomic row identity<a class="anchor" aria-label="anchor" href="#genomic-row-identity"></a>
@@ -257,8 +256,8 @@ reading any external files.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">md</span> <span class="op">&lt;-</span> <span class="fu">S4Vectors</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/S4Vectors/man/Annotated-class.html" class="external-link">metadata</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">md</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "annotation"       "motifSites"       "caller"           "min_coverage"    </span></span>
-<span><span class="co">#&gt; [5] "assay_defaults"   "assay_provenance"</span></span>
+<span><span class="co">#&gt; [1] "annotation"       "motifSites"       "min_coverage"     "assay_defaults"  </span></span>
+<span><span class="co">#&gt; [5] "assay_provenance"</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  annotation_features <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu">annotation</span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -268,10 +267,10 @@ reading any external files.</p>
 <span><span class="co">#&gt;                   5                   0</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">md</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="st">"/"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;       annotation       motifSites           caller     min_coverage </span></span>
-<span><span class="co">#&gt;        "GRanges"        "GRanges"      "character"        "integer" </span></span>
-<span><span class="co">#&gt;   assay_defaults assay_provenance </span></span>
-<span><span class="co">#&gt;           "list"           "list"</span></span></code></pre></div>
+<span><span class="co">#&gt;       annotation       motifSites     min_coverage   assay_defaults </span></span>
+<span><span class="co">#&gt;        "GRanges"        "GRanges"        "integer"           "list" </span></span>
+<span><span class="co">#&gt; assay_provenance </span></span>
+<span><span class="co">#&gt;           "list"</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="analysis-layers">Analysis layers<a class="anchor" aria-label="anchor" href="#analysis-layers"></a>
@@ -363,7 +362,7 @@ separate.</p>
 <span><span class="co">#&gt; 1                                              BH            5       0.5</span></span>
 <span><span class="co">#&gt;                           result_cols              timestamp package_version</span></span>
 <span><span class="co">#&gt;                       &lt;CharacterList&gt;            &lt;character&gt;     &lt;character&gt;</span></span>
-<span><span class="co">#&gt; 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-22 22:22:11 ..           0.2.0</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-22 23:23:20 ..           0.2.0</span></span></code></pre></div>
 <p><code><a href="../reference/results.html">results()</a></code> exposes the active result layer as a tidy data
 frame while preserving the site metadata needed to interpret each row.
 When you keep multiple named runs, pass <code>result</code> or

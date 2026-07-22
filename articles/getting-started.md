@@ -70,7 +70,6 @@ comma_example_data
 #> genome: 1 chromosome (100,000 bp total)
 #> annotation: 5 features
 #> motif sites: none
-#> caller: modkit
 #> min_coverage: 5
 ```
 
@@ -86,13 +85,13 @@ modContexts(comma_example_data)
 
 # Per-sample metadata
 sampleInfo(comma_example_data)
-#>         sample_name condition replicate caller
-#> ctrl_1       ctrl_1   control         1 modkit
-#> ctrl_2       ctrl_2   control         2 modkit
-#> ctrl_3       ctrl_3   control         3 modkit
-#> treat_1     treat_1 treatment         1 modkit
-#> treat_2     treat_2 treatment         2 modkit
-#> treat_3     treat_3 treatment         3 modkit
+#>         sample_name condition replicate
+#> ctrl_1       ctrl_1   control         1
+#> ctrl_2       ctrl_2   control         2
+#> ctrl_3       ctrl_3   control         3
+#> treat_1     treat_1 treatment         1
+#> treat_2     treat_2 treatment         2
+#> treat_3     treat_3 treatment         3
 
 # Matrix dimensions: sites × samples
 dim(methylation(comma_example_data))
@@ -301,7 +300,6 @@ cd_dm
 #> genome: 1 chromosome (100,000 bp total)
 #> annotation: 5 features
 #> motif sites: none
-#> caller: modkit
 #> min_coverage: 5
 ```
 

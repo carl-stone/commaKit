@@ -4,7 +4,7 @@
 
 Most import problems come from one of four places:
 
-1.  The file format does not match the selected `caller`.
+1.  The file is not modkit pileup bedMethyl output.
 2.  Sample names in `files` and `colData$sample_name` do not match
     exactly.
 3.  Genome information is missing, unnamed, or uses chromosome names
@@ -12,9 +12,8 @@ Most import problems come from one of four places:
 4.  Annotation files are missing optional dependencies or use an
     unexpected file extension.
 
-Start by checking that each input sample can be parsed with the same
-caller and that the sample names are identical across `files` and
-`colData`.
+Start by checking each input file and confirming that the sample names
+are identical across `files` and `colData`.
 
 ``` r
 
@@ -34,64 +33,7 @@ col_data <- data.frame(
 obj <- commaData(
   files = files,
   colData = col_data,
-  genome = c(chr1 = 4641652L),
-  caller = "modkit"
-)
-```
-
-## Choosing The Caller
-
-Use `caller = "modkit"` for modkit pileup BED files. This is the
-recommended path for most Dorado-based workflows: call bases with
-Dorado, run `modkit pileup`, then import the resulting BED files into
-commaKit.
-
-Use `caller = "dorado"` only when you want commaKit to parse an aligned
-BAM file with MM/ML base modification tags directly. The BAM must
-contain modification tags and should be indexed. Direct BAM parsing does
-not provide motif context, so per-site `motif` values will be `NA`.
-
-During direct BAM parsing, two kinds of information loss can occur and
-should not be confused:
-
-1.  **Read-level skips.** An entire read is skipped when it cannot be
-    parsed at all. This happens when the CIGAR string is malformed or
-    the MM/ML tags are missing or truncated. No modified-base calls from
-    that read contribute to any site.
-2.  **Call-level drops.** Individual modified-base calls whose read
-    positions cannot be mapped to reference sites are dropped *before*
-    site aggregation. This happens when the call falls on an inserted or
-    soft-clipped read position that has no corresponding reference
-    coordinate. The rest of the read is still used; only the unmappable
-    call is discarded.
-
-In other words, a read with a usable CIGAR and valid MM/ML tags may
-still lose some modified-base calls to call-level drops, but the read
-itself is not skipped.
-
-Use `caller = "megalodon"` for legacy Megalodon per-read modification
-BED files. Megalodon files do not encode the modification type in a way
-commaKit can infer, so provide exactly one `mod_type` value.
-
-``` r
-
-# Recommended path for Dorado runs after modkit pileup
-obj_modkit <- commaData(files, col_data,
-  genome = c(chr1 = 4641652L),
-  caller = "modkit"
-)
-
-# Direct Dorado BAM import
-obj_dorado <- commaData(bam_files, col_data,
-  genome = c(chr1 = 4641652L),
-  caller = "dorado"
-)
-
-# Legacy Megalodon import requires a single explicit modification type
-obj_megalodon <- commaData(megalodon_files, col_data,
-  genome = c(chr1 = 4641652L),
-  caller = "megalodon",
-  mod_type = "5mC"
+  genome = c(chr1 = 4641652L)
 )
 ```
 
@@ -213,7 +155,7 @@ if (requireNamespace("rtracklayer", quietly = TRUE)) {
   genes <- loadAnnotation("genes.gff3", feature_types = "gene")
   obj <- commaData(files, col_data,
     genome = c(chr1 = 4641652L),
-    annotation = genes, caller = "modkit"
+    annotation = genes
   )
 }
 ```
@@ -255,7 +197,6 @@ obj <- commaData(
   genome = c(chr1 = 4641652L),
   annotation = NULL,
   motif = NULL,
-  caller = "modkit",
   min_coverage = 1L
 )
 ```

@@ -96,11 +96,6 @@ A `data.frame` with one row per sample, containing:
   retained sites, including sites below the `min_coverage` threshold
   when coverage is available.
 
-- `caller`:
-
-  Methylation caller that produced the data (e.g., `"modkit"`), or `NA`
-  if not stored.
-
 - `min_coverage`:
 
   Minimum coverage threshold applied at construction, or `NA` if not
@@ -135,13 +130,13 @@ ms
 #> 4     treat_1 treatment      all     588       588 0.8357998   0.8864176
 #> 5     treat_2 treatment      all     588       588 0.8369054   0.8893089
 #> 6     treat_3 treatment      all     588       588 0.8388398   0.8866568
-#>      sd_beta frac_methylated mean_coverage median_coverage caller min_coverage
-#> 1 0.10704958       0.9897959      79.25340            79.0 modkit            5
-#> 2 0.09647906       0.9948980      79.83333            81.0 modkit            5
-#> 3 0.10609612       0.9897959      82.67347            83.0 modkit            5
-#> 4 0.17009987       0.9421769      76.49490            76.5 modkit            5
-#> 5 0.16870207       0.9404762      78.44218            78.0 modkit            5
-#> 6 0.16809920       0.9455782      79.17517            76.5 modkit            5
+#>      sd_beta frac_methylated mean_coverage median_coverage min_coverage
+#> 1 0.10704958       0.9897959      79.25340            79.0            5
+#> 2 0.09647906       0.9948980      79.83333            81.0            5
+#> 3 0.10609612       0.9897959      82.67347            83.0            5
+#> 4 0.17009987       0.9421769      76.49490            76.5            5
+#> 5 0.16870207       0.9404762      78.44218            78.0            5
+#> 6 0.16809920       0.9455782      79.17517            76.5            5
 # Beta summaries use n_covered; coverage summaries use non-missing coverage.
 ms[, c("sample_name", "n_sites", "n_covered", "mean_beta", "mean_coverage")]
 #>   sample_name n_sites n_covered mean_beta mean_coverage

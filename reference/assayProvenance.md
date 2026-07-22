@@ -2,7 +2,7 @@
 
 Returns metadata describing how assay matrices were produced. The
 constructor records whether count assays were observed directly from
-caller output, unavailable, or reconstructed for synthetic/test objects.
+modkit output or reconstructed for synthetic/test objects.
 
 ## Usage
 

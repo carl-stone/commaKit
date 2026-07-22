@@ -70,7 +70,7 @@ for ease of use.</p>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>data.frame</code> with one row per sample. Always contains columns
 <code>sample_name</code> and <code>replicate</code>. May contain optional columns such
-as <code>condition</code>, <code>caller</code>, and <code>file_path</code>.</p>
+as <code>condition</code>, <code>batch</code>, and <code>file_path</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -81,13 +81,13 @@ as <code>condition</code>, <code>caller</code>, and <code>file_path</code>.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">sampleInfo</span><span class="op">(</span><span class="va">comma_example_data</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         sample_name condition replicate caller</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ctrl_1       ctrl_1   control         1 modkit</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ctrl_2       ctrl_2   control         2 modkit</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ctrl_3       ctrl_3   control         3 modkit</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> treat_1     treat_1 treatment         1 modkit</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> treat_2     treat_2 treatment         2 modkit</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> treat_3     treat_3 treatment         3 modkit</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         sample_name condition replicate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ctrl_1       ctrl_1   control         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ctrl_2       ctrl_2   control         2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ctrl_3       ctrl_3   control         3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> treat_1     treat_1 treatment         1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> treat_2     treat_2 treatment         2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> treat_3     treat_3 treatment         3</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

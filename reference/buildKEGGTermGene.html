@@ -118,7 +118,8 @@ description).</p></dd>
 
 
 </dl><p>Pass these to <code><a href="enrichMethylation.html">enrichMethylation()</a></code> as
-<code>kegg_term2gene = result$term2gene, kegg_term2name = result$term2name</code>.</p>
+<code>kegg_term2gene = result$term2gene,
+  kegg_term2name = result$term2name</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -138,7 +139,8 @@ names.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"KEGGREST"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>  <span class="co"># Fetch once and cache to disk (use tempdir() so check directory stays clean)</span></span></span>
+<span class="r-in"><span>  <span class="co"># Fetch once and cache to disk</span></span></span>
+<span class="r-in"><span>  <span class="co"># (use tempdir() so check directory stays clean)</span></span></span>
 <span class="r-in"><span>  <span class="va">kegg_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"eco_kegg.rds"</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="va">kegg</span> <span class="op">&lt;-</span> <span class="fu">buildKEGGTermGene</span><span class="op">(</span><span class="st">"eco"</span>, file <span class="op">=</span> <span class="va">kegg_file</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -152,8 +154,8 @@ names.</p>
 <span class="r-in"><span>  <span class="co">#             kegg_term2gene = kegg$term2gene,</span></span></span>
 <span class="r-in"><span>  <span class="co">#             kegg_term2name = kegg$term2name)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading KEGG data from cache: /tmp/Rtmpvl5Ydc/eco_kegg.rds</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading KEGG data from cache: /tmp/Rtmpvl5Ydc/eco_kegg.rds</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading KEGG data from cache: /tmp/RtmpW1cUjD/eco_kegg.rds</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading KEGG data from cache: /tmp/RtmpW1cUjD/eco_kegg.rds</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

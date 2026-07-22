@@ -11,8 +11,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Comparative Microbial Methylomics Analysis Kit">
-<meta name="description" content="Analyze bacterial DNA methylation from Oxford Nanopore sequencing data. Supports genome-wide characterization of methylation patterns across multiple modification types (6mA, 5mC, 4mC), annotation of methylation sites relative to genomic features, and identification of differentially methylated sites between conditions. Accepts input from modkit pileup (primary), Dorado BAM, and Megalodon (legacy) callers. Previously developed as comma / CoMMA.">
-<meta property="og:description" content="Analyze bacterial DNA methylation from Oxford Nanopore sequencing data. Supports genome-wide characterization of methylation patterns across multiple modification types (6mA, 5mC, 4mC), annotation of methylation sites relative to genomic features, and identification of differentially methylated sites between conditions. Accepts input from modkit pileup (primary), Dorado BAM, and Megalodon (legacy) callers. Previously developed as comma / CoMMA.">
+<meta name="description" content="Analyze bacterial DNA methylation from Oxford Nanopore sequencing data. Supports genome-wide characterization of methylation patterns across multiple modification types (6mA, 5mC, 4mC), annotation of methylation sites relative to genomic features, and identification of differentially methylated sites between conditions. Accepts modkit pileup bedMethyl input. Previously developed as comma / CoMMA.">
+<meta property="og:description" content="Analyze bacterial DNA methylation from Oxford Nanopore sequencing data. Supports genome-wide characterization of methylation patterns across multiple modification types (6mA, 5mC, 4mC), annotation of methylation sites relative to genomic features, and identification of differentially methylated sites between conditions. Accepts modkit pileup bedMethyl input. Previously developed as comma / CoMMA.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -66,9 +66,9 @@
 <div class="section level2">
 <h2 id="why-commakit">Why commaKit?<a class="anchor" aria-label="anchor" href="#why-commakit"></a>
 </h2>
-<p>Nanopore methylation callers can report rich modified-base evidence, but most analysis workflows still leave users to reconcile caller-specific formats, coverage filters, genome coordinates, methylation contexts, sample metadata, and downstream statistics by hand. commaKit provides one R-native container and a coherent workflow for comparative microbial methylomics:</p>
+<p>Nanopore methylation tools can report rich modified-base evidence, but most analysis workflows still leave users to reconcile input formats, coverage filters, genome coordinates, methylation contexts, sample metadata, and downstream statistics by hand. commaKit provides one R-native container and a coherent workflow for comparative microbial methylomics:</p>
 <ul>
-<li>import modkit, Dorado, or Megalodon output into a single <code>commaData</code> object;</li>
+<li>import modkit pileup bedMethyl output into a single <code>commaData</code> object;</li>
 <li>keep raw methylation and count evidence together with genomic ranges and sample metadata;</li>
 <li>analyze methylation by modification context, such as <code>6mA_GATC</code> or <code>5mC_CCWGG</code>;</li>
 <li>test for differential methylation with <code>methylKit</code>, <code>limma</code>, or a native quasi-binomial F-test backend;</li>
@@ -98,7 +98,7 @@
 <li>Preserve tab-delimited bedMethyl structure so blank required fields are not shifted into the wrong columns.</li>
 <li>For modkit input, <code>Nvalid_cov</code>, <code>Nmod</code>, <code>Ncanonical</code>, and <code>Nother_mod</code> are the authoritative count fields. Methylation beta values are computed from <code>Nmod / Nvalid_cov</code>, not from the derived <code>fraction_modified</code> percentage.</li>
 <li>Genome names must match imported methylation chromosomes. If the methylation files contain chromosomes absent from <code>genome</code>, construction stops with a clear error instead of guessing.</li>
-<li>Direct Dorado BAM parsing requires mapped BAM files with MM/ML tags preserved; in practice, many users will prefer to run modkit first and import the resulting bedMethyl files.</li>
+<li>Input files must be modkit pileup bedMethyl output with at least 18 columns.</li>
 </ul>
 <p>A typical <code><a href="reference/commaData.html">commaData()</a></code> call needs a named vector of per-sample files, a sample metadata table, genome lengths or a FASTA/BSgenome, and optionally annotation and motif information:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -128,8 +128,7 @@
 <span>  genome <span class="op">=</span> <span class="st">"path/to/genome.fa"</span>,</span>
 <span>  annotation <span class="op">=</span> <span class="st">"path/to/genes.gff3"</span>,</span>
 <span>  motif <span class="op">=</span> <span class="st">"GATC"</span>,</span>
-<span>  min_coverage <span class="op">=</span> <span class="fl">5L</span>,</span>
-<span>  caller <span class="op">=</span> <span class="st">"modkit"</span></span>
+<span>  min_coverage <span class="op">=</span> <span class="fl">5L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>For import details and common failure modes, see <code><a href="articles/import-troubleshooting.html">vignette("import-troubleshooting", package = "commaKit")</a></code>.</p>
 </div>
@@ -150,7 +149,6 @@
 <span><span class="co">#&gt; genome: 1 chromosome (100,000 bp total)</span></span>
 <span><span class="co">#&gt; annotation: 5 features</span></span>
 <span><span class="co">#&gt; motif sites: none</span></span>
-<span><span class="co">#&gt; caller: modkit</span></span>
 <span><span class="co">#&gt; min_coverage: 5</span></span></code></pre></div>
 <p>The core accessors expose sample metadata, genomic site metadata, modification contexts, beta values, coverage, and raw count assays:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -362,9 +360,12 @@
 <span><span class="co">#&gt;          mod_type           motif p_adjust_method min_coverage     alpha</span></span>
 <span><span class="co">#&gt;   &lt;CharacterList&gt; &lt;CharacterList&gt;     &lt;character&gt;    &lt;integer&gt; &lt;numeric&gt;</span></span>
 <span><span class="co">#&gt; 1             6mA                              BH            5       0.5</span></span>
-<span><span class="co">#&gt;                           result_cols              timestamp package_version</span></span>
-<span><span class="co">#&gt;                       &lt;CharacterList&gt;            &lt;character&gt;     &lt;character&gt;</span></span>
-<span><span class="co">#&gt; 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-03 07:08:14 ..           0.2.0</span></span></code></pre></div>
+<span><span class="co">#&gt;                                 result_cols              timestamp</span></span>
+<span><span class="co">#&gt;                             &lt;CharacterList&gt;            &lt;character&gt;</span></span>
+<span><span class="co">#&gt; 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,... 2026-07-22 17:40:50 ..</span></span>
+<span><span class="co">#&gt;   package_version</span></span>
+<span><span class="co">#&gt;       &lt;character&gt;</span></span>
+<span><span class="co">#&gt; 1           0.2.0</span></span></code></pre></div>
 <p>Raw evidence assays are treated as canonical input evidence. Transformations, when created, should live as named derived assay layers. Filtering returns subset <code>commaData</code> objects rather than hidden lazy views.</p>
 </div>
 <div class="section level2">
@@ -388,7 +389,6 @@
 <span><span class="co">#&gt; genome: 1 chromosome (100,000 bp total)</span></span>
 <span><span class="co">#&gt; annotation: 5 features</span></span>
 <span><span class="co">#&gt; motif sites: none</span></span>
-<span><span class="co">#&gt; caller: modkit</span></span>
 <span><span class="co">#&gt; min_coverage: 5</span></span></code></pre></div>
 <p>For a complete joint 6mA + 5mC workflow, see <code><a href="articles/multiple-modification-types.html">vignette("multiple-modification-types", package = "commaKit")</a></code>.</p>
 </div>
@@ -407,7 +407,7 @@
 <li>
 <code><a href="articles/understanding-commaData.html">vignette("understanding-commaData", package = "commaKit")</a></code> - object model, assays, provenance, and result layers.</li>
 <li>
-<code><a href="articles/import-troubleshooting.html">vignette("import-troubleshooting", package = "commaKit")</a></code> - modkit, Dorado, Megalodon, genome, and annotation input issues.</li>
+<code><a href="articles/import-troubleshooting.html">vignette("import-troubleshooting", package = "commaKit")</a></code> - modkit bedMethyl, genome, and annotation input issues.</li>
 <li>
 <code><a href="articles/multiple-modification-types.html">vignette("multiple-modification-types", package = "commaKit")</a></code> - joint analysis of multiple modification contexts.</li>
 </ul>
@@ -437,10 +437,6 @@
 <tr>
 <td>Primary input</td>
 <td>modkit pileup bedMethyl</td>
-</tr>
-<tr>
-<td>Optional inputs</td>
-<td>Dorado BAM with MM/ML tags; Megalodon legacy output</td>
 </tr>
 <tr>
 <td>Differential methylation</td>
@@ -506,7 +502,7 @@
 </h2>
 <p>Use GitHub Issues for bug reports, feature requests, and documentation problems:</p>
 <p><a href="https://github.com/carl-stone/commaKit/issues" class="external-link uri">https://github.com/carl-stone/commaKit/issues</a></p>
-<p>For import problems, include the caller (<code>modkit</code>, <code>dorado</code>, or <code>megalodon</code>), the relevant command used upstream, a small excerpt of input if possible, and the full error message.</p>
+<p>For import problems, include the modkit command used upstream, a small excerpt of input if possible, and the full error message.</p>
 </div>
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>

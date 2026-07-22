@@ -14,8 +14,6 @@
   : Build a KEGG gene ID map for symbol translation
 - [`buildKEGGTermGene()`](https://carl-stone.github.io/commaKit/reference/buildKEGGTermGene.md)
   : Build a KEGG term-to-gene mapping for use with enrichMethylation()
-- [`caller()`](https://carl-stone.github.io/commaKit/reference/caller.md)
-  : Accessor for the methylation caller
 - [`canonicalCounts()`](https://carl-stone.github.io/commaKit/reference/canonicalCounts.md)
   : Accessor for observed canonical-read counts
 - [`commaData-class`](https://carl-stone.github.io/commaKit/reference/commaData-class.md)

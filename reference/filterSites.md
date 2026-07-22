@@ -55,7 +55,7 @@ filterSites(
   Character vector or `NULL`. If provided, only sites with a matching
   modification context are kept (e.g., `"6mA_GATC"`, `"5mC_CCWGG"`). A
   `mod_context` value is `paste(mod_type, motif, sep = "_")` when motif
-  is available, or just `mod_type` for Dorado/Megalodon data. Use
+  is available, or just `mod_type` when motif is unavailable. Use
   [`modContexts`](https://carl-stone.github.io/commaKit/reference/modContexts.md)
   to see which contexts are present. When provided, this filter is
   applied in addition to (ANDed with) any `mod_type` or `motif` filters.

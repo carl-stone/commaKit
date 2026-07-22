@@ -27,10 +27,10 @@ siteInfo(object)
 
 A [`DataFrame`](https://rdrr.io/pkg/S4Vectors/man/DataFrame-class.html)
 with one row per methylation site. Always contains columns `chrom`,
-`position`, `strand`, `mod_type`, `motif` (the sequence context; `NA`
-for Dorado/Megalodon callers), `mod_context` (the composite modification
-context, e.g., `"6mA_GATC"`), and `site_key` (a human-readable label
-with fixed `"chrom:position:strand:mod_type:motif"` fields, e.g.,
+`position`, `strand`, `mod_type`, `motif` (the sequence context),
+`mod_context` (the composite modification context, e.g., `"6mA_GATC"`),
+and `site_key` (a human-readable label with fixed
+`"chrom:position:strand:mod_type:motif"` fields, e.g.,
 `"chr1:512:+:6mA:GATC"`; computed on demand, not used for internal
 matching). May contain additional annotation columns added by
 [`annotateSites()`](https://carl-stone.github.io/commaKit/reference/annotateSites.md)

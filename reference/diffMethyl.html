@@ -126,8 +126,8 @@ replicates are few (n &lt; 3 per group). Requires <span class="pkg">limma</span>
 <dd><p>Character vector or <code>NULL</code>. Modification context(s)
 to test (e.g., <code>"6mA_GATC"</code>, <code>c("6mA_GATC", "5mC_CCWGG")</code>).
 A <code>mod_context</code> value is <code>paste(mod_type, motif, sep = "_")</code>
-when motif information is available, or just <code>mod_type</code> for
-Dorado/Megalodon data. Use <code><a href="modContexts.html">modContexts</a>(object)</code> to see which
+when motif information is available, or just <code>mod_type</code> when motif
+information is unavailable. Use <code><a href="modContexts.html">modContexts</a>(object)</code> to see which
 contexts are present. If <code>NULL</code> (default), all contexts present in
 <code>object</code> are tested independently. When provided, takes precedence
 over the <code>mod_type</code> and <code>motif</code> arguments.</p></dd>

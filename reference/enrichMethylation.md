@@ -323,7 +323,9 @@ the largest absolute score, preserving its sign) or `"mean"`.
 # Requires clusterProfiler and a custom TERM2GENE mapping
 if (requireNamespace("clusterProfiler", quietly = TRUE)) {
   data(comma_example_data)
-  dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
+  dm <- diffMethyl(comma_example_data,
+    formula = ~condition, mod_type = "6mA"
+  )
   ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
 
   # Custom TERM2GENE (works without network access or OrgDb)
@@ -331,7 +333,9 @@ if (requireNamespace("clusterProfiler", quietly = TRUE)) {
     term = c("PATH:01", "PATH:01", "PATH:02"),
     gene = c("geneA", "geneB", "geneC")
   )
-  res <- enrichMethylation(ann, TERM2GENE = fake_t2g, method = c("ora", "gsea"))
+  res <- enrichMethylation(ann,
+    TERM2GENE = fake_t2g, method = c("ora", "gsea")
+  )
   str(res, max.level = 2)
 }
 #> diffMethyl: testing 'condition' -- 'treatment' vs 'control' (reference)

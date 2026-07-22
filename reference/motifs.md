@@ -1,9 +1,7 @@
 # Accessor for sequence context motifs present in a commaData object
 
 Returns the sorted unique motif strings stored in
-`rowData(object)$motif`. `NA` values (sites from Dorado or Megalodon
-callers where motif context is unavailable) are excluded from the
-result.
+`rowData(object)$motif`. `NA` values are excluded from the result.
 
 ## Usage
 
@@ -24,7 +22,7 @@ motifs(object)
 
 A sorted character vector of unique non-`NA` motif strings (e.g.,
 `c("CCWGG", "GATC")`). Returns `character(0)` if all motif values are
-`NA` (e.g., Dorado-only data).
+`NA`.
 
 ## Examples
 

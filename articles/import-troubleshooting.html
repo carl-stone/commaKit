@@ -73,8 +73,7 @@
 </h2>
 <p>Most import problems come from one of four places:</p>
 <ol style="list-style-type: decimal">
-<li>The file format does not match the selected
-<code>caller</code>.</li>
+<li>The file is not modkit pileup bedMethyl output.</li>
 <li>Sample names in <code>files</code> and
 <code>colData$sample_name</code> do not match exactly.</li>
 <li>Genome information is missing, unnamed, or uses chromosome names
@@ -82,9 +81,9 @@ that do not match the methylation files.</li>
 <li>Annotation files are missing optional dependencies or use an
 unexpected file extension.</li>
 </ol>
-<p>Start by checking that each input sample can be parsed with the same
-caller and that the sample names are identical across <code>files</code>
-and <code>colData</code>.</p>
+<p>Start by checking each input file and confirming that the sample
+names are identical across <code>files</code> and
+<code>colData</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/carl-stone/commaKit" class="external-link">commaKit</a></span><span class="op">)</span></span>
 <span></span>
@@ -102,63 +101,7 @@ and <code>colData</code>.</p>
 <span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span></span>
 <span>  files <span class="op">=</span> <span class="va">files</span>,</span>
 <span>  colData <span class="op">=</span> <span class="va">col_data</span>,</span>
-<span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>  caller <span class="op">=</span> <span class="st">"modkit"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="choosing-the-caller">Choosing The Caller<a class="anchor" aria-label="anchor" href="#choosing-the-caller"></a>
-</h2>
-<p>Use <code>caller = "modkit"</code> for modkit pileup BED files. This
-is the recommended path for most Dorado-based workflows: call bases with
-Dorado, run <code>modkit pileup</code>, then import the resulting BED
-files into commaKit.</p>
-<p>Use <code>caller = "dorado"</code> only when you want commaKit to
-parse an aligned BAM file with MM/ML base modification tags directly.
-The BAM must contain modification tags and should be indexed. Direct BAM
-parsing does not provide motif context, so per-site <code>motif</code>
-values will be <code>NA</code>.</p>
-<p>During direct BAM parsing, two kinds of information loss can occur
-and should not be confused:</p>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Read-level skips.</strong> An entire read is skipped when it
-cannot be parsed at all. This happens when the CIGAR string is malformed
-or the MM/ML tags are missing or truncated. No modified-base calls from
-that read contribute to any site.</li>
-<li>
-<strong>Call-level drops.</strong> Individual modified-base calls
-whose read positions cannot be mapped to reference sites are dropped
-<em>before</em> site aggregation. This happens when the call falls on an
-inserted or soft-clipped read position that has no corresponding
-reference coordinate. The rest of the read is still used; only the
-unmappable call is discarded.</li>
-</ol>
-<p>In other words, a read with a usable CIGAR and valid MM/ML tags may
-still lose some modified-base calls to call-level drops, but the read
-itself is not skipped.</p>
-<p>Use <code>caller = "megalodon"</code> for legacy Megalodon per-read
-modification BED files. Megalodon files do not encode the modification
-type in a way commaKit can infer, so provide exactly one
-<code>mod_type</code> value.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Recommended path for Dorado runs after modkit pileup</span></span>
-<span><span class="va">obj_modkit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">files</span>, <span class="va">col_data</span>,</span>
-<span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>  caller <span class="op">=</span> <span class="st">"modkit"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Direct Dorado BAM import</span></span>
-<span><span class="va">obj_dorado</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">bam_files</span>, <span class="va">col_data</span>,</span>
-<span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>  caller <span class="op">=</span> <span class="st">"dorado"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Legacy Megalodon import requires a single explicit modification type</span></span>
-<span><span class="va">obj_megalodon</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">megalodon_files</span>, <span class="va">col_data</span>,</span>
-<span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>  caller <span class="op">=</span> <span class="st">"megalodon"</span>,</span>
-<span>  mod_type <span class="op">=</span> <span class="st">"5mC"</span></span>
+<span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -235,7 +178,7 @@ such as <code>a,GATC,1</code>, commaKit stores
 <code>mod_type = "6mA"</code> and <code>motif = "GATC"</code>. Older or
 derived files without motif context can still import, but
 <code>motif</code> will be <code>NA</code>.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">first_rows</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.table</a></span><span class="op">(</span><span class="st">"ctrl_1.modkit.bed"</span>, nrows <span class="op">=</span> <span class="fl">5</span>, fill <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">first_rows</span><span class="op">)</span></span>
 <span><span class="va">first_rows</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">6</span>, <span class="fl">10</span>, <span class="fl">11</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
@@ -248,7 +191,7 @@ must match <code>colData$sample_name</code>. The constructor requires
 <code>sample_name</code> and <code>replicate</code> columns in
 <code>colData</code>; <code>condition</code> is optional sample metadata
 used by grouping and design workflows when present.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">files</span><span class="op">)</span>, <span class="va">col_data</span><span class="op">$</span><span class="va">sample_name</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="va">col_data</span><span class="op">$</span><span class="va">sample_name</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">files</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>If either result is non-empty, fix the names before calling
@@ -268,7 +211,7 @@ forms:</p>
 </li>
 <li>a whole <code>BSgenome</code> object</li>
 </ul>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Named vector: simplest and robust for one bacterial chromosome</span></span>
 <span><span class="va">genome</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>NC_000913 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span></span>
 <span></span>
@@ -290,7 +233,7 @@ absent from <code>genome</code>, because it cannot attach valid
 <code>Seqinfo</code> for those sites. Extra chromosomes in the genome
 input are dropped with a message when they are not present in the
 methylation data.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bed_chroms</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.table</a></span><span class="op">(</span><span class="st">"ctrl_1.modkit.bed"</span>, nrows <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">genome</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="va">bed_chroms</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">genome</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -304,12 +247,12 @@ debugging methylation file import, then add annotation once the
 <p>commaKit accepts annotation as a <code>GRanges</code> object or as a
 GFF, GFF3, or BED file path. Loading annotation files requires the
 Bioconductor package <code>rtracklayer</code>.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"rtracklayer"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/loadAnnotation.html">loadAnnotation</a></span><span class="op">(</span><span class="st">"genes.gff3"</span>, feature_types <span class="op">=</span> <span class="st">"gene"</span><span class="op">)</span></span>
 <span>  <span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span><span class="va">files</span>, <span class="va">col_data</span>,</span>
 <span>    genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
-<span>    annotation <span class="op">=</span> <span class="va">genes</span>, caller <span class="op">=</span> <span class="st">"modkit"</span></span>
+<span>    annotation <span class="op">=</span> <span class="va">genes</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Common symptoms and fixes:</p>
@@ -360,7 +303,7 @@ type column.</td>
 </h2>
 <p>Before opening an issue or debugging further, collect these
 facts:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">files</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">files</span><span class="op">)</span></span>
 <span><span class="va">col_data</span><span class="op">$</span><span class="va">sample_name</span></span>
@@ -372,14 +315,13 @@ facts:</p>
 <span><span class="va">genome</span></span></code></pre></div>
 <p>Then try a minimal constructor call without annotation or motif
 scanning:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/commaData.html">commaData</a></span><span class="op">(</span></span>
 <span>  files <span class="op">=</span> <span class="va">files</span>,</span>
 <span>  colData <span class="op">=</span> <span class="va">col_data</span>,</span>
 <span>  genome <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>chr1 <span class="op">=</span> <span class="fl">4641652L</span><span class="op">)</span>,</span>
 <span>  annotation <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  motif <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  caller <span class="op">=</span> <span class="st">"modkit"</span>,</span>
 <span>  min_coverage <span class="op">=</span> <span class="fl">1L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>If this works, add filters, annotation, motif scanning, and higher
@@ -390,7 +332,7 @@ optional annotation.</p>
 <div class="section level2">
 <h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>

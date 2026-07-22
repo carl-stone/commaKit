@@ -42,18 +42,16 @@ The class stores methylation data in assay matrices (accessible via
 
 - `"mod_counts"`:
 
-  Observed reads called as the target modification, when available from
-  the caller.
+  Observed reads called as the target modification by modkit.
 
 - `"canonical_counts"`:
 
-  Observed reads called canonical or unmodified, when available from the
-  caller.
+  Observed reads called canonical or unmodified by modkit.
 
 - `"other_mod_counts"`:
 
-  Observed reads called as non-target modifications, when available from
-  the caller. For modkit pileup, `coverage` is the valid denominator
+  Observed reads called as non-target modifications by modkit. For
+  modkit pileup, `coverage` is the valid denominator
   `mod_counts + canonical_counts + other_mod_counts`.
 
 Genomic positions are stored in `rowRanges(object)`, a
@@ -63,11 +61,9 @@ with one 1-bp range per methylation site. Per-site metadata is in the
 The `mod_type` column is a factor with levels `c("4mC", "5mC", "6mA")`,
 enforcing valid values at the data structure level. The `motif` column
 stores the sequence context of each site (e.g., `"GATC"` or `"CCWGG"`)
-as extracted from the modkit `mod_code` field. It is `NA` for Dorado and
-Megalodon callers. The `mod_context` is computed on demand from
-`mod_type` and `motif` (e.g., `"6mA_GATC"`, `"5mC_CCWGG"`), or just
-`mod_type` when motif is unavailable (e.g., `"6mA"` for Dorado/Megalodon
-data). Use
+as extracted from the modkit `mod_code` field. The `mod_context` is
+computed on demand from `mod_type` and `motif` (e.g., `"6mA_GATC"`,
+`"5mC_CCWGG"`), or just `mod_type` when motif is unavailable. Use
 [`modContexts`](https://carl-stone.github.io/commaKit/reference/modContexts.md)`(object)`
 or
 [`siteInfo`](https://carl-stone.github.io/commaKit/reference/siteInfo.md)`(object)`
@@ -87,10 +83,8 @@ as
 [`diffMethyl`](https://carl-stone.github.io/commaKit/reference/diffMethyl.md))
 validate that requirement locally.
 
-The methylation caller and minimum coverage threshold are stored in
-`metadata(object)` and accessible via
-[`caller`](https://carl-stone.github.io/commaKit/reference/caller.md)`(object)`
-and
+The minimum coverage threshold is stored in `metadata(object)` and
+accessible via
 [`minCoverage`](https://carl-stone.github.io/commaKit/reference/minCoverage.md)`(object)`.
 
 Assay-layer provenance and defaults are stored in

@@ -3,10 +3,9 @@
 The commaKit package provides a complete toolkit for genome-wide
 analysis of bacterial DNA methylation from Oxford Nanopore sequencing
 data. It supports the three major modification types (6mA, 5mC, 4mC),
-handles input from modkit pileup (primary), Dorado BAM, and Megalodon
-(legacy) callers, and provides a unified data container, annotation
-utilities, differential methylation testing, and a full set of
-visualization functions.
+handles modkit pileup bedMethyl input, and provides a unified data
+container, annotation utilities, differential methylation testing, and a
+full set of visualization functions.
 
 ## Value
 
@@ -74,23 +73,6 @@ CoMMA.
 - [`resultLayers`](https://carl-stone.github.io/commaKit/reference/resultLayers.md):
 
   Tabular registry of named differential methylation result runs.
-
-## Package options
-
-commaKit records structured breadcrumbs for parsing and construction
-events when contextual error tracking is enabled. Set
-`options(commaKit.error_tracking = TRUE)` or
-`COMMAKIT_ERROR_TRACKING=true` to capture recent error events in
-`options("commaKit.error_tracking.events")`. Set
-`options(commaKit.error_tracking.reporter = function(event) ...)` to
-receive event payloads in process, or set
-`options(commaKit.sentry.dsn = "...")` / `SENTRY_DSN` to send captured
-errors to Sentry when the suggested curl package is installed. Optional
-context can be supplied through `commaKit.error_tracking.user`,
-`commaKit.error_tracking.release`,
-`commaKit.error_tracking.environment`, and the timeout options
-`commaKit.error_tracking.timeout` and
-`commaKit.error_tracking.connect_timeout`.
 
 ## References
 

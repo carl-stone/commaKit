@@ -5,8 +5,7 @@ Returns the unique modification contexts stored in a
 object. A `mod_context` is a composite string combining modification
 type and sequence motif: `paste(mod_type, motif, sep = "_")` when motif
 information is available (e.g., `"6mA_GATC"`, `"5mC_CCWGG"`), or just
-`mod_type` for callers that do not provide per-site motif context (e.g.,
-`"6mA"` for Dorado or Megalodon data).
+`mod_type` when motif context is unavailable.
 
 ## Usage
 
