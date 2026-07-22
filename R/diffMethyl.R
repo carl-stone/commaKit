@@ -124,8 +124,8 @@ NULL
 #'   to test (e.g., \code{"6mA_GATC"}, \code{c("6mA_GATC", "5mC_CCWGG")}).
 #'   A \code{mod_context} value is \code{paste(mod_type, motif, sep = "_")}
 #'   when motif information is available, or just \code{mod_type} when motif
-#'   information is unavailable. Use \code{\link{modContexts}(object)} to see which
-#'   contexts are present. If \code{NULL} (default), all contexts present in
+#'   information is unavailable. Use \code{\link{modContexts}(object)} to see
+#'   which contexts are present. If \code{NULL} (default), all contexts in
 #'   \code{object} are tested independently. When provided, takes precedence
 #'   over the \code{mod_type} and \code{motif} arguments.
 #' @param mod_type Character vector or \code{NULL}. Modification type(s) to

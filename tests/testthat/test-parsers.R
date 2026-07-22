@@ -21,7 +21,8 @@ library(testthat)
 
 # A minimal valid modkit row (18 columns, real modkit bedMethyl format):
 # chrom start end mod_code score strand thickStart thickEnd itemRgb
-#   Nvalid_cov fraction_modified Nmod Ncanonical Nother_mod Ndelete Nfail Ndiff Nnocall
+#   Nvalid_cov fraction_modified Nmod Ncanonical Nother_mod
+#   Ndelete Nfail Ndiff Nnocall
 # mod_code uses compound "code,motif,position" format (e.g. "a,GATC,1")
 # fraction_modified is a percentage (0-100)
 .modkit_row <- function(chrom = "chr1", start = 99L, mod_code = "a,GATC,1",
@@ -270,11 +271,14 @@ test_that(".parseModkit() retains zero-coverage rows only when requested", {
   expect_equal(nrow(kept_result), 1L)
   expect_equal(kept_result$coverage, 0L)
   expect_equal(kept_result$beta, 0)
-  expect_equal(kept_result$mod_counts + kept_result$canonical_counts +
-    kept_result$other_mod_counts, 0L)
+  expect_equal(
+    kept_result$mod_counts + kept_result$canonical_counts +
+      kept_result$other_mod_counts,
+    0L
+  )
 })
 
-test_that(".parseModkit() preserves unexpected motif strings without schema changes", {
+test_that(".parseModkit() preserves unexpected motif strings", {
   rows <- rbind(
     .modkit_row(mod_code = "a,GATC,1", start = 99L),
     .modkit_row(mod_code = "a,not-a-standard-motif,1", start = 199L),
@@ -296,7 +300,7 @@ test_that(".parseModkit() preserves unexpected motif strings without schema chan
 # Delimiter structure and blank-field detection (#235)
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that(".parseModkit() rejects blank required fields without shifting later values", {
+test_that(".parseModkit() rejects blank required fields", {
   # Row with blank Nvalid_cov (column 10) but valid later fields.
   # With sep = "" the blank would be collapsed and fraction_modified
   # would shift into the Nvalid_cov position, hiding the error.
@@ -343,8 +347,8 @@ test_that(".parseModkit() preserves all-tab bedMethyl with no blank fields", {
 # Authoritative count fields and zero-coverage drops (#237)
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that(".parseModkit() computes beta from Nmod/Nvalid_cov, not fraction_modified", {
-  # Row where fraction_modified (40%) disagrees with Nmod/Nvalid_cov (7/20 = 35%)
+test_that(".parseModkit() computes beta from count fields", {
+  # fraction_modified is 40%, but Nmod/Nvalid_cov is 7/20 = 35%.
   row <- paste(c(
     "chr1", "99", "100", "a,GATC,1", "20", "+",
     "99", "100", "255,0,0",
@@ -360,7 +364,7 @@ test_that(".parseModkit() computes beta from Nmod/Nvalid_cov, not fraction_modif
   expect_equal(result$coverage, 20L)
 })
 
-test_that(".parseModkit() drops zero-coverage rows with undefined fraction_modified", {
+test_that(".parseModkit() drops zero-coverage rows", {
   # Row with Nvalid_cov = 0 and blank fraction_modified.
   # fraction_modified is no longer a required field, so the row passes
   # the required-fields check and is dropped by the coverage filter.

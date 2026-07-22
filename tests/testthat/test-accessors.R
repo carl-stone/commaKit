@@ -34,7 +34,7 @@ library(GenomicRanges)
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# methylation()
+# Tests for the methylation accessor
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("methylation() returns a numeric matrix", {
@@ -59,7 +59,7 @@ test_that("methylation() values are in [0, 1] range (ignoring NA)", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# siteCoverage()
+# Tests for the siteCoverage accessor
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("siteCoverage() returns a numeric matrix", {
@@ -128,7 +128,7 @@ test_that(
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sampleInfo()
+# Tests for the sampleInfo accessor
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("sampleInfo() returns a data.frame", {
@@ -159,7 +159,7 @@ test_that("filterSites() errors clearly when filtering by absent condition", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# siteInfo()
+# Tests for the siteInfo accessor
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("siteInfo() returns a DataFrame", {
@@ -229,7 +229,7 @@ test_that(
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# modTypes()
+# Tests for the modTypes accessor
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("modTypes() returns a character vector", {
@@ -251,7 +251,7 @@ test_that("modTypes() returns only unique values", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# genome()
+# Tests for the genome accessor
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("genome() returns a named integer vector", {
@@ -284,7 +284,7 @@ test_that("genome() returns NULL when no Seqinfo", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# annotation()
+# Tests for the annotation accessor
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("annotation() returns a GRanges", {
@@ -298,7 +298,7 @@ test_that("annotation() returns correct number of features", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# motifSites()
+# Tests for the motifSites accessor
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("motifSites() returns a GRanges", {
@@ -596,7 +596,7 @@ test_that("filterSites: mod_context and mod_type can be combined", {
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
-# minCoverage()
+# Tests for the minCoverage accessor
 # ─────────────────────────────────────────────────────────────────────────────
 
 test_that("minCoverage() returns NA for objects without stored min_coverage", {

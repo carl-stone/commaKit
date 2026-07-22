@@ -32,7 +32,8 @@
 #'   \item{\strong{colData}}{Per-sample metadata: \code{sample_name},
 #'     \code{condition}, and \code{replicate}.}
 #'   \item{\strong{Seqinfo}}{Chromosome sizes: \code{c(chr_sim = 100000L)}.}
-#'   \item{\strong{annotation}}{5 simulated genomic features (genes, rRNA, tRNA).}
+#'   \item{\strong{annotation}}{5 simulated genomic features
+#'     (genes, rRNA, tRNA).}
 #'   \item{\strong{motifSites}}{Empty \code{GRanges} (no motif search was run).}
 #' }
 #'

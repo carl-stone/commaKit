@@ -1,24 +1,24 @@
 ## Script to generate comma_example_data — the synthetic example dataset
 ## bundled with the commaKit package for use in tests, vignettes, and examples.
 ##
-## Run this script from the package root with:
-##   source("data-raw/create_example_data.R")
+# Run this script from the package root by sourcing this file.
 ##
-## Output: data/comma_example_data.rda
+# The output is data/comma_example_data.rda.
 ##
 ## Design:
 ##   - Simulated 100 kb single-chromosome genome ("chr_sim")
 ##   - 6 samples: ctrl_1/2/3 (control), treat_1/2/3 (treatment)
 ##   - Two modification types: 6mA (~393 GATC sites) and 5mC (~195 CCWGG sites)
 ##   - ~30 differentially methylated 6mA sites between control and treatment
-##   - Site positions: deterministic evenly-spaced backbone + random complement +
-##     anchor positions guaranteeing coverage of all position-sensitive test windows
+##   - Site positions: deterministic evenly-spaced backbone, random complement,
+##     and anchors covering all position-sensitive test windows
 ##   - Random coverage 10–150 per site per sample
 ##   - Object constructed directly (no file I/O) to avoid round-trip artifacts
 
 set.seed(1312)
 
 # ── Parameters ────────────────────────────────────────────────────────────────
+# nolint start: object_name_linter
 GENOME_SIZE <- 100000L
 CHR_NAME <- "chr_sim"
 SAMPLES <- c(
@@ -63,6 +63,7 @@ ccgg_positions <- sort(unique(c(ccgg_backbone, ccgg_random)))
 # Derive final site counts used everywhere downstream
 N_6MA_SITES <- length(gatc_positions)
 N_5MC_SITES <- length(ccgg_positions)
+# nolint end
 
 # Assign strands
 gatc_strands <- sample(c("+", "-"), N_6MA_SITES, replace = TRUE)

@@ -301,7 +301,8 @@ enr_kegg <- enrichMethylation(
 
 ```{r assay-and-result-layers}
 assayLayers(comma_example_data)
-resultLayers(cd_dm)
+result_layers <- resultLayers(cd_dm)
+result_layers[, setdiff(colnames(result_layers), "timestamp")]
 ```
 
 Raw evidence assays are treated as canonical input evidence. Transformations,
@@ -317,8 +318,8 @@ and plotting functions accept `mod_type`, `motif`, or `mod_context` filters.
 modTypes(comma_example_data)
 modContexts(comma_example_data)
 
-obj_6mA <- filterSites(comma_example_data, mod_context = "6mA_GATC")
-obj_6mA
+obj_6ma <- filterSites(comma_example_data, mod_context = "6mA_GATC")
+obj_6ma
 ```
 
 For a complete joint 6mA + 5mC workflow, see

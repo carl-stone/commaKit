@@ -201,18 +201,13 @@ check_rmarkdown_rendered <- function(files) {
   }
 
   output_files <- vapply(files, rendered_md_path, character(1))
-  missing <- files[!file.exists(output_files)]
   files <- files[file.exists(output_files)]
-  if (length(files) == 0L && length(missing) == 0L) {
+  if (length(files) == 0L) {
     message("No R Markdown files with Markdown outputs to check.")
     return(invisible(TRUE))
   }
 
-  stale <- if (length(missing) > 0L) {
-    paste0(missing, " -> ", rendered_md_path(missing), " (missing)")
-  } else {
-    character()
-  }
+  stale <- character()
   for (file in files) {
     output_file <- rendered_md_path(file)
     render_dir <- tempfile("rmd-render-")

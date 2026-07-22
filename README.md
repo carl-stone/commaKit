@@ -387,8 +387,9 @@ assayLayers(comma_example_data)
 #> 2          NA           0.2.0
 #> 3          NA           0.2.0
 #> 4          NA           0.2.0
-resultLayers(cd_dm)
-#> DataFrame with 1 row and 18 columns
+result_layers <- resultLayers(cd_dm)
+result_layers[, setdiff(colnames(result_layers), "timestamp")]
+#> DataFrame with 1 row and 17 columns
 #>          name        role                   type      source is_default
 #>   <character> <character>            <character> <character>  <logical>
 #> 1  diffMethyl  diffMethyl differential_methyla..  diffMethyl       TRUE
@@ -398,12 +399,9 @@ resultLayers(cd_dm)
 #>          mod_type           motif p_adjust_method min_coverage     alpha
 #>   <CharacterList> <CharacterList>     <character>    <integer> <numeric>
 #> 1             6mA                              BH            5       0.5
-#>                                 result_cols              timestamp
-#>                             <CharacterList>            <character>
-#> 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,... 2026-07-22 17:40:50 ..
-#>   package_version
-#>       <character>
-#> 1           0.2.0
+#>                                 result_cols package_version
+#>                             <CharacterList>     <character>
+#> 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,...           0.2.0
 ```
 
 Raw evidence assays are treated as canonical input evidence.
@@ -423,8 +421,8 @@ modTypes(comma_example_data)
 modContexts(comma_example_data)
 #> [1] "5mC_CCWGG" "6mA_GATC"
 
-obj_6mA <- filterSites(comma_example_data, mod_context = "6mA_GATC")
-obj_6mA
+obj_6ma <- filterSites(comma_example_data, mod_context = "6mA_GATC")
+obj_6ma
 #> class: commaData
 #> sites: 393 | samples: 6
 #> mod types: 6mA

@@ -59,19 +59,19 @@ test_that("methylomeSummary: mod_type='all' when not filtered", {
 
 test_that("methylomeSummary: mod_type filtering works", {
   data(comma_example_data)
-  result_6mA <- methylomeSummary(comma_example_data, mod_type = "6mA")
-  result_5mC <- methylomeSummary(comma_example_data, mod_type = "5mC")
-  expect_true(all(result_6mA$mod_type == "6mA"))
-  expect_true(all(result_5mC$mod_type == "5mC"))
+  result_6ma <- methylomeSummary(comma_example_data, mod_type = "6mA")
+  result_5mc <- methylomeSummary(comma_example_data, mod_type = "5mC")
+  expect_true(all(result_6ma$mod_type == "6mA"))
+  expect_true(all(result_5mc$mod_type == "5mC"))
   # n_sites differs between mod types
-  expect_false(result_6mA$n_sites[1] == result_5mC$n_sites[1])
+  expect_false(result_6ma$n_sites[1] == result_5mc$n_sites[1])
 })
 
 test_that("methylomeSummary: n_sites correct after mod_type filter", {
   data(comma_example_data)
-  n_6mA <- sum(siteInfo(comma_example_data)$mod_type == "6mA")
+  n_6ma <- sum(siteInfo(comma_example_data)$mod_type == "6mA")
   result <- methylomeSummary(comma_example_data, mod_type = "6mA")
-  expect_equal(result$n_sites[1], n_6mA)
+  expect_equal(result$n_sites[1], n_6ma)
 })
 
 test_that("methylomeSummary: mean_beta in [0,1]", {
