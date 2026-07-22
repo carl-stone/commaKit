@@ -84,8 +84,8 @@ diffMethyl(
   Use
   [`modContexts`](https://carl-stone.github.io/commaKit/reference/modContexts.md)`(object)`
   to see which contexts are present. If `NULL` (default), all contexts
-  present in `object` are tested independently. When provided, takes
-  precedence over the `mod_type` and `motif` arguments.
+  in `object` are tested independently. When provided, takes precedence
+  over the `mod_type` and `motif` arguments.
 
 - mod_type:
 
