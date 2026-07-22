@@ -16,8 +16,8 @@ siteInfo(object)
 A \code{\link[S4Vectors]{DataFrame}} with one row per methylation
 site.
 Always contains columns \code{chrom}, \code{position}, \code{strand},
-\code{mod_type}, \code{motif} (the sequence context; \code{NA} for
-Dorado/Megalodon callers), \code{mod_context} (the composite
+\code{mod_type}, \code{motif} (the sequence context),
+\code{mod_context} (the composite
 modification context, e.g., \code{"6mA_GATC"}), and \code{site_key}
 (a human-readable label with fixed
 \code{"chrom:position:strand:mod_type:motif"} fields, e.g.,

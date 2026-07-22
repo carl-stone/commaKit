@@ -20,8 +20,7 @@ columns corresponding to samples.
 Retrieves the sites × samples matrix of observed reads called as a
 non-target modification at the same site. For modkit pileup this is the
 \code{Nother_mod} column, and \code{coverage} is the denominator
-\code{mod_counts + canonical_counts + other_mod_counts}. For callers that
-cannot provide this decomposition, values may be \code{NA}; consult
+\code{mod_counts + canonical_counts + other_mod_counts}. Consult
 \code{\link{assayProvenance}} for source details.
 }
 \seealso{

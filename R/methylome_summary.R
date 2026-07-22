@@ -55,8 +55,6 @@ NULL
 #'     \item{\code{median_coverage}}{Median sequencing depth across non-missing
 #'       coverage values for retained sites, including sites below the
 #'       \code{min_coverage} threshold when coverage is available.}
-#'     \item{\code{caller}}{Methylation caller that produced the data
-#'       (e.g., \code{"modkit"}), or \code{NA} if not stored.}
 #'     \item{\code{min_coverage}}{Minimum coverage threshold applied at
 #'       construction, or \code{NA} if not stored.}
 #'   }
@@ -99,7 +97,6 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
   si <- sampleInfo(object)
   sample_nms <- colnames(methyl_mat)
   n_sites <- nrow(methyl_mat)
-  obj_caller <- caller(object)
   obj_min_cov <- minCoverage(object)
 
   # ── Per-sample statistics ─────────────────────────────────────────────────
@@ -129,7 +126,6 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
       frac_methylated  = if (n_covered > 0) mean(b_cov > 0.5) else NA_real_,
       mean_coverage    = mean(c_all, na.rm = TRUE),
       median_coverage  = stats::median(c_all, na.rm = TRUE),
-      caller           = obj_caller,
       min_coverage     = obj_min_cov,
       stringsAsFactors = FALSE
     )

@@ -15,9 +15,11 @@ mechanisms. The Bioconductor-typical path is to keep `renv.lock` focused on the
 check-ready package environment, including `Suggests`, rather than adding a
 custom gate-tool manifest that future snapshots can accidentally drop. The
 devcontainer should bootstrap `renv`, restore the lockfile, and install
-contributor/editor tools once after restore. CI should remain split:
-`R-CMD-check` follows the package-first `DESCRIPTION` contract, while tooling
-gates such as style checks and `BiocCheck` install their tools explicitly.
+contributor/editor tools once after restore. `R-CMD-check` follows the
+package-first `DESCRIPTION` contract, while focused tooling gates such as style
+checks install their tools explicitly. Submission-only tools such as
+`BiocCheck` remain available in the development environment without running on
+every pull request.
 Dependencies used only by archival scripts under `inst/scripts` should not
 expand either dependency contract. Interactive R startup should activate `renv`
 without auto-attaching development packages.

@@ -1,5 +1,4 @@
-## Tests for the internal parser functions:
-##   .parseModkit(), .parseMegalodon(), .parseDorado()
+## Tests for the internal modkit bedMethyl parser: .parseModkit()
 
 library(testthat)
 

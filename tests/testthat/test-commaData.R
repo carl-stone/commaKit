@@ -88,7 +88,6 @@ test_that(
       files = c(s1 = bed_file),
       colData = data.frame(sample_name = "s1", replicate = 1L),
       genome = c(chr_sim = 1000L),
-      caller = "modkit",
       min_coverage = 1L
     ))
 
@@ -300,24 +299,6 @@ test_that("commaData() errors on mismatched sample names", {
   )
 })
 
-test_that("commaData() errors on invalid caller", {
-  bed_file <- system.file("extdata", "example_modkit.bed", package = "commaKit")
-  skip_if(bed_file == "", message = "extdata not available")
-
-  expect_error(
-    commaData(
-      files = c(s1 = bed_file),
-      colData = data.frame(
-        sample_name = "s1",
-        condition = "ctrl",
-        replicate = 1L
-      ),
-      genome = c(chr_sim = 100000L),
-      caller = "unknown_caller"
-    )
-  )
-})
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Constructor: successful construction from extdata example file
 # ─────────────────────────────────────────────────────────────────────────────
@@ -335,8 +316,7 @@ test_that("commaData() constructs valid object from example modkit BED", {
       replicate = 1L,
       stringsAsFactors = FALSE
     ),
-    genome = genome_info,
-    caller = "modkit"
+    genome = genome_info
   )
 
   expect_true(is(cd, "commaData"))
@@ -410,7 +390,6 @@ test_that(
         stringsAsFactors = FALSE
       ),
       genome = c(chr_sim = 1000L),
-      caller = "modkit",
       min_coverage = 5L
     ))
 
@@ -444,7 +423,6 @@ test_that("commaData() rejects invalid min_coverage thresholds", {
           stringsAsFactors = FALSE
         ),
         genome = c(chr_sim = 1000L),
-        caller = "modkit",
         min_coverage = threshold
       ),
       regexp = "single positive integer"
@@ -466,8 +444,7 @@ test_that("commaData() accepts a tibble as colData without warning", {
     commaData(
       files   = c(s1 = bed_file),
       colData = tbl_cd,
-      genome  = c(chr_sim = 100000L),
-      caller  = "modkit"
+      genome  = c(chr_sim = 100000L)
     )
   )
 })
@@ -674,8 +651,7 @@ test_that(
           sample_name = "s1", condition = "control", replicate = 1L,
           stringsAsFactors = FALSE
         ),
-        genome = c(chr_sim = 100000L),
-        caller = "modkit"
+        genome = c(chr_sim = 100000L)
       ),
       regexp = "duplicate methylation site rows"
     )
@@ -718,8 +694,7 @@ test_that(
           sample_name = "s1", condition = "control", replicate = 1L,
           stringsAsFactors = FALSE
         ),
-        genome = c(chr_sim = 100000L),
-        caller = "modkit"
+        genome = c(chr_sim = 100000L)
       )),
       regexp = "duplicate methylation site rows.*6mA:NA"
     )
@@ -743,8 +718,7 @@ test_that("commaData() treats missing and explicit motifs as distinct sites", {
       sample_name = "s1", condition = "control", replicate = 1L,
       stringsAsFactors = FALSE
     ),
-    genome = c(chr_sim = 100000L),
-    caller = "modkit"
+    genome = c(chr_sim = 100000L)
   ))
 
   expect_equal(nrow(obj), 2L)
@@ -762,7 +736,6 @@ test_that(
         files = c(s1 = bed_file),
         colData = data.frame(sample_name = "s1", replicate = 1L),
         genome = c(chr_other = 1000L),
-        caller = "modkit",
         min_coverage = 1L
       )),
       regexp = "genome is missing chromosome.*chr_sim"

@@ -24,7 +24,7 @@ Required per-site metadata:
 | Field | Meaning |
 |---|---|
 | `mod_type` | Chemical modification, currently valid values `6mA`, `5mC`, `4mC`. |
-| `motif` | Sequence context, such as `GATC` or `CCWGG`; may be `NA` for callers without motif context. |
+| `motif` | Sequence context, such as `GATC` or `CCWGG`; may be `NA` when absent from the modkit modification code. |
 
 Computed accessors:
 
@@ -61,7 +61,7 @@ The active result is mirrored into bare `dm_*` row metadata columns for backward
 
 # Pipeline
 
-1. `commaData()` constructs an object from modkit, Dorado, or Megalodon output.
+1. `commaData()` constructs an object from modkit pileup bedMethyl output.
 2. `annotateSites()` annotates sites to genomic features and stores all associations as list-columns.
 3. `diffMethyl()` tests differential methylation by `mod_context`.
 4. `results()` and `filterResults()` extract and filter result layers.
@@ -71,9 +71,7 @@ The active result is mirrored into bare `dm_*` row metadata columns for backward
 
 # Parser Contracts
 
-- modkit pileup BED is the primary path.
-- Dorado BAM reads MM/ML tags and can contain 6mA, 5mC, and 4mC in one file.
-- Megalodon is legacy and requires explicit `mod_type`.
+- modkit pileup bedMethyl is the only supported input path.
 - Constructor merging aligns by `GRanges` overlaps plus `mod_type`/motif checks, not by row names or string keys.
 
 # Annotation Contract
@@ -106,7 +104,7 @@ Core and accessors:
 commaData()
 methylation(); siteCoverage(); modCounts(); canonicalCounts(); otherModCounts()
 sampleInfo(); siteInfo(); modTypes(); modContexts(); motifs()
-genomeSizes(); annotation(); motifSites(); caller(); minCoverage()
+genomeSizes(); annotation(); motifSites(); minCoverage()
 assayLayers(); assayProvenance(); resultLayers()
 filterSites()
 ```

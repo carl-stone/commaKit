@@ -21,9 +21,8 @@ NULL
 #' Create a commaData object from methylation calling output files
 #'
 #' Constructor for the \code{\link{commaData-class}} S4 class. Parses one or
-#' more methylation calling output files (modkit, Megalodon, or Dorado), merges
-#' them into a sites × samples matrix representation, and optionally loads
-#' genomic annotation and motif site positions.
+#' more modkit pileup bedMethyl files, merges them into a sites × samples matrix
+#' representation, and optionally loads genomic annotation and motif positions.
 #'
 #' @param files Named character vector mapping sample names to file paths.
 #'   Names must match \code{colData$sample_name}. Example:
@@ -61,8 +60,7 @@ NULL
 #'   \emph{Note:} this
 #'   argument is distinct from \code{rowData(object)$motif}, which stores the
 #'   per-site sequence context extracted automatically from the modkit
-#'   \code{mod_code} field (e.g., \code{"a,GATC,1"} → \code{motif = "GATC"})
-#'   and is \code{NA} for Dorado and Megalodon callers.
+#'   \code{mod_code} field (e.g., \code{"a,GATC,1"} → \code{motif = "GATC"}).
 #' @param expected_mod_contexts Named list or \code{NULL}. If provided,
 #'   specifies which modification type / sequence motif combinations to retain.
 #'   Names must be modification type strings (e.g., \code{"6mA"}, \code{"5mC"}).
@@ -73,19 +71,10 @@ NULL
 #'   reporting the number of sites dropped per modification type. Use
 #'   \code{NULL} (default) to retain all sites.
 #'   Example: \code{list("6mA" = "GATC", "5mC" = c("CCWGG", "CCGG"))}.
-#'   \emph{Note:} for Dorado/Megalodon callers where \code{motif} is
-#'   \code{NA}, the \code{mod_context} falls back to just \code{mod_type}
-#'   (e.g., \code{"6mA"}), so those sites are only retained if you include
-#'   \code{NA} in the motif vector for that type
-#'   (e.g., \code{list("6mA" = NA)}).
 #' @param min_coverage Integer. Minimum read depth to include a site. Sites
 #'   present in a sample with coverage below this threshold have their beta
 #'   value set to \code{NA}. Sites absent from a sample entirely are also
 #'   \code{NA}. Default \code{5}.
-#' @param caller Character string specifying the methylation caller that
-#'   produced the input files. One of \code{"modkit"} (default),
-#'   \code{"megalodon"}, or \code{"dorado"}.
-#'
 #' @return A valid \code{\link{commaData}} object.
 #'
 #' @details
@@ -100,8 +89,7 @@ NULL
 #'     matrices, with \code{NA} for samples that do not cover a given site.
 #'   \item Observed modified, canonical, and non-target modified read counts
 #'     are preserved as \code{mod_counts}, \code{canonical_counts}, and
-#'     \code{other_mod_counts} assays when reported by the caller;
-#'     probability-only callers store \code{NA} in those assays.
+#'     \code{other_mod_counts} assays.
 #'   \item Assay-layer provenance and default roles are recorded in
 #'     \code{metadata(object)$assay_provenance} and
 #'     \code{metadata(object)$assay_defaults}.
@@ -127,8 +115,7 @@ NULL
 #'     replicate   = c(1L, 1L)
 #'   ),
 #'   genome = c(chr1 = 4641652L),
-#'   annotation = "MG1655.gff3",
-#'   caller = "modkit"
+#'   annotation = "MG1655.gff3"
 #' )
 #' cd
 #' }
@@ -149,10 +136,8 @@ commaData <- function(files,
                       mod_type = NULL,
                       motif = NULL,
                       expected_mod_contexts = NULL,
-                      min_coverage = 5L,
-                      caller = "modkit") {
+                      min_coverage = 5L) {
   min_coverage <- .validateMinCoverage(min_coverage)
-  caller <- match.arg(caller, c("modkit", "megalodon", "dorado"))
 
   # ── Validate expected_mod_contexts ───────────────────────────────────────
   if (!is.null(expected_mod_contexts)) {
@@ -213,61 +198,18 @@ commaData <- function(files,
     )
   }
 
-  # ── Select parser ───────────────────────────────────────────────────────
-  parser_fn <- switch(caller,
-    modkit = .parseModkit,
-    megalodon = .parseMegalodon,
-    dorado = .parseDorado
-  )
-
   # ── Parse each sample ───────────────────────────────────────────────────
   sample_names <- colData$sample_name
-  .comma_log_event(
-    "commaData_construct_started",
-    component = "commaData",
-    caller = caller,
-    sample_count = length(sample_names),
-    min_coverage = min_coverage
-  )
   parsed_list <- vector("list", length(sample_names))
   names(parsed_list) <- sample_names
 
   for (sn in sample_names) {
-    .comma_log_event(
-      "sample_parse_started",
-      component = "commaData",
-      caller = caller,
+    message("Parsing modkit bedMethyl file for sample '", sn, "'...")
+    parsed_list[[sn]] <- .parseModkit(
+      file = files[sn],
       sample_name = sn,
-      file = unname(files[sn])
-    )
-    message("Parsing ", caller, " file for sample '", sn, "'...")
-    parsed_list[[sn]] <- withCallingHandlers(
-      parser_fn(
-        file = files[sn],
-        sample_name = sn,
-        mod_type = mod_type,
-        min_coverage = 1L # apply min_coverage AFTER merging (see below)
-      ),
-      error = function(e) {
-        calls <- sys.calls()
-        .comma_track_error(
-          e,
-          component = "commaData",
-          operation = "sample_parse",
-          caller = caller,
-          sample_name = sn,
-          file = unname(files[sn]),
-          min_coverage = 1L,
-          .calls = calls
-        )
-      }
-    )
-    .comma_log_event(
-      "sample_parse_finished",
-      component = "commaData",
-      caller = caller,
-      sample_name = sn,
-      site_count = nrow(parsed_list[[sn]])
+      mod_type = mod_type,
+      min_coverage = 1L # apply min_coverage AFTER merging (see below)
     )
   }
 
@@ -296,7 +238,7 @@ commaData <- function(files,
   rownames(all_sites) <- NULL
 
   # ── Compute mod_context on the fly for filtering ────────────────────────
-  # "6mA_GATC" when motif is known; falls back to "6mA" for NA-motif callers.
+  # "6mA_GATC" when motif is known; falls back to "6mA" when motif is NA.
   site_ctx <- ifelse(
     is.na(all_sites$motif),
     all_sites$mod_type,
@@ -329,12 +271,6 @@ commaData <- function(files,
       dropped <- all_sites[drop_mask, , drop = FALSE]
       for (mt in unique(dropped$mod_type)) {
         n_drop <- sum(dropped$mod_type == mt)
-        .comma_log_event(
-          "expected_mod_contexts_sites_dropped",
-          component = "commaData",
-          mod_type = mt,
-          dropped_site_count = n_drop
-        )
         message(
           "expected_mod_contexts: dropping ", n_drop,
           " site(s) with mod_type='", mt,
@@ -549,19 +485,9 @@ commaData <- function(files,
   S4Vectors::metadata(obj)$annotation <- ann_gr
   S4Vectors::metadata(obj)$motifSites <- motif_gr
 
-  # Store caller and min_coverage in metadata for reproducibility
-  S4Vectors::metadata(obj)$caller <- caller
+  # Store construction threshold in metadata for reproducibility
   S4Vectors::metadata(obj)$min_coverage <- min_coverage
-  count_provenance <- switch(caller,
-    modkit = "observed_modkit_pileup",
-    dorado = "observed_probability_threshold",
-    megalodon = "unavailable_probability_input"
-  )
-  other_count_provenance <- switch(caller,
-    modkit = "observed_modkit_pileup",
-    dorado = "unavailable_direct_bam_parser",
-    megalodon = "unavailable_probability_input"
-  )
+  count_provenance <- "observed_modkit_pileup"
   S4Vectors::metadata(obj)$assay_defaults <- list(
     methylation = "methylation",
     coverage = "coverage",
@@ -572,22 +498,22 @@ commaData <- function(files,
   S4Vectors::metadata(obj)$assay_provenance <- list(
     methylation = .makeAssayLayerRecord(
       type = "filtered_beta",
-      source = caller,
+      source = "modkit",
       role = "methylation",
       parent_assays = c("coverage"),
-      method = "caller_beta_filter",
+      method = "modkit_beta_filter",
       params = list(min_coverage = min_coverage, filtered_assay = TRUE),
       default_for = "methylation"
     ),
     coverage = .makeAssayLayerRecord(
       type = "observed_total_coverage",
-      source = caller,
+      source = "modkit",
       role = "coverage",
-      method = "caller_coverage",
+      method = "modkit_coverage",
       default_for = "coverage"
     ),
     mod_counts = .makeAssayLayerRecord(
-      type = if (caller == "megalodon") "unavailable" else "observed_counts",
+      type = "observed_counts",
       source = count_provenance,
       role = "mod_counts",
       parent_assays = "coverage",
@@ -595,7 +521,7 @@ commaData <- function(files,
       default_for = "mod_counts"
     ),
     canonical_counts = .makeAssayLayerRecord(
-      type = if (caller == "megalodon") "unavailable" else "observed_counts",
+      type = "observed_counts",
       source = count_provenance,
       role = "canonical_counts",
       parent_assays = "coverage",
@@ -603,25 +529,15 @@ commaData <- function(files,
       default_for = "canonical_counts"
     ),
     other_mod_counts = .makeAssayLayerRecord(
-      type = if (caller == "modkit") "observed_counts" else "unavailable",
-      source = other_count_provenance,
+      type = "observed_counts",
+      source = count_provenance,
       role = "other_mod_counts",
       parent_assays = "coverage",
-      method = other_count_provenance,
+      method = count_provenance,
       default_for = "other_mod_counts"
     )
   )
 
   validObject(obj)
-  .comma_log_event(
-    "commaData_construct_finished",
-    component = "commaData",
-    caller = caller,
-    sample_count = n_samples,
-    site_count = n_sites,
-    assay_count = length(SummarizedExperiment::assayNames(obj)),
-    has_annotation = length(ann_gr) > 0L,
-    motif_site_count = length(motif_gr)
-  )
   obj
 }

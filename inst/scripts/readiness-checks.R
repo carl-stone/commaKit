@@ -209,7 +209,7 @@ readiness_r_quality_files <- function(files) {
   files[
     grepl("\\.[Rr]$", files) &
       grepl("^(R|inst/scripts)/", files) &
-      !grepl("^(renv|docs|man|droid-wiki|\\.git)/", files)
+      !grepl("^(renv|docs|man|\\.git)/", files)
   ]
 }
 

@@ -18,9 +18,8 @@ columns corresponding to samples.
 }
 \description{
 Retrieves the sites × samples matrix of observed reads called as canonical
-or unmodified for the site. For callers that cannot provide a true
-canonical-count decomposition, values may be \code{NA}; consult
-\code{\link{assayProvenance}} for source details.
+or unmodified for the site. Consult \code{\link{assayProvenance}} for
+source details.
 }
 \examples{
 data(comma_example_data)

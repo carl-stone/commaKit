@@ -178,8 +178,7 @@ test_that("full pipeline composes from modkit files through enrichment", {
     files = files,
     colData = col_data,
     genome = c(chr_sim = 100000L),
-    annotation = gff_file,
-    caller = "modkit"
+    annotation = gff_file
   )
 
   annotated <- annotateSites(object, keep = "overlap")

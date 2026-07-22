@@ -13,7 +13,7 @@
 * **`mod_context` is derived on demand** — `mod_context` is computed from
   `mod_type` and `motif` (e.g. `"6mA_GATC"`, `"5mC_CCWGG"`) by
   `modContexts()` and `siteInfo()` rather than stored as a persistent
-  `rowData` column. When `motif` is `NA` (Dorado/Megalodon callers), the
+  `rowData` column. When `motif` is `NA`, the
   fallback is the `mod_type` string alone (never `"6mA_NA"`).
 
 * **`modContexts()`** — new exported S4 accessor that returns sorted unique
@@ -44,9 +44,16 @@
 
 ## Breaking changes
 
+* **Only modkit pileup bedMethyl input is supported.** Direct Dorado BAM and
+  legacy Megalodon import paths, their optional dependencies, and the `caller`
+  constructor argument/accessor have been removed.
+
+* The experimental logging and remote error-tracking subsystem has been
+  removed.
+
 * **Old `commaData` objects should be recreated** — the Schema v2 data model
   moved genomic positions into `rowRanges()`, stores `mod_type`/`motif` as
-  row-range metadata, derives `mod_context` on demand, and stores caller and
+  row-range metadata, derives `mod_context` on demand, and stores
   minimum-coverage metadata in `metadata(object)`. Objects created with earlier
   informal versions should be recreated from source files using the updated
   constructor.

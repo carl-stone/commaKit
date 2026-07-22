@@ -95,8 +95,7 @@ while others accepted only a single string.
 
 **Current state:** The main exported filtering surfaces now document
 `mod_type` as a character vector or `NULL`, routed through shared site-filter
-helpers. `parse_megalodon()` remains a parser-specific exception because legacy
-Megalodon input cannot infer the modification type.
+helpers.
 
 **Action:** Do not copy this older inconsistency into new docs. Check the
 specific roxygen block before changing an API.
@@ -183,19 +182,16 @@ missing fields, and non-standard delimiter shapes.
 shifting later bedMethyl values. Beta is computed from authoritative count
 fields (`Nmod / Nvalid_cov`) instead of the derived `fraction_modified`
 percentage, and zero-valid-coverage rows with undefined fractions are dropped
-by the coverage filter. Dorado documentation distinguishes read-level skips
-from call-level drops using the ADR 0003 vocabulary. Tests cover blank-field
-rejection, space-separated file rejection, count-based beta, zero-coverage
-drops, and Dorado CIGAR/MM/ML edge cases.
+by the coverage filter. Tests cover blank-field rejection, space-separated file
+rejection, count-based beta, zero-coverage drops, and malformed partial rows.
 
 **Remaining gaps:**
-- No tests with real production modkit or Dorado files beyond the bundled
-  synthetic fixture.
+- No tests with real production modkit files beyond the bundled synthetic
+  fixture.
 - No coverage for unexpected chromosome names that do not match a user-supplied
   genome (the constructor catches mismatches, but parser-level behaviour is not
   tested with exotic names).
 - No tests for very large bedMethyl files (performance and memory).
-- Megalodon parser edge cases remain untested beyond basic valid/invalid input.
 
 **Confidence:** Medium. The pipeline shape and specific edge cases above are
 covered, but real biological data and performance at scale remain out of scope.

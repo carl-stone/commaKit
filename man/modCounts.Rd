@@ -18,9 +18,7 @@ columns corresponding to samples.
 }
 \description{
 Retrieves the sites × samples matrix of observed reads called as the target
-modification. This assay is available for callers that report count-like
-methylation evidence directly, such as modkit pileup. Older objects or
-probability-only callers may contain \code{NA} values.
+modification reported by modkit pileup.
 }
 \examples{
 data(comma_example_data)

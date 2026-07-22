@@ -22,9 +22,8 @@ Returns the unique modification contexts stored in a
 \code{\link{commaData}} object. A \code{mod_context} is a composite string
 combining modification type and sequence motif:
 \code{paste(mod_type, motif, sep = "_")} when motif information is available
-(e.g., \code{"6mA_GATC"}, \code{"5mC_CCWGG"}), or just \code{mod_type} for
-callers that do not provide per-site motif context (e.g., \code{"6mA"} for
-Dorado or Megalodon data).
+(e.g., \code{"6mA_GATC"}, \code{"5mC_CCWGG"}), or just \code{mod_type}
+when motif context is unavailable.
 }
 \details{
 All differential methylation analyses run independently per

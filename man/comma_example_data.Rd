@@ -31,7 +31,7 @@ dataset; newly constructed modkit objects include this assay when
 \code{mod_type}, \code{motif}, \code{mod_context}, and \code{is_diff}
 (ground-truth differential methylation status for testing).}
 \item{\strong{colData}}{Per-sample metadata: \code{sample_name},
-\code{condition}, \code{replicate}, \code{caller}.}
+\code{condition}, and \code{replicate}.}
 \item{\strong{Seqinfo}}{Chromosome sizes: \code{c(chr_sim = 100000L)}.}
 \item{\strong{annotation}}{5 simulated genomic features (genes, rRNA, tRNA).}
 \item{\strong{motifSites}}{Empty \code{GRanges} (no motif search was run).}

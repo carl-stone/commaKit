@@ -3,7 +3,6 @@
 on:
   push:
     branches: [main, master]
-  pull_request:
   release:
     types: [published]
   workflow_dispatch:
@@ -13,44 +12,8 @@ name: pkgdown.yaml
 permissions: read-all
 
 jobs:
-  pkgdown:
-    name: pkgdown
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    container: bioconductor/bioconductor_docker:RELEASE_3_22
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Check R and Bioconductor versions
-        run: |
-          Rscript -e 'cat("R ", as.character(getRversion()), "\n", sep = "")'
-          Rscript -e 'cat("Bioconductor ", as.character(BiocManager::version()), "\n", sep = "")'
-
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          packages: any::sessioninfo
-          extra-packages: any::pkgdown, local::.
-          needs: website
-
-      - name: Build site
-        run: |
-          pkgdown::build_site(new_process = FALSE, install = FALSE)
-          file.create(file.path("docs/_site", ".nojekyll"))
-        shell: Rscript {0}
-
-      - name: Upload pkgdown site artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pkgdown-site
-          path: docs/_site
-          retention-days: 14
-
   pkgdown-deploy:
     name: pkgdown deploy
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     concurrency:
       group: pkgdown-deploy

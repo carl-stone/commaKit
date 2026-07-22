@@ -20,7 +20,6 @@ docs/*
 .claude/settings.local.json
 .claude/worktrees/
 .codex/
-droid-wiki/
 .letta/
 .lteams/
 .vscode/

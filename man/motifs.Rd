@@ -15,13 +15,11 @@ motifs(object)
 \value{
 A sorted character vector of unique non-\code{NA} motif strings
 (e.g., \code{c("CCWGG", "GATC")}). Returns \code{character(0)} if all
-motif values are \code{NA} (e.g., Dorado-only data).
+motif values are \code{NA}.
 }
 \description{
 Returns the sorted unique motif strings stored in
-\code{rowData(object)$motif}. \code{NA} values (sites from Dorado or
-Megalodon callers where motif context is unavailable) are excluded from
-the result.
+\code{rowData(object)$motif}. \code{NA} values are excluded from the result.
 }
 \examples{
 data(comma_example_data)

@@ -64,8 +64,6 @@ Verdicts: **keep** (genuinely useful), **remove** (uninformative/redundant), **s
 | test-coverageDepth.R | 11 | 9 | 1 | 0 | 0 | 10 | 0 | 1 |
 | test-varianceByDepth.R | 10 | 8 | 0 | 1 | 0 | 10 | 0 | 0 |
 | test-integration.R | 2 | 0 | 0 | 0 | 2 | 2 | 0 | 0 |
-| test-parse_dorado.R | 22 | 14 | 0 | 8 | 0 | 22 | 0 | 0 |
-| test-parse_megalodon.R | 14 | 10 | 0 | 3 | 0 | 14 | 0 | 0 |
 | test-parsers.R | 21 | 17 | 1 | 2 | 0 | 19 | 2 | 0 |
 | test-findMotifSites.R | 19 | 17 | 0 | 1 | 0 | 18 | 1 | 0 |
 | test-loadAnnotation.R | 18 | 16 | 0 | 2 | 0 | 18 | 0 | 0 |
@@ -94,8 +92,6 @@ Verdicts: **keep** (genuinely useful), **remove** (uninformative/redundant), **s
 | test-plot_methylation_distribution.R | example data, mod_type = '6mA' | Redundant with example-data test; only adds mod_type filter |
 | test-plot_tss_profile.R | works with comma_example_data, window = 1000L | Redundant with example-data test; window already covered by contract test |
 | test-enrichMethylation.R | data.frame input runs without error when valid | Redundant with test above that exercises data.frame + checks warning |
-| test-parsers.R | .parseDorado() stops with informative error for missing file | Duplicate of test-parse_dorado.R |
-| test-parsers.R | .parseDorado() stops with informative error for non-character file | Duplicate of test-parse_dorado.R |
 | test-findMotifSites.R | DNAStringSet multi-chromosome searches all sequences | Redundant with FASTA multi-chromosome test; only input type differs |
 
 ---
@@ -244,17 +240,9 @@ All 10 keep. Good contract coverage.
 
 Both keep. End-to-end pipeline tests.
 
-### test-parse_dorado.R (22 tests: 14 contract, 8 edge-case)
-
-All 22 keep. Strong contract and edge-case coverage for Dorado parser.
-
-### test-parse_megalodon.R (14 tests: 10 contract, 3 edge-case)
-
-All 14 keep. Good contract coverage for Megalodon parser.
-
 ### test-parsers.R (21 tests: 17 contract, 1 smoke, 2 edge-case)
 
-19 keep, 2 remove. Two duplicate error tests already covered in test-parse_dorado.R.
+The modkit bedMethyl parser contract and edge cases belong here.
 
 ### test-findMotifSites.R (19 tests: 17 contract, 1 edge-case)
 
@@ -280,7 +268,7 @@ All 24 keep. Strong coverage of .validateGenomeInfo, .loadGenomeSequences, and .
 
 2. **Real enrichment semantics.** `enrichMethylation()` is tested with `clusterProfiler` when installed and synthetic TERM2GENE mappings, but not yet with real biological identifiers and real GO/KEGG mappings aligned to a real example dataset.
 
-3. **Parser edge cases — PARTIALLY COVERED.** Tests now cover blank-field detection with tab-delimited parsing, space-separated file rejection, count-based beta computation (`Nmod / Nvalid_cov`), zero-coverage drops with undefined `fraction_modified`, unexpected motif strings, partial-row errors, and Dorado CIGAR/MM/ML edge cases (malformed CIGAR, insertions, soft clips, truncated ML arrays). Remaining gaps: no tests with real production files, unexpected chromosome names, large-file performance, or Megalodon edge cases beyond basic valid/invalid input.
+3. **Parser edge cases — PARTIALLY COVERED.** Tests cover blank-field detection with tab-delimited parsing, space-separated file rejection, count-based beta computation (`Nmod / Nvalid_cov`), zero-coverage drops with undefined `fraction_modified`, unexpected motif strings, and partial-row errors. Remaining gaps: no tests with real production files, unexpected chromosome names, or large-file performance.
 
 4. **Small-sample behavior.** `diffMethyl()` with exactly 2 samples per condition has 1 residual df for quasi-F. Is this still valid? What happens with exactly 2 samples total? Not tested.
 
@@ -293,7 +281,7 @@ All 24 keep. Strong coverage of .validateGenomeInfo, .loadGenomeSequences, and .
 1. **Finish plot fallback coverage:** Decide whether missing `patchwork` should message, warn, or error; test that behavior directly.
 2. **Keep strengthening plot contracts:** Use `ggplot_build()` to verify data mappings, point counts, aesthetic mappings, and layer structure when touching plot files.
 3. **Add real-ID enrichment coverage:** Use real biological identifiers and real GO/KEGG mappings once an appropriate dataset exists.
-4. **Add real parser fixtures:** Cover malformed and edge-case caller outputs from production-like files. Specific edge cases now covered (blank fields, delimiter shapes, count-based beta, zero-coverage drops, Dorado CIGAR/MM/ML); remaining work is real production files, unexpected chromosome names, large-file performance, and Megalodon edge cases.
+4. **Add real parser fixtures:** Cover malformed and edge-case modkit bedMethyl output from production-like files. Remaining work is real production files, unexpected chromosome names, and large-file performance.
 5. **Benchmark realistic scale:** Measure memory/runtime for constructor, `validObject()`, `diffMethyl()`, `siteInfo()`, and `slidingWindow()`.
 
 See GitHub Issues for prioritized work items.

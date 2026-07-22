@@ -108,7 +108,7 @@ writeBED(cd, "dm_sites.bed")
 | Feature | commaKit | methylKit | DSS | nanomethyR | DiffMethylTools |
 |---------|----------|-----------|-----|-----------|-----------------|
 | **Data container** | commaData (S4/RSE) | methylRaw/methylBase (S4) | BSseq (S4/SE) | ModBamResult (S4/SE) | None (data.frames) |
-| **Input format** | modkit, Dorado, Megalodon | Bismark BAM | Bismark | modkit/Dorado BAM | Various |
+| **Input format** | modkit bedMethyl | Bismark BAM | Bismark | modkit/Dorado BAM | Various |
 | **Modification types** | 6mA, 5mC, 4mC | 5mC only | 5mC only | 5mC only | 5mC only |
 | **mod_context** | First-class | No | No | No | No |
 | **Bacterial genomes** | Native | No (eukaryotic) | No | No | No |
@@ -125,7 +125,7 @@ writeBED(cd, "dm_sites.bed")
 1. Only package that handles 6mA, 5mC, and 4mC simultaneously
 2. Only package with mod_context as a first-class variable
 3. Only package designed for bacterial (monoploid, circular) genomes
-4. Only package with native Nanopore format support (modkit, Dorado)
+4. Native modkit pileup bedMethyl support
 5. Only package with built-in enrichment (no external genomation dependency)
 6. Most visualization functions of any methylation package
 

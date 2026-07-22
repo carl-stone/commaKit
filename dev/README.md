@@ -2,16 +2,15 @@
 
 This directory holds project-management context, durable knowledge, and strategic documents for commaKit.
 
-**Maintained by:** commaBot
 **Audience:** Carl, Claire, future agents, and any human contributor
 
 ---
 
-## Tactical Work: Linear Symphony & GitHub PRs
+## Tactical Work: GitHub Issues & Pull Requests
 
-**The tactical source of truth for commaBot-driven work is the Linear project `commaKit Symphony`; the integration surface for code is [GitHub Pull Requests](https://github.com/carl-stone/commaKit/pulls).**
+**[GitHub Issues](https://github.com/carl-stone/commaKit/issues) track accepted work; [GitHub Pull Requests](https://github.com/carl-stone/commaKit/pulls) are the code-integration surface.**
 
-If you want to know what Carl asked for, what needs to be done, or what is blocked in the agent loop — go to Linear. If you want to inspect code review, CI, or merge state — go to GitHub PRs. GitHub Issues may still exist for public bugs or external contributor tracking, but they are no longer the primary commaBot queue.
+Use issues for work state and PRs for code review, CI, and merge state.
 
 Labels follow a namespaced scheme:
 
@@ -21,10 +20,6 @@ Labels follow a namespaced scheme:
 | `area:` | `import`, `diffMethyl`, `plots`, `slidingWindow`, `enrichment`, `bioconductor`, `pm` | Which package area |
 | `priority:` | `high`, `medium`, `low` | Urgency |
 | `status:` | `blocked`, `needs-decision`, `accepted` | GitHub/public workflow state |
-
-Linear worker labels used by Symphony include `commakit`, `specialist:implementer`, `specialist:reviewer`, `steward`, `pc-worker`, and `needs-human`.
-
----
 
 ## Local R Version
 
@@ -80,7 +75,7 @@ These files are maintained in `dev/`:
 
 ## Durable Knowledge (`knowledge/`)
 
-Organized by topic, not by date. When commaBot learns something durable, it goes here.
+Organized by topic, not by date. Durable project knowledge goes here.
 
 | File | What it covers |
 |------|---------------|
@@ -105,15 +100,15 @@ Historical documents that are no longer active but should not be deleted. These 
 
 ---
 
-## For commaBot
+## For Contributors
 
 When doing project-management work:
 
-1. **Linear `commaKit Symphony`** is the single source of truth for commaBot-driven tasks. Create, label, decompose, and update work there.
+1. Use GitHub Issues to create, label, decompose, and update accepted work.
 2. Use GitHub PRs for code integration evidence; do not treat a worker response as Done before PR/CI/review state is resolved or explicitly blocked.
 3. Document durable findings in the appropriate `knowledge/` file.
 4. Update `ROADMAP.md` only for strategic changes.
 5. Do not silently fix without documenting why.
-6. Do not create new files in `dev/` for task tracking — use Linear issues.
+6. Do not create new files in `dev/` for task tracking — use GitHub Issues.
 
-Carl is the product owner. commaBot is the engineering team and PM.
+Carl is the product owner.

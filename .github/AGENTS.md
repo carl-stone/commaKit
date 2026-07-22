@@ -7,7 +7,7 @@ For branch, PR, and validation expectations, see `../dev/knowledge/git-disciplin
 
 - Keep CI aligned with the R version and dependency expectations documented in `dev/README.md` and `renv.lock`.
 - Do not weaken checks to make a PR pass. If a check is too broad or flaky, document the reason and narrow it deliberately.
-- PR templates/instructions should point code work back to Linear `commaKit Symphony` when work originates from commaBot.
+- Keep pull requests self-contained and link the relevant GitHub issue when one exists.
 - Avoid committing secrets, tokens, local paths, or machine-specific caches.
 - Use closing keywords (`Closes #N`, `Fixes #N`, `Resolves #N`) in commit messages when a commit fully implements a GitHub issue. A bare `(#N)` reference does NOT close the issue. The PR template includes a "Closes" section as a reminder.
 

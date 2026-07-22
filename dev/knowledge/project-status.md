@@ -31,7 +31,7 @@ owner: Carl Stone
 - Remaining public GitHub issues are grouped around Bioconductor readiness,
   real-data/performance evidence, enrichment realism, optional plot dependency
   behavior, production-like parser fixtures, and small-sample `diffMethyl()`
-  policy. Internal commaBot work remains in Linear `commaKit Symphony`.
+  policy.
 
 # Source Inventory
 

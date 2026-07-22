@@ -2,8 +2,6 @@ name: Test coverage threshold
 
 on:
   pull_request:
-  push:
-    branches: [main, master]
   workflow_dispatch:
 
 permissions: read-all
@@ -48,9 +46,11 @@ jobs:
       - name: Add coverage summary
         if: always()
         run: |
-          echo "## Test Coverage" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Coverage threshold: ${COMMAKIT_MIN_COVERAGE}%" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Test Coverage"
+            echo ""
+            echo "Coverage threshold: ${COMMAKIT_MIN_COVERAGE}%"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage report
         if: always()

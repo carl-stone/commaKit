@@ -48,8 +48,6 @@ coverage values for retained sites, including sites below the
 \item{\code{median_coverage}}{Median sequencing depth across non-missing
 coverage values for retained sites, including sites below the
 \code{min_coverage} threshold when coverage is available.}
-\item{\code{caller}}{Methylation caller that produced the data
-(e.g., \code{"modkit"}), or \code{NA} if not stored.}
 \item{\code{min_coverage}}{Minimum coverage threshold applied at
 construction, or \code{NA} if not stored.}
 }

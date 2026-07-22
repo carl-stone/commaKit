@@ -35,11 +35,11 @@ methylated, range 0-1). Sites with coverage below the
 \code{min_coverage} threshold are stored as \code{NA}.}
 \item{\code{"coverage"}}{Integer read depth at each site.}
 \item{\code{"mod_counts"}}{Observed reads called as the target
-modification, when available from the caller.}
+modification by modkit.}
 \item{\code{"canonical_counts"}}{Observed reads called canonical or
-unmodified, when available from the caller.}
+unmodified by modkit.}
 \item{\code{"other_mod_counts"}}{Observed reads called as non-target
-modifications, when available from the caller. For modkit pileup,
+modifications by modkit. For modkit pileup,
 \code{coverage} is the valid denominator
 \code{mod_counts + canonical_counts + other_mod_counts}.}
 }
@@ -52,11 +52,11 @@ includes at minimum: \code{mod_type} and \code{motif}. The \code{mod_type}
 column is a factor with levels \code{c("4mC", "5mC", "6mA")}, enforcing
 valid values at the data structure level. The \code{motif}
 column stores the sequence context of each site (e.g., \code{"GATC"} or
-\code{"CCWGG"}) as extracted from the modkit \code{mod_code} field. It is
-\code{NA} for Dorado and Megalodon callers. The \code{mod_context} is
+\code{"CCWGG"}) as extracted from the modkit \code{mod_code} field. The
+\code{mod_context} is
 computed on demand from \code{mod_type} and \code{motif} (e.g.,
 \code{"6mA_GATC"}, \code{"5mC_CCWGG"}), or just \code{mod_type} when
-motif is unavailable (e.g., \code{"6mA"} for Dorado/Megalodon data). Use
+motif is unavailable. Use
 \code{\link{modContexts}(object)} or \code{\link{siteInfo}(object)} to
 retrieve it. All analyses default to running independently per
 \code{mod_context} group to prevent spurious mixing of biologically distinct
@@ -71,9 +71,8 @@ Per-sample metadata is in \code{colData(object)} and includes at minimum:
 optional container metadata; functions that need a grouping/design variable
 (such as \code{\link{diffMethyl}}) validate that requirement locally.
 
-The methylation caller and minimum coverage threshold are stored in
-\code{metadata(object)} and accessible via \code{\link{caller}(object)}
-and \code{\link{minCoverage}(object)}.
+The minimum coverage threshold is stored in \code{metadata(object)} and
+accessible via \code{\link{minCoverage}(object)}.
 
 Assay-layer provenance and defaults are stored in
 \code{metadata(object)$assay_provenance} and

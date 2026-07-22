@@ -10,9 +10,8 @@ Description: Analyze bacterial DNA methylation from Oxford Nanopore sequencing
     data. Supports genome-wide characterization of methylation patterns across
     multiple modification types (6mA, 5mC, 4mC), annotation of methylation
     sites relative to genomic features, and identification of differentially
-    methylated sites between conditions. Accepts input from modkit pileup
-    (primary), Dorado BAM, and Megalodon (legacy) callers. Previously developed
-    as comma / CoMMA.
+    methylated sites between conditions. Accepts modkit pileup bedMethyl input.
+    Previously developed as comma / CoMMA.
 License: MIT + file LICENSE
 URL: https://github.com/carl-stone/commaKit, https://carl-stone.github.io/commaKit/
 BugReports: https://github.com/carl-stone/commaKit/issues
@@ -25,9 +24,7 @@ Suggests:
     BSgenome,
     Biostrings,
     BiocStyle,
-    cigarillo,
     clusterProfiler,
-    curl,
     KEGGREST,
     DelayedArray,
     limma,
@@ -36,7 +33,6 @@ Suggests:
     org.EcK12.eg.db,
     patchwork,
     rtracklayer,
-    Rsamtools,
     testthat (>= 3.0.0),
     tibble,
     knitr,
@@ -46,7 +42,6 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 Collate:
     'commaKit-package.R'
-    'logger.R'
     'commaData_class.R'
     'assay_layers.R'
     'result_layers.R'
@@ -65,8 +60,6 @@ Collate:
     'm_values.R'
     'methylkit_wrapper.R'
     'methylome_summary.R'
-    'parse_dorado.R'
-    'parse_megalodon.R'
     'parse_modkit.R'
     'plot_coverage.R'
     'plot_distribution.R'

@@ -35,7 +35,7 @@ Use \code{\link{motifs}} to see which motifs are present.}
 with a matching modification context are kept (e.g.,
 \code{"6mA_GATC"}, \code{"5mC_CCWGG"}). A \code{mod_context} value is
 \code{paste(mod_type, motif, sep = "_")} when motif is available, or just
-\code{mod_type} for Dorado/Megalodon data. Use \code{\link{modContexts}}
+\code{mod_type} when motif is unavailable. Use \code{\link{modContexts}}
 to see which contexts are present. When provided, this filter is applied in
 addition to (ANDed with) any \code{mod_type} or \code{motif} filters.}
 

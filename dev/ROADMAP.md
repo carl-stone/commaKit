@@ -6,7 +6,7 @@
 **R package namespace:** commaKit
 **GitHub repo:** carl-stone/commaKit
 
-This file is the strategic roadmap: where commaKit is going and why. The internal commaBot work queue lives in Linear `commaKit Symphony`; GitHub Issues remain the public/accepted work log for bugs, external-facing blockers, and deferred readiness items.
+This file is the strategic roadmap: where commaKit is going and why. GitHub Issues are the work log for bugs, blockers, and deferred readiness items.
 
 ---
 
@@ -18,7 +18,7 @@ These are the reasons behind the work. They determine priority order.
 
 2. **Usability** — Claire should be able to use commaKit independently. She needs docs, clear error messages, method selection guidance, and a package that doesn't surprise her with silent failures.
 
-3. **Robustness** — commaKit should handle real data, not just a 588-site toy example. Edge cases, large genomes, weird callers, production-scale site counts.
+3. **Robustness** — commaKit should handle real data, not just a 588-site toy example. Edge cases, large genomes, malformed bedMethyl, production-scale site counts.
 
 4. **Publishability** — Bioconductor-ready when the time comes. This is a low priority. We'd rather have a great, stable package installable from GitHub than a rushed Bioconductor submission.
 
@@ -41,7 +41,7 @@ Key changes:
 - genomeInfo → Seqinfo
 - annotation/motifSites → metadata()
 - mod_context derived on demand, not stored
-- mod_type as factor, caller/min_coverage stored, site key convention
+- mod_type as factor, min_coverage stored, site key convention
 - No-rownames alignment (findOverlaps-based)
 
 ### 2. Test Quality — in progress (correctness)

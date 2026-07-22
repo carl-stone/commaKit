@@ -25,14 +25,14 @@ Install from GitHub for now.
 
 ## Why commaKit?
 
-Nanopore methylation callers can report rich modified-base evidence, but
-most analysis workflows still leave users to reconcile caller-specific
-formats, coverage filters, genome coordinates, methylation contexts,
-sample metadata, and downstream statistics by hand. commaKit provides
-one R-native container and a coherent workflow for comparative microbial
+Nanopore methylation tools can report rich modified-base evidence, but
+most analysis workflows still leave users to reconcile input formats,
+coverage filters, genome coordinates, methylation contexts, sample
+metadata, and downstream statistics by hand. commaKit provides one
+R-native container and a coherent workflow for comparative microbial
 methylomics:
 
-- import modkit, Dorado, or Megalodon output into a single `commaData`
+- import modkit pileup bedMethyl output into a single `commaData`
   object;
 - keep raw methylation and count evidence together with genomic ranges
   and sample metadata;
@@ -76,9 +76,8 @@ common path is modkit pileup bedMethyl:
 - Genome names must match imported methylation chromosomes. If the
   methylation files contain chromosomes absent from `genome`,
   construction stops with a clear error instead of guessing.
-- Direct Dorado BAM parsing requires mapped BAM files with MM/ML tags
-  preserved; in practice, many users will prefer to run modkit first and
-  import the resulting bedMethyl files.
+- Input files must be modkit pileup bedMethyl output with at least 18
+  columns.
 
 A typical `commaData()` call needs a named vector of per-sample files, a
 sample metadata table, genome lengths or a FASTA/BSgenome, and
@@ -111,8 +110,7 @@ obj <- commaData(
   genome = "path/to/genome.fa",
   annotation = "path/to/genes.gff3",
   motif = "GATC",
-  min_coverage = 5L,
-  caller = "modkit"
+  min_coverage = 5L
 )
 ```
 
@@ -138,7 +136,6 @@ comma_example_data
 #> genome: 1 chromosome (100,000 bp total)
 #> annotation: 5 features
 #> motif sites: none
-#> caller: modkit
 #> min_coverage: 5
 ```
 
@@ -401,9 +398,12 @@ resultLayers(cd_dm)
 #>          mod_type           motif p_adjust_method min_coverage     alpha
 #>   <CharacterList> <CharacterList>     <character>    <integer> <numeric>
 #> 1             6mA                              BH            5       0.5
-#>                           result_cols              timestamp package_version
-#>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-07-03 07:08:14 ..           0.2.0
+#>                                 result_cols              timestamp
+#>                             <CharacterList>            <character>
+#> 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,... 2026-07-22 17:40:50 ..
+#>   package_version
+#>       <character>
+#> 1           0.2.0
 ```
 
 Raw evidence assays are treated as canonical input evidence.
@@ -434,7 +434,6 @@ obj_6mA
 #> genome: 1 chromosome (100,000 bp total)
 #> annotation: 5 features
 #> motif sites: none
-#> caller: modkit
 #> min_coverage: 5
 ```
 
@@ -456,8 +455,8 @@ Vignettes:
   analysis from example data.
 - `vignette("understanding-commaData", package = "commaKit")` - object
   model, assays, provenance, and result layers.
-- `vignette("import-troubleshooting", package = "commaKit")` - modkit,
-  Dorado, Megalodon, genome, and annotation input issues.
+- `vignette("import-troubleshooting", package = "commaKit")` - modkit
+  bedMethyl, genome, and annotation input issues.
 - `vignette("multiple-modification-types", package = "commaKit")` -
   joint analysis of multiple modification contexts.
 
@@ -468,7 +467,6 @@ Vignettes:
 | Package version | `0.2.0` development baseline |
 | Distribution | GitHub only; not yet submitted to Bioconductor |
 | Primary input | modkit pileup bedMethyl |
-| Optional inputs | Dorado BAM with MM/ML tags; Megalodon legacy output |
 | Differential methylation | One two-level design variable for v1 |
 | Example data | Synthetic, deterministic, useful for tests and tutorials |
 | Real-data validation | Planned; depends on selecting a redistributable bacterial dataset |
@@ -491,9 +489,8 @@ problems:
 
 <https://github.com/carl-stone/commaKit/issues>
 
-For import problems, include the caller (`modkit`, `dorado`, or
-`megalodon`), the relevant command used upstream, a small excerpt of
-input if possible, and the full error message.
+For import problems, include the modkit command used upstream, a small
+excerpt of input if possible, and the full error message.
 
 ## Citation
 

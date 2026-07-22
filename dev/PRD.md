@@ -19,7 +19,7 @@ Existing methylation tools (methylKit, DSS, nanomethyR) were built for bisulfite
 - **Multiple modification types** in one dataset (6mA + 5mC + 4mC from the same Nanopore run)
 - **Modification context** as a first-class variable (6mA:GATC vs 6mA:ACCACC are biologically distinct)
 - **Bacterial genome structure** (circular chromosomes, operons, small genomes, no CpG island paradigm)
-- **Oxford Nanopore-native formats** (modkit pileup, Dorado BAM, MM/ML tags)
+- **Oxford Nanopore-native format** (modkit pileup bedMethyl)
 - **End-to-end workflow** from raw calls to enrichment analysis in one package
 
 commaKit fills this gap.
@@ -77,11 +77,9 @@ writeBED()           ->  Export to BED
 |---------|--------|-------|
 | `commaData` S4 class (extends RangedSummarizedExperiment) | Done | Validity method, show() |
 | modkit pileup parser | Done | Primary format |
-| Dorado BAM parser (MM/ML tags) | Done | CIGAR decoding |
-| Megalodon parser (legacy) | Done | Per-read aggregation |
 | `commaData()` constructor | Done | Multi-sample, multi-mod-type, findOverlaps alignment |
 | `mod_context` derived on demand | Done | No longer stored as rowData column (Schema v2) |
-| All accessors (methylation, coverage, sampleInfo, siteInfo, modTypes, modContexts, motifs, caller, minCoverage, siteCoverage) | Done | S4 methods |
+| All accessors (methylation, coverage, sampleInfo, siteInfo, modTypes, modContexts, motifs, minCoverage, siteCoverage) | Done | S4 methods |
 | `filterSites()` | Done | By mod_type, condition, chrom |
 | `comma_example_data` | Done | 588 sites, 6 samples, 2 mod types |
 | Genome info via Seqinfo | Done | Replaced legacy genomeInfo slot (Schema v2) |

@@ -12,8 +12,7 @@ commaData(
   mod_type = NULL,
   motif = NULL,
   expected_mod_contexts = NULL,
-  min_coverage = 5L,
-  caller = "modkit"
+  min_coverage = 5L
 )
 }
 \arguments{
@@ -58,8 +57,7 @@ integer vector). If \code{NULL}, the \code{motifSites} slot is left empty.
 \emph{Note:} this
 argument is distinct from \code{rowData(object)$motif}, which stores the
 per-site sequence context extracted automatically from the modkit
-\code{mod_code} field (e.g., \code{"a,GATC,1"} → \code{motif = "GATC"})
-and is \code{NA} for Dorado and Megalodon callers.}
+\code{mod_code} field (e.g., \code{"a,GATC,1"} → \code{motif = "GATC"}).}
 
 \item{expected_mod_contexts}{Named list or \code{NULL}. If provided,
 specifies which modification type / sequence motif combinations to retain.
@@ -70,30 +68,20 @@ Values are character vectors of motif strings (e.g., \code{c("GATC",
 pair are dropped before the object is assembled. A message is emitted
 reporting the number of sites dropped per modification type. Use
 \code{NULL} (default) to retain all sites.
-Example: \code{list("6mA" = "GATC", "5mC" = c("CCWGG", "CCGG"))}.
-\emph{Note:} for Dorado/Megalodon callers where \code{motif} is
-\code{NA}, the \code{mod_context} falls back to just \code{mod_type}
-(e.g., \code{"6mA"}), so those sites are only retained if you include
-\code{NA} in the motif vector for that type
-(e.g., \code{list("6mA" = NA)}).}
+Example: \code{list("6mA" = "GATC", "5mC" = c("CCWGG", "CCGG"))}.}
 
 \item{min_coverage}{Integer. Minimum read depth to include a site. Sites
 present in a sample with coverage below this threshold have their beta
 value set to \code{NA}. Sites absent from a sample entirely are also
 \code{NA}. Default \code{5}.}
-
-\item{caller}{Character string specifying the methylation caller that
-produced the input files. One of \code{"modkit"} (default),
-\code{"megalodon"}, or \code{"dorado"}.}
 }
 \value{
 A valid \code{\link{commaData}} object.
 }
 \description{
 Constructor for the \code{\link{commaData-class}} S4 class. Parses one or
-more methylation calling output files (modkit, Megalodon, or Dorado), merges
-them into a sites × samples matrix representation, and optionally loads
-genomic annotation and motif site positions.
+more modkit pileup bedMethyl files, merges them into a sites × samples matrix
+representation, and optionally loads genomic annotation and motif positions.
 }
 \details{
 The constructor uses a parse-then-merge strategy:
@@ -107,8 +95,7 @@ strand) plus modification type and motif context.
 matrices, with \code{NA} for samples that do not cover a given site.
 \item Observed modified, canonical, and non-target modified read counts
 are preserved as \code{mod_counts}, \code{canonical_counts}, and
-\code{other_mod_counts} assays when reported by the caller;
-probability-only callers store \code{NA} in those assays.
+\code{other_mod_counts} assays.
 \item Assay-layer provenance and default roles are recorded in
 \code{metadata(object)$assay_provenance} and
 \code{metadata(object)$assay_defaults}.
@@ -134,8 +121,7 @@ cd <- commaData(
     replicate   = c(1L, 1L)
   ),
   genome = c(chr1 = 4641652L),
-  annotation = "MG1655.gff3",
-  caller = "modkit"
+  annotation = "MG1655.gff3"
 )
 cd
 }

@@ -73,9 +73,7 @@ setMethod("siteCoverage", "commaData", function(object) {
 #' Accessor for observed modified-read counts
 #'
 #' Retrieves the sites × samples matrix of observed reads called as the target
-#' modification. This assay is available for callers that report count-like
-#' methylation evidence directly, such as modkit pileup. Older objects or
-#' probability-only callers may contain \code{NA} values.
+#' modification reported by modkit pileup.
 #'
 #' @param object A \code{commaData} object.
 #'
@@ -109,9 +107,8 @@ setMethod("modCounts", "commaData", function(object) {
 #' Accessor for observed canonical-read counts
 #'
 #' Retrieves the sites × samples matrix of observed reads called as canonical
-#' or unmodified for the site. For callers that cannot provide a true
-#' canonical-count decomposition, values may be \code{NA}; consult
-#' \code{\link{assayProvenance}} for source details.
+#' or unmodified for the site. Consult \code{\link{assayProvenance}} for
+#' source details.
 #'
 #' @param object A \code{commaData} object.
 #'
@@ -150,8 +147,7 @@ setMethod("canonicalCounts", "commaData", function(object) {
 #' Retrieves the sites × samples matrix of observed reads called as a
 #' non-target modification at the same site. For modkit pileup this is the
 #' \code{Nother_mod} column, and \code{coverage} is the denominator
-#' \code{mod_counts + canonical_counts + other_mod_counts}. For callers that
-#' cannot provide this decomposition, values may be \code{NA}; consult
+#' \code{mod_counts + canonical_counts + other_mod_counts}. Consult
 #' \code{\link{assayProvenance}} for source details.
 #'
 #' @param object A \code{commaData} object.
@@ -181,8 +177,8 @@ setMethod("otherModCounts", "commaData", function(object) {
 #' Accessor for assay provenance metadata
 #'
 #' Returns metadata describing how assay matrices were produced. The constructor
-#' records whether count assays were observed directly from caller output,
-#' unavailable, or reconstructed for synthetic/test objects.
+#' records whether count assays were observed directly from modkit output or
+#' reconstructed for synthetic/test objects.
 #'
 #' @param object A \code{commaData} object.
 #'
@@ -260,7 +256,7 @@ setMethod(
 #'
 #' @return A \code{data.frame} with one row per sample. Always contains columns
 #'   \code{sample_name} and \code{replicate}. May contain optional columns such
-#'   as \code{condition}, \code{caller}, and \code{file_path}.
+#'   as \code{condition}, \code{batch}, and \code{file_path}.
 #'
 #' @seealso \code{\link{siteInfo}}, \code{\link{modTypes}}
 #'
@@ -292,8 +288,8 @@ setMethod("sampleInfo", "commaData", function(object) {
 #' @return A \code{\link[S4Vectors]{DataFrame}} with one row per methylation
 #'   site.
 #'   Always contains columns \code{chrom}, \code{position}, \code{strand},
-#'   \code{mod_type}, \code{motif} (the sequence context; \code{NA} for
-#'   Dorado/Megalodon callers), \code{mod_context} (the composite
+#'   \code{mod_type}, \code{motif} (the sequence context),
+#'   \code{mod_context} (the composite
 #'   modification context, e.g., \code{"6mA_GATC"}), and \code{site_key}
 #'   (a human-readable label with fixed
 #'   \code{"chrom:position:strand:mod_type:motif"} fields, e.g.,
@@ -370,15 +366,13 @@ setMethod("modTypes", "commaData", function(object) {
 #' Accessor for sequence context motifs present in a commaData object
 #'
 #' Returns the sorted unique motif strings stored in
-#' \code{rowData(object)$motif}. \code{NA} values (sites from Dorado or
-#' Megalodon callers where motif context is unavailable) are excluded from
-#' the result.
+#' \code{rowData(object)$motif}. \code{NA} values are excluded from the result.
 #'
 #' @param object A \code{commaData} object.
 #'
 #' @return A sorted character vector of unique non-\code{NA} motif strings
 #'   (e.g., \code{c("CCWGG", "GATC")}). Returns \code{character(0)} if all
-#'   motif values are \code{NA} (e.g., Dorado-only data).
+#'   motif values are \code{NA}.
 #'
 #' @examples
 #' data(comma_example_data)
@@ -401,9 +395,8 @@ setMethod("motifs", "commaData", function(object) {
 #' \code{\link{commaData}} object. A \code{mod_context} is a composite string
 #' combining modification type and sequence motif:
 #' \code{paste(mod_type, motif, sep = "_")} when motif information is available
-#' (e.g., \code{"6mA_GATC"}, \code{"5mC_CCWGG"}), or just \code{mod_type} for
-#' callers that do not provide per-site motif context (e.g., \code{"6mA"} for
-#' Dorado or Megalodon data).
+#' (e.g., \code{"6mA_GATC"}, \code{"5mC_CCWGG"}), or just \code{mod_type}
+#' when motif context is unavailable.
 #'
 #' All differential methylation analyses run independently per
 #' \code{mod_context} group by default, preventing spurious pooling of
@@ -603,7 +596,7 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
 #'   with a matching modification context are kept (e.g.,
 #'   \code{"6mA_GATC"}, \code{"5mC_CCWGG"}). A \code{mod_context} value is
 #'   \code{paste(mod_type, motif, sep = "_")} when motif is available, or just
-#'   \code{mod_type} for Dorado/Megalodon data. Use \code{\link{modContexts}}
+#'   \code{mod_type} when motif is unavailable. Use \code{\link{modContexts}}
 #'   to see which contexts are present. When provided, this filter is applied in
 #'   addition to (ANDed with) any \code{mod_type} or \code{motif} filters.
 #' @param ... Ignored.
@@ -674,32 +667,6 @@ setMethod("subset", "commaData", function(x, ...) {
   subset.commaData(x, ...)
 })
 
-# ─── caller() ────────────────────────────────────────────────────────────────
-
-#' Accessor for the methylation caller
-#'
-#' Returns the name of the methylation caller that produced the data
-#' (e.g., \code{"modkit"}, \code{"megalodon"}, or \code{"dorado"}).
-#' The caller is stored in \code{metadata(object)} at construction time.
-#'
-#' @param object A \code{commaData} object.
-#'
-#' @return A character string naming the caller, or \code{NA} if not stored
-#'   (e.g., objects created before caller storage was implemented).
-#'
-#' @examples
-#' data(comma_example_data)
-#' caller(comma_example_data)
-#'
-#' @export
-setGeneric("caller", function(object) standardGeneric("caller"))
-
-#' @rdname caller
-setMethod("caller", "commaData", function(object) {
-  md <- S4Vectors::metadata(object)
-  if (is.null(md$caller)) NA_character_ else md$caller
-})
-
 # ─── minCoverage() ───────────────────────────────────────────────────────────
 
 #' Accessor for the minimum coverage threshold
@@ -731,7 +698,7 @@ setMethod("minCoverage", "commaData", function(object) {
 
 # Internal helper: compute mod_context from mod_type and motif vectors.
 # Returns "mod_type_motif" when motif is known, or just "mod_type" when
-# motif is NA (e.g., Dorado/Megalodon callers).
+# motif is NA.
 .computeModContext <- function(mod_type, motif) {
   # Convert factor to character (paste/ifelse on factor return integer codes)
   mod_type <- as.character(mod_type)
