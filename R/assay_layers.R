@@ -29,8 +29,12 @@ NULL
 )
 
 .validateAssayLayerName <- function(assay_name) {
-  if (!is.character(assay_name) || length(assay_name) != 1L ||
-    is.na(assay_name) || !nzchar(assay_name)) {
+  if (
+    !is.character(assay_name) ||
+      length(assay_name) != 1L ||
+      is.na(assay_name) ||
+      !nzchar(assay_name)
+  ) {
     stop("'assay_name' must be a single non-empty character string.")
   }
   if (!grepl("^[A-Za-z][A-Za-z0-9_.:-]*$", assay_name)) {
@@ -42,22 +46,25 @@ NULL
   invisible(assay_name)
 }
 
-.makeAssayLayerRecord <- function(type,
-                                  source,
-                                  role = "derived",
-                                  parent_assays = character(),
-                                  method = NA_character_,
-                                  params = list(),
-                                  default_for = character(),
-                                  timestamp = NA,
-                                  package_version = as.character(
-                                    utils::packageVersion("commaKit")
-                                  )) {
+.makeAssayLayerRecord <- function(
+  type,
+  source,
+  role = "derived",
+  parent_assays = character(),
+  method = NA_character_,
+  params = list(),
+  default_for = character(),
+  timestamp = NA,
+  package_version = as.character(
+    utils::packageVersion("commaKit")
+  )
+) {
   if (is.null(type) || length(type) != 1L || is.na(type) || !nzchar(type)) {
     stop("'type' must be a single non-empty character string.")
   }
-  if (is.null(source) || length(source) != 1L ||
-    is.na(source) || !nzchar(source)) {
+  if (
+    is.null(source) || length(source) != 1L || is.na(source) || !nzchar(source)
+  ) {
     stop("'source' must be a single non-empty character string.")
   }
   if (!is.list(params)) {
@@ -81,9 +88,11 @@ NULL
   )
 }
 
-.normalizeAssayLayerRecord <- function(assay_name,
-                                       record = NULL,
-                                       defaults = character()) {
+.normalizeAssayLayerRecord <- function(
+  assay_name,
+  record = NULL,
+  defaults = character()
+) {
   if (is.null(record)) {
     record <- list()
   }
@@ -97,12 +106,14 @@ NULL
   }
 
   source <- record$source
-  if (is.null(source) || length(source) == 0L ||
-    is.na(source) || !nzchar(source)) {
+  if (
+    is.null(source) || length(source) == 0L || is.na(source) || !nzchar(source)
+  ) {
     source <- .ASSAY_LAYER_DEFAULT_SOURCES[[assay_name]]
   }
-  if (is.null(source) || length(source) == 0L ||
-    is.na(source) || !nzchar(source)) {
+  if (
+    is.null(source) || length(source) == 0L || is.na(source) || !nzchar(source)
+  ) {
     source <- "unknown"
   }
 
@@ -259,14 +270,18 @@ setMethod("assayLayers", "commaData", function(object) {
       lapply(records, `[[`, "parent_assays")
     ),
     method = unname(vapply(records, `[[`, character(1L), "method")),
-    timestamp = unname(vapply(records, function(record) {
-      ts <- record$timestamp
-      if (length(ts) == 0L || all(is.na(ts))) {
-        NA_character_
-      } else {
-        format(ts[[1L]], usetz = TRUE)
-      }
-    }, character(1L))),
+    timestamp = unname(vapply(
+      records,
+      function(record) {
+        ts <- record$timestamp
+        if (length(ts) == 0L || all(is.na(ts))) {
+          NA_character_
+        } else {
+          format(ts[[1L]], usetz = TRUE)
+        }
+      },
+      character(1L)
+    )),
     package_version = unname(vapply(
       records,
       `[[`,
@@ -276,19 +291,21 @@ setMethod("assayLayers", "commaData", function(object) {
   )
 })
 
-.addAssayLayer <- function(object,
-                           assay_name,
-                           value,
-                           type,
-                           source,
-                           role = "derived",
-                           parent_assays = character(),
-                           method = NA_character_,
-                           params = list(),
-                           default_for = character(),
-                           make_default = length(default_for) > 0L,
-                           overwrite = FALSE,
-                           timestamp = Sys.time()) {
+.addAssayLayer <- function(
+  object,
+  assay_name,
+  value,
+  type,
+  source,
+  role = "derived",
+  parent_assays = character(),
+  method = NA_character_,
+  params = list(),
+  default_for = character(),
+  make_default = length(default_for) > 0L,
+  overwrite = FALSE,
+  timestamp = Sys.time()
+) {
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
@@ -299,10 +316,15 @@ setMethod("assayLayers", "commaData", function(object) {
   if (!identical(dim(value), dim(object))) {
     stop("'value' must have the same dimensions as 'object'.")
   }
-  if (assay_name %in% SummarizedExperiment::assayNames(object) &&
-    !isTRUE(overwrite)) {
+  if (
+    assay_name %in%
+      SummarizedExperiment::assayNames(object) &&
+      !isTRUE(overwrite)
+  ) {
     stop(
-      "Assay layer '", assay_name, "' already exists. Use a new assay ",
+      "Assay layer '",
+      assay_name,
+      "' already exists. Use a new assay ",
       "name for another version, or set overwrite = TRUE explicitly."
     )
   }

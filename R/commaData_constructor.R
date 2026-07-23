@@ -8,13 +8,27 @@ NULL
 
 .validateMinCoverage <- function(min_coverage) {
   min_coverage_error <- "'min_coverage' must be a single positive integer."
-  if (!is.numeric(min_coverage)) stop(min_coverage_error)
-  if (length(min_coverage) != 1L) stop(min_coverage_error)
-  if (is.na(min_coverage)) stop(min_coverage_error)
-  if (!is.finite(min_coverage)) stop(min_coverage_error)
-  if (min_coverage < 1L) stop(min_coverage_error)
-  if (min_coverage != floor(min_coverage)) stop(min_coverage_error)
-  if (min_coverage > .Machine$integer.max) stop(min_coverage_error)
+  if (!is.numeric(min_coverage)) {
+    stop(min_coverage_error)
+  }
+  if (length(min_coverage) != 1L) {
+    stop(min_coverage_error)
+  }
+  if (is.na(min_coverage)) {
+    stop(min_coverage_error)
+  }
+  if (!is.finite(min_coverage)) {
+    stop(min_coverage_error)
+  }
+  if (min_coverage < 1L) {
+    stop(min_coverage_error)
+  }
+  if (min_coverage != floor(min_coverage)) {
+    stop(min_coverage_error)
+  }
+  if (min_coverage > .Machine$integer.max) {
+    stop(min_coverage_error)
+  }
   as.integer(min_coverage)
 }
 
@@ -129,14 +143,16 @@ NULL
 #'   \code{\link{findMotifSites}}
 #'
 #' @export
-commaData <- function(files,
-                      colData,
-                      genome = NULL,
-                      annotation = NULL,
-                      mod_type = NULL,
-                      motif = NULL,
-                      expected_mod_contexts = NULL,
-                      min_coverage = 5L) {
+commaData <- function(
+  files,
+  colData,
+  genome = NULL,
+  annotation = NULL,
+  mod_type = NULL,
+  motif = NULL,
+  expected_mod_contexts = NULL,
+  min_coverage = 5L
+) {
   min_coverage <- .validateMinCoverage(min_coverage)
 
   # ── Validate expected_mod_contexts ───────────────────────────────────────
@@ -157,8 +173,10 @@ commaData <- function(files,
     if (length(bad_types) > 0L) {
       stop(
         "Names in 'expected_mod_contexts' must be valid mod_type values. ",
-        "Unrecognized: ", paste(bad_types, collapse = ", "),
-        ". Allowed: ", paste(.VALID_MOD_TYPES, collapse = ", ")
+        "Unrecognized: ",
+        paste(bad_types, collapse = ", "),
+        ". Allowed: ",
+        paste(.VALID_MOD_TYPES, collapse = ", ")
       )
     }
   }
@@ -214,12 +232,15 @@ commaData <- function(files,
   }
 
   # ── Build site universe ─────────────────────────────────────────────────
-  all_sites <- unique(do.call(rbind, lapply(parsed_list, function(df) {
-    if (nrow(df) == 0L) {
-      return(NULL)
-    }
-    df[, c("chrom", "position", "strand", "mod_type", "motif"), drop = FALSE]
-  })))
+  all_sites <- unique(do.call(
+    rbind,
+    lapply(parsed_list, function(df) {
+      if (nrow(df) == 0L) {
+        return(NULL)
+      }
+      df[, c("chrom", "position", "strand", "mod_type", "motif"), drop = FALSE]
+    })
+  ))
 
   if (is.null(all_sites) || nrow(all_sites) == 0L) {
     stop(
@@ -230,8 +251,10 @@ commaData <- function(files,
 
   # Stable sort: chrom, position, strand, mod_type, motif (NA last)
   ord <- order(
-    all_sites$chrom, all_sites$position,
-    all_sites$strand, all_sites$mod_type,
+    all_sites$chrom,
+    all_sites$position,
+    all_sites$strand,
+    all_sites$mod_type,
     all_sites$motif
   )
   all_sites <- all_sites[ord, , drop = FALSE]
@@ -272,8 +295,10 @@ commaData <- function(files,
       for (mt in unique(dropped$mod_type)) {
         n_drop <- sum(dropped$mod_type == mt)
         message(
-          "expected_mod_contexts: dropping ", n_drop,
-          " site(s) with mod_type='", mt,
+          "expected_mod_contexts: dropping ",
+          n_drop,
+          " site(s) with mod_type='",
+          mt,
           "' not in expected contexts."
         )
       }
@@ -293,24 +318,34 @@ commaData <- function(files,
 
   # ── Build matrices ──────────────────────────────────────────────────────
   n_samples <- length(sample_names)
-  methyl_mat <- matrix(NA_real_,
-    nrow = n_sites, ncol = n_samples,
+  methyl_mat <- matrix(
+    NA_real_,
+    nrow = n_sites,
+    ncol = n_samples,
     dimnames = list(NULL, sample_names)
   )
-  coverage_mat <- matrix(NA_integer_,
-    nrow = n_sites, ncol = n_samples,
+  coverage_mat <- matrix(
+    NA_integer_,
+    nrow = n_sites,
+    ncol = n_samples,
     dimnames = list(NULL, sample_names)
   )
-  mod_counts_mat <- matrix(NA_integer_,
-    nrow = n_sites, ncol = n_samples,
+  mod_counts_mat <- matrix(
+    NA_integer_,
+    nrow = n_sites,
+    ncol = n_samples,
     dimnames = list(NULL, sample_names)
   )
-  canonical_counts_mat <- matrix(NA_integer_,
-    nrow = n_sites, ncol = n_samples,
+  canonical_counts_mat <- matrix(
+    NA_integer_,
+    nrow = n_sites,
+    ncol = n_samples,
     dimnames = list(NULL, sample_names)
   )
-  other_mod_counts_mat <- matrix(NA_integer_,
-    nrow = n_sites, ncol = n_samples,
+  other_mod_counts_mat <- matrix(
+    NA_integer_,
+    nrow = n_sites,
+    ncol = n_samples,
     dimnames = list(NULL, sample_names)
   )
 
@@ -325,7 +360,9 @@ commaData <- function(files,
 
   for (sn in sample_names) {
     df <- parsed_list[[sn]]
-    if (nrow(df) == 0L) next
+    if (nrow(df) == 0L) {
+      next
+    }
 
     # Parsed rows must be unique for the site identity used by the merge.
     # Otherwise later matrix assignment would silently let the last duplicate
@@ -337,18 +374,20 @@ commaData <- function(files,
         duplicated(df_identity, fromLast = TRUE)
       dup <- df_identity[dup_mask, , drop = FALSE]
       stop(
-        "Parser returned duplicate methylation site rows for sample '", sn,
+        "Parser returned duplicate methylation site rows for sample '",
+        sn,
         "'. Duplicate chrom/position/strand/mod_type/motif entries ",
         "must be aggregated before commaData() can merge samples. ",
-        "First duplicate: ", paste(dup[1L, ], collapse = ":")
+        "First duplicate: ",
+        paste(dup[1L, ], collapse = ":")
       )
     }
 
     # Align parsed sites to the site universe using findOverlaps()
     df_gr <- GenomicRanges::GRanges(
       seqnames = df$chrom,
-      ranges   = IRanges::IRanges(start = df$position, width = 1L),
-      strand   = df$strand
+      ranges = IRanges::IRanges(start = df$position, width = 1L),
+      strand = df$strand
     )
     GenomicRanges::mcols(df_gr)$mod_type <- df$mod_type
     GenomicRanges::mcols(df_gr)$motif <- df$motif
@@ -370,7 +409,8 @@ commaData <- function(files,
 
     if (anyDuplicated(qh[valid])) {
       stop(
-        "Ambiguous site merge for sample '", sn,
+        "Ambiguous site merge for sample '",
+        sn,
         "': at least one parsed row matched multiple site-universe rows."
       )
     }
@@ -409,7 +449,8 @@ commaData <- function(files,
     if (length(missing_chroms) > 0L) {
       stop(
         "genome is missing chromosome(s) present in methylation data: ",
-        paste(missing_chroms, collapse = ", "), ". ",
+        paste(missing_chroms, collapse = ", "),
+        ". ",
         "Chromosome names in 'genome' must match the imported files."
       )
     }
@@ -417,7 +458,9 @@ commaData <- function(files,
     extra_chroms <- setdiff(names(genome_info), data_chroms)
     if (length(extra_chroms) > 0L) {
       message(
-        "Dropping ", length(extra_chroms), " chromosome(s) from genome info ",
+        "Dropping ",
+        length(extra_chroms),
+        " chromosome(s) from genome info ",
         "not present in data: ",
         paste(extra_chroms, collapse = ", ")
       )

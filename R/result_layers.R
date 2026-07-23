@@ -5,7 +5,7 @@
 #' @importFrom GenomicRanges mcols "mcols<-"
 NULL
 
-.DIFFMETHYL_DEFAULT_RESULT_NAME <- "diffMethyl"
+.DEFAULT_DIFFMETHYL_RESULT <- "diffMethyl"
 
 .DIFFMETHYL_CORE_RESULT_COLS <- c(
   "dm_pvalue",
@@ -14,8 +14,12 @@ NULL
 )
 
 .validateResultLayerName <- function(result_name) {
-  if (!is.character(result_name) || length(result_name) != 1L ||
-    is.na(result_name) || !nzchar(result_name)) {
+  if (
+    !is.character(result_name) ||
+      length(result_name) != 1L ||
+      is.na(result_name) ||
+      !nzchar(result_name)
+  ) {
     stop("'result_name' must be a single non-empty character string.")
   }
   if (!grepl("^[A-Za-z][A-Za-z0-9_.:-]*$", result_name)) {
@@ -27,19 +31,24 @@ NULL
   invisible(result_name)
 }
 
-.makeDiffMethylResultRecord <- function(result_name,
-                                        result_cols,
-                                        params,
-                                        role = "diffMethyl",
-                                        type = "differential_methylation",
-                                        source = "diffMethyl",
-                                        timestamp = Sys.time(),
-                                        package_version = as.character(
-                                          utils::packageVersion("commaKit")
-                                        )) {
+.makeDiffMethylResultRecord <- function(
+  result_name,
+  result_cols,
+  params,
+  role = "diffMethyl",
+  type = "differential_methylation",
+  source = "diffMethyl",
+  timestamp = Sys.time(),
+  package_version = as.character(
+    utils::packageVersion("commaKit")
+  )
+) {
   .validateResultLayerName(result_name)
-  if (!is.character(result_cols) || length(result_cols) == 0L ||
-    any(is.na(result_cols) | !nzchar(result_cols))) {
+  if (
+    !is.character(result_cols) ||
+      length(result_cols) == 0L ||
+      any(is.na(result_cols) | !nzchar(result_cols))
+  ) {
     stop("'result_cols' must be a non-empty character vector.")
   }
   if (!is.list(params)) {
@@ -79,8 +88,8 @@ NULL
   }
 
   if (length(registry) == 0L && !is.null(md$diffMethyl_result_cols)) {
-    registry[[.DIFFMETHYL_DEFAULT_RESULT_NAME]] <- .makeDiffMethylResultRecord(
-      result_name = .DIFFMETHYL_DEFAULT_RESULT_NAME,
+    registry[[.DEFAULT_DIFFMETHYL_RESULT]] <- .makeDiffMethylResultRecord(
+      result_name = .DEFAULT_DIFFMETHYL_RESULT,
       result_cols = md$diffMethyl_result_cols,
       params = md$diffMethyl_params %||% list(),
       timestamp = NA
@@ -97,20 +106,28 @@ NULL
 .diffMethylDefaultResultName <- function(object) {
   md <- S4Vectors::metadata(object)
   default_name <- md$diffMethyl_default_result
-  if (!is.null(default_name) && length(default_name) == 1L &&
-    !is.na(default_name) && nzchar(default_name)) {
+  if (
+    !is.null(default_name) &&
+      length(default_name) == 1L &&
+      !is.na(default_name) &&
+      nzchar(default_name)
+  ) {
     return(as.character(default_name))
   }
 
   registry <- .diffMethylResultRegistry(object)
   if (!is.null(md$diffMethyl_result_cols)) {
     params_name <- md$diffMethyl_params$result_name
-    if (!is.null(params_name) && length(params_name) == 1L &&
-      !is.na(params_name) && params_name %in% names(registry)) {
+    if (
+      !is.null(params_name) &&
+        length(params_name) == 1L &&
+        !is.na(params_name) &&
+        params_name %in% names(registry)
+    ) {
       return(as.character(params_name))
     }
-    if (.DIFFMETHYL_DEFAULT_RESULT_NAME %in% names(registry)) {
-      return(.DIFFMETHYL_DEFAULT_RESULT_NAME)
+    if (.DEFAULT_DIFFMETHYL_RESULT %in% names(registry)) {
+      return(.DEFAULT_DIFFMETHYL_RESULT)
     }
     if (length(registry) == 1L) {
       return(names(registry))
@@ -144,15 +161,18 @@ NULL
       "<none>"
     }
     stop(
-      "Differential methylation result layer '", result_name,
-      "' not found. Available result layers: ", available_label, "."
+      "Differential methylation result layer '",
+      result_name,
+      "' not found. Available result layers: ",
+      available_label,
+      "."
     )
   }
 
   result_name
 }
 
-.knownDiffMethylResultColsFromMetadata <- function(md) {
+.knownResultColsFromMetadata <- function(md) {
   cols <- character()
   if (!is.null(md$diffMethyl_result_cols)) {
     cols <- c(cols, md$diffMethyl_result_cols)
@@ -177,7 +197,7 @@ NULL
 }
 
 .knownDiffMethylResultCols <- function(object) {
-  .knownDiffMethylResultColsFromMetadata(S4Vectors::metadata(object))
+  .knownResultColsFromMetadata(S4Vectors::metadata(object))
 }
 
 .diffMethylResultData <- function(object, result_name) {
@@ -187,8 +207,10 @@ NULL
     return(result_data[[result_name]])
   }
 
-  if (result_name == .DIFFMETHYL_DEFAULT_RESULT_NAME &&
-    !is.null(md$diffMethyl_result_cols)) {
+  if (
+    result_name == .DEFAULT_DIFFMETHYL_RESULT &&
+      !is.null(md$diffMethyl_result_cols)
+  ) {
     rd <- SummarizedExperiment::rowData(object)
     result_cols <- intersect(md$diffMethyl_result_cols, colnames(rd))
     if (length(result_cols) == length(md$diffMethyl_result_cols)) {
@@ -219,14 +241,16 @@ NULL
   object
 }
 
-.addDiffMethylResultLayer <- function(object,
-                                      result_name,
-                                      result_data,
-                                      params,
-                                      result_cols,
-                                      make_default = TRUE,
-                                      overwrite = FALSE,
-                                      timestamp = Sys.time()) {
+.addDiffMethylResultLayer <- function(
+  object,
+  result_name,
+  result_data,
+  params,
+  result_cols,
+  make_default = TRUE,
+  overwrite = FALSE,
+  timestamp = Sys.time()
+) {
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
@@ -255,13 +279,13 @@ NULL
 
   if (result_name %in% names(md$diffMethyl_results) && !isTRUE(overwrite)) {
     stop(
-      "Differential methylation result layer '", result_name,
+      "Differential methylation result layer '",
+      result_name,
       "' already exists. Use a new 'result_name' or set overwrite = TRUE."
     )
   }
 
-  md$diffMethyl_results[[result_name]] <- result_data[
-    ,
+  md$diffMethyl_results[[result_name]] <- result_data[,
     result_cols,
     drop = FALSE
   ]
@@ -358,10 +382,11 @@ setMethod("resultLayers", "commaData", function(object) {
       min_coverage = params$min_coverage %||% NA_integer_,
       alpha = params$alpha %||% NA_real_,
       result_cols = as.character(record$result_cols %||% character()),
-      timestamp = record$timestamp %||% as.POSIXct(
-        NA_real_,
-        origin = "1970-01-01"
-      ),
+      timestamp = record$timestamp %||%
+        as.POSIXct(
+          NA_real_,
+          origin = "1970-01-01"
+        ),
       package_version = record$package_version %||% NA_character_
     )
   })
@@ -396,14 +421,18 @@ setMethod("resultLayers", "commaData", function(object) {
     result_cols = IRanges::CharacterList(
       lapply(records, `[[`, "result_cols")
     ),
-    timestamp = unname(vapply(records, function(record) {
-      ts <- record$timestamp
-      if (length(ts) == 0L || all(is.na(ts))) {
-        NA_character_
-      } else {
-        format(ts[[1L]], usetz = TRUE)
-      }
-    }, character(1L))),
+    timestamp = unname(vapply(
+      records,
+      function(record) {
+        ts <- record$timestamp
+        if (length(ts) == 0L || all(is.na(ts))) {
+          NA_character_
+        } else {
+          format(ts[[1L]], usetz = TRUE)
+        }
+      },
+      character(1L)
+    )),
     package_version = unname(vapply(
       records,
       `[[`,

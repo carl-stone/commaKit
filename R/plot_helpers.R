@@ -25,9 +25,13 @@
   .MOD_TYPE_PALETTE
 }
 
-.simpleQcAssayLongData <- function(object, assay_matrix, value_name,
-                                   site_columns = character(),
-                                   empty_message) {
+.simpleQcAssayLongData <- function(
+  object,
+  assay_matrix,
+  value_name,
+  site_columns = character(),
+  empty_message
+) {
   sample_info <- sampleInfo(object)
   sample_names <- colnames(assay_matrix)
   n_sites <- nrow(assay_matrix)

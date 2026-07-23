@@ -22,8 +22,12 @@ test_that("diffMethyl method docs preserve default and practical guidance", {
     },
     test_path("..", "..", "vignettes", "getting-started.Rmd"),
     test_path(
-      "..", "..", "00_pkg_src", "commaKit",
-      "vignettes", "getting-started.Rmd"
+      "..",
+      "..",
+      "00_pkg_src",
+      "commaKit",
+      "vignettes",
+      "getting-started.Rmd"
     )
   )
   vignette <- paste(

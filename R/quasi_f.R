@@ -78,10 +78,18 @@ NULL
 #'   }
 #'
 #' @keywords internal
-.runQuasiF <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
-                       ref_level = NULL, design_info = NULL,
-                       mod_counts_mat = NULL, canonical_counts_mat = NULL,
-                       other_mod_counts_mat = NULL) {
+.runQuasiF <- function(
+  methyl_mat,
+  coverage_mat,
+  site_df,
+  coldata,
+  formula,
+  ref_level = NULL,
+  design_info = NULL,
+  mod_counts_mat = NULL,
+  canonical_counts_mat = NULL,
+  other_mod_counts_mat = NULL
+) {
   # ── Dependency check ──────────────────────────────────────────────────────
   if (!requireNamespace("limma", quietly = TRUE)) {
     stop(
@@ -127,11 +135,15 @@ NULL
 
     # Require at least 2 non-NA samples with positive coverage
     ok <- !is.na(beta_i) & !is.na(cov_i) & cov_i > 0L
-    if (sum(ok) < 2L) next
+    if (sum(ok) < 2L) {
+      next
+    }
 
     # Require at least 2 distinct condition levels among non-NA samples
     cond_ok <- cond[ok]
-    if (length(unique(cond_ok)) < 2L) next
+    if (length(unique(cond_ok)) < 2L) {
+      next
+    }
 
     n_mod <- count_mats$modified[i, ok]
     n_unmod <- count_mats$unmodified[i, ok]
@@ -154,7 +166,7 @@ NULL
     fit <- tryCatch(
       glm(
         cbind(n_mod, n_unmod) ~ .,
-        data   = df_glm,
+        data = df_glm,
         family = quasibinomial()
       ),
       error = function(e) NULL,
@@ -162,7 +174,7 @@ NULL
         tryCatch(
           suppressWarnings(glm(
             cbind(n_mod, n_unmod) ~ .,
-            data   = df_glm,
+            data = df_glm,
             family = quasibinomial()
           )),
           error = function(e2) NULL
@@ -170,27 +182,37 @@ NULL
       }
     )
 
-    if (is.null(fit) || fit$df.residual < 1L) next
+    if (is.null(fit) || fit$df.residual < 1L) {
+      next
+    }
 
     # summary(fit) computes the Pearson dispersion estimate for quasibinomial.
     # fit$dispersion is NULL for quasi families, so use summary(fit)$dispersion.
     sm <- tryCatch(summary(fit), error = function(e) NULL)
-    if (is.null(sm)) next
+    if (is.null(sm)) {
+      next
+    }
 
     phi_hat <- sm$dispersion
     if (
-      is.null(phi_hat) || length(phi_hat) != 1L ||
-        is.na(phi_hat) || phi_hat <= 0
+      is.null(phi_hat) ||
+        length(phi_hat) != 1L ||
+        is.na(phi_hat) ||
+        phi_hat <= 0
     ) {
       next
     }
 
     cs <- sm$coefficients
-    if (is.null(cs)) next
+    if (is.null(cs)) {
+      next
+    }
 
     row_nm <- rownames(cs)
     contrast_row <- grep(primary_var, row_nm, value = TRUE)
-    if (length(contrast_row) == 0L) next
+    if (length(contrast_row) == 0L) {
+      next
+    }
 
     cr <- contrast_row[[length(contrast_row)]]
 
@@ -198,7 +220,9 @@ NULL
     # t_unscaled_j = t_j × sqrt(phi_hat) = beta_hat / unscaled_SE
     # This is independent of phi_hat and is what we carry forward.
     t_j <- cs[cr, "t value"]
-    if (is.na(t_j)) next
+    if (is.na(t_j)) {
+      next
+    }
 
     phi_vec[i] <- phi_hat
     df_vec[i] <- fit$df.residual
@@ -208,12 +232,16 @@ NULL
   # ── Pass 2: EB shrinkage on dispersions via limma::squeezeVar ────────────
   had_data <- rowSums(
     !is.na(methyl_mat) & !is.na(coverage_mat) & coverage_mat > 0L
-  ) >= 2L
+  ) >=
+    2L
   failed_with_data <- had_data & (is.na(phi_vec) | is.na(t_unscaled))
   if (sum(had_data) > 0L && sum(failed_with_data) / sum(had_data) > 0.5) {
     warning(
-      "quasi_f: GLM fitting failed for ", sum(failed_with_data),
-      " of ", sum(had_data), " sites with sufficient observed data. ",
+      "quasi_f: GLM fitting failed for ",
+      sum(failed_with_data),
+      " of ",
+      sum(had_data),
+      " sites with sufficient observed data. ",
       "These sites retain p = NA.",
       call. = FALSE
     )

@@ -45,17 +45,24 @@
 #' summarizeRegions(comma_example_data, regions, mod_type = "6mA")
 #'
 #' @export
-summarizeRegions <- function(object, regions, min_sites = 1L,
-                             mod_type = NULL, motif = NULL,
-                             mod_context = NULL) {
+summarizeRegions <- function(
+  object,
+  regions,
+  min_sites = 1L,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL
+) {
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
   if (!is(regions, "GRanges")) {
     stop("'regions' must be a GRanges object.")
   }
-  invalid_min_sites <- !is.numeric(min_sites) || length(min_sites) != 1L ||
-    is.na(min_sites) || min_sites < 0
+  invalid_min_sites <- !is.numeric(min_sites) ||
+    length(min_sites) != 1L ||
+    is.na(min_sites) ||
+    min_sites < 0
   if (!invalid_min_sites) {
     invalid_min_sites <- abs(min_sites - round(min_sites)) >
       sqrt(.Machine$double.eps)
@@ -70,7 +77,8 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
   if (length(missing_assays) > 0L) {
     stop(
       "summarizeRegions() requires count evidence assays: ",
-      paste(missing_assays, collapse = ", "), "."
+      paste(missing_assays, collapse = ", "),
+      "."
     )
   }
 
@@ -97,7 +105,8 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
   } else {
     selected_mod_counts <- mod_counts[site_idx, , drop = FALSE]
     selected_coverage <- valid_coverage[site_idx, , drop = FALSE]
-    usable_counts <- !is.na(selected_mod_counts) & !is.na(selected_coverage) &
+    usable_counts <- !is.na(selected_mod_counts) &
+      !is.na(selected_coverage) &
       selected_coverage > 0
     any(usable_counts)
   }
@@ -132,7 +141,8 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
   region_df <- .regionSummaryFrame(regions)
   if (length(regions) == 0L) {
     return(.emptyRegionSummaryOutput(
-      region_df, !is.null(canonical_counts),
+      region_df,
+      !is.null(canonical_counts),
       !is.null(other_mod_counts)
     ))
   }
@@ -192,8 +202,11 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
 }
 
 
-.emptyRegionSummaryOutput <- function(region_df, has_canonical_counts,
-                                      has_other_mod_counts) {
+.emptyRegionSummaryOutput <- function(
+  region_df,
+  has_canonical_counts,
+  has_other_mod_counts
+) {
   out <- cbind(
     region_df[0L, , drop = FALSE],
     data.frame(
@@ -215,11 +228,16 @@ summarizeRegions <- function(object, regions, min_sites = 1L,
   out
 }
 
-.summarizeRegionSample <- function(sites, sample_i, sample_name,
-                                   mod_counts, valid_coverage,
-                                   canonical_counts = NULL,
-                                   other_mod_counts = NULL,
-                                   min_sites = 1L) {
+.summarizeRegionSample <- function(
+  sites,
+  sample_i,
+  sample_name,
+  mod_counts,
+  valid_coverage,
+  canonical_counts = NULL,
+  other_mod_counts = NULL,
+  min_sites = 1L
+) {
   if (length(sites) == 0L) {
     valid <- logical(0)
     mod_vals <- cov_vals <- numeric(0)

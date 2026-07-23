@@ -135,7 +135,9 @@ readiness_check_debt_markers <- function(
   violations <- character()
   for (file in files) {
     path <- file.path(root, file)
-    if (!file.exists(path) || !readiness_is_text_file(path)) next
+    if (!file.exists(path) || !readiness_is_text_file(path)) {
+      next
+    }
     lines <- readLines(path, warn = FALSE)
     hits <- grepl(marker_re, lines, ignore.case = TRUE) &
       !grepl(issue_re, lines)
@@ -231,7 +233,8 @@ readiness_descendant_ids <- function(parse_data, parent_id) {
 readiness_function_name <- function(parse_data, function_row) {
   siblings <- parse_data[
     parse_data$parent == function_row$parent &
-      parse_data$line1 <= function_row$line1, ,
+      parse_data$line1 <= function_row$line1,
+    ,
     drop = FALSE
   ]
   symbols <- siblings[siblings$token == "SYMBOL", , drop = FALSE]
@@ -264,15 +267,23 @@ readiness_check_complexity <- function(
   max_seen <- 0L
   for (file in files) {
     path <- file.path(root, file)
-    if (!file.exists(path)) next
+    if (!file.exists(path)) {
+      next
+    }
     parsed <- tryCatch(parse(path, keep.source = TRUE), error = identity)
     if (inherits(parsed, "error")) {
-      stop("Could not parse ", file, ": ", conditionMessage(parsed),
+      stop(
+        "Could not parse ",
+        file,
+        ": ",
+        conditionMessage(parsed),
         call. = FALSE
       )
     }
     parse_data <- utils::getParseData(parsed)
-    if (is.null(parse_data)) next
+    if (is.null(parse_data)) {
+      next
+    }
     functions <- parse_data[parse_data$token == "FUNCTION", , drop = FALSE]
     for (i in seq_len(nrow(functions))) {
       complexity <- readiness_function_complexity(parse_data, functions[i, ])
@@ -325,10 +336,14 @@ readiness_internal_definitions <- function(files, root) {
   )
   for (file in files) {
     path <- file.path(root, file)
-    if (!file.exists(path) || !readiness_is_text_file(path)) next
+    if (!file.exists(path) || !readiness_is_text_file(path)) {
+      next
+    }
     lines <- readLines(path, warn = FALSE)
     hits <- grep(definition_re, lines, perl = TRUE)
-    if (length(hits) == 0L) next
+    if (length(hits) == 0L) {
+      next
+    }
     defs <- rbind(
       defs,
       data.frame(
@@ -357,12 +372,15 @@ readiness_check_dead_code <- function(
   for (i in seq_len(nrow(defs))) {
     reference_count <- 0L
     name_re <- paste0(
-      "(?<![A-Za-z0-9._])", gsub("\\.", "\\\\.", defs$name[[i]]),
+      "(?<![A-Za-z0-9._])",
+      gsub("\\.", "\\\\.", defs$name[[i]]),
       "(?![A-Za-z0-9._])"
     )
     for (file in searchable) {
       path <- file.path(root, file)
-      if (!file.exists(path) || !readiness_is_text_file(path)) next
+      if (!file.exists(path) || !readiness_is_text_file(path)) {
+        next
+      }
       lines <- readLines(path, warn = FALSE)
       reference_count <- reference_count +
         sum(grepl(name_re, lines, perl = TRUE))
@@ -422,12 +440,16 @@ readiness_check_duplicate_code <- function(
   windows <- list()
   for (file in files) {
     path <- file.path(root, file)
-    if (!file.exists(path) || !readiness_is_text_file(path)) next
+    if (!file.exists(path) || !readiness_is_text_file(path)) {
+      next
+    }
     lines <- readLines(path, warn = FALSE)
     lines <- vapply(lines, readiness_normalize_code_line, character(1))
     lines <- lines[nzchar(lines) & !lines %in% c("{", "}", "},", ")", "),")]
     chunks <- readiness_duplicate_windows(lines, window_size)
-    if (length(chunks) == 0L) next
+    if (length(chunks) == 0L) {
+      next
+    }
     windows <- c(
       windows,
       stats::setNames(
@@ -510,7 +532,8 @@ readiness_run <- function(checks, files = NULL, root = NULL) {
   }
 
   for (check in checks) {
-    switch(check,
+    switch(
+      check,
       "large-files" = readiness_check_large_files(files = files, root = root),
       "debt-markers" = readiness_check_debt_markers(files = files, root = root),
       "agents-links" = readiness_check_agents_links(files = files, root = root),

@@ -49,16 +49,19 @@ NULL
   coldata <- as.data.frame(coldata)
   if (!primary_var %in% colnames(coldata)) {
     stop(
-      "Variable '", primary_var,
+      "Variable '",
+      primary_var,
       "' from formula not found in sample metadata. ",
-      "Available columns: ", paste(colnames(coldata), collapse = ", ")
+      "Available columns: ",
+      paste(colnames(coldata), collapse = ", ")
     )
   }
 
   cond <- as.character(coldata[[primary_var]])
   if (anyNA(cond)) {
     stop(
-      "Column '", primary_var,
+      "Column '",
+      primary_var,
       "' contains NA values; diffMethyl() requires complete group labels."
     )
   }
@@ -72,13 +75,19 @@ NULL
   if (length(all_levels) < 2L) {
     stop(
       "Differential methylation requires exactly 2 distinct levels of '",
-      primary_var, "'. Found only: '", all_levels[[1L]], "'."
+      primary_var,
+      "'. Found only: '",
+      all_levels[[1L]],
+      "'."
     )
   }
   if (length(all_levels) > 2L) {
     stop(
-      "diffMethyl() currently supports exactly 2 levels for '", primary_var,
-      "' per call. Found ", length(all_levels), " levels: ",
+      "diffMethyl() currently supports exactly 2 levels for '",
+      primary_var,
+      "' per call. Found ",
+      length(all_levels),
+      " levels: ",
       paste(all_levels, collapse = ", "),
       ". For now, subset the object to the two groups you want to compare; ",
       "explicit multi-level contrasts are planned for a future API."
@@ -87,15 +96,17 @@ NULL
 
   if (!is.null(ref_level)) {
     if (
-      !is.character(ref_level) || length(ref_level) != 1L ||
-        is.na(ref_level)
+      !is.character(ref_level) || length(ref_level) != 1L || is.na(ref_level)
     ) {
       stop("'reference' must be a single non-NA character string or NULL.")
     }
     if (!ref_level %in% all_levels) {
       stop(
-        "'reference' value '", ref_level, "' not found in column '",
-        primary_var, "'. Available values: ",
+        "'reference' value '",
+        ref_level,
+        "' not found in column '",
+        primary_var,
+        "'. Available values: ",
         paste(all_levels, collapse = ", ")
       )
     }
@@ -110,11 +121,11 @@ NULL
 
   list(
     primary_var = primary_var,
-    ref_level   = ref_level,
+    ref_level = ref_level,
     treat_level = treat_level,
     cond_levels = cond_levels,
-    cond        = cond,
-    group_idx   = group_idx
+    cond = cond,
+    group_idx = group_idx
   )
 }
 
@@ -127,17 +138,22 @@ NULL
 #' @keywords internal
 .computeDiffMethylGroupStats <- function(methyl_mat, design) {
   n_sites <- nrow(methyl_mat)
-  group_means <- vapply(design$cond_levels, function(lv) {
-    idx <- design$group_idx[[lv]]
-    if (length(idx) == 1L) {
-      methyl_mat[, idx]
-    } else {
-      rowMeans(methyl_mat[, idx, drop = FALSE], na.rm = TRUE)
-    }
-  }, numeric(n_sites))
+  group_means <- vapply(
+    design$cond_levels,
+    function(lv) {
+      idx <- design$group_idx[[lv]]
+      if (length(idx) == 1L) {
+        methyl_mat[, idx]
+      } else {
+        rowMeans(methyl_mat[, idx, drop = FALSE], na.rm = TRUE)
+      }
+    },
+    numeric(n_sites)
+  )
 
   if (is.null(dim(group_means))) {
-    group_means <- matrix(group_means,
+    group_means <- matrix(
+      group_means,
       nrow = 1L,
       dimnames = list(NULL, design$cond_levels)
     )
@@ -171,10 +187,13 @@ NULL
   }
 }
 
-.resolveCountMatrices <- function(methyl_mat, coverage_mat,
-                                  mod_counts_mat = NULL,
-                                  canonical_counts_mat = NULL,
-                                  other_mod_counts_mat = NULL) {
+.resolveCountMatrices <- function(
+  methyl_mat,
+  coverage_mat,
+  mod_counts_mat = NULL,
+  canonical_counts_mat = NULL,
+  other_mod_counts_mat = NULL
+) {
   n_mod <- round(methyl_mat * coverage_mat)
   n_mod[is.na(methyl_mat) | is.na(coverage_mat)] <- NA_real_
   n_mod <- pmax(0, pmin(n_mod, coverage_mat))
@@ -182,8 +201,10 @@ NULL
   dimnames(n_mod) <- dimnames(coverage_mat)
   n_unmod <- coverage_mat - n_mod
 
-  observed_mod <- matrix(FALSE,
-    nrow = nrow(coverage_mat), ncol = ncol(coverage_mat),
+  observed_mod <- matrix(
+    FALSE,
+    nrow = nrow(coverage_mat),
+    ncol = ncol(coverage_mat),
     dimnames = dimnames(coverage_mat)
   )
   observed_canonical <- observed_mod
@@ -204,14 +225,17 @@ NULL
     n_unmod[add_other] <- n_unmod[add_other] + other_mod_counts_mat[add_other]
 
     infer_canonical <- observed_mod &
-      !observed_canonical & observed_other & !is.na(coverage_mat)
+      !observed_canonical &
+      observed_other &
+      !is.na(coverage_mat)
     n_unmod[infer_canonical] <-
       coverage_mat[infer_canonical] -
       n_mod[infer_canonical]
   }
 
   if (!is.null(mod_counts_mat)) {
-    infer_unmod_from_observed_mod <- observed_mod & !observed_canonical &
+    infer_unmod_from_observed_mod <- observed_mod &
+      !observed_canonical &
       !is.na(coverage_mat)
     n_unmod[infer_unmod_from_observed_mod] <-
       coverage_mat[infer_unmod_from_observed_mod] -

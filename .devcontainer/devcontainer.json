@@ -4,13 +4,13 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-  "runArgs": [
-    "--privileged"
-  ],
+  "containerUser": "rstudio",
+  "remoteUser": "rstudio",
+  "updateRemoteUserUID": true,
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/commaKit,type=bind,consistency=cached",
   "workspaceFolder": "/workspaces/commaKit",
   "mounts": [
-    "source=${localEnv:HOME}/.codex/auth.json,target=/root/.codex/auth.json,type=bind,consistency=cached"
+    "source=${localEnv:HOME}/.codex/auth.json,target=/home/rstudio/.codex/auth.json,type=bind,consistency=cached"
   ],
   "otherPortsAttributes": {
     "onAutoForward": "ignore"
@@ -28,6 +28,7 @@
     "vscode": {
       "extensions": [
         "openai.chatgpt",
+        "Posit.air-vscode",
         "REditorSupport.r",
         "REditorSupport.r-syntax",
         "quarto.quarto",

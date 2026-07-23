@@ -52,11 +52,14 @@ test_that("run-r-4.5 creates an overlay Rscript that uses overlay R", {
     ),
     file.path(fake_home, "etc", "Makeconf")
   )
-  Sys.chmod(c(
-    file.path(fake_home, "bin", "exec", "R"),
-    file.path(fake_home, "bin", "R"),
-    file.path(fake_home, "bin", "Rscript")
-  ), "0755")
+  Sys.chmod(
+    c(
+      file.path(fake_home, "bin", "exec", "R"),
+      file.path(fake_home, "bin", "R"),
+      file.path(fake_home, "bin", "Rscript")
+    ),
+    "0755"
+  )
 
   script <- file.path(project_root, "dev", "run-r-4.5.sh")
   result <- system2(

@@ -4,8 +4,8 @@ NULL
 # ─── mod_code → mod_type mapping ─────────────────────────────────────────────
 
 .MODKIT_CODE_MAP <- c(
-  "a"     = "6mA",
-  "m"     = "5mC",
+  "a" = "6mA",
+  "m" = "5mC",
   "21839" = "4mC"
 )
 
@@ -15,10 +15,24 @@ NULL
 # from authoritative count fields: Nmod / Nvalid_cov.
 # mod_code (col 4) uses compound format "code,motif,position" (e.g. "a,GATC,1").
 .MODKIT_COLS <- c(
-  "chrom", "start", "end", "mod_code", "score", "strand",
-  "thickStart", "thickEnd", "itemRgb",
-  "Nvalid_cov", "fraction_modified", "Nmod", "Ncanonical",
-  "Nother_mod", "Ndelete", "Nfail", "Ndiff", "Nnocall"
+  "chrom",
+  "start",
+  "end",
+  "mod_code",
+  "score",
+  "strand",
+  "thickStart",
+  "thickEnd",
+  "itemRgb",
+  "Nvalid_cov",
+  "fraction_modified",
+  "Nmod",
+  "Ncanonical",
+  "Nother_mod",
+  "Ndelete",
+  "Nfail",
+  "Ndiff",
+  "Nnocall"
 )
 
 #' Parse a modkit pileup BED file into a tidy per-site data frame
@@ -61,10 +75,12 @@ NULL
 #'   }
 #'
 #' @keywords internal
-.parseModkit <- function(file,
-                         sample_name,
-                         mod_type = NULL,
-                         min_coverage = 5L) {
+.parseModkit <- function(
+  file,
+  sample_name,
+  mod_type = NULL,
+  min_coverage = 5L
+) {
   # ── Validate inputs ─────────────────────────────────────────────────────
   if (!is.character(file) || length(file) != 1) {
     stop("file must be a single character string path")
@@ -105,7 +121,11 @@ NULL
 
   if (ncol(raw) < 18L) {
     stop(
-      "modkit BED file '", file, "' has ", ncol(raw), " column(s); ",
+      "modkit BED file '",
+      file,
+      "' has ",
+      ncol(raw),
+      " column(s); ",
       "expected at least 18 (modkit pileup bedMethyl format). ",
       "The file must be tab-separated. ",
       "Check that the file is a modkit pileup output."
@@ -116,8 +136,15 @@ NULL
   colnames(raw) <- .MODKIT_COLS
 
   required_fields <- c(
-    "chrom", "start", "end", "mod_code", "strand", "Nvalid_cov",
-    "Nmod", "Ncanonical", "Nother_mod"
+    "chrom",
+    "start",
+    "end",
+    "mod_code",
+    "strand",
+    "Nvalid_cov",
+    "Nmod",
+    "Ncanonical",
+    "Nother_mod"
   )
   missing_required <- as.data.frame(
     lapply(
@@ -133,8 +160,14 @@ NULL
       unlist(missing_required[row_idx, ], use.names = FALSE)
     ]
     stop(
-      "modkit BED file '", file, "' has missing required field(s) in ",
-      "row ", row_idx, ": ", paste(fields, collapse = ", "), ". ",
+      "modkit BED file '",
+      file,
+      "' has missing required field(s) in ",
+      "row ",
+      row_idx,
+      ": ",
+      paste(fields, collapse = ", "),
+      ". ",
       "Check that the file is complete modkit pileup bedMethyl output."
     )
   }
@@ -155,9 +188,12 @@ NULL
   unknown_codes <- unique(raw$mod_code[is.na(mapped)])
   if (length(unknown_codes) > 0) {
     warning(
-      "Unknown mod_code values in '", file, "' (skipped): ",
+      "Unknown mod_code values in '",
+      file,
+      "' (skipped): ",
       paste(unknown_codes, collapse = ", "),
-      ". Known codes: ", paste(names(.MODKIT_CODE_MAP), collapse = ", ")
+      ". Known codes: ",
+      paste(names(.MODKIT_CODE_MAP), collapse = ", ")
     )
   }
   raw$mod_type_mapped <- mapped
@@ -185,8 +221,10 @@ NULL
     strand = as.character(raw$strand),
     mod_type = raw$mod_type_mapped,
     motif = raw$motif,
-    beta = ifelse(raw$Nvalid_cov > 0,
-      as.numeric(raw$Nmod) / as.numeric(raw$Nvalid_cov), 0
+    beta = ifelse(
+      raw$Nvalid_cov > 0,
+      as.numeric(raw$Nmod) / as.numeric(raw$Nvalid_cov),
+      0
     ),
     coverage = raw$Nvalid_cov,
     mod_counts = as.integer(raw$Nmod),

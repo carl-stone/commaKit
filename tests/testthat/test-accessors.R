@@ -23,7 +23,7 @@ library(GenomicRanges)
   # Store annotation in metadata
   ann <- GenomicRanges::GRanges(
     seqnames = "chr_sim",
-    ranges   = IRanges::IRanges(start = 1L, end = 500L)
+    ranges = IRanges::IRanges(start = 1L, end = 500L)
   )
   GenomicRanges::mcols(ann)$feature_type <- "gene"
   GenomicRanges::mcols(ann)$name <- "geneA"
@@ -108,24 +108,27 @@ test_that("raw count accessors error clearly for legacy objects", {
   expect_no_error(validObject(obj))
 })
 
-test_that(
-  "assayProvenance() returns recorded layer metadata or an empty list",
-  {
-    obj <- .make_two_modtype()
-    provenance <- assayProvenance(obj)
+test_that("assayProvenance() returns recorded layer metadata or an empty list", {
+  obj <- .make_two_modtype()
+  provenance <- assayProvenance(obj)
 
-    expect_true(is.list(provenance))
-    expect_true(all(c(
-      "methylation", "coverage", "mod_counts",
-      "canonical_counts", "other_mod_counts"
-    ) %in% names(provenance)))
-    expect_equal(provenance$mod_counts$type, "reconstructed_counts")
-    expect_equal(provenance$other_mod_counts$type, "observed_counts")
+  expect_true(is.list(provenance))
+  expect_true(all(
+    c(
+      "methylation",
+      "coverage",
+      "mod_counts",
+      "canonical_counts",
+      "other_mod_counts"
+    ) %in%
+      names(provenance)
+  ))
+  expect_equal(provenance$mod_counts$type, "reconstructed_counts")
+  expect_equal(provenance$other_mod_counts$type, "observed_counts")
 
-    S4Vectors::metadata(obj)$assay_provenance <- NULL
-    expect_identical(assayProvenance(obj), list())
-  }
-)
+  S4Vectors::metadata(obj)$assay_provenance <- NULL
+  expect_identical(assayProvenance(obj), list())
+})
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Tests for the sampleInfo accessor
@@ -191,8 +194,12 @@ test_that(
 
     expect_equal(
       si$site_key[1],
-      paste(si$chrom[1], si$position[1], si$strand[1],
-        as.character(si$mod_type[1]), si$motif[1],
+      paste(
+        si$chrom[1],
+        si$position[1],
+        si$strand[1],
+        as.character(si$mod_type[1]),
+        si$motif[1],
         sep = ":"
       )
     )
@@ -200,33 +207,37 @@ test_that(
   }
 )
 
-test_that(
-  "siteInfo() site_key uses same field contract for multi-chromosome objects",
-  {
-    obj <- .make_two_modtype()
-    rr <- rowRanges(obj)
-    GenomeInfoDb::seqlevels(rr) <- c("chr_sim", "chr_alt")
-    GenomeInfoDb::seqnames(rr)[seq_len(3L)] <- "chr_alt"
-    GenomeInfoDb::seqlengths(rr) <- c(chr_sim = 100000L, chr_alt = 50000L)
-    rowRanges(obj) <- rr
+test_that("siteInfo() site_key uses same field contract for multi-chromosome objects", {
+  obj <- .make_two_modtype()
+  rr <- rowRanges(obj)
+  GenomeInfoDb::seqlevels(rr) <- c("chr_sim", "chr_alt")
+  GenomeInfoDb::seqnames(rr)[seq_len(3L)] <- "chr_alt"
+  GenomeInfoDb::seqlengths(rr) <- c(chr_sim = 100000L, chr_alt = 50000L)
+  rowRanges(obj) <- rr
 
-    si <- siteInfo(obj)
+  si <- siteInfo(obj)
 
-    expect_true(any(si$chrom == "chr_alt"))
-    expect_true(all(vapply(
+  expect_true(any(si$chrom == "chr_alt"))
+  expect_true(all(
+    vapply(
       strsplit(si$site_key, ":", fixed = TRUE),
       length,
       integer(1L)
-    ) == 5L))
-    expect_equal(
-      si$site_key,
-      paste(si$chrom, si$position, si$strand,
-        as.character(si$mod_type), si$motif,
-        sep = ":"
-      )
+    ) ==
+      5L
+  ))
+  expect_equal(
+    si$site_key,
+    paste(
+      si$chrom,
+      si$position,
+      si$strand,
+      as.character(si$mod_type),
+      si$motif,
+      sep = ":"
     )
-  }
-)
+  )
+})
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Tests for the modTypes accessor
@@ -266,14 +277,11 @@ test_that("genome() returns correct chromosome sizes", {
   expect_equal(genome(obj), c(chr_sim = 100000L))
 })
 
-test_that(
-  "genomeSizes() returns chromosome sizes with genome() compatibility",
-  {
-    obj <- .make_two_modtype()
-    expect_equal(genomeSizes(obj), c(chr_sim = 100000L))
-    expect_equal(genome(obj), genomeSizes(obj))
-  }
-)
+test_that("genomeSizes() returns chromosome sizes with genome() compatibility", {
+  obj <- .make_two_modtype()
+  expect_equal(genomeSizes(obj), c(chr_sim = 100000L))
+  expect_equal(genome(obj), genomeSizes(obj))
+})
 
 test_that("genome() returns NULL when no Seqinfo", {
   obj <- .make_two_modtype()
@@ -490,8 +498,12 @@ test_that("comma_example_data loads and accessors work correctly", {
 
   data(comma_example_data)
   expected_samples <- c(
-    "ctrl_1", "ctrl_2", "ctrl_3",
-    "treat_1", "treat_2", "treat_3"
+    "ctrl_1",
+    "ctrl_2",
+    "ctrl_3",
+    "treat_1",
+    "treat_2",
+    "treat_3"
   )
 
   expect_true(is(comma_example_data, "commaData"))
@@ -630,24 +642,18 @@ test_that("coverage() compatibility wrapper warns and returns siteCoverage", {
   expect_equal(cov, siteCoverage(obj))
 })
 
-test_that(
-  "coverage() compatibility wrapper rejects ignored IRanges arguments",
-  {
-    obj <- .make_two_modtype()
-    expect_error(coverage(obj, shift = 1L), regexp = "siteCoverage")
-    expect_error(coverage(obj, width = 100L), regexp = "siteCoverage")
-    expect_error(coverage(obj, weight = 2L), regexp = "siteCoverage")
-  }
-)
+test_that("coverage() compatibility wrapper rejects ignored IRanges arguments", {
+  obj <- .make_two_modtype()
+  expect_error(coverage(obj, shift = 1L), regexp = "siteCoverage")
+  expect_error(coverage(obj, width = 100L), regexp = "siteCoverage")
+  expect_error(coverage(obj, weight = 2L), regexp = "siteCoverage")
+})
 
-test_that(
-  "subset.commaData compatibility method warns and returns filterSites",
-  {
-    obj <- .make_two_modtype()
-    expect_warning(
-      sub <- subset(obj, mod_type = "6mA"),
-      regexp = "deprecated"
-    )
-    expect_equal(sub, filterSites(obj, mod_type = "6mA"))
-  }
-)
+test_that("subset.commaData compatibility method warns and returns filterSites", {
+  obj <- .make_two_modtype()
+  expect_warning(
+    sub <- subset(obj, mod_type = "6mA"),
+    regexp = "deprecated"
+  )
+  expect_equal(sub, filterSites(obj, mod_type = "6mA"))
+})

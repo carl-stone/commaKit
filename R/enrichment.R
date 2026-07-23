@@ -8,15 +8,28 @@ NULL
 
 # Feature types that are large regions; overlap_only defaults to TRUE for these.
 .COMMA_REGION_FEATURE_TYPES <- c(
-  "gene", "CDS", "mRNA", "tRNA", "rRNA", "ncRNA",
-  "operon", "repeat_region", "prophage", "region", "insertion_sequence"
+  "gene",
+  "CDS",
+  "mRNA",
+  "tRNA",
+  "rRNA",
+  "ncRNA",
+  "operon",
+  "repeat_region",
+  "prophage",
+  "region",
+  "insertion_sequence"
 )
 
 # Map EcoCyc sigma factor names to E. coli gene symbols.
 # Users can override via custom TERM2GENE for other organisms.
 .SIGMA_FACTOR_GENE_MAP <- c(
-  Sigma70 = "rpoD", Sigma24 = "rpoE", Sigma32 = "rpoH",
-  Sigma28 = "fliA", Sigma38 = "rpoS", Sigma54 = "rpoN",
+  Sigma70 = "rpoD",
+  Sigma24 = "rpoE",
+  Sigma32 = "rpoH",
+  Sigma28 = "fliA",
+  Sigma38 = "rpoS",
+  Sigma54 = "rpoN",
   Sigma19 = "fecI"
 )
 
@@ -34,7 +47,9 @@ NULL
 .siteToGeneMap <- function(res_df, gene_col) {
   if (!gene_col %in% colnames(res_df)) {
     stop(
-      "Column '", gene_col, "' not found in results.\n",
+      "Column '",
+      gene_col,
+      "' not found in results.\n",
       "Run annotateSites() before enrichMethylation(), e.g.:\n",
       "  object <- annotateSites(object, keep = \"overlap\")"
     )
@@ -50,7 +65,9 @@ NULL
 
   if (!any(has_gene)) {
     warning(
-      "No sites have gene annotations in column '", gene_col, "'. ",
+      "No sites have gene annotations in column '",
+      gene_col,
+      "'. ",
       "Returning empty gene map."
     )
     return(data.frame(
@@ -65,10 +82,7 @@ NULL
   res_sub <- res_df[has_gene, , drop = FALSE]
   gene_lists_sub <- gene_lists[has_gene]
   lens_sub <- lens[has_gene]
-  site_keys <- paste(res_sub$chrom, res_sub$position,
-    res_sub$strand,
-    sep = ":"
-  )
+  site_keys <- paste(res_sub$chrom, res_sub$position, res_sub$strand, sep = ":")
 
   result <- data.frame(
     gene_id = unlist(gene_lists_sub, use.names = FALSE),
@@ -88,8 +102,11 @@ NULL
 # @param agg           how to aggregate site scores per gene: "max" | "mean"
 # @return  named numeric vector sorted decreasing, suitable for
 # `clusterProfiler::GSEA()` accepts this ranking format.
-.computeGeneScores <- function(site_gene_df, score_metric = "combined",
-                               agg = "max") {
+.computeGeneScores <- function(
+  site_gene_df,
+  score_metric = "combined",
+  agg = "max"
+) {
   valid <- !is.na(site_gene_df$dm_padj) & !is.na(site_gene_df$dm_delta_beta)
   df <- site_gene_df[valid, , drop = FALSE]
 
@@ -98,7 +115,8 @@ NULL
   }
 
   eps <- .Machine$double.eps
-  df$site_score <- switch(score_metric,
+  df$site_score <- switch(
+    score_metric,
     combined = -log10(pmax(df$dm_padj, eps)) * sign(df$dm_delta_beta),
     padj = -log10(pmax(df$dm_padj, eps)),
     delta_beta = df$dm_delta_beta,
@@ -114,14 +132,18 @@ NULL
     return(setNames(numeric(0L), character(0L)))
   }
 
-  gene_scores <- vapply(genes, function(g) {
-    s <- df$site_score[df$gene_id == g]
-    s <- s[!is.na(s)]
-    if (length(s) == 0L) {
-      return(NA_real_)
-    }
-    if (agg == "max") s[which.max(abs(s))] else mean(s)
-  }, FUN.VALUE = numeric(1L))
+  gene_scores <- vapply(
+    genes,
+    function(g) {
+      s <- df$site_score[df$gene_id == g]
+      s <- s[!is.na(s)]
+      if (length(s) == 0L) {
+        return(NA_real_)
+      }
+      if (agg == "max") s[which.max(abs(s))] else mean(s)
+    },
+    FUN.VALUE = numeric(1L)
+  )
   names(gene_scores) <- genes
   gene_scores <- gene_scores[!is.na(gene_scores)]
 
@@ -145,7 +167,8 @@ NULL
 .parseTargetGenes <- function(feature_names, feature_type, tu_values = NULL) {
   n <- length(feature_names)
 
-  switch(feature_type,
+  switch(
+    feature_type,
     gene = ,
     CDS = ,
     tRNA = ,
@@ -228,12 +251,16 @@ NULL
 # @param subtype_values  optional character vector: feature_subtype column
 #                        (sigma factor identity for TFBSs)
 # @return list of character vectors
-.parseRegulatorGenes <- function(feature_names, feature_type,
-                                 subtype_values = NULL) {
+.parseRegulatorGenes <- function(
+  feature_names,
+  feature_type,
+  subtype_values = NULL
+) {
   n <- length(feature_names)
   na_list <- as.list(rep(NA_character_, n))
 
-  switch(feature_type,
+  switch(
+    feature_type,
     transcription_factor_binding_site = ,
     minus_10_signal = ,
     minus_35_signal = {
@@ -314,9 +341,13 @@ NULL
 # @param overlap_only     logical: restrict to rel_position==0 hits
 # @param rel_position_col name of the rel_position column
 # @return data.frame or NULL if no sites match
-.extractGeneRoles <- function(res_df, ft, gene_col,
-                              overlap_only = FALSE,
-                              rel_position_col = "rel_position") {
+.extractGeneRoles <- function(
+  res_df,
+  ft,
+  gene_col,
+  overlap_only = FALSE,
+  rel_position_col = "rel_position"
+) {
   if (!gene_col %in% colnames(res_df)) {
     stop("Column '", gene_col, "' not found. Run annotateSites() first.")
   }
@@ -353,15 +384,24 @@ NULL
       res_sub[[rel_position_col]]
     }
     # Keep only ft-indices where rel_position == 0
-    type_idx_sub <- mapply(function(tidx, rp) {
-      if (length(tidx) == 0L) {
-        return(integer(0L))
-      }
-      inside_ft <- vapply(tidx, function(j) {
-        length(rp) >= j && !is.na(rp[j]) && rp[j] == 0L
-      }, logical(1L))
-      tidx[inside_ft]
-    }, type_idx_sub, rp_all, SIMPLIFY = FALSE)
+    type_idx_sub <- mapply(
+      function(tidx, rp) {
+        if (length(tidx) == 0L) {
+          return(integer(0L))
+        }
+        inside_ft <- vapply(
+          tidx,
+          function(j) {
+            length(rp) >= j && !is.na(rp[j]) && rp[j] == 0L
+          },
+          logical(1L)
+        )
+        tidx[inside_ft]
+      },
+      type_idx_sub,
+      rp_all,
+      SIMPLIFY = FALSE
+    )
 
     still_match <- lengths(type_idx_sub) > 0L
     if (!any(still_match)) {
@@ -377,8 +417,10 @@ NULL
   } else {
     res_sub[[gene_col]]
   }
-  raw_per_site <- mapply(function(nms, idx) as.character(nms[idx]),
-    gn_lists, type_idx_sub,
+  raw_per_site <- mapply(
+    function(nms, idx) as.character(nms[idx]),
+    gn_lists,
+    type_idx_sub,
     SIMPLIFY = FALSE
   )
 
@@ -394,8 +436,10 @@ NULL
     } else {
       res_sub[[sub_col]]
     }
-    mapply(function(st, idx) as.character(st[idx]),
-      st_lists, type_idx_sub,
+    mapply(
+      function(st, idx) as.character(st[idx]),
+      st_lists,
+      type_idx_sub,
       SIMPLIFY = FALSE
     )
   } else {
@@ -408,8 +452,10 @@ NULL
     } else {
       res_sub[[tu_col]]
     }
-    mapply(function(tu, idx) as.character(tu[idx]),
-      tu_lists, type_idx_sub,
+    mapply(
+      function(tu, idx) as.character(tu[idx]),
+      tu_lists,
+      type_idx_sub,
       SIMPLIFY = FALSE
     )
   } else {
@@ -447,7 +493,8 @@ NULL
     reg_genes <- unique(reg_genes) # deduplicate (e.g. autoregulatory sites)
 
     # role_type for this feature_type
-    reg_type <- switch(ft,
+    reg_type <- switch(
+      ft,
       transcription_factor_binding_site = ,
       minus_10_signal = ,
       minus_35_signal = "sigma_factor",
@@ -499,16 +546,23 @@ NULL
   }
   if (!is.data.frame(x)) {
     stop(
-      "'", arg_name, "' must be a data.frame with columns ",
-      paste(sprintf("'%s'", required_cols), collapse = " and "), "."
+      "'",
+      arg_name,
+      "' must be a data.frame with columns ",
+      paste(sprintf("'%s'", required_cols), collapse = " and "),
+      "."
     )
   }
   missing <- setdiff(required_cols, colnames(x))
   if (length(missing) > 0L) {
     stop(
-      "'", arg_name, "' must be a data.frame with columns ",
+      "'",
+      arg_name,
+      "' must be a data.frame with columns ",
       paste(sprintf("'%s'", required_cols), collapse = " and "),
-      ". Missing: ", paste(sprintf("'%s'", missing), collapse = ", "), "."
+      ". Missing: ",
+      paste(sprintf("'%s'", missing), collapse = ", "),
+      "."
     )
   }
   invisible(NULL)
@@ -520,10 +574,12 @@ NULL
   if (is.null(file)) {
     return(invisible(NULL))
   }
-  if (!is.character(file) ||
-    length(file) != 1L || # nolint: indentation_linter
-    is.na(file) ||
-    nchar(file) == 0L) {
+  if (
+    !is.character(file) ||
+      length(file) != 1L || # nolint: indentation_linter
+      is.na(file) ||
+      nchar(file) == 0L
+  ) {
     stop("'", arg_name, "' must be a single non-empty file path or NULL.")
   }
   parent <- dirname(file)
@@ -535,12 +591,25 @@ NULL
 
 # Build the shared enrichment dispatch context.
 # @keywords internal
-.enrichmentDispatchContext <- function(method, org_db, keyType, ont, organism,
-                                       term2gene, term2name, kegg_term2gene,
-                                       kegg_term2name, padj_threshold,
-                                       delta_beta_threshold, score_metric,
-                                       gene_score_agg, pvalueCutoff,
-                                       qvalueCutoff, minGSSize, maxGSSize) {
+.enrichmentDispatchContext <- function(
+  method,
+  org_db,
+  keyType,
+  ont,
+  organism,
+  term2gene,
+  term2name,
+  kegg_term2gene,
+  kegg_term2name,
+  padj_threshold,
+  delta_beta_threshold,
+  score_metric,
+  gene_score_agg,
+  pvalueCutoff,
+  qvalueCutoff,
+  minGSSize,
+  maxGSSize
+) {
   list(
     method = unique(method),
     OrgDb = org_db,
@@ -585,13 +654,16 @@ NULL
 
   if (identical(collection, "go")) {
     if (!is.null(ctx$TERM2GENE)) {
-      args <- c(args, list(
-        TERM2GENE = ctx$TERM2GENE,
-        TERM2NAME = ctx$TERM2NAME,
-        pvalueCutoff = ctx$pvalueCutoff,
-        minGSSize = ctx$minGSSize,
-        maxGSSize = ctx$maxGSSize
-      ))
+      args <- c(
+        args,
+        list(
+          TERM2GENE = ctx$TERM2GENE,
+          TERM2NAME = ctx$TERM2NAME,
+          pvalueCutoff = ctx$pvalueCutoff,
+          minGSSize = ctx$minGSSize,
+          maxGSSize = ctx$maxGSSize
+        )
+      )
       if (is_ora) {
         args$universe <- universe
         args$qvalueCutoff <- ctx$qvalueCutoff
@@ -600,14 +672,17 @@ NULL
     }
 
     if (!is.null(ctx$OrgDb)) {
-      args <- c(args, list(
-        OrgDb = ctx$OrgDb,
-        keyType = ctx$keyType,
-        ont = ctx$ont,
-        pvalueCutoff = ctx$pvalueCutoff,
-        minGSSize = ctx$minGSSize,
-        maxGSSize = ctx$maxGSSize
-      ))
+      args <- c(
+        args,
+        list(
+          OrgDb = ctx$OrgDb,
+          keyType = ctx$keyType,
+          ont = ctx$ont,
+          pvalueCutoff = ctx$pvalueCutoff,
+          minGSSize = ctx$minGSSize,
+          maxGSSize = ctx$maxGSSize
+        )
+      )
       if (is_ora) {
         args$universe <- universe
         args$qvalueCutoff <- ctx$qvalueCutoff
@@ -620,13 +695,16 @@ NULL
   }
 
   if (!is.null(ctx$kegg_term2gene)) {
-    args <- c(args, list(
-      TERM2GENE = ctx$kegg_term2gene,
-      TERM2NAME = .term2nameOrNull(ctx$kegg_term2name),
-      pvalueCutoff = ctx$pvalueCutoff,
-      minGSSize = ctx$minGSSize,
-      maxGSSize = ctx$maxGSSize
-    ))
+    args <- c(
+      args,
+      list(
+        TERM2GENE = ctx$kegg_term2gene,
+        TERM2NAME = .term2nameOrNull(ctx$kegg_term2name),
+        pvalueCutoff = ctx$pvalueCutoff,
+        minGSSize = ctx$minGSSize,
+        maxGSSize = ctx$maxGSSize
+      )
+    )
     if (is_ora) {
       args$universe <- universe
       args$qvalueCutoff <- ctx$qvalueCutoff
@@ -635,13 +713,16 @@ NULL
   }
 
   if (!is.null(ctx$organism)) {
-    args <- c(args, list(
-      organism = ctx$organism,
-      keyType = ctx$keyType,
-      pvalueCutoff = ctx$pvalueCutoff,
-      minGSSize = ctx$minGSSize,
-      maxGSSize = ctx$maxGSSize
-    ))
+    args <- c(
+      args,
+      list(
+        organism = ctx$organism,
+        keyType = ctx$keyType,
+        pvalueCutoff = ctx$pvalueCutoff,
+        minGSSize = ctx$minGSSize,
+        maxGSSize = ctx$maxGSSize
+      )
+    )
     if (is_ora) {
       args$universe <- universe
       args$qvalueCutoff <- ctx$qvalueCutoff
@@ -663,7 +744,8 @@ NULL
 # @keywords internal
 .runEnrichmentMethod <- function(analysis, sg, universe, ctx) {
   if (identical(analysis, "ora")) {
-    sig_mask <- !is.na(sg$dm_padj) & !is.na(sg$dm_delta_beta) &
+    sig_mask <- !is.na(sg$dm_padj) &
+      !is.na(sg$dm_delta_beta) &
       sg$dm_padj <= ctx$padj_threshold &
       abs(sg$dm_delta_beta) >= ctx$delta_beta_threshold
     genes <- unique(sg$gene_id[sig_mask])
@@ -671,8 +753,11 @@ NULL
     if (length(genes) == 0L) {
       warning(
         "No significantly differentially methylated genes found ",
-        "(padj <= ", ctx$padj_threshold, " and |delta_beta| >= ",
-        ctx$delta_beta_threshold, "). ORA will not be run."
+        "(padj <= ",
+        ctx$padj_threshold,
+        " and |delta_beta| >= ",
+        ctx$delta_beta_threshold,
+        "). ORA will not be run."
       )
       return(list(go = NULL, kegg = NULL))
     }
@@ -704,8 +789,11 @@ NULL
 # @return list(go = ..., kegg = ...)
 .runEnrichmentForGeneMap <- function(sg, universe, ctx) {
   by_method <- stats::setNames(
-    lapply(ctx$method, .runEnrichmentMethod,
-      sg = sg, universe = universe,
+    lapply(
+      ctx$method,
+      .runEnrichmentMethod,
+      sg = sg,
+      universe = universe,
       ctx = ctx
     ),
     ctx$method
@@ -802,11 +890,17 @@ NULL
 #'
 #' @seealso \code{\link{buildKEGGGeneIDMap}}, \code{\link{enrichMethylation}}
 #' @export
-buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
-                              id_map = NULL) {
-  if (!is.character(organism) ||
-    length(organism) != 1L || # nolint: indentation_linter
-    nchar(organism) == 0L) {
+buildKEGGTermGene <- function(
+  organism,
+  file = NULL,
+  strip_prefix = TRUE,
+  id_map = NULL
+) {
+  if (
+    !is.character(organism) ||
+      length(organism) != 1L || # nolint: indentation_linter
+      nchar(organism) == 0L
+  ) {
     stop("'organism' must be a non-empty character string (e.g., \"eco\").")
   }
 
@@ -845,16 +939,20 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
         sprintf("KEGG API call failed for organism '%s'.\n", organism),
         "Check the organism code at:\n",
         "  https://www.genome.jp/kegg/catalog/org_list.html\n",
-        "Original error: ", conditionMessage(e)
+        "Original error: ",
+        conditionMessage(e)
       )
     }
   )
 
   if (length(links) == 0L) {
-    stop(sprintf(
-      "No KEGG pathway associations returned for organism '%s'. ",
-      organism
-    ), "Verify the organism code.")
+    stop(
+      sprintf(
+        "No KEGG pathway associations returned for organism '%s'. ",
+        organism
+      ),
+      "Verify the organism code."
+    )
   }
 
   # -- API call 2: pathway descriptions (one bulk request) -------------------
@@ -862,7 +960,8 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
     KEGGREST::keggList("pathway", organism),
     error = function(e) {
       warning(
-        "Could not fetch KEGG pathway names: ", conditionMessage(e),
+        "Could not fetch KEGG pathway names: ",
+        conditionMessage(e),
         "\nterm2name will be empty."
       )
       character(0)
@@ -888,8 +987,11 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
 
   # -- Optionally translate KEGG IDs to gene symbols -------------------------
   if (!is.null(id_map)) {
-    if (!is.data.frame(id_map) ||
-      !all(c("symbol", "kegg_id") %in% colnames(id_map))) { # nolint: indentation_linter
+    if (
+      !is.data.frame(id_map) ||
+        !all(c("symbol", "kegg_id") %in% colnames(id_map))
+    ) {
+      # nolint: indentation_linter
       stop(
         "'id_map' must be a data.frame with columns 'symbol' and 'kegg_id'.\n",
         "Use buildKEGGGeneIDMap() to create it."
@@ -905,13 +1007,17 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
     pw_names <- unname(path_list)
     if (strip_prefix) {
       pw_ids <- sub("^path:", "", pw_ids)
-      pw_names <- vapply(strsplit(pw_names, " - "), function(parts) {
-        if (length(parts) <= 1L) {
-          parts
-        } else {
-          paste(parts[-length(parts)], collapse = " - ")
-        }
-      }, character(1L))
+      pw_names <- vapply(
+        strsplit(pw_names, " - "),
+        function(parts) {
+          if (length(parts) <= 1L) {
+            parts
+          } else {
+            paste(parts[-length(parts)], collapse = " - ")
+          }
+        },
+        character(1L)
+      )
     }
     term2name <- data.frame(
       term = pw_ids,
@@ -936,7 +1042,8 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
 
   message(sprintf(
     "Done. %d gene-pathway associations across %d pathways.",
-    nrow(term2gene), nrow(term2name)
+    nrow(term2gene),
+    nrow(term2name)
   ))
 
   result
@@ -1040,16 +1147,20 @@ buildKEGGTermGene <- function(organism, file = NULL, strip_prefix = TRUE,
 #'
 #' @seealso \code{\link{buildKEGGTermGene}}, \code{\link{enrichMethylation}}
 #' @export
-buildKEGGGeneIDMap <- function(organism,
-                               OrgDb = NULL, # nolint: object_name_linter
-                               entrez2symbol = NULL,
-                               keys_col = "SYMBOL",
-                               id_col = "ENTREZID",
-                               file = NULL) {
+buildKEGGGeneIDMap <- function(
+  organism,
+  OrgDb = NULL, # nolint: object_name_linter
+  entrez2symbol = NULL,
+  keys_col = "SYMBOL",
+  id_col = "ENTREZID",
+  file = NULL
+) {
   # -- Input validation ------------------------------------------------------
-  if (!is.character(organism) ||
-    length(organism) != 1L || # nolint: indentation_linter
-    nchar(organism) == 0L) {
+  if (
+    !is.character(organism) ||
+      length(organism) != 1L || # nolint: indentation_linter
+      nchar(organism) == 0L
+  ) {
     stop("'organism' must be a non-empty character string (e.g., \"eco\").")
   }
   if (is.null(OrgDb) && is.null(entrez2symbol)) {
@@ -1062,8 +1173,11 @@ buildKEGGGeneIDMap <- function(organism,
   .validateWritableCacheFile(file)
 
   if (!is.null(entrez2symbol)) {
-    if (!is.data.frame(entrez2symbol) ||
-      !all(c("entrez_id", "symbol") %in% colnames(entrez2symbol))) { # nolint: indentation_linter
+    if (
+      !is.data.frame(entrez2symbol) ||
+        !all(c("entrez_id", "symbol") %in% colnames(entrez2symbol))
+    ) {
+      # nolint: indentation_linter
       stop(
         "'entrez2symbol' must be a data.frame with columns ",
         "'entrez_id' and 'symbol'."
@@ -1095,7 +1209,8 @@ buildKEGGGeneIDMap <- function(organism,
   }
 
   message(sprintf(
-    "Fetching KEGG gene ID map for organism '%s' ...", organism
+    "Fetching KEGG gene ID map for organism '%s' ...",
+    organism
   ))
 
   # -- API call: NCBI Gene ID <-> KEGG gene ID (one bulk request) ------------
@@ -1106,16 +1221,20 @@ buildKEGGGeneIDMap <- function(organism,
         sprintf("KEGG API call failed for organism '%s'.\n", organism),
         "Check the organism code at:\n",
         "  https://www.genome.jp/kegg/catalog/org_list.html\n",
-        "Original error: ", conditionMessage(e)
+        "Original error: ",
+        conditionMessage(e)
       )
     }
   )
 
   if (length(conv) == 0L) {
-    stop(sprintf(
-      "keggConv returned no entries for organism '%s'. ",
-      organism
-    ), "Verify the organism code.")
+    stop(
+      sprintf(
+        "keggConv returned no entries for organism '%s'. ",
+        organism
+      ),
+      "Verify the organism code."
+    )
   }
 
   # conv: names = "ncbi-geneid:945076", values = "eco:b0344"
@@ -1145,13 +1264,14 @@ buildKEGGGeneIDMap <- function(organism,
       if (!col %in% avail_cols) {
         stop(sprintf(
           "Column '%s' not found in OrgDb. Available columns:\n  %s",
-          col, paste(avail_cols, collapse = ", ")
+          col,
+          paste(avail_cols, collapse = ", ")
         ))
       }
     }
     sym_raw <- AnnotationDbi::select(
       OrgDb,
-      keys    = AnnotationDbi::keys(OrgDb, keytype = id_col),
+      keys = AnnotationDbi::keys(OrgDb, keytype = id_col),
       columns = c(id_col, keys_col),
       keytype = id_col
     )
@@ -1163,7 +1283,9 @@ buildKEGGGeneIDMap <- function(organism,
   }
 
   # Drop NA rows from symbol table
-  sym_df <- sym_df[!is.na(sym_df$entrez_id) & !is.na(sym_df$symbol), ,
+  sym_df <- sym_df[
+    !is.na(sym_df$entrez_id) & !is.na(sym_df$symbol),
+    ,
     drop = FALSE
   ]
 
@@ -1396,30 +1518,32 @@ buildKEGGGeneIDMap <- function(organism,
 #' }
 #'
 #' @export
-enrichMethylation <- function(object,
-                              method = "ora",
-                              OrgDb = NULL, # nolint: object_name_linter
-                              keyType = "SYMBOL",
-                              ont = "BP",
-                              organism = NULL,
-                              TERM2GENE = NULL, # nolint: object_name_linter
-                              TERM2NAME = NULL, # nolint: object_name_linter
-                              kegg_term2gene = NULL,
-                              kegg_term2name = NULL,
-                              gene_col = "feature_names",
-                              feature_type = "gene",
-                              gene_role = c("target", "regulator", "both"),
-                              overlap_only = NULL,
-                              padj_threshold = 0.05,
-                              delta_beta_threshold = 0.1,
-                              score_metric = "combined",
-                              gene_score_agg = "max",
-                              mod_type = NULL,
-                              mod_context = NULL,
-                              pvalueCutoff = 0.05,
-                              qvalueCutoff = 0.2,
-                              minGSSize = 10L,
-                              maxGSSize = 500L) {
+enrichMethylation <- function(
+  object,
+  method = "ora",
+  OrgDb = NULL, # nolint: object_name_linter
+  keyType = "SYMBOL",
+  ont = "BP",
+  organism = NULL,
+  TERM2GENE = NULL, # nolint: object_name_linter
+  TERM2NAME = NULL, # nolint: object_name_linter
+  kegg_term2gene = NULL,
+  kegg_term2name = NULL,
+  gene_col = "feature_names",
+  feature_type = "gene",
+  gene_role = c("target", "regulator", "both"),
+  overlap_only = NULL,
+  padj_threshold = 0.05,
+  delta_beta_threshold = 0.1,
+  score_metric = "combined",
+  gene_score_agg = "max",
+  mod_type = NULL,
+  mod_context = NULL,
+  pvalueCutoff = 0.05,
+  qvalueCutoff = 0.2,
+  minGSSize = 10L,
+  maxGSSize = 500L
+) {
   # -- Validate inputs -------------------------------------------------------
   method <- match.arg(method, choices = c("ora", "gsea"), several.ok = TRUE)
   gene_role <- match.arg(gene_role)
@@ -1432,8 +1556,13 @@ enrichMethylation <- function(object,
     stop("'object' must be a commaData object or a data.frame from results().")
   }
 
-  if (is.null(OrgDb) && is.null(organism) && is.null(TERM2GENE) &&
-    is.null(kegg_term2gene)) { # nolint: indentation_linter
+  if (
+    is.null(OrgDb) &&
+      is.null(organism) &&
+      is.null(TERM2GENE) &&
+      is.null(kegg_term2gene)
+  ) {
+    # nolint: indentation_linter
     stop(
       "No gene-to-term mapping supplied. Provide at least one of:\n",
       "  kegg_term2gene -- pre-built KEGG mapping from buildKEGGTermGene()\n",
@@ -1483,13 +1612,22 @@ enrichMethylation <- function(object,
   is_single <- length(ft_loop) == 1L
   dispatch_ctx <- .enrichmentDispatchContext(
     method,
-    OrgDb, keyType, ont, organism,
-    TERM2GENE, TERM2NAME,
-    kegg_term2gene, kegg_term2name,
-    padj_threshold, delta_beta_threshold,
-    score_metric, gene_score_agg,
-    pvalueCutoff, qvalueCutoff,
-    minGSSize, maxGSSize
+    OrgDb,
+    keyType,
+    ont,
+    organism,
+    TERM2GENE,
+    TERM2NAME,
+    kegg_term2gene,
+    kegg_term2name,
+    padj_threshold,
+    delta_beta_threshold,
+    score_metric,
+    gene_score_agg,
+    pvalueCutoff,
+    qvalueCutoff,
+    minGSSize,
+    maxGSSize
   )
 
   results_by_ft <- lapply(ft_loop, function(ft) {
@@ -1519,7 +1657,9 @@ enrichMethylation <- function(object,
       }
       universe <- unique(sg_all$gene_id[!is.na(sg_all$gene_id)])
       return(.runEnrichmentForGeneMap(
-        sg_all, universe, dispatch_ctx
+        sg_all,
+        universe,
+        dispatch_ctx
       ))
     }
 
@@ -1527,7 +1667,9 @@ enrichMethylation <- function(object,
     if (!"feature_types" %in% colnames(res_df)) {
       warning(
         "'feature_types' column not found. Run annotateSites() first. ",
-        "Returning NULL for feature_type = '", ft, "'."
+        "Returning NULL for feature_type = '",
+        ft,
+        "'."
       )
       return(list(go = NULL, kegg = NULL))
     }
@@ -1544,8 +1686,11 @@ enrichMethylation <- function(object,
       sg <- rt[rt$role == role_name & !is.na(rt$gene_id), , drop = FALSE]
       if (nrow(sg) == 0L) {
         warning(
-          "No ", role_name, " genes found for feature_type '",
-          ft, "'. Returning NULL."
+          "No ",
+          role_name,
+          " genes found for feature_type '",
+          ft,
+          "'. Returning NULL."
         )
         return(list(go = NULL, kegg = NULL))
       }
@@ -1558,13 +1703,15 @@ enrichMethylation <- function(object,
         universe <- unique(rt$gene_id[regulator_rows])
       }
       .runEnrichmentForGeneMap(
-        sg, universe, dispatch_ctx
+        sg,
+        universe,
+        dispatch_ctx
       )
     }
 
     if (gene_role == "both") {
       list(
-        target    = .enrich_for_role(role_table, "target"),
+        target = .enrich_for_role(role_table, "target"),
         regulator = .enrich_for_role(role_table, "regulator")
       )
     } else {

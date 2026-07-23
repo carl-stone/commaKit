@@ -32,11 +32,13 @@ fake_t2n <- data.frame(
 
 test_that("enrichment dispatch builds custom GO and KEGG call specs", {
   kegg_t2g <- data.frame(
-    term = "eco00010", gene = "geneA",
+    term = "eco00010",
+    gene = "geneA",
     stringsAsFactors = FALSE
   )
   kegg_t2n <- data.frame(
-    term = "eco00010", name = "Glycolysis",
+    term = "eco00010",
+    name = "Glycolysis",
     stringsAsFactors = FALSE
   )
   ctx <- commaKit:::.enrichmentDispatchContext(
@@ -60,13 +62,25 @@ test_that("enrichment dispatch builds custom GO and KEGG call specs", {
   )
 
   go_ora <- commaKit:::.enrichmentCallSpec(
-    "go", "ora", "geneA", c("geneA", "geneB"), ctx
+    "go",
+    "ora",
+    "geneA",
+    c("geneA", "geneB"),
+    ctx
   )
   go_gsea <- commaKit:::.enrichmentCallSpec(
-    "go", "gsea", c(geneA = 2, geneB = 1), c("geneA", "geneB"), ctx
+    "go",
+    "gsea",
+    c(geneA = 2, geneB = 1),
+    c("geneA", "geneB"),
+    ctx
   )
   kegg_ora <- commaKit:::.enrichmentCallSpec(
-    "kegg", "ora", "geneA", c("geneA", "geneB"), ctx
+    "kegg",
+    "ora",
+    "geneA",
+    c("geneA", "geneB"),
+    ctx
   )
 
   expect_equal(go_ora$fun, "enricher")
@@ -109,16 +123,32 @@ test_that("enrichment dispatch builds optional database call specs", {
   )
 
   go_ora <- commaKit:::.enrichmentCallSpec(
-    "go", "ora", "geneA", c("geneA", "geneB"), ctx
+    "go",
+    "ora",
+    "geneA",
+    c("geneA", "geneB"),
+    ctx
   )
   go_gsea <- commaKit:::.enrichmentCallSpec(
-    "go", "gsea", c(geneA = 2, geneB = 1), c("geneA", "geneB"), ctx
+    "go",
+    "gsea",
+    c(geneA = 2, geneB = 1),
+    c("geneA", "geneB"),
+    ctx
   )
   kegg_ora <- commaKit:::.enrichmentCallSpec(
-    "kegg", "ora", "geneA", c("geneA", "geneB"), ctx
+    "kegg",
+    "ora",
+    "geneA",
+    c("geneA", "geneB"),
+    ctx
   )
   kegg_gsea <- commaKit:::.enrichmentCallSpec(
-    "kegg", "gsea", c(geneA = 2, geneB = 1), c("geneA", "geneB"), ctx
+    "kegg",
+    "gsea",
+    c(geneA = 2, geneB = 1),
+    c("geneA", "geneB"),
+    ctx
   )
 
   expect_equal(go_ora$fun, "enrichGO")
@@ -149,11 +179,13 @@ test_that("enrichment dispatch keeps empty KEGG names optional", {
     term2gene = NULL,
     term2name = NULL,
     kegg_term2gene = data.frame(
-      term = "eco00010", gene = "geneA",
+      term = "eco00010",
+      gene = "geneA",
       stringsAsFactors = FALSE
     ),
     kegg_term2name = data.frame(
-      term = character(), name = character(),
+      term = character(),
+      name = character(),
       stringsAsFactors = FALSE
     ),
     padj_threshold = 0.05,
@@ -167,7 +199,11 @@ test_that("enrichment dispatch keeps empty KEGG names optional", {
   )
 
   spec <- commaKit:::.enrichmentCallSpec(
-    "kegg", "ora", "geneA", c("geneA", "geneB"), ctx
+    "kegg",
+    "ora",
+    "geneA",
+    c("geneA", "geneB"),
+    ctx
   )
 
   expect_equal(spec$fun, "enricher")
@@ -212,7 +248,8 @@ test_that("enrichment dispatch preserves combined short-circuit shape", {
   )
 
   expect_true(any(grepl(
-    "No significantly differentially methylated genes", warnings
+    "No significantly differentially methylated genes",
+    warnings
   )))
   expect_true(any(grepl("No valid gene scores", warnings)))
   expect_equal(names(res), c("go", "kegg"))
@@ -335,8 +372,11 @@ test_that(".siteToGeneMap returns empty data.frame when all sites intergenic", {
 
 test_that(".siteToGeneMap errors when gene_col is missing", {
   res_df <- data.frame(
-    chrom = "chr1", position = 100L, strand = "+",
-    dm_padj = 0.01, dm_delta_beta = -0.3,
+    chrom = "chr1",
+    position = 100L,
+    strand = "+",
+    dm_padj = 0.01,
+    dm_delta_beta = -0.3,
     stringsAsFactors = FALSE
   )
   expect_error(
@@ -472,21 +512,18 @@ test_that("enrichMethylation errors when diffMethyl not run", {
   )
 })
 
-test_that(
-  "enrichMethylation warns when annotateSites not run (feature_type='gene')",
-  {
-    skip_if_not_installed("clusterProfiler")
-    data(comma_example_data)
-    dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
-    # dm has no feature_types column; new code path warns and returns NULL
-    expect_warning(
-      res <- enrichMethylation(dm, TERM2GENE = fake_t2g),
-      "feature_types.*not found|annotateSites"
-    )
-    expect_null(res$go)
-    expect_null(res$kegg)
-  }
-)
+test_that("enrichMethylation warns when annotateSites not run (feature_type='gene')", {
+  skip_if_not_installed("clusterProfiler")
+  data(comma_example_data)
+  dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
+  # dm has no feature_types column; new code path warns and returns NULL
+  expect_warning(
+    res <- enrichMethylation(dm, TERM2GENE = fake_t2g),
+    "feature_types.*not found|annotateSites"
+  )
+  expect_null(res$go)
+  expect_null(res$kegg)
+})
 
 # ── enrichMethylation() — ORA with TERM2GENE ─────────────────────────────────
 
@@ -520,9 +557,11 @@ test_that(
   {
     skip_if_not_installed("clusterProfiler")
     ann <- make_annotated_dm()
-    res <- enrichMethylation(ann,
+    res <- enrichMethylation(
+      ann,
       method = "ora",
-      TERM2GENE = fake_t2g, TERM2NAME = fake_t2n
+      TERM2GENE = fake_t2g,
+      TERM2NAME = fake_t2n
     )
     # Should return a list with go and kegg
     expect_type(res, "list")
@@ -549,8 +588,10 @@ test_that("enrichMethylation GSEA returns list with $go and $kegg", {
 test_that("enrichMethylation GSEA $go is gseaResult or NULL", {
   skip_if_not_installed("clusterProfiler")
   ann <- make_annotated_dm()
-  res <- enrichMethylation(ann,
-    method = "gsea", TERM2GENE = fake_t2g,
+  res <- enrichMethylation(
+    ann,
+    method = "gsea",
+    TERM2GENE = fake_t2g,
     minGSSize = 1L
   )
 
@@ -564,9 +605,11 @@ test_that("enrichMethylation GSEA $go is gseaResult or NULL", {
 test_that("enrichMethylation both methods returns nested list structure", {
   skip_if_not_installed("clusterProfiler")
   ann <- make_annotated_dm()
-  res <- enrichMethylation(ann,
+  res <- enrichMethylation(
+    ann,
     method = c("ora", "gsea"),
-    TERM2GENE = fake_t2g, minGSSize = 1L
+    TERM2GENE = fake_t2g,
+    minGSSize = 1L
   )
 
   expect_type(res, "list")
@@ -585,9 +628,12 @@ test_that("enrichMethylation ORA warns (not errors) when no sig genes", {
   ann <- make_annotated_dm()
   # Impossible thresholds → no significant genes
   expect_warning(
-    res <- enrichMethylation(ann,
-      method = "ora", TERM2GENE = fake_t2g,
-      padj_threshold = 0, delta_beta_threshold = 2
+    res <- enrichMethylation(
+      ann,
+      method = "ora",
+      TERM2GENE = fake_t2g,
+      padj_threshold = 0,
+      delta_beta_threshold = 2
     ),
     "No significantly differentially methylated genes"
   )
@@ -597,42 +643,43 @@ test_that("enrichMethylation ORA warns (not errors) when no sig genes", {
 
 # ── enrichMethylation() — mod_type / mod_context filters ─────────────────────
 
-test_that(
-  "enrichMethylation mod_type filter restricts gene set to filtered sites",
-  {
-    skip_if_not_installed("clusterProfiler")
-    ann <- make_annotated_dm()
-    res_all <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g)
-    res_filt <- enrichMethylation(ann,
-      method = "ora", TERM2GENE = fake_t2g,
-      mod_type = "6mA"
-    )
-    # Both should return results
-    expect_type(res_all, "list")
-    expect_type(res_filt, "list")
-    # The filtered enrichment should use a subset of the genes from unfiltered
-    # GO may be NULL with tiny synthetic data (gene sets below min/max size)
-    # but the subset relationship should hold when both produce results
-    if (!is.null(res_all$go) && !is.null(res_filt$go)) {
-      genes_all <- res_all$go@gene
-      genes_filt <- res_filt$go@gene
-      expect_true(all(genes_filt %in% genes_all))
-    }
-    # At minimum, verify mod_type filter produces different gene Universes
-    # (the unfiltered run includes all mod_types, filtered only 6mA)
-    expect_true(
-      length(res_filt$kegg) <= length(res_all$kegg) ||
-        is.null(res_filt$kegg)
-    )
+test_that("enrichMethylation mod_type filter restricts gene set to filtered sites", {
+  skip_if_not_installed("clusterProfiler")
+  ann <- make_annotated_dm()
+  res_all <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g)
+  res_filt <- enrichMethylation(
+    ann,
+    method = "ora",
+    TERM2GENE = fake_t2g,
+    mod_type = "6mA"
+  )
+  # Both should return results
+  expect_type(res_all, "list")
+  expect_type(res_filt, "list")
+  # The filtered enrichment should use a subset of the genes from unfiltered
+  # GO may be NULL with tiny synthetic data (gene sets below min/max size)
+  # but the subset relationship should hold when both produce results
+  if (!is.null(res_all$go) && !is.null(res_filt$go)) {
+    genes_all <- res_all$go@gene
+    genes_filt <- res_filt$go@gene
+    expect_true(all(genes_filt %in% genes_all))
   }
-)
+  # At minimum, verify mod_type filter produces different gene Universes
+  # (the unfiltered run includes all mod_types, filtered only 6mA)
+  expect_true(
+    length(res_filt$kegg) <= length(res_all$kegg) ||
+      is.null(res_filt$kegg)
+  )
+})
 
 test_that("enrichMethylation mod_type filter errors on unknown type", {
   skip_if_not_installed("clusterProfiler")
   ann <- make_annotated_dm()
   expect_error(
-    enrichMethylation(ann,
-      method = "ora", TERM2GENE = fake_t2g,
+    enrichMethylation(
+      ann,
+      method = "ora",
+      TERM2GENE = fake_t2g,
       mod_type = "99mX"
     ),
     "mod_type"
@@ -675,78 +722,72 @@ test_that(".computeGeneScores 'max' does not crash when gene_ids contain NA", {
   expect_false(any(is.na(names(scores))))
 })
 
-test_that(
-  ".computeGeneScores 'mean' does not return empty when gene_ids contain NA",
-  {
-    sg <- data.frame(
-      gene_id = c(NA_character_, "geneA"),
-      site_key = c("chr1:100:+", "chr1:200:+"),
-      dm_padj = c(0.01, 0.01),
-      dm_delta_beta = c(0.4, 0.5),
-      stringsAsFactors = FALSE
-    )
-    scores <- commaKit:::.computeGeneScores(sg, "delta_beta", "mean")
-    expect_true(length(scores) > 0L)
-    expect_true("geneA" %in% names(scores))
-  }
-)
+test_that(".computeGeneScores 'mean' does not return empty when gene_ids contain NA", {
+  sg <- data.frame(
+    gene_id = c(NA_character_, "geneA"),
+    site_key = c("chr1:100:+", "chr1:200:+"),
+    dm_padj = c(0.01, 0.01),
+    dm_delta_beta = c(0.4, 0.5),
+    stringsAsFactors = FALSE
+  )
+  scores <- commaKit:::.computeGeneScores(sg, "delta_beta", "mean")
+  expect_true(length(scores) > 0L)
+  expect_true("geneA" %in% names(scores))
+})
 
 # ── enrichMethylation() — feature_type argument ───────────────────────────────
 
-test_that(
-  "enrichMethylation feature_type = 'gene' filters to gene features only",
-  {
-    skip_if_not_installed("clusterProfiler")
-    ann <- make_annotated_dm()
-    res <- enrichMethylation(ann,
-      method = "ora", TERM2GENE = fake_t2g,
-      feature_type = "gene"
-    )
-    expect_type(res, "list")
-    # Result should exist (gene features are present in test data)
-    if (!is.null(res$go)) {
-      expect_s4_class(res$go, "enrichResult")
-    }
+test_that("enrichMethylation feature_type = 'gene' filters to gene features only", {
+  skip_if_not_installed("clusterProfiler")
+  ann <- make_annotated_dm()
+  res <- enrichMethylation(
+    ann,
+    method = "ora",
+    TERM2GENE = fake_t2g,
+    feature_type = "gene"
+  )
+  expect_type(res, "list")
+  # Result should exist (gene features are present in test data)
+  if (!is.null(res$go)) {
+    expect_s4_class(res$go, "enrichResult")
   }
-)
+})
 
-test_that(
-  "enrichMethylation feature_type = NULL matches default (all features)",
-  {
-    skip_if_not_installed("clusterProfiler")
-    ann <- make_annotated_dm()
-    res_null <- enrichMethylation(ann,
-      method = "ora", TERM2GENE = fake_t2g,
-      feature_type = NULL
-    )
-    res_default <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g)
-    # Both should return the same structure
-    expect_type(res_null, "list")
-    expect_type(res_default, "list")
-    expect_equal(names(res_null), names(res_default))
-    # Both should use the same gene set (NULL = default = all features)
-    if (!is.null(res_null$go) && !is.null(res_default$go)) {
-      expect_equal(sort(res_null$go@gene), sort(res_default$go@gene))
-    }
+test_that("enrichMethylation feature_type = NULL matches default (all features)", {
+  skip_if_not_installed("clusterProfiler")
+  ann <- make_annotated_dm()
+  res_null <- enrichMethylation(
+    ann,
+    method = "ora",
+    TERM2GENE = fake_t2g,
+    feature_type = NULL
+  )
+  res_default <- enrichMethylation(ann, method = "ora", TERM2GENE = fake_t2g)
+  # Both should return the same structure
+  expect_type(res_null, "list")
+  expect_type(res_default, "list")
+  expect_equal(names(res_null), names(res_default))
+  # Both should use the same gene set (NULL = default = all features)
+  if (!is.null(res_null$go) && !is.null(res_default$go)) {
+    expect_equal(sort(res_null$go@gene), sort(res_default$go@gene))
   }
-)
+})
 
-test_that(
-  "enrichMethylation warns and returns NULL for unmatched feature_type",
-  {
-    skip_if_not_installed("clusterProfiler")
-    ann <- make_annotated_dm()
-    expect_warning(
-      res <- enrichMethylation(ann,
-        method = "ora", TERM2GENE = fake_t2g,
-        feature_type = "nonexistent_type"
-      ),
-      "No sites with feature_type"
-    )
-    expect_null(res$go)
-    expect_null(res$kegg)
-  }
-)
+test_that("enrichMethylation warns and returns NULL for unmatched feature_type", {
+  skip_if_not_installed("clusterProfiler")
+  ann <- make_annotated_dm()
+  expect_warning(
+    res <- enrichMethylation(
+      ann,
+      method = "ora",
+      TERM2GENE = fake_t2g,
+      feature_type = "nonexistent_type"
+    ),
+    "No sites with feature_type"
+  )
+  expect_null(res$go)
+  expect_null(res$kegg)
+})
 
 # ── .parseTargetGenes() ───────────────────────────────────────────────────────
 
@@ -761,7 +802,9 @@ test_that(".parseTargetGenes identity for gene/CDS/tRNA/rRNA/ncRNA", {
 test_that(".parseTargetGenes strips promoter suffix for promoter/TFBS types", {
   nms <- c("aaeRp", "geneA-geneBp1", "flhDCp")
   for (ft in c(
-    "promoter", "minus_10_signal", "minus_35_signal",
+    "promoter",
+    "minus_10_signal",
+    "minus_35_signal",
     "transcription_factor_binding_site"
   )) {
     res <- commaKit:::.parseTargetGenes(nms, ft)
@@ -813,18 +856,15 @@ test_that(".parseTargetGenes RNA_binding_site prefers transcription_unit", {
   expect_equal(res[[1]], "eptB")
 })
 
-test_that(
-  ".parseTargetGenes RNA_binding_site falls back to 'regulating' pattern",
-  {
-    nms <- "ArcZ mRNA-binding-site regulating eptB"
-    res <- commaKit:::.parseTargetGenes(
-      nms,
-      "RNA_binding_site",
-      tu_values = NA_character_
-    )
-    expect_equal(res[[1]], "eptB")
-  }
-)
+test_that(".parseTargetGenes RNA_binding_site falls back to 'regulating' pattern", {
+  nms <- "ArcZ mRNA-binding-site regulating eptB"
+  res <- commaKit:::.parseTargetGenes(
+    nms,
+    "RNA_binding_site",
+    tu_values = NA_character_
+  )
+  expect_equal(res[[1]], "eptB")
+})
 
 test_that(".parseTargetGenes terminator strips ' terminator' suffix", {
   nms <- c("geneA terminator", "thrLABC terminator")
@@ -845,7 +885,8 @@ test_that(".parseRegulatorGenes returns NA for non-regulatory types", {
   nms <- c("geneA", "geneB")
   for (ft in c("gene", "CDS", "promoter", "terminator")) {
     res <- commaKit:::.parseRegulatorGenes(nms, ft)
-    expect_true(all(vapply(res, function(x) all(is.na(x)), logical(1))),
+    expect_true(
+      all(vapply(res, function(x) all(is.na(x)), logical(1))),
       info = ft
     )
   }
@@ -856,7 +897,8 @@ test_that(".parseRegulatorGenes maps sigma factor for TFBS types", {
   subtypes <- c("Sigma70", "Sigma32")
   for (ft in c(
     "transcription_factor_binding_site",
-    "minus_10_signal", "minus_35_signal"
+    "minus_10_signal",
+    "minus_35_signal"
   )) {
     res <- commaKit:::.parseRegulatorGenes(nms, ft, subtype_values = subtypes)
     expect_equal(res[[1]], "rpoD", info = ft)
@@ -873,7 +915,8 @@ test_that(".parseRegulatorGenes TFBS returns NA when no subtype", {
 })
 
 test_that(".parseRegulatorGenes TFBS returns NA for unknown sigma factor", {
-  res <- commaKit:::.parseRegulatorGenes("some-site",
+  res <- commaKit:::.parseRegulatorGenes(
+    "some-site",
     "transcription_factor_binding_site",
     subtype_values = "SigmaXX"
   )
@@ -887,17 +930,14 @@ test_that(".parseRegulatorGenes protein_binding_site extracts protein name", {
   expect_equal(res[[2]], "dnaA")
 })
 
-test_that(
-  ".parseRegulatorGenes RNA_binding_site extracts gene-name first word",
-  {
-    # ArcZ matches gene-name pattern (3-5 lowercase after uppercase)
-    res_match <- commaKit:::.parseRegulatorGenes(
-      "ArcZ mRNA-binding-site regulating eptB",
-      "RNA_binding_site"
-    )
-    expect_equal(res_match[[1]], "arcZ")
-  }
-)
+test_that(".parseRegulatorGenes RNA_binding_site extracts gene-name first word", {
+  # ArcZ matches gene-name pattern (3-5 lowercase after uppercase)
+  res_match <- commaKit:::.parseRegulatorGenes(
+    "ArcZ mRNA-binding-site regulating eptB",
+    "RNA_binding_site"
+  )
+  expect_equal(res_match[[1]], "arcZ")
+})
 
 test_that(".parseRegulatorGenes RNA_binding_site returns NA for riboswitches", {
   # "adenosylcobalamin" is all-lowercase and too long — no match
@@ -911,10 +951,14 @@ test_that(".parseRegulatorGenes RNA_binding_site returns NA for riboswitches", {
 # ── .extractGeneRoles() ───────────────────────────────────────────────────────
 
 # Helper: build a minimal res_df with feature_types and feature_names lists
-make_role_res_df <- function(feature_types_list, feature_names_list,
-                             dm_padj = 0.01, dm_delta_beta = -0.3,
-                             subtype_values_list = NULL,
-                             tu_values_list = NULL) {
+make_role_res_df <- function(
+  feature_types_list,
+  feature_names_list,
+  dm_padj = 0.01,
+  dm_delta_beta = -0.3,
+  subtype_values_list = NULL,
+  tu_values_list = NULL
+) {
   n <- length(feature_types_list)
   df <- data.frame(
     chrom = rep("chr1", n),
@@ -950,42 +994,37 @@ test_that(".extractGeneRoles gene type: target only, identity", {
   expect_false("regulator" %in% out$role)
 })
 
-test_that(
-  ".extractGeneRoles promoter: strips suffix, operonic → multiple targets",
-  {
-    df <- make_role_res_df(
-      list(c("promoter", "promoter")),
-      list(c("aaeRp1", "geneA-geneBp"))
-    )
-    out <- commaKit:::.extractGeneRoles(df, "promoter", "feature_names")
-    targets <- out$gene_id[out$role == "target"]
-    expect_true("aaeR" %in% targets)
-    expect_true("geneA" %in% targets)
-    expect_true("geneB" %in% targets)
-    # No regulators for promoter type
-    expect_false("regulator" %in% out$role)
-  }
-)
+test_that(".extractGeneRoles promoter: strips suffix, operonic → multiple targets", {
+  df <- make_role_res_df(
+    list(c("promoter", "promoter")),
+    list(c("aaeRp1", "geneA-geneBp"))
+  )
+  out <- commaKit:::.extractGeneRoles(df, "promoter", "feature_names")
+  targets <- out$gene_id[out$role == "target"]
+  expect_true("aaeR" %in% targets)
+  expect_true("geneA" %in% targets)
+  expect_true("geneB" %in% targets)
+  # No regulators for promoter type
+  expect_false("regulator" %in% out$role)
+})
 
-test_that(
-  ".extractGeneRoles TFBS: target from promoter name, regulator from subtype",
-  {
-    df <- make_role_res_df(
-      list(c("transcription_factor_binding_site")),
-      list(c("acrRp")),
-      subtype_values_list = list(c("Sigma70"))
-    )
-    out <- commaKit:::.extractGeneRoles(
-      df, "transcription_factor_binding_site",
-      "feature_names"
-    )
-    expect_true("target" %in% out$role)
-    expect_true("regulator" %in% out$role)
-    expect_equal(out$gene_id[out$role == "target"], "acrR")
-    expect_equal(out$gene_id[out$role == "regulator"], "rpoD")
-    expect_equal(out$role_type[out$role == "regulator"], "sigma_factor")
-  }
-)
+test_that(".extractGeneRoles TFBS: target from promoter name, regulator from subtype", {
+  df <- make_role_res_df(
+    list(c("transcription_factor_binding_site")),
+    list(c("acrRp")),
+    subtype_values_list = list(c("Sigma70"))
+  )
+  out <- commaKit:::.extractGeneRoles(
+    df,
+    "transcription_factor_binding_site",
+    "feature_names"
+  )
+  expect_true("target" %in% out$role)
+  expect_true("regulator" %in% out$role)
+  expect_equal(out$gene_id[out$role == "target"], "acrR")
+  expect_equal(out$gene_id[out$role == "regulator"], "rpoD")
+  expect_equal(out$role_type[out$role == "regulator"], "sigma_factor")
+})
 
 test_that(
   paste(
@@ -1035,10 +1074,16 @@ test_that(".extractGeneRoles overlap_only=TRUE filters by rel_position", {
   )
   df$rel_position <- list(0L, -20L)
 
-  out_all <- commaKit:::.extractGeneRoles(df, "gene", "feature_names",
+  out_all <- commaKit:::.extractGeneRoles(
+    df,
+    "gene",
+    "feature_names",
     overlap_only = FALSE
   )
-  out_ovlp <- commaKit:::.extractGeneRoles(df, "gene", "feature_names",
+  out_ovlp <- commaKit:::.extractGeneRoles(
+    df,
+    "gene",
+    "feature_names",
     overlap_only = TRUE
   )
 
@@ -1074,12 +1119,14 @@ test_that(
     skip_if_not_installed("clusterProfiler")
     df <- make_tfbs_res_df()
     suppressWarnings({
-      res_target <- enrichMethylation(df,
+      res_target <- enrichMethylation(
+        df,
         TERM2GENE = fake_t2g,
         feature_type = "transcription_factor_binding_site",
         gene_role = "target"
       )
-      res_regulator <- enrichMethylation(df,
+      res_regulator <- enrichMethylation(
+        df,
         TERM2GENE = fake_t2g,
         feature_type = "transcription_factor_binding_site",
         gene_role = "regulator"
@@ -1106,7 +1153,8 @@ test_that("enrichMethylation gene_role='regulator' returns valid results", {
   skip_if_not_installed("clusterProfiler")
   df <- make_tfbs_res_df()
   suppressWarnings({
-    res <- enrichMethylation(df,
+    res <- enrichMethylation(
+      df,
       TERM2GENE = fake_t2g,
       feature_type = "transcription_factor_binding_site",
       gene_role = "regulator"
@@ -1120,24 +1168,22 @@ test_that("enrichMethylation gene_role='regulator' returns valid results", {
   }
 })
 
-test_that(
-  "enrichMethylation gene_role='both' returns list with target and regulator",
-  {
-    skip_if_not_installed("clusterProfiler")
-    df <- make_tfbs_res_df()
-    suppressWarnings({
-      res <- enrichMethylation(df,
-        TERM2GENE = fake_t2g,
-        feature_type = "transcription_factor_binding_site",
-        gene_role = "both"
-      )
-    })
-    expect_type(res, "list")
-    expect_true(all(c("target", "regulator") %in% names(res)))
-    expect_true(all(c("go", "kegg") %in% names(res$target)))
-    expect_true(all(c("go", "kegg") %in% names(res$regulator)))
-  }
-)
+test_that("enrichMethylation gene_role='both' returns list with target and regulator", {
+  skip_if_not_installed("clusterProfiler")
+  df <- make_tfbs_res_df()
+  suppressWarnings({
+    res <- enrichMethylation(
+      df,
+      TERM2GENE = fake_t2g,
+      feature_type = "transcription_factor_binding_site",
+      gene_role = "both"
+    )
+  })
+  expect_type(res, "list")
+  expect_true(all(c("target", "regulator") %in% names(res)))
+  expect_true(all(c("go", "kegg") %in% names(res$target)))
+  expect_true(all(c("go", "kegg") %in% names(res$regulator)))
+})
 
 # ── enrichMethylation() — multiple feature_type values ────────────────────────
 
@@ -1145,7 +1191,8 @@ test_that("enrichMethylation multiple feature_type returns named list", {
   skip_if_not_installed("clusterProfiler")
   ann <- make_annotated_dm()
   suppressWarnings({
-    res <- enrichMethylation(ann,
+    res <- enrichMethylation(
+      ann,
       TERM2GENE = fake_t2g,
       feature_type = c("gene", "nonexistent_type")
     )
@@ -1184,8 +1231,12 @@ test_that(
   ),
   {
     res_df <- data.frame(
-      chrom = "chr1", position = 1L, strand = "+", mod_type = "6mA",
-      dm_padj = 0.01, dm_delta_beta = 0.2,
+      chrom = "chr1",
+      position = 1L,
+      strand = "+",
+      mod_type = "6mA",
+      dm_padj = 0.01,
+      dm_delta_beta = 0.2,
       feature_names = I(list("geneA")),
       stringsAsFactors = FALSE
     )

@@ -175,23 +175,20 @@ test_that("buildKEGGTermGene wraps keggLink errors with helpful message", {
   expect_error(buildKEGGTermGene("bad_org"), "KEGG API call failed")
 })
 
-test_that(
-  "buildKEGGTermGene warns when keggList fails and returns empty term2name",
-  {
-    skip_if_not_installed("KEGGREST")
-    local_mocked_bindings(
-      keggLink = function(...) mock_links,
-      keggList = function(...) stop("server error"),
-      .package = "KEGGREST"
-    )
-    result <- suppressWarnings(buildKEGGTermGene("eco"))
-    expect_warning(
-      buildKEGGTermGene("eco"),
-      "Could not fetch KEGG pathway names"
-    )
-    expect_equal(nrow(result$term2name), 0L)
-  }
-)
+test_that("buildKEGGTermGene warns when keggList fails and returns empty term2name", {
+  skip_if_not_installed("KEGGREST")
+  local_mocked_bindings(
+    keggLink = function(...) mock_links,
+    keggList = function(...) stop("server error"),
+    .package = "KEGGREST"
+  )
+  result <- suppressWarnings(buildKEGGTermGene("eco"))
+  expect_warning(
+    buildKEGGTermGene("eco"),
+    "Could not fetch KEGG pathway names"
+  )
+  expect_equal(nrow(result$term2name), 0L)
+})
 
 # ── File caching ──────────────────────────────────────────────────────────────
 
@@ -280,90 +277,80 @@ test_that("enrichMethylation accepts kegg_term2gene and returns $kegg slot", {
   expect_true("kegg" %in% names(res))
 })
 
-test_that(
-  "enrichMethylation kegg_term2gene result is in $kegg (not $go) slot",
-  {
-    skip_if_not_installed("clusterProfiler")
+test_that("enrichMethylation kegg_term2gene result is in $kegg (not $go) slot", {
+  skip_if_not_installed("clusterProfiler")
 
-    data(comma_example_data)
-    dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
-    ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
+  data(comma_example_data)
+  dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
+  ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
 
-    fake_kegg_t2g <- data.frame(
-      term = c("eco00010", "eco00010", "eco00020"),
-      gene = c("geneA", "geneB", "geneC"),
-      stringsAsFactors = FALSE
-    )
+  fake_kegg_t2g <- data.frame(
+    term = c("eco00010", "eco00010", "eco00020"),
+    gene = c("geneA", "geneB", "geneC"),
+    stringsAsFactors = FALSE
+  )
 
-    res <- enrichMethylation(
+  res <- enrichMethylation(
+    ann,
+    kegg_term2gene = fake_kegg_t2g,
+    minGSSize = 1L
+  )
+  # $go should be NULL; $kegg should be populated even when enricher
+  # returns no hits.
+  expect_null(res$go)
+  # kegg slot exists in the result list.
+  expect_true("kegg" %in% names(res))
+})
+
+test_that("enrichMethylation errors if kegg_term2gene missing required columns", {
+  skip_if_not_installed("clusterProfiler")
+
+  data(comma_example_data)
+  dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
+  ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
+
+  bad_t2g <- data.frame(pathway = "eco00010", gene_id = "geneA")
+
+  expect_error(
+    enrichMethylation(ann, kegg_term2gene = bad_t2g),
+    "columns 'term' and 'gene'"
+  )
+})
+
+test_that("enrichMethylation errors if kegg_term2name missing required columns", {
+  skip_if_not_installed("clusterProfiler")
+
+  data(comma_example_data)
+  dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
+  ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
+
+  fake_kegg_t2g <- data.frame(
+    term = "eco00010",
+    gene = "geneA",
+    stringsAsFactors = FALSE
+  )
+  bad_t2n <- data.frame(pathway = "eco00010", description = "Glycolysis")
+
+  expect_error(
+    enrichMethylation(
       ann,
       kegg_term2gene = fake_kegg_t2g,
-      minGSSize = 1L
-    )
-    # $go should be NULL; $kegg should be populated even when enricher
-    # returns no hits.
-    expect_null(res$go)
-    # kegg slot exists in the result list.
-    expect_true("kegg" %in% names(res))
-  }
-)
+      kegg_term2name = bad_t2n
+    ),
+    "columns 'term' and 'name'"
+  )
+})
 
-test_that(
-  "enrichMethylation errors if kegg_term2gene missing required columns",
-  {
-    skip_if_not_installed("clusterProfiler")
+test_that("enrichMethylation error mentions kegg_term2gene in no-mapping message", {
+  data(comma_example_data)
+  dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
+  ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
 
-    data(comma_example_data)
-    dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
-    ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
-
-    bad_t2g <- data.frame(pathway = "eco00010", gene_id = "geneA")
-
-    expect_error(
-      enrichMethylation(ann, kegg_term2gene = bad_t2g),
-      "columns 'term' and 'gene'"
-    )
-  }
-)
-
-test_that(
-  "enrichMethylation errors if kegg_term2name missing required columns",
-  {
-    skip_if_not_installed("clusterProfiler")
-
-    data(comma_example_data)
-    dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
-    ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
-
-    fake_kegg_t2g <- data.frame(
-      term = "eco00010", gene = "geneA",
-      stringsAsFactors = FALSE
-    )
-    bad_t2n <- data.frame(pathway = "eco00010", description = "Glycolysis")
-
-    expect_error(
-      enrichMethylation(ann,
-        kegg_term2gene = fake_kegg_t2g,
-        kegg_term2name = bad_t2n
-      ),
-      "columns 'term' and 'name'"
-    )
-  }
-)
-
-test_that(
-  "enrichMethylation error mentions kegg_term2gene in no-mapping message",
-  {
-    data(comma_example_data)
-    dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
-    ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
-
-    expect_error(
-      enrichMethylation(ann),
-      "kegg_term2gene"
-    )
-  }
-)
+  expect_error(
+    enrichMethylation(ann),
+    "kegg_term2gene"
+  )
+})
 
 test_that("enrichMethylation kegg_term2gene works with method = 'gsea'", {
   skip_if_not_installed("clusterProfiler")
@@ -380,40 +367,37 @@ test_that("enrichMethylation kegg_term2gene works with method = 'gsea'", {
 
   res <- enrichMethylation(
     ann,
-    method         = "gsea",
+    method = "gsea",
     kegg_term2gene = fake_kegg_t2g,
-    minGSSize      = 1L
+    minGSSize = 1L
   )
   expect_type(res, "list")
   expect_true("kegg" %in% names(res))
 })
 
-test_that(
-  "enrichMethylation kegg_term2gene works with method = c('ora','gsea')",
-  {
-    skip_if_not_installed("clusterProfiler")
+test_that("enrichMethylation kegg_term2gene works with method = c('ora','gsea')", {
+  skip_if_not_installed("clusterProfiler")
 
-    data(comma_example_data)
-    dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
-    ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
+  data(comma_example_data)
+  dm <- diffMethyl(comma_example_data, formula = ~condition, mod_type = "6mA")
+  ann <- annotateSites(dm, annotation(comma_example_data), keep = "overlap")
 
-    fake_kegg_t2g <- data.frame(
-      term = c("eco00010", "eco00010", "eco00020", "eco00020", "eco00030"),
-      gene = c("geneA", "geneB", "geneC", "geneD", "geneE"),
-      stringsAsFactors = FALSE
-    )
+  fake_kegg_t2g <- data.frame(
+    term = c("eco00010", "eco00010", "eco00020", "eco00020", "eco00030"),
+    gene = c("geneA", "geneB", "geneC", "geneD", "geneE"),
+    stringsAsFactors = FALSE
+  )
 
-    res <- enrichMethylation(
-      ann,
-      method         = c("ora", "gsea"),
-      kegg_term2gene = fake_kegg_t2g,
-      minGSSize      = 1L
-    )
-    expect_type(res, "list")
-    expect_true("kegg" %in% names(res))
-    expect_true(all(c("ora", "gsea") %in% names(res$kegg)))
-  }
-)
+  res <- enrichMethylation(
+    ann,
+    method = c("ora", "gsea"),
+    kegg_term2gene = fake_kegg_t2g,
+    minGSSize = 1L
+  )
+  expect_type(res, "list")
+  expect_true("kegg" %in% names(res))
+  expect_true(all(c("ora", "gsea") %in% names(res$kegg)))
+})
 
 # ── buildKEGGGeneIDMap() — shared mock data ───────────────────────────────────
 
@@ -436,19 +420,16 @@ mock_ent2sym <- data.frame(
 
 # ── buildKEGGGeneIDMap() — entrez2symbol path ─────────────────────────────────
 
-test_that(
-  "buildKEGGGeneIDMap entrez2symbol returns data.frame with symbol and kegg_id",
-  {
-    skip_if_not_installed("KEGGREST")
-    local_mocked_bindings(
-      keggConv = function(...) mock_conv,
-      .package = "KEGGREST"
-    )
-    result <- buildKEGGGeneIDMap("eco", entrez2symbol = mock_ent2sym)
-    expect_s3_class(result, "data.frame")
-    expect_true(all(c("symbol", "kegg_id") %in% colnames(result)))
-  }
-)
+test_that("buildKEGGGeneIDMap entrez2symbol returns data.frame with symbol and kegg_id", {
+  skip_if_not_installed("KEGGREST")
+  local_mocked_bindings(
+    keggConv = function(...) mock_conv,
+    .package = "KEGGREST"
+  )
+  result <- buildKEGGGeneIDMap("eco", entrez2symbol = mock_ent2sym)
+  expect_s3_class(result, "data.frame")
+  expect_true(all(c("symbol", "kegg_id") %in% colnames(result)))
+})
 
 test_that("buildKEGGGeneIDMap entrez2symbol kegg_id has no organism prefix", {
   skip_if_not_installed("KEGGREST")
@@ -473,49 +454,41 @@ test_that("buildKEGGGeneIDMap entrez2symbol join is correct", {
   expect_equal(lacz_row$kegg_id, "b0344")
 })
 
-test_that(
-  "buildKEGGGeneIDMap entrez2symbol excludes genes absent from keggConv",
-  {
-    skip_if_not_installed("KEGGREST")
-    extra_sym <- rbind(
-      mock_ent2sym,
-      data.frame(
-        entrez_id = "999999", symbol = "fakeGene",
-        stringsAsFactors = FALSE
-      )
+test_that("buildKEGGGeneIDMap entrez2symbol excludes genes absent from keggConv", {
+  skip_if_not_installed("KEGGREST")
+  extra_sym <- rbind(
+    mock_ent2sym,
+    data.frame(
+      entrez_id = "999999",
+      symbol = "fakeGene",
+      stringsAsFactors = FALSE
     )
-    local_mocked_bindings(
-      keggConv = function(...) mock_conv,
-      .package = "KEGGREST"
-    )
-    result <- buildKEGGGeneIDMap("eco", entrez2symbol = extra_sym)
-    expect_false("fakeGene" %in% result$symbol)
-    expect_equal(nrow(result), nrow(mock_ent2sym))
-  }
-)
+  )
+  local_mocked_bindings(
+    keggConv = function(...) mock_conv,
+    .package = "KEGGREST"
+  )
+  result <- buildKEGGGeneIDMap("eco", entrez2symbol = extra_sym)
+  expect_false("fakeGene" %in% result$symbol)
+  expect_equal(nrow(result), nrow(mock_ent2sym))
+})
 
-test_that(
-  "buildKEGGGeneIDMap errors when entrez2symbol missing required columns",
-  {
-    skip_if_not_installed("KEGGREST")
-    bad <- data.frame(gene_id = "945076", name = "lacZ")
-    expect_error(
-      buildKEGGGeneIDMap("eco", entrez2symbol = bad),
-      "'entrez_id' and 'symbol'"
-    )
-  }
-)
+test_that("buildKEGGGeneIDMap errors when entrez2symbol missing required columns", {
+  skip_if_not_installed("KEGGREST")
+  bad <- data.frame(gene_id = "945076", name = "lacZ")
+  expect_error(
+    buildKEGGGeneIDMap("eco", entrez2symbol = bad),
+    "'entrez_id' and 'symbol'"
+  )
+})
 
-test_that(
-  "buildKEGGGeneIDMap errors when neither OrgDb nor entrez2symbol provided",
-  {
-    skip_if_not_installed("KEGGREST")
-    expect_error(
-      buildKEGGGeneIDMap("eco"),
-      "Provide at least one of"
-    )
-  }
-)
+test_that("buildKEGGGeneIDMap errors when neither OrgDb nor entrez2symbol provided", {
+  skip_if_not_installed("KEGGREST")
+  expect_error(
+    buildKEGGGeneIDMap("eco"),
+    "Provide at least one of"
+  )
+})
 
 test_that("buildKEGGGeneIDMap errors on bad organism", {
   skip_if_not_installed("KEGGREST")
@@ -544,7 +517,8 @@ test_that("buildKEGGGeneIDMap wraps keggConv errors with helpful message", {
 test_that("buildKEGGGeneIDMap warns when no symbol matches found", {
   skip_if_not_installed("KEGGREST")
   no_match <- data.frame(
-    entrez_id = "000000", symbol = "X",
+    entrez_id = "000000",
+    symbol = "X",
     stringsAsFactors = FALSE
   )
   local_mocked_bindings(
@@ -562,34 +536,31 @@ test_that("buildKEGGGeneIDMap warns when no symbol matches found", {
 # Build a minimal mock OrgDb-like environment
 mock_orgdb <- new.env()
 
-test_that(
-  "buildKEGGGeneIDMap OrgDb path returns correct symbol-kegg_id pairs",
-  {
-    skip_if_not_installed("KEGGREST")
-    skip_if_not_installed("AnnotationDbi")
-    local_mocked_bindings(
-      keggConv = function(...) mock_conv,
-      .package = "KEGGREST"
-    )
-    local_mocked_bindings(
-      columns = function(x, ...) c("ENTREZID", "SYMBOL"),
-      keys = function(x, keytype, ...) mock_ent2sym$entrez_id,
-      select = function(x, keys, columns, keytype, ...) {
-        data.frame(
-          ENTREZID = mock_ent2sym$entrez_id,
-          SYMBOL = mock_ent2sym$symbol,
-          stringsAsFactors = FALSE
-        )
-      },
-      .package = "AnnotationDbi"
-    )
-    result <- buildKEGGGeneIDMap("eco", OrgDb = mock_orgdb)
-    expect_s3_class(result, "data.frame")
-    expect_true(all(c("symbol", "kegg_id") %in% colnames(result)))
-    lacz_row <- result[result$symbol == "lacZ", ]
-    expect_equal(lacz_row$kegg_id, "b0344")
-  }
-)
+test_that("buildKEGGGeneIDMap OrgDb path returns correct symbol-kegg_id pairs", {
+  skip_if_not_installed("KEGGREST")
+  skip_if_not_installed("AnnotationDbi")
+  local_mocked_bindings(
+    keggConv = function(...) mock_conv,
+    .package = "KEGGREST"
+  )
+  local_mocked_bindings(
+    columns = function(x, ...) c("ENTREZID", "SYMBOL"),
+    keys = function(x, keytype, ...) mock_ent2sym$entrez_id,
+    select = function(x, keys, columns, keytype, ...) {
+      data.frame(
+        ENTREZID = mock_ent2sym$entrez_id,
+        SYMBOL = mock_ent2sym$symbol,
+        stringsAsFactors = FALSE
+      )
+    },
+    .package = "AnnotationDbi"
+  )
+  result <- buildKEGGGeneIDMap("eco", OrgDb = mock_orgdb)
+  expect_s3_class(result, "data.frame")
+  expect_true(all(c("symbol", "kegg_id") %in% colnames(result)))
+  lacz_row <- result[result$symbol == "lacZ", ]
+  expect_equal(lacz_row$kegg_id, "b0344")
+})
 
 test_that("buildKEGGGeneIDMap OrgDb path errors when id_col not in OrgDb", {
   skip_if_not_installed("KEGGREST")
@@ -702,20 +673,17 @@ test_that("buildKEGGTermGene with id_map preserves unmatched KEGG IDs", {
   expect_false(any(is.na(genes)))
 })
 
-test_that(
-  "buildKEGGTermGene without id_map is unchanged from original behavior",
-  {
-    skip_if_not_installed("KEGGREST")
-    local_mocked_bindings(
-      keggLink = function(...) mock_links,
-      keggList = function(...) mock_pathways,
-      .package = "KEGGREST"
-    )
-    result <- buildKEGGTermGene("eco")
-    # Default behavior: b-numbers in gene column
-    expect_true(all(grepl("^b[0-9]", result$term2gene$gene)))
-  }
-)
+test_that("buildKEGGTermGene without id_map is unchanged from original behavior", {
+  skip_if_not_installed("KEGGREST")
+  local_mocked_bindings(
+    keggLink = function(...) mock_links,
+    keggList = function(...) mock_pathways,
+    .package = "KEGGREST"
+  )
+  result <- buildKEGGTermGene("eco")
+  # Default behavior: b-numbers in gene column
+  expect_true(all(grepl("^b[0-9]", result$term2gene$gene)))
+})
 
 test_that("buildKEGGTermGene with id_map = NULL is identical to default", {
   skip_if_not_installed("KEGGREST")
@@ -743,28 +711,22 @@ test_that("buildKEGGTermGene errors on malformed id_map", {
   )
 })
 
-test_that(
-  "buildKEGGTermGene errors when cache parent directory does not exist",
-  {
-    bad_file <- file.path(tempdir(), "does-not-exist", "kegg.rds")
-    expect_error(
-      buildKEGGTermGene("eco", file = bad_file),
-      regexp = "Parent directory"
-    )
-  }
-)
+test_that("buildKEGGTermGene errors when cache parent directory does not exist", {
+  bad_file <- file.path(tempdir(), "does-not-exist", "kegg.rds")
+  expect_error(
+    buildKEGGTermGene("eco", file = bad_file),
+    regexp = "Parent directory"
+  )
+})
 
-test_that(
-  "buildKEGGGeneIDMap errors when cache parent directory does not exist",
-  {
-    bad_file <- file.path(tempdir(), "does-not-exist", "id-map.rds")
-    expect_error(
-      buildKEGGGeneIDMap(
-        "eco",
-        entrez2symbol = data.frame(entrez_id = "1", symbol = "geneA"),
-        file = bad_file
-      ),
-      regexp = "Parent directory"
-    )
-  }
-)
+test_that("buildKEGGGeneIDMap errors when cache parent directory does not exist", {
+  bad_file <- file.path(tempdir(), "does-not-exist", "id-map.rds")
+  expect_error(
+    buildKEGGGeneIDMap(
+      "eco",
+      entrez2symbol = data.frame(entrez_id = "1", symbol = "geneA"),
+      file = bad_file
+    ),
+    regexp = "Parent directory"
+  )
+})

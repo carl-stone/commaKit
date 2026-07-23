@@ -72,16 +72,13 @@ test_that(
   }
 )
 
-test_that(
-  "findMotifSites() reports both + and - strand hits for a palindromic motif",
-  {
-    skip_if_not_installed("Biostrings")
-    fa <- .write_tmp_fasta(c(chr_test = "ATCGATCGGG"))
-    result <- findMotifSites(fa, "GATC")
-    expect_true("+" %in% as.character(strand(result)))
-    expect_true("-" %in% as.character(strand(result)))
-  }
-)
+test_that("findMotifSites() reports both + and - strand hits for a palindromic motif", {
+  skip_if_not_installed("Biostrings")
+  fa <- .write_tmp_fasta(c(chr_test = "ATCGATCGGG"))
+  result <- findMotifSites(fa, "GATC")
+  expect_true("+" %in% as.character(strand(result)))
+  expect_true("-" %in% as.character(strand(result)))
+})
 
 test_that(
   paste(
@@ -162,28 +159,22 @@ test_that("findMotifSites() matches IUPAC W (A or T) in a motif", {
 # findMotifSites() — multi-chromosome genome
 # ─────────────────────────────────────────────────────────────────────────────
 
-test_that(
-  "findMotifSites() searches across all chromosomes in a multi-chr FASTA",
-  {
-    skip_if_not_installed("Biostrings")
-    fa <- .write_tmp_fasta(c(chr1 = "GATCAAAA", chr2 = "AAAGATCA"))
-    result <- findMotifSites(fa, "GATC")
-    chroms <- as.character(seqnames(result))
-    expect_true("chr1" %in% chroms)
-    expect_true("chr2" %in% chroms)
-  }
-)
+test_that("findMotifSites() searches across all chromosomes in a multi-chr FASTA", {
+  skip_if_not_installed("Biostrings")
+  fa <- .write_tmp_fasta(c(chr1 = "GATCAAAA", chr2 = "AAAGATCA"))
+  result <- findMotifSites(fa, "GATC")
+  chroms <- as.character(seqnames(result))
+  expect_true("chr1" %in% chroms)
+  expect_true("chr2" %in% chroms)
+})
 
-test_that(
-  "findMotifSites() returns a zero-length GRanges when the motif is absent",
-  {
-    skip_if_not_installed("Biostrings")
-    fa <- .write_tmp_fasta(c(chr_test = "AAAAAAAAAA"))
-    result <- findMotifSites(fa, "GATC")
-    expect_equal(length(result), 0L)
-    expect_true(is(result, "GRanges"))
-  }
-)
+test_that("findMotifSites() returns a zero-length GRanges when the motif is absent", {
+  skip_if_not_installed("Biostrings")
+  fa <- .write_tmp_fasta(c(chr_test = "AAAAAAAAAA"))
+  result <- findMotifSites(fa, "GATC")
+  expect_equal(length(result), 0L)
+  expect_true(is(result, "GRanges"))
+})
 
 # ─────────────────────────────────────────────────────────────────────────────
 # findMotifSites() — DNAStringSet input

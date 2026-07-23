@@ -56,21 +56,18 @@ test_that(".validateGenomeInfo() errors on non-existent FASTA path", {
   )
 })
 
-test_that(
-  ".validateGenomeInfo() reads FASTA and returns named integer vector",
-  {
-    skip_if_not_installed("Biostrings")
-    fa <- tempfile(fileext = ".fa")
-    writeLines(c(">chr_a", "ATCGATCG", ">chr_b", "GGGGCCCC"), fa)
+test_that(".validateGenomeInfo() reads FASTA and returns named integer vector", {
+  skip_if_not_installed("Biostrings")
+  fa <- tempfile(fileext = ".fa")
+  writeLines(c(">chr_a", "ATCGATCG", ">chr_b", "GGGGCCCC"), fa)
 
-    result <- commaKit:::.validateGenomeInfo(fa)
+  result <- commaKit:::.validateGenomeInfo(fa)
 
-    expect_true(is.integer(result))
-    expect_equal(names(result), c("chr_a", "chr_b"))
-    expect_equal(result[["chr_a"]], 8L)
-    expect_equal(result[["chr_b"]], 8L)
-  }
-)
+  expect_true(is.integer(result))
+  expect_equal(names(result), c("chr_a", "chr_b"))
+  expect_equal(result[["chr_a"]], 8L)
+  expect_equal(result[["chr_b"]], 8L)
+})
 
 test_that(
   paste(
@@ -103,16 +100,13 @@ test_that(".validateGenomeInfo() accepts a named DNAStringSet", {
   expect_equal(result[["chr2"]], 8L)
 })
 
-test_that(
-  ".validateGenomeInfo() DNAStringSet single-sequence returns correct size",
-  {
-    skip_if_not_installed("Biostrings")
-    seqs <- Biostrings::DNAStringSet(c(NC_000913 = "GATCAAAA"))
-    result <- commaKit:::.validateGenomeInfo(seqs)
-    expect_equal(names(result), "NC_000913")
-    expect_equal(result[["NC_000913"]], 8L)
-  }
-)
+test_that(".validateGenomeInfo() DNAStringSet single-sequence returns correct size", {
+  skip_if_not_installed("Biostrings")
+  seqs <- Biostrings::DNAStringSet(c(NC_000913 = "GATCAAAA"))
+  result <- commaKit:::.validateGenomeInfo(seqs)
+  expect_equal(names(result), "NC_000913")
+  expect_equal(result[["NC_000913"]], 8L)
+})
 
 test_that(".validateGenomeInfo() errors on unnamed DNAStringSet", {
   skip_if_not_installed("Biostrings")
@@ -170,21 +164,21 @@ test_that(".loadGenomeSequences() requires named sequences", {
   )
 })
 
-test_that(
-  ".validateGenomeInfo() and .loadGenomeSequences() share sequence sizes",
-  {
-    skip_if_not_installed("Biostrings")
-    seqs <- Biostrings::DNAStringSet(c(chr1 = "ATCG", chr2 = "GGCCCC"))
+test_that(".validateGenomeInfo() and .loadGenomeSequences() share sequence sizes", {
+  skip_if_not_installed("Biostrings")
+  seqs <- Biostrings::DNAStringSet(c(chr1 = "ATCG", chr2 = "GGCCCC"))
 
-    loaded <- commaKit:::.loadGenomeSequences(seqs)
-    sizes <- commaKit:::.validateGenomeInfo(seqs)
+  loaded <- commaKit:::.loadGenomeSequences(seqs)
+  sizes <- commaKit:::.validateGenomeInfo(seqs)
 
-    expect_equal(sizes, stats::setNames(
+  expect_equal(
+    sizes,
+    stats::setNames(
       as.integer(Biostrings::width(loaded)),
       names(loaded)
-    ))
-  }
-)
+    )
+  )
+})
 
 test_that(".makeSeqinfo() returns NULL for NULL input", {
   expect_null(commaKit:::.makeSeqinfo(NULL))

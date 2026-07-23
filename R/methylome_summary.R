@@ -74,8 +74,12 @@ NULL
 #'   \code{\link{sampleInfo}}
 #'
 #' @export
-methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
-                             mod_context = NULL) {
+methylomeSummary <- function(
+  object,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL
+) {
   # ── Input validation ──────────────────────────────────────────────────────
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
@@ -115,18 +119,18 @@ methylomeSummary <- function(object, mod_type = NULL, motif = NULL,
     c_all <- as.numeric(covs)
 
     data.frame(
-      sample_name      = samp,
-      condition        = condition_value,
-      mod_type         = mt_label,
-      n_sites          = n_sites,
-      n_covered        = n_covered,
-      mean_beta        = if (n_covered > 0) mean(b_cov) else NA_real_,
-      median_beta      = if (n_covered > 0) stats::median(b_cov) else NA_real_,
-      sd_beta          = if (n_covered > 1) stats::sd(b_cov) else NA_real_,
-      frac_methylated  = if (n_covered > 0) mean(b_cov > 0.5) else NA_real_,
-      mean_coverage    = mean(c_all, na.rm = TRUE),
-      median_coverage  = stats::median(c_all, na.rm = TRUE),
-      min_coverage     = obj_min_cov,
+      sample_name = samp,
+      condition = condition_value,
+      mod_type = mt_label,
+      n_sites = n_sites,
+      n_covered = n_covered,
+      mean_beta = if (n_covered > 0) mean(b_cov) else NA_real_,
+      median_beta = if (n_covered > 0) stats::median(b_cov) else NA_real_,
+      sd_beta = if (n_covered > 1) stats::sd(b_cov) else NA_real_,
+      frac_methylated = if (n_covered > 0) mean(b_cov > 0.5) else NA_real_,
+      mean_coverage = mean(c_all, na.rm = TRUE),
+      median_coverage = stats::median(c_all, na.rm = TRUE),
+      min_coverage = obj_min_cov,
       stringsAsFactors = FALSE
     )
   })

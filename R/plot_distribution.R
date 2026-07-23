@@ -45,11 +45,13 @@ NULL
 #' @seealso \code{\link{methylomeSummary}}, \code{\link{plot_coverage}}
 #'
 #' @export
-plot_methylation_distribution <- function(object,
-                                          mod_type = NULL,
-                                          motif = NULL,
-                                          mod_context = NULL,
-                                          per_sample = TRUE) {
+plot_methylation_distribution <- function(
+  object,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  per_sample = TRUE
+) {
   ## --- Input validation ---------------------------------------------------
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
@@ -113,10 +115,10 @@ plot_methylation_distribution <- function(object,
     ggplot2::scale_x_continuous(
       limits = c(0, 1),
       expand = c(0.01, 0.01),
-      name   = "Methylation"
+      name = "Methylation"
     ) +
     ggplot2::labs(
-      y     = "Density",
+      y = "Density",
       title = "Methylation Beta Distribution"
     ) +
     ggplot2::theme_bw()

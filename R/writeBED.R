@@ -49,13 +49,15 @@ NULL
 #' @seealso \code{\link{methylation}}, \code{\link{siteInfo}}
 #'
 #' @export
-writeBED <- function(object,
-                     file,
-                     sample,
-                     mod_type = NULL,
-                     rgb_scale = TRUE,
-                     track_name = sample,
-                     track_description = "methylation beta values") {
+writeBED <- function(
+  object,
+  file,
+  sample,
+  mod_type = NULL,
+  rgb_scale = TRUE,
+  track_name = sample,
+  track_description = "methylation beta values"
+) {
   # ── Input validation ──────────────────────────────────────────────────────
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
@@ -73,8 +75,11 @@ writeBED <- function(object,
   available_samples <- colnames(methylation(object))
   if (!sample %in% available_samples) {
     stop(
-      "'sample' = '", sample, "' not found in object. ",
-      "Available samples: ", paste(available_samples, collapse = ", ")
+      "'sample' = '",
+      sample,
+      "' not found in object. ",
+      "Available samples: ",
+      paste(available_samples, collapse = ", ")
     )
   }
 
@@ -95,14 +100,19 @@ writeBED <- function(object,
   betas <- betas[keep]
 
   track_line <- paste0(
-    'track name="', track_name, '" description="',
-    track_description, '" itemRgb="On"'
+    'track name="',
+    track_name,
+    '" description="',
+    track_description,
+    '" itemRgb="On"'
   )
   bed_df <- NULL
 
   if (nrow(rd) == 0) {
     warning(
-      "No sites with non-NA methylation for sample '", sample, "'. ",
+      "No sites with non-NA methylation for sample '",
+      sample,
+      "'. ",
       "Writing empty BED file."
     )
   } else {
@@ -165,19 +175,17 @@ writeBED <- function(object,
   if (!is.null(bed_df) && nrow(bed_df) > 0L) {
     utils::write.table(
       bed_df,
-      file      = tmp,
-      sep       = "\t",
+      file = tmp,
+      sep = "\t",
       row.names = FALSE,
       col.names = FALSE,
-      quote     = FALSE,
-      append    = TRUE
+      quote = FALSE,
+      append = TRUE
     )
   }
 
   if (!file.rename(tmp, file)) {
-    stop("Failed to move temporary BED file into place: ", file,
-      call. = FALSE
-    )
+    stop("Failed to move temporary BED file into place: ", file, call. = FALSE)
   }
 
   cleanup_tmp <- FALSE

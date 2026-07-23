@@ -49,12 +49,14 @@ NULL
 #' @seealso \code{\link{annotateSites}}, \code{\link{plot_genome_track}}
 #'
 #' @export
-plot_metagene <- function(object,
-                          feature = "gene",
-                          mod_type = NULL,
-                          motif = NULL,
-                          mod_context = NULL,
-                          n_bins = 50L) {
+plot_metagene <- function(
+  object,
+  feature = "gene",
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  n_bins = 50L
+) {
   ## --- Input validation ---------------------------------------------------
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
@@ -88,8 +90,12 @@ plot_metagene <- function(object,
   if (length(feat_gr) == 0L) {
     available_types <- unique(as.character(annot_gr$feature_type))
     stop(
-      "No features of type '", feature, "' found in annotation(object). ",
-      "Available feature types: ", paste(available_types, collapse = ", "), "."
+      "No features of type '",
+      feature,
+      "' found in annotation(object). ",
+      "Available feature types: ",
+      paste(available_types, collapse = ", "),
+      "."
     )
   }
 
@@ -114,7 +120,9 @@ plot_metagene <- function(object,
   has_overlap <- site_lengths > 0L
   if (!any(has_overlap)) {
     stop(
-      "No methylation sites overlap any '", feature, "' features. ",
+      "No methylation sites overlap any '",
+      feature,
+      "' features. ",
       "The metagene plot cannot be produced."
     )
   }
@@ -189,24 +197,26 @@ plot_metagene <- function(object,
   p <- ggplot2::ggplot(
     summary_df,
     ggplot2::aes(
-      x     = .data[["bin_center"]],
-      y     = .data[["mean_beta"]],
+      x = .data[["bin_center"]],
+      y = .data[["mean_beta"]],
       color = .data[["sample_name"]]
     )
   ) +
     ggplot2::geom_line(linewidth = 0.8) +
     ggplot2::geom_vline(
       xintercept = c(0, 1),
-      linetype = "dashed", color = "grey50", linewidth = 0.5
+      linetype = "dashed",
+      color = "grey50",
+      linewidth = 0.5
     ) +
     ggplot2::scale_x_continuous(
       breaks = c(0, 0.5, 1),
       labels = c("TSS", "Middle", "TTS"),
-      name   = paste0("Relative position within '", feature, "'")
+      name = paste0("Relative position within '", feature, "'")
     ) +
     ggplot2::scale_y_continuous(
       limits = c(0, 1),
-      name   = "Mean methylation"
+      name = "Mean methylation"
     ) +
     ggplot2::labs(
       title = paste0("Metagene: ", feature),

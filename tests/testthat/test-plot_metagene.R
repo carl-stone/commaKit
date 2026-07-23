@@ -6,19 +6,25 @@
   # 10 sites distributed within annotated genes so metagene has overlap
   n_sites <- 10L
   positions <- c(
-    1500L, 2000L, 2500L, 3000L, 3500L,
-    6500L, 7000L, 7500L, 8000L, 8500L
+    1500L,
+    2000L,
+    2500L,
+    3000L,
+    3500L,
+    6500L,
+    7000L,
+    7500L,
+    8000L,
+    8500L
   )
   set.seed(5L)
   betas <- matrix(
     runif(n_sites * 2L, 0.1, 0.9),
-    nrow = n_sites, ncol = 2L,
+    nrow = n_sites,
+    ncol = 2L,
     dimnames = list(NULL, c("ctrl_1", "treat_1"))
   )
-  cov_mat <- matrix(20L,
-    nrow = n_sites, ncol = 2L,
-    dimnames = dimnames(betas)
-  )
+  cov_mat <- matrix(20L, nrow = n_sites, ncol = 2L, dimnames = dimnames(betas))
   site_gr <- GenomicRanges::GRanges(
     seqnames = rep("chr_sim", n_sites),
     ranges = IRanges::IRanges(start = positions, width = 1L),
@@ -33,9 +39,9 @@
   )
   cd <- S4Vectors::DataFrame(
     sample_name = c("ctrl_1", "treat_1"),
-    condition   = c("control", "treatment"),
-    replicate   = 1:2,
-    row.names   = c("ctrl_1", "treat_1")
+    condition = c("control", "treatment"),
+    replicate = 1:2,
+    row.names = c("ctrl_1", "treat_1")
   )
   ann_gr <- GenomicRanges::GRanges(
     seqnames = "chr_sim",
@@ -49,9 +55,9 @@
   ann_gr$name <- c("geneA", "geneB")
 
   rse <- SummarizedExperiment::SummarizedExperiment(
-    assays     = list(methylation = betas, coverage = cov_mat),
-    rowRanges  = site_gr,
-    colData    = cd
+    assays = list(methylation = betas, coverage = cov_mat),
+    rowRanges = site_gr,
+    colData = cd
   )
   obj <- new("commaData", rse)
   S4Vectors::metadata(obj)$annotation <- ann_gr
@@ -61,41 +67,35 @@
 
 # ─── Basic return type ────────────────────────────────────────────────────────
 
-test_that(
-  "plot_metagene: returns ggplot with line data for valid feature type",
-  {
-    obj <- .make_metagene_data()
-    p <- plot_metagene(obj, feature = "gene")
-    expect_s3_class(p, "ggplot")
-    d <- p$data
-    # bin_center values are in [0, 1]
-    expect_true(all(d$bin_center >= 0))
-    expect_true(all(d$bin_center <= 1))
-    # sample_name matches fixture
-    expect_setequal(as.character(d$sample_name), c("ctrl_1", "treat_1"))
-    # mean_beta values are finite
-    expect_true(all(is.finite(d$mean_beta)))
-  }
-)
+test_that("plot_metagene: returns ggplot with line data for valid feature type", {
+  obj <- .make_metagene_data()
+  p <- plot_metagene(obj, feature = "gene")
+  expect_s3_class(p, "ggplot")
+  d <- p$data
+  # bin_center values are in [0, 1]
+  expect_true(all(d$bin_center >= 0))
+  expect_true(all(d$bin_center <= 1))
+  # sample_name matches fixture
+  expect_setequal(as.character(d$sample_name), c("ctrl_1", "treat_1"))
+  # mean_beta values are finite
+  expect_true(all(is.finite(d$mean_beta)))
+})
 
-test_that(
-  "plot_metagene: mod_type filter produces identical data when all sites match",
-  {
-    obj <- .make_metagene_data()
-    p <- plot_metagene(obj, feature = "gene")
-    p_filt <- plot_metagene(obj, feature = "gene", mod_type = "6mA")
-    expect_s3_class(p_filt, "ggplot")
-    # All sites are 6mA, so filtering by 6mA should produce identical data
-    d_all <- p$data
-    d_filt <- p_filt$data
-    expect_identical(d_all$bin_center, d_filt$bin_center)
-    expect_identical(
-      as.character(d_all$sample_name),
-      as.character(d_filt$sample_name)
-    )
-    expect_identical(d_all$mean_beta, d_filt$mean_beta)
-  }
-)
+test_that("plot_metagene: mod_type filter produces identical data when all sites match", {
+  obj <- .make_metagene_data()
+  p <- plot_metagene(obj, feature = "gene")
+  p_filt <- plot_metagene(obj, feature = "gene", mod_type = "6mA")
+  expect_s3_class(p_filt, "ggplot")
+  # All sites are 6mA, so filtering by 6mA should produce identical data
+  d_all <- p$data
+  d_filt <- p_filt$data
+  expect_identical(d_all$bin_center, d_filt$bin_center)
+  expect_identical(
+    as.character(d_all$sample_name),
+    as.character(d_filt$sample_name)
+  )
+  expect_identical(d_all$mean_beta, d_filt$mean_beta)
+})
 
 test_that("plot_metagene: n_bins parameter controls bin count", {
   obj <- .make_metagene_data()
@@ -132,11 +132,11 @@ test_that("plot_metagene: extracts beta values from annotated row order", {
     seq(0.2, 0.9, length.out = nrow(obj))
 
   expected <- plot_metagene(obj, feature = "gene", n_bins = 10L)$data
-  real_annotateSites <- annotateSites
+  real_annotate_sites <- annotateSites
 
   local_mocked_bindings(
     annotateSites = function(object, features = NULL, keep = "all", ...) {
-      annotated <- real_annotateSites(
+      annotated <- real_annotate_sites(
         object,
         features = features,
         keep = keep,

@@ -74,26 +74,31 @@ NULL
 #' }
 #'
 #' @export
-slidingWindow <- function(object,
-                          window,
-                          stat = c("median", "mean"),
-                          mod_type = NULL,
-                          motif = NULL,
-                          mod_context = NULL,
-                          circular = NULL) {
+slidingWindow <- function(
+  object,
+  window,
+  stat = c("median", "mean"),
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  circular = NULL
+) {
   # ── Input validation ──────────────────────────────────────────────────────
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
   stat <- match.arg(stat)
 
-  if (missing(window) || !is.numeric(window) || length(window) != 1 ||
-    window < 1) {
+  if (
+    missing(window) || !is.numeric(window) || length(window) != 1 || window < 1
+  ) {
     stop("'window' must be a positive integer specifying window size in bp.")
   }
   window <- as.integer(window)
-  if (!is.null(circular) &&
-    (!is.logical(circular) || length(circular) != 1L || is.na(circular))) {
+  if (
+    !is.null(circular) &&
+      (!is.logical(circular) || length(circular) != 1L || is.na(circular))
+  ) {
     stop("'circular' must be TRUE, FALSE, or NULL.")
   }
 
@@ -117,8 +122,11 @@ slidingWindow <- function(object,
   min_chr <- min(genome_info)
   if (window > min_chr) {
     stop(
-      "'window' (", window, " bp) exceeds the smallest chromosome size (",
-      min_chr, " bp). Reduce window size."
+      "'window' (",
+      window,
+      " bp) exceeds the smallest chromosome size (",
+      min_chr,
+      " bp). Reduce window size."
     )
   }
 
@@ -172,21 +180,21 @@ slidingWindow <- function(object,
         )
         smoothed_padded <- zoo::rollapply(
           padded,
-          width   = window,
-          FUN     = function(x) stat_fn(x, na.rm = TRUE),
+          width = window,
+          FUN = function(x) stat_fn(x, na.rm = TRUE),
           partial = TRUE,
-          align   = "center",
-          fill    = NA_real_
+          align = "center",
+          fill = NA_real_
         )
         smoothed <- smoothed_padded[(half + 1L):(half + chr_size)]
       } else {
         smoothed <- zoo::rollapply(
           beta_vec,
-          width   = window,
-          FUN     = function(x) stat_fn(x, na.rm = TRUE),
+          width = window,
+          FUN = function(x) stat_fn(x, na.rm = TRUE),
           partial = TRUE,
-          align   = "center",
-          fill    = NA_real_
+          align = "center",
+          fill = NA_real_
         )
       }
 

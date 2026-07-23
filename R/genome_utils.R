@@ -59,7 +59,9 @@ NULL
       "genome is a DNAString (a single, unnamed sequence). Either pass the ",
       "whole BSgenome object directly (e.g., BSgenome.Ecoli.NCBI.20080805), ",
       "or provide a named integer vector of chromosome sizes:\n",
-      "  c(NC_000913 = ", Biostrings::nchar(genome), "L)"
+      "  c(NC_000913 = ",
+      Biostrings::nchar(genome),
+      "L)"
     )
   }
 

@@ -1,8 +1,14 @@
 .make_region_summary_fixture <- function() {
   beta <- matrix(
     c(
-      0.2, 0.4, 0.6, 0.8,
-      0.1, 0.5, 0.7, 0.9
+      0.2,
+      0.4,
+      0.6,
+      0.8,
+      0.1,
+      0.5,
+      0.7,
+      0.9
     ),
     nrow = 4L,
     ncol = 2L,
@@ -10,8 +16,14 @@
   )
   coverage <- matrix(
     c(
-      10L, 10L, 10L, 10L,
-      20L, 20L, 20L, 20L
+      10L,
+      10L,
+      10L,
+      10L,
+      20L,
+      20L,
+      20L,
+      20L
     ),
     nrow = 4L,
     ncol = 2L,
@@ -19,8 +31,14 @@
   )
   mod_counts <- matrix(
     c(
-      2L, 4L, NA, 8L,
-      2L, 10L, 14L, 18L
+      2L,
+      4L,
+      NA,
+      8L,
+      2L,
+      10L,
+      14L,
+      18L
     ),
     nrow = 4L,
     ncol = 2L,
@@ -135,7 +153,8 @@ test_that("summarizeRegions() requires count evidence assays", {
   obj <- .make_region_summary_fixture()
   SummarizedExperiment::assays(obj) <-
     SummarizedExperiment::assays(obj)[c(
-      "methylation", "coverage",
+      "methylation",
+      "coverage",
       "canonical_counts"
     )]
 
@@ -169,27 +188,30 @@ test_that("summarizeRegions() validates motif and mod_context filters", {
   )
 })
 
-test_that(
-  "summarizeRegions() returns a typed 0-row data frame for empty regions",
-  {
-    obj <- .make_region_summary_fixture()
-    empty_regions <- GenomicRanges::GRanges(
-      seqnames = character(0),
-      ranges = IRanges::IRanges(start = integer(0), end = integer(0))
-    )
+test_that("summarizeRegions() returns a typed 0-row data frame for empty regions", {
+  obj <- .make_region_summary_fixture()
+  empty_regions <- GenomicRanges::GRanges(
+    seqnames = character(0),
+    ranges = IRanges::IRanges(start = integer(0), end = integer(0))
+  )
 
-    out <- summarizeRegions(obj, empty_regions)
+  out <- summarizeRegions(obj, empty_regions)
 
-    expect_s3_class(out, "data.frame")
-    expect_equal(nrow(out), 0L)
-    expect_true(all(c(
-      "region_id", "sample_name", "n_sites",
-      "total_mod_counts", "total_valid_coverage",
-      "region_methylation", "total_canonical_counts"
+  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(out), 0L)
+  expect_true(all(
+    c(
+      "region_id",
+      "sample_name",
+      "n_sites",
+      "total_mod_counts",
+      "total_valid_coverage",
+      "region_methylation",
+      "total_canonical_counts"
     ) %in%
-      colnames(out)))
-  }
-)
+      colnames(out)
+  ))
+})
 
 test_that("summarizeRegions() rejects assays with no usable count evidence", {
   obj <- .make_region_summary_fixture()
@@ -201,23 +223,20 @@ test_that("summarizeRegions() rejects assays with no usable count evidence", {
   )
 })
 
-test_that(
-  "summarizeRegions() excludes zero-coverage sites from usable counts",
-  {
-    obj <- .make_region_summary_fixture()
-    SummarizedExperiment::assay(obj, "coverage")[1, 1] <- 0L
-    SummarizedExperiment::assay(obj, "mod_counts")[1, 1] <- 0L
-    SummarizedExperiment::assay(obj, "canonical_counts")[1, 1] <- 0L
+test_that("summarizeRegions() excludes zero-coverage sites from usable counts", {
+  obj <- .make_region_summary_fixture()
+  SummarizedExperiment::assay(obj, "coverage")[1, 1] <- 0L
+  SummarizedExperiment::assay(obj, "mod_counts")[1, 1] <- 0L
+  SummarizedExperiment::assay(obj, "canonical_counts")[1, 1] <- 0L
 
-    out <- summarizeRegions(obj, .make_regions())
-    first_s1 <- out[out$region_id == "region_1" & out$sample_name == "s1", ]
+  out <- summarizeRegions(obj, .make_regions())
+  first_s1 <- out[out$region_id == "region_1" & out$sample_name == "s1", ]
 
-    expect_equal(first_s1$n_sites, 1L)
-    expect_equal(first_s1$total_mod_counts, 4)
-    expect_equal(first_s1$total_valid_coverage, 10)
-    expect_equal(first_s1$region_methylation, 4 / 10)
-  }
-)
+  expect_equal(first_s1$n_sites, 1L)
+  expect_equal(first_s1$total_mod_counts, 4)
+  expect_equal(first_s1$total_valid_coverage, 10)
+  expect_equal(first_s1$region_methylation, 4 / 10)
+})
 
 test_that("summarizeRegions() ignores strand for coordinate region summaries", {
   obj <- .make_region_summary_fixture()
@@ -234,30 +253,33 @@ test_that("summarizeRegions() ignores strand for coordinate region summaries", {
   expect_equal(first_s1$total_mod_counts, 6)
 })
 
-test_that(
-  "summarizeRegions() reports optional component totals conservatively",
-  {
-    obj <- .make_region_summary_fixture()
-    SummarizedExperiment::assay(obj, "canonical_counts")[2, 1] <- NA_integer_
-    SummarizedExperiment::assay(obj, "other_mod_counts") <- matrix(
-      c(
-        1L, NA, 3L, 4L,
-        2L, 2L, 2L, 2L
-      ),
-      nrow = nrow(obj),
-      ncol = ncol(obj),
-      dimnames = dimnames(SummarizedExperiment::assay(obj, "coverage"))
-    )
+test_that("summarizeRegions() reports optional component totals conservatively", {
+  obj <- .make_region_summary_fixture()
+  SummarizedExperiment::assay(obj, "canonical_counts")[2, 1] <- NA_integer_
+  SummarizedExperiment::assay(obj, "other_mod_counts") <- matrix(
+    c(
+      1L,
+      NA,
+      3L,
+      4L,
+      2L,
+      2L,
+      2L,
+      2L
+    ),
+    nrow = nrow(obj),
+    ncol = ncol(obj),
+    dimnames = dimnames(SummarizedExperiment::assay(obj, "coverage"))
+  )
 
-    out <- summarizeRegions(obj, .make_regions())
-    first_s1 <- out[out$region_id == "region_1" & out$sample_name == "s1", ]
-    first_s2 <- out[out$region_id == "region_1" & out$sample_name == "s2", ]
+  out <- summarizeRegions(obj, .make_regions())
+  first_s1 <- out[out$region_id == "region_1" & out$sample_name == "s1", ]
+  first_s2 <- out[out$region_id == "region_1" & out$sample_name == "s2", ]
 
-    expect_true(is.na(first_s1$total_canonical_counts))
-    expect_true(is.na(first_s1$total_other_mod_counts))
-    expect_equal(first_s2$total_other_mod_counts, 6)
-  }
-)
+  expect_true(is.na(first_s1$total_canonical_counts))
+  expect_true(is.na(first_s1$total_other_mod_counts))
+  expect_equal(first_s2$total_other_mod_counts, 6)
+})
 
 test_that("summarizeRegions() rejects non-integer min_sites", {
   obj <- .make_region_summary_fixture()
@@ -282,16 +304,13 @@ test_that("summarizeRegions() rejects contradictory valid site filters", {
   )
 })
 
-test_that(
-  "summarizeRegions() requires count evidence in the filtered site set",
-  {
-    obj <- .make_region_summary_fixture()
-    SummarizedExperiment::assay(obj, "mod_counts")[3, ] <- NA_integer_
-    SummarizedExperiment::assay(obj, "coverage")[3, ] <- 0L
+test_that("summarizeRegions() requires count evidence in the filtered site set", {
+  obj <- .make_region_summary_fixture()
+  SummarizedExperiment::assay(obj, "mod_counts")[3, ] <- NA_integer_
+  SummarizedExperiment::assay(obj, "coverage")[3, ] <- 0L
 
-    expect_error(
-      summarizeRegions(obj, .make_regions(), mod_context = "5mC_CCWGG"),
-      "after site filtering"
-    )
-  }
-)
+  expect_error(
+    summarizeRegions(obj, .make_regions(), mod_context = "5mC_CCWGG"),
+    "after site filtering"
+  )
+})

@@ -122,10 +122,13 @@ setValidity("commaData", function(object) {
   mc <- GenomicRanges::mcols(rr)
   missing_cols <- setdiff(required_mcol_cols, colnames(mc))
   if (length(missing_cols) > 0) {
-    errors <- c(errors, paste0(
-      "rowRanges mcols is missing required columns: ",
-      paste(missing_cols, collapse = ", ")
-    ))
+    errors <- c(
+      errors,
+      paste0(
+        "rowRanges mcols is missing required columns: ",
+        paste(missing_cols, collapse = ", ")
+      )
+    )
   }
 
   # ── rowRanges must be 1-bp ranges (one per methylation site) ──────────
@@ -133,21 +136,29 @@ setValidity("commaData", function(object) {
     widths <- GenomicRanges::width(rr)
     if (any(widths != 1L)) {
       n_bad <- sum(widths != 1L)
-      errors <- c(errors, paste0(
-        "rowRanges must contain 1-bp ranges (one per site), ",
-        "but ", n_bad, " range(s) have width != 1. ",
-        "Downstream code treats each row as a single position."
-      ))
+      errors <- c(
+        errors,
+        paste0(
+          "rowRanges must contain 1-bp ranges (one per site), ",
+          "but ",
+          n_bad,
+          " range(s) have width != 1. ",
+          "Downstream code treats each row as a single position."
+        )
+      )
     }
   }
 
   # ── mod_type must be a factor with valid levels ─────────────────────────
   if ("mod_type" %in% colnames(mc)) {
     if (!is.factor(mc$mod_type)) {
-      errors <- c(errors, paste0(
-        "rowRanges mcols$mod_type must be a factor. ",
-        "Use factor(mod_type, levels = .VALID_MOD_TYPES) when constructing."
-      ))
+      errors <- c(
+        errors,
+        paste0(
+          "rowRanges mcols$mod_type must be a factor. ",
+          "Use factor(mod_type, levels = .VALID_MOD_TYPES) when constructing."
+        )
+      )
     } else {
       # Check levels and values using shared helper
       mt_errors <- .checkModTypeValues(
@@ -171,16 +182,18 @@ setValidity("commaData", function(object) {
     }
   }
 
-
   # ── colData required columns ────────────────────────────────────────────
   required_col_cols <- c("sample_name", "replicate")
   cd <- colData(object)
   missing_cols2 <- setdiff(required_col_cols, colnames(cd))
   if (length(missing_cols2) > 0) {
-    errors <- c(errors, paste0(
-      "colData is missing required columns: ",
-      paste(missing_cols2, collapse = ", ")
-    ))
+    errors <- c(
+      errors,
+      paste0(
+        "colData is missing required columns: ",
+        paste(missing_cols2, collapse = ", ")
+      )
+    )
   }
 
   # ── assay names ─────────────────────────────────────────────────────────
@@ -188,12 +201,14 @@ setValidity("commaData", function(object) {
   present_assays <- assayNames(object)
   missing_assays <- setdiff(expected_assays, present_assays)
   if (length(missing_assays) > 0) {
-    errors <- c(errors, paste0(
-      "Missing required assays: ",
-      paste(missing_assays, collapse = ", ")
-    ))
+    errors <- c(
+      errors,
+      paste0(
+        "Missing required assays: ",
+        paste(missing_assays, collapse = ", ")
+      )
+    )
   }
-
 
   # ── assay value invariants ──────────────────────────────────────────────
   if ("methylation" %in% assayNames(object)) {
@@ -212,7 +227,8 @@ setValidity("commaData", function(object) {
     cov <- SummarizedExperiment::assay(object, "coverage")
     cov_vals <- cov[!is.na(cov)]
     if (length(cov_vals) > 0L) {
-      bad_cov <- !is.finite(cov_vals) | cov_vals < 0 |
+      bad_cov <- !is.finite(cov_vals) |
+        cov_vals < 0 |
         abs(cov_vals - round(cov_vals)) > sqrt(.Machine$double.eps)
       if (any(bad_cov)) {
         errors <- c(
@@ -227,19 +243,28 @@ setValidity("commaData", function(object) {
       counts <- SummarizedExperiment::assay(object, assay_name)
       count_vals <- counts[!is.na(counts)]
       if (length(count_vals) > 0L) {
-        bad_counts <- !is.finite(count_vals) | count_vals < 0 |
+        bad_counts <- !is.finite(count_vals) |
+          count_vals < 0 |
           abs(count_vals - round(count_vals)) > sqrt(.Machine$double.eps)
         if (any(bad_counts)) {
-          errors <- c(errors, paste0(
-            "assay '", assay_name,
-            "' must contain non-negative integer-like values or NA"
-          ))
+          errors <- c(
+            errors,
+            paste0(
+              "assay '",
+              assay_name,
+              "' must contain non-negative integer-like values or NA"
+            )
+          )
         }
       }
     }
   }
-  if (all(c("mod_counts", "canonical_counts", "coverage") %in%
-            assayNames(object))) {
+  if (
+    all(
+      c("mod_counts", "canonical_counts", "coverage") %in%
+        assayNames(object)
+    )
+  ) {
     mod_counts <- SummarizedExperiment::assay(object, "mod_counts")
     canonical_counts <- SummarizedExperiment::assay(object, "canonical_counts")
     cov <- SummarizedExperiment::assay(object, "coverage")
@@ -290,7 +315,8 @@ setMethod("show", "commaData", function(object) {
   }
   if ("motif" %in% colnames(rd) && n_sites > 0) {
     m <- sort(unique(rd$motif[!is.na(rd$motif)]))
-    cat("motifs: ",
+    cat(
+      "motifs: ",
       if (length(m) == 0L) "not available" else paste(m, collapse = ", "),
       "\n",
       sep = ""
@@ -312,9 +338,12 @@ setMethod("show", "commaData", function(object) {
   sl <- GenomeInfoDb::seqlengths(object)
   if (length(sl) > 0 && !all(is.na(sl))) {
     total_bp <- sum(sl, na.rm = TRUE)
-    cat("genome: ",
-      length(sl), " ",
-      ifelse(length(sl) == 1, "chromosome", "chromosomes"), " ",
+    cat(
+      "genome: ",
+      length(sl),
+      " ",
+      ifelse(length(sl) == 1, "chromosome", "chromosomes"),
+      " ",
       paste0("(", format(total_bp, big.mark = ","), " bp total)"),
       "\n",
       sep = ""
@@ -327,11 +356,13 @@ setMethod("show", "commaData", function(object) {
   n_ann <- length(annotation(object))
   n_mot <- length(motifSites(object))
   cat(
-    "annotation: ", if (n_ann == 0) "none" else paste(n_ann, "features"),
+    "annotation: ",
+    if (n_ann == 0) "none" else paste(n_ann, "features"),
     "\n",
     sep = ""
   )
-  cat("motif sites: ",
+  cat(
+    "motif sites: ",
     if (n_mot == 0) "none" else paste(format(n_mot, big.mark = ","), "sites"),
     "\n",
     sep = ""

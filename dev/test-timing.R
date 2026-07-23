@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
-# dev/test-timing.R
-# Run each test file individually and report per-file timing.
+# Test timing utility.
+# Runs each test file individually and reports per-file timing.
 # Usage: Rscript dev/test-timing.R
 # Output: test-timing-report.csv and console summary
 
@@ -13,7 +13,11 @@ if (requireNamespace("pkgload", quietly = TRUE)) {
 }
 
 test_path <- "tests/testthat"
-test_files <- list.files(test_path, pattern = "^test-.*\\.R$", full.names = TRUE)
+test_files <- list.files(
+  test_path,
+  pattern = "^test-.*\\.R$",
+  full.names = TRUE
+)
 test_files <- sort(test_files)
 
 cat("Running", length(test_files), "test files with timing...\n\n")
@@ -67,12 +71,16 @@ cat(paste(rep("=", 65), collapse = ""), "\n\n", sep = "")
 cat(sprintf("  Total files:  %d\n", nrow(df)))
 cat(sprintf("  Total time:   %.2fs\n", sum(df$duration_sec)))
 cat(sprintf("  Average:      %.2fs per file\n", mean(df$duration_sec)))
-cat(sprintf("  Fastest:      %.2fs (%s)\n",
+cat(sprintf(
+  "  Fastest:      %.2fs (%s)\n",
   min(df$duration_sec),
-  df$file[which.min(df$duration_sec)]))
-cat(sprintf("  Slowest:      %.2fs (%s)\n",
+  df$file[which.min(df$duration_sec)]
+))
+cat(sprintf(
+  "  Slowest:      %.2fs (%s)\n",
   max(df$duration_sec),
-  df$file[which.max(df$duration_sec)]))
+  df$file[which.max(df$duration_sec)]
+))
 
 cat("\n  Top 10 slowest:\n")
 cat(sprintf("    %-50s %8s\n", "File", "Time(s)"))

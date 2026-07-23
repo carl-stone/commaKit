@@ -3,7 +3,10 @@ test_that("R Markdown checks ignore sources without Markdown outputs", {
 
   script <- testthat::test_path("..", "..", "dev", "precommit.R")
   vignette <- testthat::test_path(
-    "..", "..", "vignettes", "import-troubleshooting.Rmd"
+    "..",
+    "..",
+    "vignettes",
+    "import-troubleshooting.Rmd"
   )
   skip_if_not(file.exists(script), "pre-commit script is unavailable")
   skip_if_not(file.exists(vignette), "source vignette is unavailable")
@@ -15,7 +18,9 @@ test_that("R Markdown checks ignore sources without Markdown outputs", {
     stderr = TRUE
   )
   status <- attr(output, "status")
-  if (is.null(status)) status <- 0L
+  if (is.null(status)) {
+    status <- 0L
+  }
 
   expect_equal(status, 0L, info = paste(output, collapse = "\n"))
 })

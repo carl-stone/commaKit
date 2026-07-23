@@ -1,5 +1,5 @@
-# Code style check using styler (tidyverse style guide)
-# Runs on PRs to ensure R source files are properly formatted.
+# Code style check using Air.
+# Runs on pushes and PRs to ensure R source files are properly formatted.
 on:
   push:
     branches: [main, master]
@@ -12,24 +12,13 @@ permissions: read-all
 jobs:
   style:
     runs-on: ubuntu-latest
-    container: bioconductor/bioconductor_docker:RELEASE_3_22
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - name: Check R and Bioconductor versions
-        run: |
-          Rscript -e 'cat("R ", as.character(getRversion()), "\n", sep = "")'
-
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - name: Install Air
+        uses: posit-dev/setup-air@cf390573ff4fe0f198f35df3a642b1409328d859 # v1
         with:
-          packages: any::styler
-          needs: check
+          version: "0.10.0"
 
       - name: Check code style
-        run: |
-          styler::style_pkg(dry = "fail")
-          message("All R source files are properly formatted.")
-        shell: Rscript {0}
+        run: air format . --check

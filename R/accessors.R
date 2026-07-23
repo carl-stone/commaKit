@@ -312,11 +312,11 @@ setMethod("siteInfo", "commaData", function(object) {
   rr <- rowRanges(object)
   mc <- GenomicRanges::mcols(rr)
   df <- S4Vectors::DataFrame(
-    chrom       = as.character(GenomeInfoDb::seqnames(rr)),
-    position    = BiocGenerics::start(rr),
-    strand      = as.character(BiocGenerics::strand(rr)),
+    chrom = as.character(GenomeInfoDb::seqnames(rr)),
+    position = BiocGenerics::start(rr),
+    strand = as.character(BiocGenerics::strand(rr)),
     mc,
-    row.names   = NULL
+    row.names = NULL
   )
   # Add computed mod_context column if not already present
   can_compute_mod_context <- !"mod_context" %in% colnames(df)
@@ -329,8 +329,12 @@ setMethod("siteInfo", "commaData", function(object) {
   }
   # Add computed site_key column for human readability (not used for matching).
   if ("mod_type" %in% colnames(mc) && "motif" %in% colnames(mc)) {
-    df$site_key <- paste(df$chrom, df$position, df$strand,
-      as.character(df$mod_type), df$motif,
+    df$site_key <- paste(
+      df$chrom,
+      df$position,
+      df$strand,
+      as.character(df$mod_type),
+      df$motif,
       sep = ":"
     )
   }
@@ -619,8 +623,15 @@ setMethod("[", "commaData", function(x, i, j, ..., drop = FALSE) {
 #' nrow(gatc2)
 #'
 #' @export
-filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
-                        motif = NULL, mod_context = NULL, ...) {
+filterSites <- function(
+  x,
+  mod_type = NULL,
+  condition = NULL,
+  chrom = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  ...
+) {
   if (!is(x, "commaData")) {
     stop("'x' must be a commaData object.")
   }
@@ -648,16 +659,29 @@ filterSites <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
 #' @inheritParams filterSites
 #' @return A \code{commaData} object containing only the selected sites and
 #'   samples.
+#' @method subset commaData
 #' @export
-subset.commaData <- function(x, mod_type = NULL, condition = NULL, chrom = NULL,
-                             motif = NULL, mod_context = NULL, ...) {
+subset.commaData <- function(
+  x,
+  mod_type = NULL,
+  condition = NULL,
+  chrom = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  ...
+) {
   warning(
     "subset.commaData() is deprecated; use filterSites() instead.",
     call. = FALSE
   )
-  filterSites(x,
-    mod_type = mod_type, condition = condition, chrom = chrom,
-    motif = motif, mod_context = mod_context, ...
+  filterSites(
+    x,
+    mod_type = mod_type,
+    condition = condition,
+    chrom = chrom,
+    motif = motif,
+    mod_context = mod_context,
+    ...
   )
 }
 
@@ -718,7 +742,9 @@ setMethod("minCoverage", "commaData", function(object) {
     stop(
       "'mod_type' value(s) not found in object: ",
       paste(bad, collapse = ", "),
-      ". Available types: ", paste(available, collapse = ", "), "."
+      ". Available types: ",
+      paste(available, collapse = ", "),
+      "."
     )
   }
   invisible(NULL)
@@ -739,9 +765,15 @@ setMethod("minCoverage", "commaData", function(object) {
       "<none>"
     }
     stop(
-      "'", arg, "' value(s) not found in ", object_label, ": ",
+      "'",
+      arg,
+      "' value(s) not found in ",
+      object_label,
+      ": ",
       paste(bad, collapse = ", "),
-      ". Available: ", available_label, "."
+      ". Available: ",
+      available_label,
+      "."
     )
   }
   invisible(NULL)
@@ -754,16 +786,25 @@ setMethod("minCoverage", "commaData", function(object) {
 .stopEmptySiteFilter <- function(filters, caller = NULL) {
   where <- if (is.null(caller)) "" else paste0(" in ", caller)
   stop(
-    "No sites remain after applying site filters", where, ": ",
-    paste(filters, collapse = "; "), "."
+    "No sites remain after applying site filters",
+    where,
+    ": ",
+    paste(filters, collapse = "; "),
+    "."
   )
 }
 
-.planSiteFilters <- function(object, mod_type = NULL, condition = NULL,
-                             chrom = NULL, motif = NULL,
-                             mod_context = NULL,
-                             validate_site_values = TRUE,
-                             stop_on_empty = TRUE, caller = NULL) {
+.planSiteFilters <- function(
+  object,
+  mod_type = NULL,
+  condition = NULL,
+  chrom = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  validate_site_values = TRUE,
+  stop_on_empty = TRUE,
+  caller = NULL
+) {
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
@@ -815,7 +856,9 @@ setMethod("minCoverage", "commaData", function(object) {
   if (!is.null(mod_context)) {
     if (validate_site_values) {
       .validateSiteFilterValues(
-        "mod_context", mod_context, modContexts(current)
+        "mod_context",
+        mod_context,
+        modContexts(current)
       )
     }
     rd <- rowData(current)
@@ -850,9 +893,14 @@ setMethod("minCoverage", "commaData", function(object) {
 # Apply mod_type, motif, and mod_context filters with consistent validation and
 # empty-result handling. Filters are applied sequentially so motif/mod_context
 # values are validated against the sites that remain after earlier filters.
-.applySiteFilters <- function(object, mod_type = NULL, motif = NULL,
-                              mod_context = NULL, stop_on_empty = TRUE,
-                              caller = NULL) {
+.applySiteFilters <- function(
+  object,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  stop_on_empty = TRUE,
+  caller = NULL
+) {
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
@@ -885,23 +933,29 @@ setMethod("minCoverage", "commaData", function(object) {
   if (!is.null(levels)) {
     bad_levels <- setdiff(levels, .VALID_MOD_TYPES)
     if (length(bad_levels) > 0L) {
-      errors <- c(errors, paste0(
-        "rowRanges mcols$mod_type has invalid factor levels: ",
-        paste(bad_levels, collapse = ", "),
-        ". Allowed levels: ",
-        paste(.VALID_MOD_TYPES, collapse = ", ")
-      ))
+      errors <- c(
+        errors,
+        paste0(
+          "rowRanges mcols$mod_type has invalid factor levels: ",
+          paste(bad_levels, collapse = ", "),
+          ". Allowed levels: ",
+          paste(.VALID_MOD_TYPES, collapse = ", ")
+        )
+      )
     }
   }
   # Check actual values
   bad_vals <- setdiff(values, .VALID_MOD_TYPES)
   if (length(bad_vals) > 0L) {
-    errors <- c(errors, paste0(
-      "rowRanges mcols$mod_type contains unrecognized values: ",
-      paste(bad_vals, collapse = ", "),
-      ". Allowed values: ",
-      paste(.VALID_MOD_TYPES, collapse = ", ")
-    ))
+    errors <- c(
+      errors,
+      paste0(
+        "rowRanges mcols$mod_type contains unrecognized values: ",
+        paste(bad_vals, collapse = ", "),
+        ". Allowed values: ",
+        paste(.VALID_MOD_TYPES, collapse = ", ")
+      )
+    )
   }
   errors
 }

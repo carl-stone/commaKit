@@ -13,15 +13,25 @@ library(GenomicRanges)
 
 # Write a minimal 6-column BED file (chrom, start, end, name, score, strand)
 .write_tmp_bed <- function(rows, file = tempfile(fileext = ".bed")) {
-  write.table(rows,
-    file = file, sep = "\t", quote = FALSE,
-    row.names = FALSE, col.names = FALSE
+  write.table(
+    rows,
+    file = file,
+    sep = "\t",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = FALSE
   )
   file
 }
 
-.bed_row <- function(chrom = "chr_sim", start = 0L, end = 500L,
-                     name = "regionA", score = 0L, strand = "+") {
+.bed_row <- function(
+  chrom = "chr_sim",
+  start = 0L,
+  end = 500L,
+  name = "regionA",
+  score = 0L,
+  strand = "+"
+) {
   data.frame(chrom, start, end, name, score, strand, stringsAsFactors = FALSE)
 }
 
@@ -38,18 +48,15 @@ test_that("loadAnnotation() returns a GRanges from a GFF3 file", {
   expect_true(is(result, "GRanges"))
 })
 
-test_that(
-  "loadAnnotation() GRanges always has 'feature_type' and 'name' mcols",
-  {
-    skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "commaKit")
-    skip_if(gff == "", message = "extdata not available")
+test_that("loadAnnotation() GRanges always has 'feature_type' and 'name' mcols", {
+  skip_if_not_installed("rtracklayer")
+  gff <- system.file("extdata", "example.gff3", package = "commaKit")
+  skip_if(gff == "", message = "extdata not available")
 
-    result <- loadAnnotation(gff)
-    expect_true("feature_type" %in% names(mcols(result)))
-    expect_true("name" %in% names(mcols(result)))
-  }
-)
+  result <- loadAnnotation(gff)
+  expect_true("feature_type" %in% names(mcols(result)))
+  expect_true("name" %in% names(mcols(result)))
+})
 
 test_that("loadAnnotation() feature_type reflects the GFF3 type column", {
   skip_if_not_installed("rtracklayer")
@@ -75,18 +82,15 @@ test_that("loadAnnotation() name column uses the GFF3 Name attribute", {
   expect_true("geneB" %in% result$name)
 })
 
-test_that(
-  "loadAnnotation() returns the expected feature count from example GFF3",
-  {
-    skip_if_not_installed("rtracklayer")
-    gff <- system.file("extdata", "example.gff3", package = "commaKit")
-    skip_if(gff == "", message = "extdata not available")
+test_that("loadAnnotation() returns the expected feature count from example GFF3", {
+  skip_if_not_installed("rtracklayer")
+  gff <- system.file("extdata", "example.gff3", package = "commaKit")
+  skip_if(gff == "", message = "extdata not available")
 
-    result <- loadAnnotation(gff)
-    # example.gff3 has 5 genes + 3 CDS + 1 rRNA + 1 tRNA = 10 features
-    expect_equal(length(result), 10L)
-  }
-)
+  result <- loadAnnotation(gff)
+  # example.gff3 has 5 genes + 3 CDS + 1 rRNA + 1 tRNA = 10 features
+  expect_equal(length(result), 10L)
+})
 
 # ─────────────────────────────────────────────────────────────────────────────
 # loadAnnotation() — GFF3: feature_types filtering
@@ -211,18 +215,39 @@ test_that("loadAnnotation() errors when a vector of paths is supplied", {
 .write_sigma_gff3 <- function(file = tempfile(fileext = ".gff3")) {
   lines <- c(
     "##gff-version 3",
-    paste("U00096.3", "EcoCyc", "transcription_factor_binding_site",
-      "138", "143", ".", "+", ".",
+    paste(
+      "U00096.3",
+      "EcoCyc",
+      "transcription_factor_binding_site",
+      "138",
+      "143",
+      ".",
+      "+",
+      ".",
       "Name=thrLp;feature_type=Sigma70",
       sep = "\t"
     ),
-    paste("U00096.3", "EcoCyc", "transcription_factor_binding_site",
-      "6594", "6600", ".", "-", ".",
+    paste(
+      "U00096.3",
+      "EcoCyc",
+      "transcription_factor_binding_site",
+      "6594",
+      "6600",
+      ".",
+      "-",
+      ".",
       "Name=yaaAp3;feature_type=Sigma24",
       sep = "\t"
     ),
-    paste("U00096.3", "EcoCyc", "gene",
-      "200", "1000", ".", "+", ".",
+    paste(
+      "U00096.3",
+      "EcoCyc",
+      "gene",
+      "200",
+      "1000",
+      ".",
+      "+",
+      ".",
       "Name=thrL;ID=thrL",
       sep = "\t"
     )
@@ -231,18 +256,15 @@ test_that("loadAnnotation() errors when a vector of paths is supplied", {
   file
 }
 
-test_that(
-  "loadAnnotation() preserves feature_type GFF3 attribute as feature_subtype",
-  {
-    skip_if_not_installed("rtracklayer")
-    f <- .write_sigma_gff3()
-    result <- loadAnnotation(f)
-    expect_true("feature_subtype" %in% names(mcols(result)))
-    # TFBS records should have Sigma70 / Sigma24 in feature_subtype
-    tfbs <- result[result$feature_type == "transcription_factor_binding_site"]
-    expect_true(all(tfbs$feature_subtype %in% c("Sigma70", "Sigma24")))
-  }
-)
+test_that("loadAnnotation() preserves feature_type GFF3 attribute as feature_subtype", {
+  skip_if_not_installed("rtracklayer")
+  f <- .write_sigma_gff3()
+  result <- loadAnnotation(f)
+  expect_true("feature_subtype" %in% names(mcols(result)))
+  # TFBS records should have Sigma70 / Sigma24 in feature_subtype
+  tfbs <- result[result$feature_type == "transcription_factor_binding_site"]
+  expect_true(all(tfbs$feature_subtype %in% c("Sigma70", "Sigma24")))
+})
 
 test_that(
   paste(
@@ -275,15 +297,12 @@ test_that(
   }
 )
 
-test_that(
-  "loadAnnotation() errors on unrecognized annotation file extensions",
-  {
-    skip_if_not_installed("rtracklayer")
-    f <- tempfile(fileext = ".regions")
-    writeLines("chr1\t0\t10\tregion1", f)
-    expect_error(
-      loadAnnotation(f),
-      regexp = "Unrecognized annotation file extension"
-    )
-  }
-)
+test_that("loadAnnotation() errors on unrecognized annotation file extensions", {
+  skip_if_not_installed("rtracklayer")
+  f <- tempfile(fileext = ".regions")
+  writeLines("chr1\t0\t10\tregion1", f)
+  expect_error(
+    loadAnnotation(f),
+    regexp = "Unrecognized annotation file extension"
+  )
+})

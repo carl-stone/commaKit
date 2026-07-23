@@ -15,14 +15,17 @@
 
   methyl_mat <- matrix(
     c(betas, betas + 0.05),
-    nrow = n_sites, ncol = 2L,
+    nrow = n_sites,
+    ncol = 2L,
     dimnames = list(NULL, c("samp1", "samp2"))
   )
   # Clamp samp2 to [0,1]
   methyl_mat[, "samp2"] <- pmin(1, pmax(0, methyl_mat[, "samp2"]))
 
-  cov_mat <- matrix(20L,
-    nrow = n_sites, ncol = 2L,
+  cov_mat <- matrix(
+    20L,
+    nrow = n_sites,
+    ncol = 2L,
     dimnames = dimnames(methyl_mat)
   )
 
@@ -40,14 +43,14 @@
   )
   cd <- S4Vectors::DataFrame(
     sample_name = c("samp1", "samp2"),
-    condition   = c("ctrl", "treat"),
-    replicate   = 1:2,
-    row.names   = c("samp1", "samp2")
+    condition = c("ctrl", "treat"),
+    replicate = 1:2,
+    row.names = c("samp1", "samp2")
   )
   rse <- SummarizedExperiment::SummarizedExperiment(
-    assays     = list(methylation = methyl_mat, coverage = cov_mat),
-    rowRanges  = site_gr,
-    colData    = cd
+    assays = list(methylation = methyl_mat, coverage = cov_mat),
+    rowRanges = site_gr,
+    colData = cd
   )
   new("commaData", rse)
 }
@@ -125,7 +128,10 @@ test_that("writeBED: each BED data line has 9 tab-separated columns", {
   on.exit(unlink(f))
   writeBED(obj, file = f, sample = "samp1")
   lines <- readLines(f)[-1] # skip track header
-  n_tabs <- vapply(lines, function(l) nchar(gsub("[^\t]", "", l)), integer(1L),
+  n_tabs <- vapply(
+    lines,
+    function(l) nchar(gsub("[^\t]", "", l)),
+    integer(1L),
     USE.NAMES = FALSE
   )
   expect_true(all(n_tabs == 8L)) # 9 columns = 8 tabs
@@ -143,20 +149,17 @@ test_that("writeBED: number of BED data lines equals non-NA site count", {
 
 # ─── Coordinate conversion ────────────────────────────────────────────────────
 
-test_that(
-  "writeBED: chromStart is 0-based (position - 1) and chromEnd is 1-based",
-  {
-    obj <- .make_bed_data()
-    f <- tempfile(fileext = ".bed")
-    on.exit(unlink(f))
-    writeBED(obj, file = f, sample = "samp1")
-    lines <- readLines(f)[-1]
-    first_row <- strsplit(lines[1], "\t")[[1]]
-    # First site has position = 1000; BED chromStart = 999, chromEnd = 1000
-    expect_equal(as.integer(first_row[2]), 999L) # chromStart (0-based)
-    expect_equal(as.integer(first_row[3]), 1000L) # chromEnd
-  }
-)
+test_that("writeBED: chromStart is 0-based (position - 1) and chromEnd is 1-based", {
+  obj <- .make_bed_data()
+  f <- tempfile(fileext = ".bed")
+  on.exit(unlink(f))
+  writeBED(obj, file = f, sample = "samp1")
+  lines <- readLines(f)[-1]
+  first_row <- strsplit(lines[1], "\t")[[1]]
+  # First site has position = 1000; BED chromStart = 999, chromEnd = 1000
+  expect_equal(as.integer(first_row[2]), 999L) # chromStart (0-based)
+  expect_equal(as.integer(first_row[3]), 1000L) # chromEnd
+})
 
 # ─── Score field ──────────────────────────────────────────────────────────────
 
@@ -166,8 +169,10 @@ test_that("writeBED: score equals round(beta * 1000) for each site", {
   on.exit(unlink(f))
   writeBED(obj, file = f, sample = "samp1")
   lines <- readLines(f)[-1]
-  score_col <- vapply(strsplit(lines, "\t"),
-    function(x) as.integer(x[5]), integer(1L),
+  score_col <- vapply(
+    strsplit(lines, "\t"),
+    function(x) as.integer(x[5]),
+    integer(1L),
     USE.NAMES = FALSE
   )
   betas <- c(0.1, 0.3, 0.5, 0.7, 0.9)
@@ -177,30 +182,29 @@ test_that("writeBED: score equals round(beta * 1000) for each site", {
 
 # ─── RGB color scale ──────────────────────────────────────────────────────────
 
-test_that(
-  "writeBED: rgb_scale=TRUE assigns correct colors for each score band",
-  {
-    obj <- .make_bed_data()
-    f <- tempfile(fileext = ".bed")
-    on.exit(unlink(f))
-    writeBED(obj, file = f, sample = "samp1", rgb_scale = TRUE)
-    lines <- readLines(f)[-1]
-    rgb_col <- vapply(strsplit(lines, "\t"),
-      function(x) x[9], character(1L),
-      USE.NAMES = FALSE
-    )
-    # score 100 ≤ 200  → blue
-    expect_equal(rgb_col[1], "0,0,255")
-    # score 300 ≤ 400  → blue-purple
-    expect_equal(rgb_col[2], "83,0,172")
-    # score 500 ≤ 600  → purple
-    expect_equal(rgb_col[3], "167,0,85")
-    # score 700 ≤ 800  → red-purple
-    expect_equal(rgb_col[4], "222,0,28")
-    # score 900 ≤ 1000 → red
-    expect_equal(rgb_col[5], "250,0,0")
-  }
-)
+test_that("writeBED: rgb_scale=TRUE assigns correct colors for each score band", {
+  obj <- .make_bed_data()
+  f <- tempfile(fileext = ".bed")
+  on.exit(unlink(f))
+  writeBED(obj, file = f, sample = "samp1", rgb_scale = TRUE)
+  lines <- readLines(f)[-1]
+  rgb_col <- vapply(
+    strsplit(lines, "\t"),
+    function(x) x[9],
+    character(1L),
+    USE.NAMES = FALSE
+  )
+  # score 100 ≤ 200  → blue
+  expect_equal(rgb_col[1], "0,0,255")
+  # score 300 ≤ 400  → blue-purple
+  expect_equal(rgb_col[2], "83,0,172")
+  # score 500 ≤ 600  → purple
+  expect_equal(rgb_col[3], "167,0,85")
+  # score 700 ≤ 800  → red-purple
+  expect_equal(rgb_col[4], "222,0,28")
+  # score 900 ≤ 1000 → red
+  expect_equal(rgb_col[5], "250,0,0")
+})
 
 test_that("writeBED: rgb_scale=FALSE gives '0,0,0' for all sites", {
   obj <- .make_bed_data()
@@ -208,8 +212,10 @@ test_that("writeBED: rgb_scale=FALSE gives '0,0,0' for all sites", {
   on.exit(unlink(f))
   writeBED(obj, file = f, sample = "samp1", rgb_scale = FALSE)
   lines <- readLines(f)[-1]
-  rgb_col <- vapply(strsplit(lines, "\t"),
-    function(x) x[9], character(1L),
+  rgb_col <- vapply(
+    strsplit(lines, "\t"),
+    function(x) x[9],
+    character(1L),
     USE.NAMES = FALSE
   )
   expect_true(all(rgb_col == "0,0,0"))
@@ -229,20 +235,17 @@ test_that("writeBED: NA methylation sites are excluded from output", {
   expect_equal(length(lines), 4L) # 5 sites minus 1 NA
 })
 
-test_that(
-  "writeBED: all-NA sample produces only track header line with warning",
-  {
-    obj <- .make_bed_data()
-    m <- methylation(obj)
-    m[, "samp1"] <- NA_real_
-    SummarizedExperiment::assay(obj, "methylation") <- m
-    f <- tempfile(fileext = ".bed")
-    on.exit(unlink(f))
-    expect_warning(writeBED(obj, file = f, sample = "samp1"), "No sites")
-    lines <- readLines(f)
-    expect_equal(length(lines), 1L) # only the track header
-  }
-)
+test_that("writeBED: all-NA sample produces only track header line with warning", {
+  obj <- .make_bed_data()
+  m <- methylation(obj)
+  m[, "samp1"] <- NA_real_
+  SummarizedExperiment::assay(obj, "methylation") <- m
+  f <- tempfile(fileext = ".bed")
+  on.exit(unlink(f))
+  expect_warning(writeBED(obj, file = f, sample = "samp1"), "No sites")
+  lines <- readLines(f)
+  expect_equal(length(lines), 1L) # only the track header
+})
 
 test_that(
   paste(
@@ -331,11 +334,14 @@ test_that("writeBED: mod_type filtering writes only matching sites", {
   on.exit(unlink(f))
   writeBED(comma_example_data, file = f, sample = "ctrl_1", mod_type = "6mA")
   lines <- readLines(f)[-1]
-  n_6ma <- sum(!is.na(
-    methylation(comma_example_data)[
-      siteInfo(comma_example_data)$mod_type == "6mA", "ctrl_1"
-    ]
-  ))
+  n_6ma <- sum(
+    !is.na(
+      methylation(comma_example_data)[
+        siteInfo(comma_example_data)$mod_type == "6mA",
+        "ctrl_1"
+      ]
+    )
+  )
   expect_equal(length(lines), n_6ma)
 })
 

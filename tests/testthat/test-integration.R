@@ -98,9 +98,17 @@ test_that("core workflow returns expected object and result contracts", {
   expect_equal(nrow(res), n_6ma)
 
   expected_result_cols <- c(
-    "chrom", "position", "strand", "mod_type", "motif", "mod_context",
-    "feature_types", "feature_names",
-    "dm_pvalue", "dm_padj", "dm_delta_beta"
+    "chrom",
+    "position",
+    "strand",
+    "mod_type",
+    "motif",
+    "mod_context",
+    "feature_types",
+    "feature_names",
+    "dm_pvalue",
+    "dm_padj",
+    "dm_delta_beta"
   )
   expect_true(all(expected_result_cols %in% colnames(res)))
 
@@ -113,12 +121,20 @@ test_that("core workflow returns expected object and result contracts", {
   # filterResults() should only return rows from results(). Use the stable
   # genomic key rather than row names, because results() preserves site keys
   # but callers should not rely on row-name behavior.
-  res_keys <- paste(res$chrom, res$position, res$strand,
-    res$mod_type, res$motif,
+  res_keys <- paste(
+    res$chrom,
+    res$position,
+    res$strand,
+    res$mod_type,
+    res$motif,
     sep = ":"
   )
-  sig_keys <- paste(sig$chrom, sig$position, sig$strand,
-    sig$mod_type, sig$motif,
+  sig_keys <- paste(
+    sig$chrom,
+    sig$position,
+    sig$strand,
+    sig$mod_type,
+    sig$motif,
     sep = ":"
   )
   expect_true(all(sig_keys %in% res_keys))
@@ -149,7 +165,8 @@ test_that("core workflow recovers ground-truth differential 6mA sites", {
   expect_lt(abs(median(delta_nondiff)), 0.1)
 
   n_true_diff <- sum(res$is_diff, na.rm = TRUE)
-  n_detected <- sum(res$is_diff & !is.na(res$dm_pvalue) & res$dm_pvalue < 0.2,
+  n_detected <- sum(
+    res$is_diff & !is.na(res$dm_pvalue) & res$dm_pvalue < 0.2,
     na.rm = TRUE
   )
   expect_gte(n_detected, floor(n_true_diff * 0.5))
@@ -188,12 +205,20 @@ test_that("full pipeline composes from modkit files through enrichment", {
 
   truth <- as.data.frame(siteInfo(comma_example_data))
   truth <- truth[truth$mod_type == "6mA", , drop = FALSE]
-  truth_key <- paste(truth$chrom, truth$position, truth$strand,
-    truth$mod_type, truth$motif,
+  truth_key <- paste(
+    truth$chrom,
+    truth$position,
+    truth$strand,
+    truth$mod_type,
+    truth$motif,
     sep = ":"
   )
-  res_key <- paste(res$chrom, res$position, res$strand,
-    res$mod_type, res$motif,
+  res_key <- paste(
+    res$chrom,
+    res$position,
+    res$strand,
+    res$mod_type,
+    res$motif,
     sep = ":"
   )
   truth_is_diff <- truth$is_diff[match(res_key, truth_key)]
@@ -208,8 +233,12 @@ test_that("full pipeline composes from modkit files through enrichment", {
   expect_equal(sum(truth_is_diff), 30L)
   expect_gt(nrow(sig), 0L)
 
-  sig_key <- paste(sig$chrom, sig$position, sig$strand,
-    sig$mod_type, sig$motif,
+  sig_key <- paste(
+    sig$chrom,
+    sig$position,
+    sig$strand,
+    sig$mod_type,
+    sig$motif,
     sep = ":"
   )
   sig_truth_is_diff <- truth$is_diff[match(sig_key, truth_key)]

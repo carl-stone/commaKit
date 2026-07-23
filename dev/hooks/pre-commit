@@ -15,7 +15,7 @@ fi
 
 export RENV_CONFIG_AUTOLOADER_ENABLED="${RENV_CONFIG_AUTOLOADER_ENABLED:-FALSE}"
 
-echo "Running commaKit style dry-run check..."
+echo "Running commaKit Air formatting check..."
 Rscript --vanilla dev/precommit.R style "${staged_files[@]}"
 
 echo "Running commaKit lint pre-commit check..."

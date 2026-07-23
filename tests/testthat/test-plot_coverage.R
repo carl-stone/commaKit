@@ -8,12 +8,14 @@
   set.seed(7L)
   betas <- matrix(
     runif(n_sites * 2L, 0.1, 0.9),
-    nrow = n_sites, ncol = 2L,
+    nrow = n_sites,
+    ncol = 2L,
     dimnames = list(NULL, c("samp1", "samp2"))
   )
   depths <- matrix(
     sample(5L:100L, n_sites * 2L, replace = TRUE),
-    nrow = n_sites, ncol = 2L,
+    nrow = n_sites,
+    ncol = 2L,
     dimnames = dimnames(betas)
   )
   sample_info <- data.frame(
@@ -104,32 +106,29 @@ test_that("plot_coverage: x-axis label mentions coverage", {
 
 # ─── Median vline ─────────────────────────────────────────────────────────────
 
-test_that(
-  "plot_coverage: per_sample vline positions match computed medians per sample",
-  {
-    obj <- .make_cov_data()
-    p <- plot_coverage(obj, per_sample = TRUE)
-    # Find the vline layer
-    layer_classes <- vapply(
-      p$layers,
-      function(l) class(l$geom)[1],
-      character(1)
-    )
-    vline_idx <- which(layer_classes == "GeomVline")
-    expect_gte(length(vline_idx), 1L)
-    # The vline layer data should have median_depth per sample
-    vline_data <- p$layers[[vline_idx[1]]]$data
-    expect_s3_class(vline_data, "data.frame")
-    expect_true("median_depth" %in% colnames(vline_data))
-    # Verify exact median values match stats::median of coverage per sample
-    cov_mat <- siteCoverage(obj)
-    for (samp in vline_data$sample_name) {
-      expected_med <- stats::median(cov_mat[, samp])
-      actual_med <- vline_data$median_depth[vline_data$sample_name == samp]
-      expect_equal(actual_med, expected_med)
-    }
+test_that("plot_coverage: per_sample vline positions match computed medians per sample", {
+  obj <- .make_cov_data()
+  p <- plot_coverage(obj, per_sample = TRUE)
+  # Find the vline layer
+  layer_classes <- vapply(
+    p$layers,
+    function(l) class(l$geom)[1],
+    character(1)
+  )
+  vline_idx <- which(layer_classes == "GeomVline")
+  expect_gte(length(vline_idx), 1L)
+  # The vline layer data should have median_depth per sample
+  vline_data <- p$layers[[vline_idx[1]]]$data
+  expect_s3_class(vline_data, "data.frame")
+  expect_true("median_depth" %in% colnames(vline_data))
+  # Verify exact median values match stats::median of coverage per sample
+  cov_mat <- siteCoverage(obj)
+  for (samp in vline_data$sample_name) {
+    expected_med <- stats::median(cov_mat[, samp])
+    actual_med <- vline_data$median_depth[vline_data$sample_name == samp]
+    expect_equal(actual_med, expected_med)
   }
-)
+})
 
 # ─── Error conditions ─────────────────────────────────────────────────────────
 
@@ -149,20 +148,17 @@ test_that("plot_coverage: error on invalid per_sample", {
 
 # ─── Single sample ────────────────────────────────────────────────────────────
 
-test_that(
-  "plot_coverage: single-sample object plots only that sample's depths",
-  {
-    obj <- .make_cov_data()
-    obj_1samp <- obj[, 1L, drop = FALSE]
-    p <- plot_coverage(obj_1samp)
-    expect_s3_class(p, "ggplot")
-    # Only one sample in the data
-    expect_equal(unique(p$data$sample_name), "samp1")
-    expect_equal(nrow(p$data), 10L) # 10 sites, 1 sample
-    # Depths should match the single column exactly
-    expect_equal(sort(p$data$depth), sort(as.vector(siteCoverage(obj_1samp))))
-  }
-)
+test_that("plot_coverage: single-sample object plots only that sample's depths", {
+  obj <- .make_cov_data()
+  obj_1samp <- obj[, 1L, drop = FALSE]
+  p <- plot_coverage(obj_1samp)
+  expect_s3_class(p, "ggplot")
+  # Only one sample in the data
+  expect_equal(unique(p$data$sample_name), "samp1")
+  expect_equal(nrow(p$data), 10L) # 10 sites, 1 sample
+  # Depths should match the single column exactly
+  expect_equal(sort(p$data$depth), sort(as.vector(siteCoverage(obj_1samp))))
+})
 
 # ─── Comma example data ───────────────────────────────────────────────────────
 

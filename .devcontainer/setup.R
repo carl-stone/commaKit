@@ -35,8 +35,7 @@ dev_packages <- c(
   "languageserver",
   "lintr",
   "pkgdown",
-  "roxygen2",
-  "styler"
+  "roxygen2"
 )
 dev_package_names <- sub("^bioc::", "", dev_packages)
 missing_dev_packages <- dev_packages[

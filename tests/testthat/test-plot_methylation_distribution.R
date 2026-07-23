@@ -8,13 +8,11 @@
   set.seed(1L)
   betas <- matrix(
     runif(n_sites * 3L, 0.1, 0.9),
-    nrow = n_sites, ncol = 3L,
+    nrow = n_sites,
+    ncol = 3L,
     dimnames = list(NULL, c("ctrl_1", "ctrl_2", "treat_1"))
   )
-  cov_mat <- matrix(20L,
-    nrow = n_sites, ncol = 3L,
-    dimnames = dimnames(betas)
-  )
+  cov_mat <- matrix(20L, nrow = n_sites, ncol = 3L, dimnames = dimnames(betas))
   sample_info <- data.frame(
     sample_name = c("ctrl_1", "ctrl_2", "treat_1"),
     condition = c("control", "control", "treatment"),
@@ -53,20 +51,17 @@ test_that("plot_methylation_distribution: returns ggplot for valid input", {
   expect_equal(sort(d$beta), sort(as.vector(methyl_mat)))
 })
 
-test_that(
-  "plot_methylation_distribution: works without optional condition metadata",
-  {
-    obj <- .make_dist_data()
-    SummarizedExperiment::colData(obj)$condition <- NULL
+test_that("plot_methylation_distribution: works without optional condition metadata", {
+  obj <- .make_dist_data()
+  SummarizedExperiment::colData(obj)$condition <- NULL
 
-    expect_no_error(validObject(obj))
-    p <- plot_methylation_distribution(obj)
+  expect_no_error(validObject(obj))
+  p <- plot_methylation_distribution(obj)
 
-    expect_s3_class(p, "ggplot")
-    expect_true("sample_name" %in% colnames(p$data))
-    expect_false("condition" %in% colnames(p$data))
-  }
-)
+  expect_s3_class(p, "ggplot")
+  expect_true("sample_name" %in% colnames(p$data))
+  expect_false("condition" %in% colnames(p$data))
+})
 
 test_that("plot_methylation_distribution: mod_type filter keeps exact sites", {
   obj <- .make_dist_data_two_mods()
@@ -83,15 +78,11 @@ test_that("plot_methylation_distribution: mod_type filter keeps exact sites", {
     stringsAsFactors = FALSE
   )
   sample_info <- sampleInfo(filtered)
-  sample_info_sub <- sample_info[
-    ,
+  sample_info_sub <- sample_info[,
     intersect(c("sample_name", "condition"), colnames(sample_info)),
     drop = FALSE
   ]
-  expected <- merge(expected, sample_info_sub,
-    by = "sample_name",
-    all.x = TRUE
-  )
+  expected <- merge(expected, sample_info_sub, by = "sample_name", all.x = TRUE)
 
   expect_s3_class(p, "ggplot")
   expect_equal(p$data, expected)
@@ -116,20 +107,17 @@ test_that("plot_methylation_distribution: single-mod object has no facets", {
 
 # ─── NA handling ─────────────────────────────────────────────────────────────
 
-test_that(
-  "plot_methylation_distribution: NAs in beta values are silently excluded",
-  {
-    obj <- .make_dist_data()
-    # Inject NAs into the methylation matrix
-    methyl_mat <- methylation(obj)
-    methyl_mat[1:3, "ctrl_1"] <- NA
-    SummarizedExperiment::assay(obj, "methylation") <- methyl_mat
-    p <- plot_methylation_distribution(obj)
-    expect_s3_class(p, "ggplot")
-    # Verify no NA betas remain in p$data
-    expect_true(all(!is.na(p$data$beta)))
-  }
-)
+test_that("plot_methylation_distribution: NAs in beta values are silently excluded", {
+  obj <- .make_dist_data()
+  # Inject NAs into the methylation matrix
+  methyl_mat <- methylation(obj)
+  methyl_mat[1:3, "ctrl_1"] <- NA
+  SummarizedExperiment::assay(obj, "methylation") <- methyl_mat
+  p <- plot_methylation_distribution(obj)
+  expect_s3_class(p, "ggplot")
+  # Verify no NA betas remain in p$data
+  expect_true(all(!is.na(p$data$beta)))
+})
 
 # ─── Error conditions ─────────────────────────────────────────────────────────
 

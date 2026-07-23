@@ -50,19 +50,23 @@ NULL
 #' @seealso \code{\link{varianceByDepth}}, \code{\link{methylomeSummary}}
 #'
 #' @export
-coverageDepth <- function(object,
-                          window,
-                          method = c("mean", "median"),
-                          log2_transform = FALSE) {
+coverageDepth <- function(
+  object,
+  window,
+  method = c("mean", "median"),
+  log2_transform = FALSE
+) {
   # ── Input validation ──────────────────────────────────────────────────────
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
   method <- match.arg(method)
-  if (missing(window) ||
-    !is.numeric(window) ||
-    length(window) != 1 ||
-    window < 1) {
+  if (
+    missing(window) ||
+      !is.numeric(window) ||
+      length(window) != 1 ||
+      window < 1
+  ) {
     stop("'window' must be a positive integer specifying window size in bp.")
   }
   window <- as.integer(window)
@@ -175,10 +179,12 @@ coverageDepth <- function(object,
 #' @seealso \code{\link{coverageDepth}}, \code{\link{methylomeSummary}}
 #'
 #' @export
-varianceByDepth <- function(object,
-                            coverage_bins = NULL,
-                            mod_type = NULL,
-                            motif = NULL) {
+varianceByDepth <- function(
+  object,
+  coverage_bins = NULL,
+  mod_type = NULL,
+  motif = NULL
+) {
   # ── Input validation ──────────────────────────────────────────────────────
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")

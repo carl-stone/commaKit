@@ -96,7 +96,9 @@ loadAnnotation <- function(file, feature_types = NULL, ...) {
     gr <- gr[keep]
     if (length(gr) == 0L) {
       warning(
-        "No features of the requested type(s) found in '", file, "': ",
+        "No features of the requested type(s) found in '",
+        file,
+        "': ",
         paste(feature_types, collapse = ", ")
       )
     }
@@ -119,7 +121,9 @@ loadAnnotation <- function(file, feature_types = NULL, ...) {
     return("bed")
   }
   stop(
-    "Unrecognized annotation file extension for '", file, "'. ",
+    "Unrecognized annotation file extension for '",
+    file,
+    "'. ",
     "Supported extensions are .gff, .gff3, and .bed ",
     "(optionally compressed with .gz, .bz2, or .xz)."
   )

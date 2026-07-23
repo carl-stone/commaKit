@@ -4,15 +4,29 @@ test_that("assayLayers() lists core assays and inferred defaults", {
 
   expect_s4_class(layers, "DFrame")
   expect_equal(layers$assay, SummarizedExperiment::assayNames(obj))
-  expect_true(all(c(
-    "assay", "role", "type", "source", "is_default",
-    "default_for", "parent_assays", "method"
-  ) %in%
-    colnames(layers)))
-  expect_true(all(c(
-    "methylation", "coverage", "mod_counts",
-    "canonical_counts", "other_mod_counts"
-  ) %in% layers$assay))
+  expect_true(all(
+    c(
+      "assay",
+      "role",
+      "type",
+      "source",
+      "is_default",
+      "default_for",
+      "parent_assays",
+      "method"
+    ) %in%
+      colnames(layers)
+  ))
+  expect_true(all(
+    c(
+      "methylation",
+      "coverage",
+      "mod_counts",
+      "canonical_counts",
+      "other_mod_counts"
+    ) %in%
+      layers$assay
+  ))
   expect_true(layers$is_default[layers$assay == "methylation"])
   expect_equal(
     as.character(layers$default_for[layers$assay == "methylation"][[1L]]),
@@ -110,8 +124,10 @@ test_that("commaKit:::.addAssayLayer() allows multiple explicit versions", {
   )
 
   expect_true(
-    all(c("methylation_norm.v1", "methylation_norm.v2") %in%
-      SummarizedExperiment::assayNames(obj))
+    all(
+      c("methylation_norm.v1", "methylation_norm.v2") %in%
+        SummarizedExperiment::assayNames(obj)
+    )
   )
   expect_false(any(duplicated(SummarizedExperiment::assayNames(obj))))
 })
@@ -146,64 +162,63 @@ test_that(
   }
 )
 
-test_that(
-  "filterSites() subsets derived assay layers without mutating raw layers",
-  {
-    obj <- .make_two_modtype_fixture()
-    original_methyl <- methylation(obj)
-    scaled <- methylation(obj) + 0.01
-    obj_layered <- commaKit:::.addAssayLayer(
+test_that("filterSites() subsets derived assay layers without mutating raw layers", {
+  obj <- .make_two_modtype_fixture()
+  original_methyl <- methylation(obj)
+  scaled <- methylation(obj) + 0.01
+  obj_layered <- commaKit:::.addAssayLayer(
+    obj,
+    assay_name = "methylation_norm.v1",
+    value = scaled,
+    type = "normalized_beta",
+    source = "test",
+    parent_assays = "methylation",
+    method = "normalize_test"
+  )
+
+  keep <- as.character(
+    SummarizedExperiment::rowData(obj_layered)$mod_type
+  ) ==
+    "6mA"
+  filtered <- filterSites(obj_layered, mod_type = "6mA")
+
+  expect_equal(methylation(obj_layered), original_methyl)
+  expect_equal(methylation(filtered), original_methyl[keep, , drop = FALSE])
+  expect_equal(
+    SummarizedExperiment::assay(filtered, "methylation_norm.v1"),
+    scaled[keep, , drop = FALSE]
+  )
+  expect_true(
+    "methylation_norm.v1" %in% SummarizedExperiment::assayNames(filtered)
+  )
+  expect_equal(nrow(filtered), sum(keep))
+})
+
+test_that("commaKit:::.addAssayLayer() validates names, dimensions, and parents", {
+  obj <- .make_two_modtype_fixture()
+  expect_error(
+    commaKit:::.addAssayLayer(obj, "bad name", methylation(obj), "x", "test"),
+    "assay_name"
+  )
+  expect_error(
+    commaKit:::.addAssayLayer(
       obj,
-      assay_name = "methylation_norm.v1",
-      value = scaled,
-      type = "normalized_beta",
-      source = "test",
-      parent_assays = "methylation",
-      method = "normalize_test"
-    )
-
-    keep <- as.character(
-      SummarizedExperiment::rowData(obj_layered)$mod_type
-    ) == "6mA"
-    filtered <- filterSites(obj_layered, mod_type = "6mA")
-
-    expect_equal(methylation(obj_layered), original_methyl)
-    expect_equal(methylation(filtered), original_methyl[keep, , drop = FALSE])
-    expect_equal(
-      SummarizedExperiment::assay(filtered, "methylation_norm.v1"),
-      scaled[keep, , drop = FALSE]
-    )
-    expect_true(
-      "methylation_norm.v1" %in% SummarizedExperiment::assayNames(filtered)
-    )
-    expect_equal(nrow(filtered), sum(keep))
-  }
-)
-
-test_that(
-  "commaKit:::.addAssayLayer() validates names, dimensions, and parents",
-  {
-    obj <- .make_two_modtype_fixture()
-    expect_error(
-      commaKit:::.addAssayLayer(obj, "bad name", methylation(obj), "x", "test"),
-      "assay_name"
-    )
-    expect_error(
-      commaKit:::.addAssayLayer(
-        obj, "good_name", methylation(obj)[-1, ], "x", "test"
-      ),
-      "same dimensions"
-    )
-    expect_error(
-      commaKit:::.addAssayLayer(
-        obj,
-        "good_name",
-        methylation(obj),
-        "x",
-        "test",
-        parent_assays = "missing_layer"
-      ),
-      "parent_assays"
-    )
-  }
-)
+      "good_name",
+      methylation(obj)[-1, ],
+      "x",
+      "test"
+    ),
+    "same dimensions"
+  )
+  expect_error(
+    commaKit:::.addAssayLayer(
+      obj,
+      "good_name",
+      methylation(obj),
+      "x",
+      "test",
+      parent_assays = "missing_layer"
+    ),
+    "parent_assays"
+  )
+})

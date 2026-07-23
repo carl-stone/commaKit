@@ -1,11 +1,18 @@
-.make_commaData_fixture <- function(beta, coverage = NULL, sample_info = NULL,
-                                    positions = NULL, mod_type = "6mA",
-                                    motif = "GATC", chrom = "chr_sim",
-                                    seqlength = 100000L, strand = "+",
-                                    site_metadata = NULL,
-                                    mod_counts = NULL,
-                                    canonical_counts = NULL,
-                                    other_mod_counts = NULL) {
+.make_commaData_fixture <- function(
+  beta,
+  coverage = NULL,
+  sample_info = NULL,
+  positions = NULL,
+  mod_type = "6mA",
+  motif = "GATC",
+  chrom = "chr_sim",
+  seqlength = 100000L,
+  strand = "+",
+  site_metadata = NULL,
+  mod_counts = NULL,
+  canonical_counts = NULL,
+  other_mod_counts = NULL
+) {
   stopifnot(is.matrix(beta))
 
   n_sites <- nrow(beta)
@@ -16,8 +23,10 @@
   }
 
   if (is.null(coverage)) {
-    coverage <- matrix(20L,
-      nrow = n_sites, ncol = ncol(beta),
+    coverage <- matrix(
+      20L,
+      nrow = n_sites,
+      ncol = ncol(beta),
       dimnames = dimnames(beta)
     )
   }
@@ -42,8 +51,10 @@
   dimnames(canonical_counts) <- dimnames(beta)
 
   if (is.null(other_mod_counts)) {
-    other_mod_counts <- matrix(0L,
-      nrow = n_sites, ncol = ncol(beta),
+    other_mod_counts <- matrix(
+      0L,
+      nrow = n_sites,
+      ncol = ncol(beta),
       dimnames = dimnames(beta)
     )
   }
@@ -161,10 +172,14 @@
   obj
 }
 
-.make_two_modtype_fixture <- function(n_6ma = 8L, n_5mc = 4L,
-                                      sample_names = c("samp1", "samp2"),
-                                      conditions = NULL, replicate = NULL,
-                                      seed = 2L) {
+.make_two_modtype_fixture <- function(
+  n_6ma = 8L,
+  n_5mc = 4L,
+  sample_names = c("samp1", "samp2"),
+  conditions = NULL,
+  replicate = NULL,
+  seed = 2L
+) {
   if (!is.null(seed)) {
     set.seed(seed)
   }
@@ -206,8 +221,12 @@
   )
 }
 
-.make_diff_methyl_fixture <- function(n_sites = 20L, n_ctrl = 2L, n_treat = 1L,
-                                      seed = 99L) {
+.make_diff_methyl_fixture <- function(
+  n_sites = 20L,
+  n_ctrl = 2L,
+  n_treat = 1L,
+  seed = 99L
+) {
   set.seed(seed)
   n_samples <- n_ctrl + n_treat
   n_diff <- n_sites %/% 2L
@@ -224,8 +243,10 @@
     paste0("ctrl_", seq_len(n_ctrl)),
     paste0("treat_", seq_len(n_treat))
   )
-  coverage <- matrix(30L,
-    nrow = n_sites, ncol = n_samples,
+  coverage <- matrix(
+    30L,
+    nrow = n_sites,
+    ncol = n_samples,
     dimnames = list(NULL, colnames(beta))
   )
   sample_info <- data.frame(

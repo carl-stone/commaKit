@@ -8,13 +8,11 @@
   set.seed(42L)
   betas <- matrix(
     runif(n_sites * 3L, 0.0, 1.0),
-    nrow = n_sites, ncol = 3L,
+    nrow = n_sites,
+    ncol = 3L,
     dimnames = list(NULL, c("ctrl_1", "ctrl_2", "treat_1"))
   )
-  cov_mat <- matrix(20L,
-    nrow = n_sites, ncol = 3L,
-    dimnames = dimnames(betas)
-  )
+  cov_mat <- matrix(20L, nrow = n_sites, ncol = 3L, dimnames = dimnames(betas))
   sample_info <- data.frame(
     sample_name = c("ctrl_1", "ctrl_2", "treat_1"),
     condition = c("control", "control", "treatment"),
@@ -142,21 +140,18 @@ test_that("plot_pca: return_data data.frame includes sampleInfo columns", {
   expect_true("sample_name" %in% colnames(d))
 })
 
-test_that(
-  "plot_pca: default color falls back to sample_name without condition",
-  {
-    obj <- .make_pca_data()
-    SummarizedExperiment::colData(obj)$condition <- NULL
+test_that("plot_pca: default color falls back to sample_name without condition", {
+  obj <- .make_pca_data()
+  SummarizedExperiment::colData(obj)$condition <- NULL
 
-    p <- plot_pca(obj)
-    d <- plot_pca(obj, return_data = TRUE)
+  p <- plot_pca(obj)
+  d <- plot_pca(obj, return_data = TRUE)
 
-    expect_s3_class(p, "ggplot")
-    expect_equal(p$labels$colour, "sample_name")
-    expect_true("sample_name" %in% colnames(d))
-    expect_false("condition" %in% colnames(d))
-  }
-)
+  expect_s3_class(p, "ggplot")
+  expect_equal(p$labels$colour, "sample_name")
+  expect_true("sample_name" %in% colnames(d))
+  expect_false("condition" %in% colnames(d))
+})
 
 test_that("plot_pca: explicit condition color still validates missing column", {
   obj <- .make_pca_data()
@@ -179,7 +174,8 @@ test_that("plot_pca: return_data attaches percentVar attribute", {
 
 test_that("plot_pca: return_data includes requested color and shape columns", {
   obj <- .make_pca_data()
-  d <- plot_pca(obj,
+  d <- plot_pca(
+    obj,
     color_by = "condition",
     shape_by = "replicate",
     return_data = TRUE

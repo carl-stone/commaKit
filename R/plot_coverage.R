@@ -44,11 +44,13 @@ NULL
 #'   \code{\link{plot_methylation_distribution}}
 #'
 #' @export
-plot_coverage <- function(object,
-                          mod_type = NULL,
-                          motif = NULL,
-                          mod_context = NULL,
-                          per_sample = TRUE) {
+plot_coverage <- function(
+  object,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  per_sample = TRUE
+) {
   ## --- Input validation ---------------------------------------------------
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
@@ -96,7 +98,9 @@ plot_coverage <- function(object,
       ggplot2::geom_vline(
         data = med_df,
         ggplot2::aes(xintercept = .data[["median_depth"]]),
-        linetype = "dashed", color = "grey30", linewidth = 0.6
+        linetype = "dashed",
+        color = "grey30",
+        linewidth = 0.6
       ) +
       ggplot2::facet_wrap("sample_name") +
       ggplot2::labs(fill = "Sample")
@@ -111,11 +115,15 @@ plot_coverage <- function(object,
       )
     ) +
       ggplot2::geom_histogram(
-        alpha = 0.4, bins = 30, position = "identity"
+        alpha = 0.4,
+        bins = 30,
+        position = "identity"
       ) +
       ggplot2::geom_vline(
         xintercept = overall_median,
-        linetype = "dashed", color = "grey30", linewidth = 0.6
+        linetype = "dashed",
+        color = "grey30",
+        linewidth = 0.6
       ) +
       ggplot2::labs(fill = "Sample", color = "Sample")
   }

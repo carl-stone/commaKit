@@ -106,34 +106,40 @@ NULL
 #'   \code{\link{loadAnnotation}}
 #'
 #' @export
-plot_tss_profile <- function(object,
-                             feature_type = "gene",
-                             window = 500L,
-                             regulatory_feature_types = NULL,
-                             mod_type = NULL,
-                             motif = NULL,
-                             mod_context = NULL,
-                             color_by = c(
-                               "sample",
-                               "regulatory_element",
-                               "mod_type",
-                               "mod_context",
-                               "none"
-                             ),
-                             facet_by = c(
-                               "none", "sample",
-                               "mod_type",
-                               "mod_context"
-                             ),
-                             alpha = 0.4,
-                             show_smooth = FALSE,
-                             smooth_span = 0.3) {
+plot_tss_profile <- function(
+  object,
+  feature_type = "gene",
+  window = 500L,
+  regulatory_feature_types = NULL,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  color_by = c(
+    "sample",
+    "regulatory_element",
+    "mod_type",
+    "mod_context",
+    "none"
+  ),
+  facet_by = c(
+    "none",
+    "sample",
+    "mod_type",
+    "mod_context"
+  ),
+  alpha = 0.4,
+  show_smooth = FALSE,
+  smooth_span = 0.3
+) {
   ## ── A. Input validation ──────────────────────────────────────────────────
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
-  if (!is.character(feature_type) || length(feature_type) != 1L ||
-    is.na(feature_type)) {
+  if (
+    !is.character(feature_type) ||
+      length(feature_type) != 1L ||
+      is.na(feature_type)
+  ) {
     stop("'feature_type' must be a single non-NA character string.")
   }
   window <- as.integer(window)
@@ -142,16 +148,27 @@ plot_tss_profile <- function(object,
   }
   color_by <- match.arg(color_by)
   facet_by <- match.arg(facet_by)
-  if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha) ||
-    alpha <= 0 || alpha > 1) {
+  if (
+    !is.numeric(alpha) ||
+      length(alpha) != 1L ||
+      is.na(alpha) ||
+      alpha <= 0 ||
+      alpha > 1
+  ) {
     stop("'alpha' must be a single numeric value in (0, 1].")
   }
-  if (!is.logical(show_smooth) || length(show_smooth) != 1L ||
-    is.na(show_smooth)) {
+  if (
+    !is.logical(show_smooth) || length(show_smooth) != 1L || is.na(show_smooth)
+  ) {
     stop("'show_smooth' must be TRUE or FALSE.")
   }
-  if (!is.numeric(smooth_span) || length(smooth_span) != 1L ||
-    is.na(smooth_span) || smooth_span <= 0 || smooth_span > 1) {
+  if (
+    !is.numeric(smooth_span) ||
+      length(smooth_span) != 1L ||
+      is.na(smooth_span) ||
+      smooth_span <= 0 ||
+      smooth_span > 1
+  ) {
     stop("'smooth_span' must be a single numeric value in (0, 1].")
   }
   if (color_by == "regulatory_element" && is.null(regulatory_feature_types)) {
@@ -179,10 +196,12 @@ plot_tss_profile <- function(object,
   if (length(tss_gr) == 0L) {
     available_types <- unique(as.character(annot_gr$feature_type))
     stop(
-      "No features of type '", feature_type,
+      "No features of type '",
+      feature_type,
       "' found in annotation(object). ",
       "Available feature types: ",
-      paste(available_types, collapse = ", "), "."
+      paste(available_types, collapse = ", "),
+      "."
     )
   }
 
@@ -190,14 +209,15 @@ plot_tss_profile <- function(object,
   ## annotateSites(type = "proximity") measures distance from the TSS itself
   ## rather than from the nearest feature boundary.
   feat_strand <- as.character(GenomicRanges::strand(tss_gr))
-  tss_pos <- ifelse(feat_strand == "-",
+  tss_pos <- ifelse(
+    feat_strand == "-",
     GenomicRanges::end(tss_gr),
     GenomicRanges::start(tss_gr)
   )
   tss_1bp <- GenomicRanges::GRanges(
     seqnames = GenomicRanges::seqnames(tss_gr),
-    ranges   = IRanges::IRanges(start = tss_pos, width = 1L),
-    strand   = GenomicRanges::strand(tss_gr)
+    ranges = IRanges::IRanges(start = tss_pos, width = 1L),
+    strand = GenomicRanges::strand(tss_gr)
   )
   GenomicRanges::mcols(tss_1bp) <- GenomicRanges::mcols(tss_gr)
   tss_gr <- tss_1bp
@@ -214,8 +234,10 @@ plot_tss_profile <- function(object,
   ## ── D. Proximity annotation ───────────────────────────────────────────────
   ## annotateSites(keep = "proximity") on 1-bp TSS GRanges adds rel_position
   ## (IntegerList): negative = upstream of TSS, positive = downstream.
-  annotated <- annotateSites(object,
-    features = tss_gr, keep = "proximity",
+  annotated <- annotateSites(
+    object,
+    features = tss_gr,
+    keep = "proximity",
     window = window
   )
   rd <- as.data.frame(siteInfo(annotated))
@@ -239,8 +261,11 @@ plot_tss_profile <- function(object,
   keep <- !is.na(nearest_rel_pos)
   if (!any(keep)) {
     stop(
-      "No methylation sites found within ", window, " bp of any '",
-      feature_type, "' TSS. Consider increasing 'window'."
+      "No methylation sites found within ",
+      window,
+      " bp of any '",
+      feature_type,
+      "' TSS. Consider increasing 'window'."
     )
   }
   annotated_sub <- annotated[keep, ]
@@ -290,10 +315,12 @@ plot_tss_profile <- function(object,
     } else {
       sites_gr <- GenomicRanges::GRanges(
         seqnames = rd_sub$chrom,
-        ranges   = IRanges::IRanges(start = rd_sub$position, width = 1L),
-        strand   = rd_sub$strand
+        ranges = IRanges::IRanges(start = rd_sub$position, width = 1L),
+        strand = rd_sub$strand
       )
-      reg_hits <- GenomicRanges::findOverlaps(sites_gr, reg_gr,
+      reg_hits <- GenomicRanges::findOverlaps(
+        sites_gr,
+        reg_gr,
         ignore.strand = TRUE
       )
       reg_label <- rep("None", nrow(rd_sub))
@@ -317,27 +344,29 @@ plot_tss_profile <- function(object,
   }
 
   ## ── H. Map color variable name ────────────────────────────────────────────
-  color_var <- switch(color_by,
-    sample             = "sample_name",
+  color_var <- switch(
+    color_by,
+    sample = "sample_name",
     regulatory_element = "regulatory_element",
-    mod_type           = "mod_type",
-    mod_context        = "mod_context",
-    none               = NULL
+    mod_type = "mod_type",
+    mod_context = "mod_context",
+    none = NULL
   )
 
   ## Map facet variable name (used in smooth grouping below)
-  facet_col <- switch(facet_by,
-    none        = NULL,
-    sample      = "sample_name",
-    mod_type    = "mod_type",
+  facet_col <- switch(
+    facet_by,
+    none = NULL,
+    sample = "sample_name",
+    mod_type = "mod_type",
     mod_context = "mod_context"
   )
 
   ## ── I. Build ggplot ───────────────────────────────────────────────────────
   base_aes <- if (!is.null(color_var)) {
     ggplot2::aes(
-      x     = .data[["rel_pos"]],
-      y     = .data[["beta"]],
+      x = .data[["rel_pos"]],
+      y = .data[["beta"]],
       color = .data[[color_var]]
     )
   } else {
@@ -349,53 +378,59 @@ plot_tss_profile <- function(object,
   p <- ggplot2::ggplot(df, base_aes) +
     ggplot2::geom_point(
       mapping = if (!is.null(color_var)) {
-        ggplot2::aes(color = ggplot2::stage(
-          start = .data[[color_var]],
-          after_scale = {
-            m <- grDevices::col2rgb(color) / 255
-            m <- m + (1 - m) * 0.4
-            grDevices::rgb(t(m))
-          }
-        ))
+        ggplot2::aes(
+          color = ggplot2::stage(
+            start = .data[[color_var]],
+            after_scale = {
+              m <- grDevices::col2rgb(color) / 255
+              m <- m + (1 - m) * 0.4
+              grDevices::rgb(t(m))
+            }
+          )
+        )
       } else {
         NULL
       },
-      alpha = alpha, size = 0.8,
+      alpha = alpha,
+      size = 0.8,
       color = if (is.null(color_var)) "black" else NULL
     ) +
     ggplot2::geom_vline(
       xintercept = 0L,
-      linetype   = "dashed",
-      color      = "grey40",
-      linewidth  = 0.5
+      linetype = "dashed",
+      color = "grey40",
+      linewidth = 0.5
     ) +
     ggplot2::scale_x_continuous(
       limits = c(-window, window),
       name = paste0(
         "Position relative to TSS (bp)\n[",
-        feature_type, "]"
+        feature_type,
+        "]"
       ),
       labels = function(x) {
-        ifelse(x > 0, paste0("+", x),
-          ifelse(x == 0, "TSS", as.character(x))
-        )
+        ifelse(x > 0, paste0("+", x), ifelse(x == 0, "TSS", as.character(x)))
       }
     ) +
     ggplot2::scale_y_continuous(
       limits = c(0, 1),
-      name   = "Methylation (beta)"
+      name = "Methylation (beta)"
     ) +
     ggplot2::labs(
       title = paste0(
-        "TSS methylation profile: ", feature_type,
-        " (\u00b1", window, " bp)"
+        "TSS methylation profile: ",
+        feature_type,
+        " (\u00b1",
+        window,
+        " bp)"
       ),
       color = if (!is.null(color_var)) {
-        switch(color_by,
-          sample             = "Sample",
+        switch(
+          color_by,
+          sample = "Sample",
           regulatory_element = "Regulatory element",
-          mod_type           = "Modification type",
-          mod_context        = "Modification context"
+          mod_type = "Modification type",
+          mod_context = "Modification context"
         )
       } else {
         NULL
@@ -405,18 +440,22 @@ plot_tss_profile <- function(object,
 
   ## Colour scale for modification types and regulatory elements.
   if (color_by == "mod_type") {
-    p <- p + ggplot2::scale_color_manual(
-      values = .modTypePalette(df$mod_type)
-    )
-  } else if (color_by == "regulatory_element" &&
-    "regulatory_element" %in% names(df)) {
+    p <- p +
+      ggplot2::scale_color_manual(
+        values = .modTypePalette(df$mod_type)
+      )
+  } else if (
+    color_by == "regulatory_element" &&
+      "regulatory_element" %in% names(df)
+  ) {
     lvls <- levels(df$regulatory_element)
     n_reg <- sum(lvls != "None")
     if (n_reg > 0L) {
       ## Generate ggplot2-style hue colours using base R grDevices
       pal_colors <- grDevices::hcl(
         h = seq(15, 375, length.out = n_reg + 1L)[seq_len(n_reg)],
-        c = 100, l = 65
+        c = 100,
+        l = 65
       )
       pal <- c(pal_colors, "grey70")
     } else {
@@ -454,9 +493,7 @@ plot_tss_profile <- function(object,
       }
       sub <- df[mask & !is.na(df$beta), ]
 
-      g_label <- paste(unlist(group_combos[i, , drop = FALSE]),
-        collapse = "/"
-      )
+      g_label <- paste(unlist(group_combos[i, , drop = FALSE]), collapse = "/")
 
       if (nrow(sub) < 10L) {
         sparse_groups <<- c(sparse_groups, g_label)
@@ -464,7 +501,8 @@ plot_tss_profile <- function(object,
       }
       loess_warns <- character(0L)
       fit <- withCallingHandlers(
-        stats::loess(beta ~ rel_pos,
+        stats::loess(
+          beta ~ rel_pos,
           data = sub,
           span = smooth_span,
           na.action = stats::na.exclude
@@ -491,7 +529,9 @@ plot_tss_profile <- function(object,
         stringsAsFactors = FALSE
       )
       ## Attach grouping columns so ggplot routes lines to correct panels
-      for (col in group_cols) out[[col]] <- group_combos[[col]][i]
+      for (col in group_cols) {
+        out[[col]] <- group_combos[[col]][i]
+      }
       out
     })
     smooth_df <- do.call(rbind, Filter(Negate(is.null), smooth_rows))
@@ -520,13 +560,14 @@ plot_tss_profile <- function(object,
           x = .data[["rel_pos"]],
           y = .data[["beta_smooth"]]
         )
-        p <- p + ggplot2::geom_line(
-          data        = smooth_df,
-          smooth_aes,
-          color       = "red",
-          linewidth   = 1.0,
-          inherit.aes = FALSE
-        )
+        p <- p +
+          ggplot2::geom_line(
+            data = smooth_df,
+            smooth_aes,
+            color = "red",
+            linewidth = 1.0,
+            inherit.aes = FALSE
+          )
       } else {
         ## color_by != "none": points are lightened, smooth lines are
         ## the same hue but darkened so they stand out above the points
@@ -542,12 +583,13 @@ plot_tss_profile <- function(object,
             }
           )
         )
-        p <- p + ggplot2::geom_line(
-          data        = smooth_df,
-          smooth_aes,
-          linewidth   = 1.0,
-          inherit.aes = FALSE
-        )
+        p <- p +
+          ggplot2::geom_line(
+            data = smooth_df,
+            smooth_aes,
+            linewidth = 1.0,
+            inherit.aes = FALSE
+          )
       }
     }
   }

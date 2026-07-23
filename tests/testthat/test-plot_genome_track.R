@@ -8,13 +8,11 @@
   set.seed(3L)
   betas <- matrix(
     runif(n_sites * 2L, 0.1, 0.9),
-    nrow = n_sites, ncol = 2L,
+    nrow = n_sites,
+    ncol = 2L,
     dimnames = list(NULL, c("ctrl_1", "treat_1"))
   )
-  cov_mat <- matrix(20L,
-    nrow = n_sites, ncol = 2L,
-    dimnames = dimnames(betas)
-  )
+  cov_mat <- matrix(20L, nrow = n_sites, ncol = 2L, dimnames = dimnames(betas))
   site_gr <- GenomicRanges::GRanges(
     seqnames = rep("chr_sim", n_sites),
     ranges = IRanges::IRanges(start = positions, width = 1L),
@@ -29,9 +27,9 @@
   )
   cd <- S4Vectors::DataFrame(
     sample_name = c("ctrl_1", "treat_1"),
-    condition   = c("control", "treatment"),
-    replicate   = 1:2,
-    row.names   = c("ctrl_1", "treat_1")
+    condition = c("control", "treatment"),
+    replicate = 1:2,
+    row.names = c("ctrl_1", "treat_1")
   )
   ann_gr <- GenomicRanges::GRanges(
     seqnames = "chr_sim",
@@ -45,9 +43,9 @@
   ann_gr$name <- c("geneA", "geneB")
 
   rse <- SummarizedExperiment::SummarizedExperiment(
-    assays     = list(methylation = betas, coverage = cov_mat),
-    rowRanges  = site_gr,
-    colData    = cd
+    assays = list(methylation = betas, coverage = cov_mat),
+    rowRanges = site_gr,
+    colData = cd
   )
   obj <- new("commaData", rse)
   S4Vectors::metadata(obj)$annotation <- ann_gr
@@ -74,21 +72,18 @@ test_that("plot_genome_track: p$data maps exact positions and beta values", {
   expect_equal(sort(p$data$beta), sort(as.vector(methyl_mat)))
 })
 
-test_that(
-  "plot_genome_track: annotation = FALSE returns ggplot without GeomRect layer",
-  {
-    obj <- .make_track_data()
-    p <- plot_genome_track(obj, chromosome = "chr_sim", annotation = FALSE)
-    expect_s3_class(p, "ggplot")
-    layer_classes <- vapply(
-      p$layers,
-      function(l) class(l$geom)[1],
-      character(1)
-    )
-    expect_true("GeomPoint" %in% layer_classes)
-    expect_false("GeomRect" %in% layer_classes)
-  }
-)
+test_that("plot_genome_track: annotation = FALSE returns ggplot without GeomRect layer", {
+  obj <- .make_track_data()
+  p <- plot_genome_track(obj, chromosome = "chr_sim", annotation = FALSE)
+  expect_s3_class(p, "ggplot")
+  layer_classes <- vapply(
+    p$layers,
+    function(l) class(l$geom)[1],
+    character(1)
+  )
+  expect_true("GeomPoint" %in% layer_classes)
+  expect_false("GeomRect" %in% layer_classes)
+})
 
 test_that(
   paste(
@@ -98,9 +93,11 @@ test_that(
   {
     obj <- .make_track_data()
     p_all <- plot_genome_track(obj, chromosome = "chr_sim", annotation = FALSE)
-    p_filt <- plot_genome_track(obj,
+    p_filt <- plot_genome_track(
+      obj,
       chromosome = "chr_sim",
-      mod_type = "6mA", annotation = FALSE
+      mod_type = "6mA",
+      annotation = FALSE
     )
     expect_s3_class(p_filt, "ggplot")
     # All sites are 6mA, so data should be identical
@@ -111,28 +108,30 @@ test_that(
 
 # ─── Positional filtering ─────────────────────────────────────────────────────
 
-test_that(
-  "plot_genome_track: start/end filtering retains only positions in range",
-  {
-    obj <- .make_track_data()
-    p <- plot_genome_track(obj,
-      chromosome = "chr_sim",
-      start = 1000L, end = 5000L, annotation = FALSE
-    )
-    expect_s3_class(p, "ggplot")
-    # Positions in p$data should be exactly those in [1000, 5000]
-    positions_in_range <- c(1000L, 2000L, 3000L, 4000L, 5000L)
-    expect_equal(sort(unique(p$data$position)), positions_in_range)
-    # Row count: 5 positions * 2 samples = 10
-    expect_equal(nrow(p$data), 10L)
-  }
-)
+test_that("plot_genome_track: start/end filtering retains only positions in range", {
+  obj <- .make_track_data()
+  p <- plot_genome_track(
+    obj,
+    chromosome = "chr_sim",
+    start = 1000L,
+    end = 5000L,
+    annotation = FALSE
+  )
+  expect_s3_class(p, "ggplot")
+  # Positions in p$data should be exactly those in [1000, 5000]
+  positions_in_range <- c(1000L, 2000L, 3000L, 4000L, 5000L)
+  expect_equal(sort(unique(p$data$position)), positions_in_range)
+  # Row count: 5 positions * 2 samples = 10
+  expect_equal(nrow(p$data), 10L)
+})
 
 test_that("plot_genome_track: start only (no end) filters positions >= start", {
   obj <- .make_track_data()
-  p <- plot_genome_track(obj,
+  p <- plot_genome_track(
+    obj,
     chromosome = "chr_sim",
-    start = 3000L, annotation = FALSE
+    start = 3000L,
+    annotation = FALSE
   )
   expect_s3_class(p, "ggplot")
   # Positions should be >= 3000
@@ -178,10 +177,7 @@ test_that("plot_genome_track: error when no sites on chromosome", {
 test_that("plot_genome_track: error when start > end", {
   obj <- .make_track_data()
   expect_error(
-    plot_genome_track(obj,
-      chromosome = "chr_sim",
-      start = 5000L, end = 1000L
-    ),
+    plot_genome_track(obj, chromosome = "chr_sim", start = 5000L, end = 1000L),
     "'end' must be"
   )
 })
@@ -189,10 +185,7 @@ test_that("plot_genome_track: error when start > end", {
 test_that("plot_genome_track: error on invalid mod_type", {
   obj <- .make_track_data()
   expect_error(
-    plot_genome_track(obj,
-      chromosome = "chr_sim",
-      mod_type = "4mC"
-    ),
+    plot_genome_track(obj, chromosome = "chr_sim", mod_type = "4mC"),
     "not found"
   )
 })
@@ -209,7 +202,8 @@ test_that("plot_genome_track: error when invalid annotation argument", {
 
 test_that("plot_genome_track: comma_example_data has correct row count", {
   data(comma_example_data)
-  p <- plot_genome_track(comma_example_data,
+  p <- plot_genome_track(
+    comma_example_data,
     chromosome = "chr_sim",
     annotation = FALSE
   )

@@ -96,13 +96,15 @@ NULL
 #' siteInfo(ann_ov)$feature_names[[1]]
 #'
 #' @export
-annotateSites <- function(object,
-                          features = NULL,
-                          feature_col = "feature_type",
-                          name_col = "name",
-                          window = 50L,
-                          keep = c("all", "overlap", "proximity", "metagene"),
-                          metadata_cols = NULL) {
+annotateSites <- function(
+  object,
+  features = NULL,
+  feature_col = "feature_type",
+  name_col = "name",
+  window = 50L,
+  keep = c("all", "overlap", "proximity", "metagene"),
+  metadata_cols = NULL
+) {
   # ── Input validation ──────────────────────────────────────────────────────
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
@@ -130,14 +132,20 @@ annotateSites <- function(object,
   feat_mcols <- names(GenomicRanges::mcols(features))
   if (!feature_col %in% feat_mcols) {
     stop(
-      "Column '", feature_col, "' not found in mcols(features). ",
-      "Available columns: ", paste(feat_mcols, collapse = ", ")
+      "Column '",
+      feature_col,
+      "' not found in mcols(features). ",
+      "Available columns: ",
+      paste(feat_mcols, collapse = ", ")
     )
   }
   if (!name_col %in% feat_mcols) {
     stop(
-      "Column '", name_col, "' not found in mcols(features). ",
-      "Available columns: ", paste(feat_mcols, collapse = ", ")
+      "Column '",
+      name_col,
+      "' not found in mcols(features). ",
+      "Available columns: ",
+      paste(feat_mcols, collapse = ", ")
     )
   }
   if (!is.null(metadata_cols)) {
@@ -156,8 +164,13 @@ annotateSites <- function(object,
 
   # ── Unified annotation ────────────────────────────────────────────────────
   rd <- .annotateSites_unified(
-    rd, sites_gr, features, feature_col, name_col,
-    window, metadata_cols
+    rd,
+    sites_gr,
+    features,
+    feature_col,
+    name_col,
+    window,
+    metadata_cols
   )
 
   # ── Post-annotation keep filter ───────────────────────────────────────────
@@ -180,13 +193,15 @@ annotateSites <- function(object,
 # element j in feature_types[[i]] corresponds to element j in all other
 # list columns for site i. This invariant must be preserved throughout.
 
-.annotateSites_unified <- function(rd,
-                                   sites_gr,
-                                   features,
-                                   feature_col,
-                                   name_col,
-                                   window,
-                                   metadata_cols) {
+.annotateSites_unified <- function(
+  rd,
+  sites_gr,
+  features,
+  feature_col,
+  name_col,
+  window,
+  metadata_cols
+) {
   n_sites <- nrow(rd)
   window <- as.integer(window)
 
@@ -241,14 +256,20 @@ annotateSites <- function(object,
   # On + and * strands, lower coordinates are upstream and larger coordinates
   # are downstream. On - strands, higher coordinates are upstream biologically.
   inside <- site_pos >= feat_starts & site_pos <= feat_ends
-  pos_signed <- ifelse(inside, 0L,
-    ifelse(site_pos < feat_starts,
+  pos_signed <- ifelse(
+    inside,
+    0L,
+    ifelse(
+      site_pos < feat_starts,
       site_pos - feat_starts, # negative: upstream
       site_pos - feat_ends
     )
   ) # positive: downstream
-  neg_signed <- ifelse(inside, 0L,
-    ifelse(site_pos > feat_ends,
+  neg_signed <- ifelse(
+    inside,
+    0L,
+    ifelse(
+      site_pos > feat_ends,
       feat_ends - site_pos, # negative: upstream on -
       feat_starts - site_pos
     )
@@ -261,8 +282,11 @@ annotateSites <- function(object,
   hit_seqnames <- as.character(GenomicRanges::seqnames(sites_gr))[q_idx]
   hit_lengths <- as.integer(seq_lengths[hit_seqnames])
   hit_circular <- seq_circular[hit_seqnames]
-  circular_hits <- !inside & !is.na(hit_lengths) & hit_lengths > 0L &
-    !is.na(hit_circular) & hit_circular
+  circular_hits <- !inside &
+    !is.na(hit_lengths) &
+    hit_lengths > 0L &
+    !is.na(hit_circular) &
+    hit_circular
 
   if (any(circular_hits)) {
     rel_pos[circular_hits] <- .circularFeatureRelPosition(
@@ -380,8 +404,13 @@ annotateSites <- function(object,
   list(windows = windows, query_map = query_map)
 }
 
-.circularFeatureRelPosition <- function(site_pos, feat_start, feat_end,
-                                        feat_strand, genome_size) {
+.circularFeatureRelPosition <- function(
+  site_pos,
+  feat_start,
+  feat_end,
+  feat_strand,
+  genome_size
+) {
   dist_site_to_start <- (feat_start - site_pos) %% genome_size
   dist_end_to_site <- (site_pos - feat_end) %% genome_size
 

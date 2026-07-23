@@ -3,7 +3,10 @@
   candidates <- c(
     file.path("vignettes", vignette_name),
     testthat::test_path(
-      "..", "..", "vignettes", "understanding-commaData.Rmd"
+      "..",
+      "..",
+      "vignettes",
+      "understanding-commaData.Rmd"
     ),
     system.file("doc", vignette_name, package = "commaKit", mustWork = FALSE)
   )

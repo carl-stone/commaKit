@@ -5,11 +5,11 @@ repos:
   - repo: local
     hooks:
       - id: r-style
-        name: Check R formatting with styler
+        name: Check R formatting with Air
         entry: env RENV_CONFIG_AUTOLOADER_ENABLED=FALSE Rscript --vanilla dev/precommit.R style
         language: system
         pass_filenames: true
-        files: ^(R|tests|vignettes|data-raw|dev)/.*\.[Rr](md)?$|^README\.Rmd$|^\.Rprofile$
+        files: ^(R|tests|data-raw|dev)/.*\.[Rr]$|^\.Rprofile$
 
       - id: r-lint
         name: Lint changed R files with lintr

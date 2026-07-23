@@ -8,13 +8,11 @@
   set.seed(10L)
   betas <- matrix(
     runif(n_sites * 3L, 0.0, 1.0),
-    nrow = n_sites, ncol = 3L,
+    nrow = n_sites,
+    ncol = 3L,
     dimnames = list(NULL, c("ctrl_1", "ctrl_2", "treat_1"))
   )
-  cov_mat <- matrix(20L,
-    nrow = n_sites, ncol = 3L,
-    dimnames = dimnames(betas)
-  )
+  cov_mat <- matrix(20L, nrow = n_sites, ncol = 3L, dimnames = dimnames(betas))
   site_gr <- GenomicRanges::GRanges(
     seqnames = rep("chr_sim", n_sites),
     ranges = IRanges::IRanges(start = positions, width = 1L),
@@ -29,14 +27,14 @@
   )
   cd <- S4Vectors::DataFrame(
     sample_name = c("ctrl_1", "ctrl_2", "treat_1"),
-    condition   = c("control", "control", "treatment"),
-    replicate   = 1:3,
-    row.names   = c("ctrl_1", "ctrl_2", "treat_1")
+    condition = c("control", "control", "treatment"),
+    replicate = 1:3,
+    row.names = c("ctrl_1", "ctrl_2", "treat_1")
   )
   rse <- SummarizedExperiment::SummarizedExperiment(
-    assays     = list(methylation = betas, coverage = cov_mat),
-    rowRanges  = site_gr,
-    colData    = cd
+    assays = list(methylation = betas, coverage = cov_mat),
+    rowRanges = site_gr,
+    colData = cd
   )
   obj <- new("commaData", rse)
 
@@ -66,8 +64,8 @@ test_that("plot_heatmap: p$data maps site_key, sample_name, and beta exactly", {
   expect_true("sample_name" %in% colnames(p$data))
   expect_true("beta" %in% colnames(p$data))
   # 15 sites * 3 samples = 45 rows (all padj non-NA)
-  n_nonNA <- sum(!is.na(fix$res$dm_padj))
-  expect_equal(nrow(p$data), n_nonNA * ncol(methylation(fix$obj)))
+  n_non_na <- sum(!is.na(fix$res$dm_padj))
+  expect_equal(nrow(p$data), n_non_na * ncol(methylation(fix$obj)))
   # Sample names should match the object
   expect_equal(
     sort(unique(p$data$sample_name)),
@@ -84,62 +82,58 @@ test_that("plot_heatmap: n_sites limits p$data to top N sites by padj", {
   expect_equal(length(unique(p5$data$site_key)), 5L)
 })
 
-test_that(
-  "plot_heatmap: n_sites larger than available sites clamps to all available",
-  {
-    fix <- .make_heatmap_fixtures()
-    p <- plot_heatmap(fix$res, fix$obj, n_sites = 1000L)
-    expect_s3_class(p, "ggplot")
-    # All 15 sites should be shown
-    n_nonNA <- sum(!is.na(fix$res$dm_padj))
-    expect_equal(length(unique(p$data$site_key)), n_nonNA)
-    expect_equal(nrow(p$data), n_nonNA * 3L)
-  }
-)
+test_that("plot_heatmap: n_sites larger than available sites clamps to all available", {
+  fix <- .make_heatmap_fixtures()
+  p <- plot_heatmap(fix$res, fix$obj, n_sites = 1000L)
+  expect_s3_class(p, "ggplot")
+  # All 15 sites should be shown
+  n_non_na <- sum(!is.na(fix$res$dm_padj))
+  expect_equal(length(unique(p$data$site_key)), n_non_na)
+  expect_equal(nrow(p$data), n_non_na * 3L)
+})
 
-test_that(
-  "plot_heatmap: subset and sorted results use preserved rowname indices",
-  {
-    fix <- .make_heatmap_fixtures()
+test_that("plot_heatmap: subset and sorted results use preserved rowname indices", {
+  fix <- .make_heatmap_fixtures()
 
-    subset_res <- fix$res[c(10L, 2L, 7L, 5L), , drop = FALSE]
-    subset_res$dm_padj <- c(0.03, 0.01, 0.02, 0.04)
-    subset_res$dm_delta_beta <- c(0.4, -0.2, 0.1, -0.5)
+  subset_res <- fix$res[c(10L, 2L, 7L, 5L), , drop = FALSE]
+  subset_res$dm_padj <- c(0.03, 0.01, 0.02, 0.04)
+  subset_res$dm_delta_beta <- c(0.4, -0.2, 0.1, -0.5)
 
-    p <- plot_heatmap(
-      subset_res,
-      fix$obj,
-      n_sites = 3L,
-      annotation_cols = character(0)
-    )
+  p <- plot_heatmap(
+    subset_res,
+    fix$obj,
+    n_sites = 3L,
+    annotation_cols = character(0)
+  )
 
-    selected <- subset_res[order(subset_res$dm_padj), , drop = FALSE]
-    selected <- selected[seq_len(3L), , drop = FALSE]
-    selected <- selected[order(selected$dm_delta_beta), , drop = FALSE]
+  selected <- subset_res[order(subset_res$dm_padj), , drop = FALSE]
+  selected <- selected[seq_len(3L), , drop = FALSE]
+  selected <- selected[order(selected$dm_delta_beta), , drop = FALSE]
 
-    expected_mat <- methylation(fix$obj)[as.integer(rownames(selected)), ,
-      drop = FALSE
-    ]
-    expected_site_keys <- paste(
-      selected$chrom,
-      selected$position,
-      selected$strand,
-      selected$mod_type,
-      selected$motif,
-      sep = ":"
-    )
+  expected_mat <- methylation(fix$obj)[
+    as.integer(rownames(selected)),
+    ,
+    drop = FALSE
+  ]
+  expected_site_keys <- paste(
+    selected$chrom,
+    selected$position,
+    selected$strand,
+    selected$mod_type,
+    selected$motif,
+    sep = ":"
+  )
 
-    expect_equal(
-      as.character(p$data$site_key),
-      rep(expected_site_keys, times = ncol(expected_mat))
-    )
-    expect_equal(
-      as.character(p$data$sample_name),
-      rep(colnames(expected_mat), each = nrow(expected_mat))
-    )
-    expect_equal(p$data$beta, as.vector(expected_mat))
-  }
-)
+  expect_equal(
+    as.character(p$data$site_key),
+    rep(expected_site_keys, times = ncol(expected_mat))
+  )
+  expect_equal(
+    as.character(p$data$sample_name),
+    rep(colnames(expected_mat), each = nrow(expected_mat))
+  )
+  expect_equal(p$data$beta, as.vector(expected_mat))
+})
 
 # ─── NA handling ─────────────────────────────────────────────────────────────
 

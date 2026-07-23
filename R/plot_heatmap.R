@@ -7,9 +7,11 @@ NULL
   paste(row_names, collapse = ", ")
 }
 
-.validateHeatmapResultRowIndices <- function(row_names,
-                                             n_selected,
-                                             n_object_rows) {
+.validateHeatmapResultRows <- function(
+  row_names,
+  n_selected,
+  n_object_rows
+) {
   contract_msg <- paste0(
     "Selected 'results' row names must be non-missing integer row ",
     "indices within the rows of 'object'. This is the row-name contract ",
@@ -17,8 +19,12 @@ NULL
     "site keys before calling plot_heatmap()."
   )
 
-  if (is.null(row_names) || length(row_names) != n_selected ||
-    anyNA(row_names) || any(!nzchar(row_names))) {
+  if (
+    is.null(row_names) ||
+      length(row_names) != n_selected ||
+      anyNA(row_names) ||
+      any(!nzchar(row_names))
+  ) {
     stop(contract_msg, call. = FALSE)
   }
 
@@ -102,23 +108,30 @@ NULL
 #'   \code{\link{plot_volcano}}
 #'
 #' @export
-plot_heatmap <- function(results,
-                         object,
-                         n_sites = 50L,
-                         annotation_cols = NULL) {
+plot_heatmap <- function(
+  results,
+  object,
+  n_sites = 50L,
+  annotation_cols = NULL
+) {
   ## --- Input validation ---------------------------------------------------
   if (!is.data.frame(results)) {
     stop("'results' must be a data.frame returned by results().")
   }
   required_cols <- c(
-    "chrom", "position", "strand", "mod_type",
-    "dm_padj", "dm_delta_beta"
+    "chrom",
+    "position",
+    "strand",
+    "mod_type",
+    "dm_padj",
+    "dm_delta_beta"
   )
   missing_cols <- setdiff(required_cols, colnames(results))
   if (length(missing_cols) > 0L) {
     stop(
       "'results' is missing required column(s): ",
-      paste(missing_cols, collapse = ", "), ". ",
+      paste(missing_cols, collapse = ", "),
+      ". ",
       "Ensure 'results' was produced by results() after diffMethyl()."
     )
   }
@@ -131,14 +144,14 @@ plot_heatmap <- function(results,
   }
 
   ## --- Select top n_sites by padj -----------------------------------------
-  res_nonNA <- results[!is.na(results$dm_padj), , drop = FALSE]
-  if (nrow(res_nonNA) == 0L) {
+  res_non_na <- results[!is.na(results$dm_padj), , drop = FALSE]
+  if (nrow(res_non_na) == 0L) {
     stop(
       "No rows with non-NA 'dm_padj' in 'results'. ",
       "Run diffMethyl() first."
     )
   }
-  res_sorted <- res_nonNA[order(res_nonNA$dm_padj), , drop = FALSE]
+  res_sorted <- res_non_na[order(res_non_na$dm_padj), , drop = FALSE]
   n_use <- min(n_sites, nrow(res_sorted))
   top_res <- res_sorted[seq_len(n_use), , drop = FALSE]
 
@@ -146,7 +159,7 @@ plot_heatmap <- function(results,
   ## results() returns a DataFrame aligned to rowRanges(object). The rownames
   ## of the results DataFrame carry the original row indices into the object,
   ## even after subsetting and sorting. Use those to index into the assay.
-  row_idx <- .validateHeatmapResultRowIndices(
+  row_idx <- .validateHeatmapResultRows(
     rownames(top_res),
     nrow(top_res),
     nrow(object)
@@ -162,8 +175,11 @@ plot_heatmap <- function(results,
   top_res <- top_res[delta_order, , drop = FALSE]
 
   ## Build display labels for y-axis (computed on demand, not from rownames)
-  site_keys <- paste(top_res$chrom, top_res$position,
-    top_res$strand, top_res$mod_type,
+  site_keys <- paste(
+    top_res$chrom,
+    top_res$position,
+    top_res$strand,
+    top_res$mod_type,
     top_res$motif,
     sep = ":"
   )
@@ -190,37 +206,39 @@ plot_heatmap <- function(results,
   p <- ggplot2::ggplot(
     df,
     ggplot2::aes(
-      x    = .data[["sample_name"]],
-      y    = .data[["site_key"]],
+      x = .data[["sample_name"]],
+      y = .data[["site_key"]],
       fill = .data[["beta"]]
     )
   ) +
     ggplot2::geom_tile(color = "white", linewidth = 0.1) +
     ggplot2::scale_fill_gradient2(
-      low      = "#4575b4",
-      mid      = "white",
-      high     = "#d73027",
+      low = "#4575b4",
+      mid = "white",
+      high = "#d73027",
       midpoint = 0.5,
-      limits   = c(0, 1),
+      limits = c(0, 1),
       na.value = "grey85",
-      name     = "Methylation"
+      name = "Methylation"
     ) +
     ggplot2::scale_y_discrete(limits = site_keys) +
     ggplot2::scale_x_discrete(limits = sample_nms) +
     ggplot2::labs(
       x = NULL,
       y = paste0(
-        "Top ", n_final, " differential sites\n",
+        "Top ",
+        n_final,
+        " differential sites\n",
         "(ordered by delta methylation)"
       ),
       title = "Differential Methylation Heatmap"
     ) +
     ggplot2::theme_minimal() +
     ggplot2::theme(
-      axis.text.y  = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_blank(),
       axis.ticks.y = ggplot2::element_blank(),
-      panel.grid   = ggplot2::element_blank(),
-      axis.text.x  = ggplot2::element_text(angle = 45, hjust = 1)
+      panel.grid = ggplot2::element_blank(),
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
     )
 
   ## If annotation_cols provided, append an annotation strip below
@@ -240,8 +258,8 @@ plot_heatmap <- function(results,
     p_annot <- ggplot2::ggplot(
       annot_df,
       ggplot2::aes(
-        x    = .data[["sample_name"]],
-        y    = .data[["annot_var"]],
+        x = .data[["sample_name"]],
+        y = .data[["annot_var"]],
         fill = .data[["annot_value"]]
       )
     ) +
@@ -250,13 +268,14 @@ plot_heatmap <- function(results,
       ggplot2::labs(x = NULL, y = NULL, fill = "Sample\nannotation") +
       ggplot2::theme_minimal() +
       ggplot2::theme(
-        axis.text.x  = ggplot2::element_text(angle = 45, hjust = 1),
-        panel.grid   = ggplot2::element_blank()
+        axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+        panel.grid = ggplot2::element_blank()
       )
 
     if (requireNamespace("patchwork", quietly = TRUE)) {
       p <- patchwork::wrap_plots(
-        p_annot, p,
+        p_annot,
+        p,
         ncol = 1L,
         heights = c(length(annotation_cols), 10)
       )

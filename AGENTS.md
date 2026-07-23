@@ -74,12 +74,12 @@ Rscript -e "devtools::test(filter = 'annotateSites')"
 Rscript -e "testthat::test_file('tests/testthat/test-annotateSites.R')"
 Rscript dev/test-timing.R
 Rscript -e "devtools::document()"
-Rscript -e "styler::style_pkg()"
+air format .
 Rscript -e "devtools::check(build_args = c('--no-build-vignettes'))"
 Rscript -e "devtools::check()"
 ```
 
-Use the narrowest command that proves the change. Run `styler::style_pkg()` before committing to keep code formatted (CI enforces the tidyverse style guide with 2-space indentation and 80-char line width). Run the narrowest relevant tests before committing (for example `Rscript -e "testthat::test_file('tests/testthat/test-annotateSites.R')"` or `Rscript -e "devtools::test()"` for broader changes). Run `Rscript dev/test-timing.R` locally when per-file timing is relevant. Escalate to `devtools::document()` for roxygen edits, and to check-level validation for package metadata, examples, vignettes, dependencies, or broad API changes.
+Use the narrowest command that proves the change. Run `air format .` before committing; CI enforces the project settings in `air.toml`. Run the narrowest relevant tests before committing (for example `Rscript -e "testthat::test_file('tests/testthat/test-annotateSites.R')"` or `Rscript -e "devtools::test()"` for broader changes). Run `Rscript dev/test-timing.R` locally when per-file timing is relevant. Escalate to `devtools::document()` for roxygen edits, and to check-level validation for package metadata, examples, vignettes, dependencies, or broad API changes.
 
 ## Knowledge Format
 

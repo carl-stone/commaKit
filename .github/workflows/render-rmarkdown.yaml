@@ -19,13 +19,13 @@ permissions: read-all
 jobs:
   render-rmarkdown:
     runs-on: ubuntu-latest
-    container: bioconductor/bioconductor_docker:RELEASE_3_22
+    container: bioconductor/bioconductor_docker:RELEASE_3_22@sha256:e34177896c1579f66d48b756e4229b58237499183a089da084af72d7aba1d40a
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
@@ -37,7 +37,7 @@ jobs:
           Rscript -e 'cat("R ", as.character(getRversion()), "\n", sep = "")'
           Rscript -e 'cat("Bioconductor ", as.character(BiocManager::version()), "\n", sep = "")'
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2
         with:
           packages: any::sessioninfo
           extra-packages: local::., any::rmarkdown

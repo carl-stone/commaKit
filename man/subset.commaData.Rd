@@ -4,7 +4,7 @@
 \alias{subset.commaData}
 \title{Deprecated subset method for commaData objects}
 \usage{
-subset.commaData(
+\method{subset}{commaData}(
   x,
   mod_type = NULL,
   condition = NULL,

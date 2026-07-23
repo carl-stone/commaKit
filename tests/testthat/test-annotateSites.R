@@ -44,19 +44,16 @@ test_that("annotateSites keep='all' columns are correct types", {
   expect_true(is(si$frac_position, "List"))
 })
 
-test_that(
-  "annotateSites keep='all' all columns have length == nrow(siteInfo)",
-  {
-    data(comma_example_data)
-    result <- annotateSites(comma_example_data)
-    si <- siteInfo(result)
-    n <- nrow(si)
-    expect_equal(length(si$feature_types), n)
-    expect_equal(length(si$feature_names), n)
-    expect_equal(length(si$rel_position), n)
-    expect_equal(length(si$frac_position), n)
-  }
-)
+test_that("annotateSites keep='all' all columns have length == nrow(siteInfo)", {
+  data(comma_example_data)
+  result <- annotateSites(comma_example_data)
+  si <- siteInfo(result)
+  n <- nrow(si)
+  expect_equal(length(si$feature_types), n)
+  expect_equal(length(si$feature_names), n)
+  expect_equal(length(si$rel_position), n)
+  expect_equal(length(si$frac_position), n)
+})
 
 test_that("annotateSites keep='all' frac_position is NA for outside sites", {
   data(comma_example_data)
@@ -77,37 +74,39 @@ test_that("annotateSites keep='all' frac_position is NA for outside sites", {
   }
 })
 
-test_that(
-  "annotateSites keep='all' frac_position is in [0,1] for inside sites",
-  {
-    data(comma_example_data)
-    result <- annotateSites(comma_example_data)
-    si <- siteInfo(result)
-    rp_list <- as.list(si$rel_position)
-    fp_list <- as.list(si$frac_position)
-    # Indices with rel_position == 0 should have frac in [0,1]
-    inside_fracs <- mapply(function(rp, fp) {
+test_that("annotateSites keep='all' frac_position is in [0,1] for inside sites", {
+  data(comma_example_data)
+  result <- annotateSites(comma_example_data)
+  si <- siteInfo(result)
+  rp_list <- as.list(si$rel_position)
+  fp_list <- as.list(si$frac_position)
+  # Indices with rel_position == 0 should have frac in [0,1]
+  inside_fracs <- mapply(
+    function(rp, fp) {
       if (length(rp) == 0L) {
         return(numeric(0))
       }
       fp[rp == 0L]
-    }, rp_list, fp_list, SIMPLIFY = FALSE)
-    all_inside <- unlist(inside_fracs)
-    all_inside <- all_inside[!is.na(all_inside)]
-    if (length(all_inside) > 0L) {
-      expect_true(all(all_inside >= 0 & all_inside <= 1))
-    }
+    },
+    rp_list,
+    fp_list,
+    SIMPLIFY = FALSE
+  )
+  all_inside <- unlist(inside_fracs)
+  all_inside <- all_inside[!is.na(all_inside)]
+  if (length(all_inside) > 0L) {
+    expect_true(all(all_inside >= 0 & all_inside <= 1))
   }
-)
+})
 
 test_that("annotateSites keep='all' rel_position is 0 for inside sites", {
   # Use a feature covering the whole 100kb chrom
   features <- GenomicRanges::GRanges(
-    seqnames     = "chr_sim",
-    ranges       = IRanges::IRanges(start = 1L, end = 100000L),
-    strand       = "+",
+    seqnames = "chr_sim",
+    ranges = IRanges::IRanges(start = 1L, end = 100000L),
+    strand = "+",
     feature_type = "gene",
-    name         = "bigGene"
+    name = "bigGene"
   )
   data(comma_example_data)
   result <- annotateSites(comma_example_data, features = features)
@@ -117,25 +116,22 @@ test_that("annotateSites keep='all' rel_position is 0 for inside sites", {
   expect_true(all(all_rp == 0L))
 })
 
-test_that(
-  "annotateSites keep='all' rel_position is negative upstream (+ strand)",
-  {
-    # Feature at 50000-60000 on + strand; sites < 50000 should be
-    # upstream (negative).
-    features <- GenomicRanges::GRanges(
-      seqnames     = "chr_test",
-      ranges       = IRanges::IRanges(start = 50000L, end = 60000L),
-      strand       = "+",
-      feature_type = "gene",
-      name         = "genePos"
-    )
-    sub_obj <- .make_annotateSites_fixture(49980L)
-    result <- annotateSites(sub_obj, features = features)
-    res_si <- siteInfo(result)
-    rp <- unlist(as.list(res_si$rel_position))
-    expect_equal(as.integer(rp), -20L)
-  }
-)
+test_that("annotateSites keep='all' rel_position is negative upstream (+ strand)", {
+  # Feature at 50000-60000 on + strand; sites < 50000 should be
+  # upstream (negative).
+  features <- GenomicRanges::GRanges(
+    seqnames = "chr_test",
+    ranges = IRanges::IRanges(start = 50000L, end = 60000L),
+    strand = "+",
+    feature_type = "gene",
+    name = "genePos"
+  )
+  sub_obj <- .make_annotateSites_fixture(49980L)
+  result <- annotateSites(sub_obj, features = features)
+  res_si <- siteInfo(result)
+  rp <- unlist(as.list(res_si$rel_position))
+  expect_equal(as.integer(rp), -20L)
+})
 
 test_that(
   paste(
@@ -146,11 +142,11 @@ test_that(
     # Feature at 50000-60000 on - strand; sites > 60000 are upstream
     # on - strand (negative).
     features <- GenomicRanges::GRanges(
-      seqnames     = "chr_test",
-      ranges       = IRanges::IRanges(start = 50000L, end = 60000L),
-      strand       = "-",
+      seqnames = "chr_test",
+      ranges = IRanges::IRanges(start = 50000L, end = 60000L),
+      strand = "-",
       feature_type = "gene",
-      name         = "geneMinus"
+      name = "geneMinus"
     )
     sub_obj <- .make_annotateSites_fixture(60020L)
     result <- annotateSites(sub_obj, features = features)
@@ -160,37 +156,35 @@ test_that(
   }
 )
 
-test_that(
-  "annotateSites keep='all' feature outside window gets length-0 lists",
-  {
-    # Feature at 1-10; site at position > 60; window=50 → no overlap
-    features <- GenomicRanges::GRanges(
-      seqnames     = "chr_test",
-      ranges       = IRanges::IRanges(start = 1L, end = 10L),
-      strand       = "+",
-      feature_type = "gene",
-      name         = "geneY"
-    )
-    sub_obj <- .make_annotateSites_fixture(100L)
-    result <- annotateSites(sub_obj, features = features, window = 50L)
-    res_si <- siteInfo(result)
-    expect_equal(length(res_si$feature_types[[1L]]), 0L)
-    expect_equal(length(res_si$rel_position[[1L]]), 0L)
-    expect_equal(length(res_si$frac_position[[1L]]), 0L)
-  }
-)
+test_that("annotateSites keep='all' feature outside window gets length-0 lists", {
+  # Feature at 1-10; site at position > 60; window=50 → no overlap
+  features <- GenomicRanges::GRanges(
+    seqnames = "chr_test",
+    ranges = IRanges::IRanges(start = 1L, end = 10L),
+    strand = "+",
+    feature_type = "gene",
+    name = "geneY"
+  )
+  sub_obj <- .make_annotateSites_fixture(100L)
+  result <- annotateSites(sub_obj, features = features, window = 50L)
+  res_si <- siteInfo(result)
+  expect_equal(length(res_si$feature_types[[1L]]), 0L)
+  expect_equal(length(res_si$rel_position[[1L]]), 0L)
+  expect_equal(length(res_si$frac_position[[1L]]), 0L)
+})
 
 test_that("annotateSites metadata_cols adds parallel CharacterList column", {
   features <- GenomicRanges::GRanges(
-    seqnames     = "chr_sim",
-    ranges       = IRanges::IRanges(start = 1L, end = 100000L),
-    strand       = "+",
+    seqnames = "chr_sim",
+    ranges = IRanges::IRanges(start = 1L, end = 100000L),
+    strand = "+",
     feature_type = "gene",
-    name         = "bigGene",
-    extra_col    = "sigmaX"
+    name = "bigGene",
+    extra_col = "sigmaX"
   )
   data(comma_example_data)
-  result <- annotateSites(comma_example_data,
+  result <- annotateSites(
+    comma_example_data,
     features = features,
     metadata_cols = "extra_col"
   )
@@ -201,28 +195,22 @@ test_that("annotateSites metadata_cols adds parallel CharacterList column", {
 
 # ── keep = "overlap" ──────────────────────────────────────────────────────────
 
-test_that(
-  "annotateSites keep='overlap' returns only feature_types and feature_names",
-  {
-    data(comma_example_data)
-    result <- annotateSites(comma_example_data, keep = "overlap")
-    si <- siteInfo(result)
-    expect_true("feature_types" %in% colnames(si))
-    expect_true("feature_names" %in% colnames(si))
-    expect_false("rel_position" %in% colnames(si))
-    expect_false("frac_position" %in% colnames(si))
-  }
-)
+test_that("annotateSites keep='overlap' returns only feature_types and feature_names", {
+  data(comma_example_data)
+  result <- annotateSites(comma_example_data, keep = "overlap")
+  si <- siteInfo(result)
+  expect_true("feature_types" %in% colnames(si))
+  expect_true("feature_names" %in% colnames(si))
+  expect_false("rel_position" %in% colnames(si))
+  expect_false("frac_position" %in% colnames(si))
+})
 
-test_that(
-  "annotateSites keep='overlap' intergenic sites have length-0 elements",
-  {
-    data(comma_example_data)
-    result <- annotateSites(comma_example_data, keep = "overlap")
-    si <- siteInfo(result)
-    expect_true(any(lengths(si$feature_types) == 0))
-  }
-)
+test_that("annotateSites keep='overlap' intergenic sites have length-0 elements", {
+  data(comma_example_data)
+  result <- annotateSites(comma_example_data, keep = "overlap")
+  si <- siteInfo(result)
+  expect_true(any(lengths(si$feature_types) == 0))
+})
 
 test_that("annotateSites keep='overlap' genic sites have non-empty elements", {
   data(comma_example_data)
@@ -231,43 +219,37 @@ test_that("annotateSites keep='overlap' genic sites have non-empty elements", {
   expect_true(any(lengths(si$feature_types) > 0))
 })
 
-test_that(
-  "annotateSites keep='overlap' site inside feature gets correct type and name",
-  {
-    features <- GenomicRanges::GRanges(
-      seqnames     = "chr_test",
-      ranges       = IRanges::IRanges(start = 45000L, end = 55000L),
-      strand       = "+",
-      feature_type = "gene",
-      name         = "geneX"
-    )
-    sub_obj <- .make_annotateSites_fixture(50000L)
-    result <- annotateSites(sub_obj, features = features, keep = "overlap")
-    res_si <- siteInfo(result)
-    expect_equal(as.character(res_si$feature_types[[1L]]), "gene")
-    expect_equal(as.character(res_si$feature_names[[1L]]), "geneX")
-  }
-)
+test_that("annotateSites keep='overlap' site inside feature gets correct type and name", {
+  features <- GenomicRanges::GRanges(
+    seqnames = "chr_test",
+    ranges = IRanges::IRanges(start = 45000L, end = 55000L),
+    strand = "+",
+    feature_type = "gene",
+    name = "geneX"
+  )
+  sub_obj <- .make_annotateSites_fixture(50000L)
+  result <- annotateSites(sub_obj, features = features, keep = "overlap")
+  res_si <- siteInfo(result)
+  expect_equal(as.character(res_si$feature_types[[1L]]), "gene")
+  expect_equal(as.character(res_si$feature_names[[1L]]), "geneX")
+})
 
-test_that(
-  "annotateSites keep='overlap' site overlapping 2 features gets both",
-  {
-    features <- GenomicRanges::GRanges(
-      seqnames = c("chr_test", "chr_test"),
-      ranges = IRanges::IRanges(
-        start = c(45000L, 48000L),
-        end = c(55000L, 52000L)
-      ),
-      strand = c("+", "+"),
-      feature_type = c("gene", "TF_binding_site"),
-      name = c("geneA", "tfbsB")
-    )
-    sub_obj <- .make_annotateSites_fixture(50000L)
-    result <- annotateSites(sub_obj, features = features, keep = "overlap")
-    res_si <- siteInfo(result)
-    expect_equal(length(res_si$feature_types[[1L]]), 2L)
-  }
-)
+test_that("annotateSites keep='overlap' site overlapping 2 features gets both", {
+  features <- GenomicRanges::GRanges(
+    seqnames = c("chr_test", "chr_test"),
+    ranges = IRanges::IRanges(
+      start = c(45000L, 48000L),
+      end = c(55000L, 52000L)
+    ),
+    strand = c("+", "+"),
+    feature_type = c("gene", "TF_binding_site"),
+    name = c("geneA", "tfbsB")
+  )
+  sub_obj <- .make_annotateSites_fixture(50000L)
+  result <- annotateSites(sub_obj, features = features, keep = "overlap")
+  res_si <- siteInfo(result)
+  expect_equal(length(res_si$feature_types[[1L]]), 2L)
+})
 
 test_that("annotateSites keep='overlap' assay data unchanged", {
   data(comma_example_data)
@@ -276,47 +258,45 @@ test_that("annotateSites keep='overlap' assay data unchanged", {
   expect_equal(siteCoverage(result), siteCoverage(comma_example_data))
 })
 
-test_that(
-  "annotateSites keep='overlap' filters metadata_cols in parallel",
-  {
-    features <- GenomicRanges::GRanges(
-      seqnames = rep("chr_test", 3L),
-      ranges = IRanges::IRanges(
-        start = c(130L, 100L, 103L),
-        end = c(140L, 120L, 108L)
-      ),
-      strand = "+",
-      feature_type = c("operon", "gene", "TF_binding_site"),
-      name = c("near_operon", "geneA", "tfbsB"),
-      locus_tag = c("near-tag", "gene-tag", "tfbs-tag"),
-      confidence = c("low", "high", "medium")
-    )
-    obj <- .make_annotateSites_fixture(105L)
+test_that("annotateSites keep='overlap' filters metadata_cols in parallel", {
+  features <- GenomicRanges::GRanges(
+    seqnames = rep("chr_test", 3L),
+    ranges = IRanges::IRanges(
+      start = c(130L, 100L, 103L),
+      end = c(140L, 120L, 108L)
+    ),
+    strand = "+",
+    feature_type = c("operon", "gene", "TF_binding_site"),
+    name = c("near_operon", "geneA", "tfbsB"),
+    locus_tag = c("near-tag", "gene-tag", "tfbs-tag"),
+    confidence = c("low", "high", "medium")
+  )
+  obj <- .make_annotateSites_fixture(105L)
 
-    result <- annotateSites(obj,
-      features = features,
-      keep = "overlap",
-      window = 50L,
-      metadata_cols = c("locus_tag", "confidence")
-    )
-    si <- siteInfo(result)
+  result <- annotateSites(
+    obj,
+    features = features,
+    keep = "overlap",
+    window = 50L,
+    metadata_cols = c("locus_tag", "confidence")
+  )
+  si <- siteInfo(result)
 
-    expect_true(is(si$locus_tag_values, "CharacterList"))
-    expect_true(is(si$confidence_values, "CharacterList"))
-    expect_equal(as.character(si$feature_names[[1L]]), c("geneA", "tfbsB"))
-    expect_equal(
-      as.character(si$locus_tag_values[[1L]]),
-      c("gene-tag", "tfbs-tag")
-    )
-    expect_equal(
-      as.character(si$confidence_values[[1L]]),
-      c("high", "medium")
-    )
-    expect_false("near-tag" %in% as.character(si$locus_tag_values[[1L]]))
-    expect_false("rel_position" %in% colnames(si))
-    expect_false("frac_position" %in% colnames(si))
-  }
-)
+  expect_true(is(si$locus_tag_values, "CharacterList"))
+  expect_true(is(si$confidence_values, "CharacterList"))
+  expect_equal(as.character(si$feature_names[[1L]]), c("geneA", "tfbsB"))
+  expect_equal(
+    as.character(si$locus_tag_values[[1L]]),
+    c("gene-tag", "tfbs-tag")
+  )
+  expect_equal(
+    as.character(si$confidence_values[[1L]]),
+    c("high", "medium")
+  )
+  expect_false("near-tag" %in% as.character(si$locus_tag_values[[1L]]))
+  expect_false("rel_position" %in% colnames(si))
+  expect_false("frac_position" %in% colnames(si))
+})
 
 # ── keep = "proximity" ────────────────────────────────────────────────────────
 
@@ -351,72 +331,69 @@ test_that("annotateSites keep='proximity' rel_position is IntegerList", {
   expect_true(is(si$rel_position, "IntegerList"))
 })
 
-test_that(
-  "annotateSites keep='proximity' sites inside feature have rel_position == 0",
-  {
-    features <- GenomicRanges::GRanges(
-      seqnames     = "chr_test",
-      ranges       = IRanges::IRanges(start = 45000L, end = 55000L),
-      strand       = "+",
-      feature_type = "gene",
-      name         = "geneX"
-    )
-    sub_obj <- .make_annotateSites_fixture(c(45000L, 50000L, 55000L))
-    result <- annotateSites(sub_obj,
-      features = features,
-      keep = "proximity", window = 500L
-    )
-    res_si <- siteInfo(result)
-    all_rp <- unlist(as.list(res_si$rel_position))
-    expect_true(all(all_rp == 0L))
-  }
-)
+test_that("annotateSites keep='proximity' sites inside feature have rel_position == 0", {
+  features <- GenomicRanges::GRanges(
+    seqnames = "chr_test",
+    ranges = IRanges::IRanges(start = 45000L, end = 55000L),
+    strand = "+",
+    feature_type = "gene",
+    name = "geneX"
+  )
+  sub_obj <- .make_annotateSites_fixture(c(45000L, 50000L, 55000L))
+  result <- annotateSites(
+    sub_obj,
+    features = features,
+    keep = "proximity",
+    window = 500L
+  )
+  res_si <- siteInfo(result)
+  all_rp <- unlist(as.list(res_si$rel_position))
+  expect_true(all(all_rp == 0L))
+})
 
-test_that(
-  "annotateSites keep='proximity' keeps metadata_cols parallel",
-  {
-    features <- GenomicRanges::GRanges(
-      seqnames = rep("chr_test", 3L),
-      ranges = IRanges::IRanges(
-        start = c(100L, 130L, 500L),
-        end = c(120L, 140L, 510L)
-      ),
-      strand = "+",
-      feature_type = c("gene", "operon", "gene"),
-      name = c("inside_gene", "near_operon", "far_gene"),
-      locus_tag = c("inside-tag", "near-tag", "far-tag"),
-      confidence = c("high", "medium", "low")
-    )
-    obj <- .make_annotateSites_fixture(105L)
+test_that("annotateSites keep='proximity' keeps metadata_cols parallel", {
+  features <- GenomicRanges::GRanges(
+    seqnames = rep("chr_test", 3L),
+    ranges = IRanges::IRanges(
+      start = c(100L, 130L, 500L),
+      end = c(120L, 140L, 510L)
+    ),
+    strand = "+",
+    feature_type = c("gene", "operon", "gene"),
+    name = c("inside_gene", "near_operon", "far_gene"),
+    locus_tag = c("inside-tag", "near-tag", "far-tag"),
+    confidence = c("high", "medium", "low")
+  )
+  obj <- .make_annotateSites_fixture(105L)
 
-    result <- annotateSites(obj,
-      features = features,
-      keep = "proximity",
-      window = 50L,
-      metadata_cols = c("locus_tag", "confidence")
-    )
-    si <- siteInfo(result)
-    observed <- data.frame(
-      feature_names = as.character(si$feature_names[[1L]]),
-      locus_tag = as.character(si$locus_tag_values[[1L]]),
-      confidence = as.character(si$confidence_values[[1L]]),
-      rel_position = as.integer(si$rel_position[[1L]])
-    )
+  result <- annotateSites(
+    obj,
+    features = features,
+    keep = "proximity",
+    window = 50L,
+    metadata_cols = c("locus_tag", "confidence")
+  )
+  si <- siteInfo(result)
+  observed <- data.frame(
+    feature_names = as.character(si$feature_names[[1L]]),
+    locus_tag = as.character(si$locus_tag_values[[1L]]),
+    confidence = as.character(si$confidence_values[[1L]]),
+    rel_position = as.integer(si$rel_position[[1L]])
+  )
 
-    expect_true(is(si$locus_tag_values, "CharacterList"))
-    expect_equal(
-      observed,
-      data.frame(
-        feature_names = c("inside_gene", "near_operon"),
-        locus_tag = c("inside-tag", "near-tag"),
-        confidence = c("high", "medium"),
-        rel_position = c(0L, -25L)
-      )
+  expect_true(is(si$locus_tag_values, "CharacterList"))
+  expect_equal(
+    observed,
+    data.frame(
+      feature_names = c("inside_gene", "near_operon"),
+      locus_tag = c("inside-tag", "near-tag"),
+      confidence = c("high", "medium"),
+      rel_position = c(0L, -25L)
     )
-    expect_false("far-tag" %in% as.character(si$locus_tag_values[[1L]]))
-    expect_false("frac_position" %in% colnames(si))
-  }
-)
+  )
+  expect_false("far-tag" %in% as.character(si$locus_tag_values[[1L]]))
+  expect_false("frac_position" %in% colnames(si))
+})
 
 test_that(
   paste(
@@ -450,99 +427,97 @@ test_that("annotateSites keep='proximity' abs(rel_position) within window", {
   expect_true(all(abs(all_rp) <= window))
 })
 
-test_that(
-  "annotateSites uses circular signed distances across chromosome origin",
-  {
-    beta <- matrix(0.8, nrow = 1L, ncol = 1L, dimnames = list(NULL, "s1"))
-    obj <- .make_commaData_fixture(
-      beta = beta,
-      sample_info = data.frame(
-        sample_name = "s1",
-        condition = "ctrl",
-        replicate = 1L,
-        stringsAsFactors = FALSE
-      ),
-      positions = 990L,
-      chrom = "chr_test",
-      seqlength = 1000L
-    )
-    rr <- rowRanges(obj)
-    si <- GenomeInfoDb::seqinfo(rr)
-    GenomeInfoDb::isCircular(si) <- TRUE
-    GenomeInfoDb::seqinfo(rr) <- si
-    rowRanges(obj) <- rr
+test_that("annotateSites uses circular signed distances across chromosome origin", {
+  beta <- matrix(0.8, nrow = 1L, ncol = 1L, dimnames = list(NULL, "s1"))
+  obj <- .make_commaData_fixture(
+    beta = beta,
+    sample_info = data.frame(
+      sample_name = "s1",
+      condition = "ctrl",
+      replicate = 1L,
+      stringsAsFactors = FALSE
+    ),
+    positions = 990L,
+    chrom = "chr_test",
+    seqlength = 1000L
+  )
+  rr <- rowRanges(obj)
+  si <- GenomeInfoDb::seqinfo(rr)
+  GenomeInfoDb::isCircular(si) <- TRUE
+  GenomeInfoDb::seqinfo(rr) <- si
+  rowRanges(obj) <- rr
 
-    features <- GenomicRanges::GRanges(
-      seqnames = c("chr_test", "chr_test"),
-      ranges = IRanges::IRanges(start = c(1L, 1L), end = c(100L, 100L)),
-      strand = c("+", "-"),
-      feature_type = "gene",
-      name = c("plus_gene", "minus_gene")
-    )
-    GenomeInfoDb::seqinfo(features) <- GenomeInfoDb::seqinfo(rowRanges(obj))
+  features <- GenomicRanges::GRanges(
+    seqnames = c("chr_test", "chr_test"),
+    ranges = IRanges::IRanges(start = c(1L, 1L), end = c(100L, 100L)),
+    strand = c("+", "-"),
+    feature_type = "gene",
+    name = c("plus_gene", "minus_gene")
+  )
+  GenomeInfoDb::seqinfo(features) <- GenomeInfoDb::seqinfo(rowRanges(obj))
 
-    result <- annotateSites(obj,
-      features = features, keep = "proximity",
-      window = 20L
-    )
-    res_si <- siteInfo(result)
-    rel_by_name <- stats::setNames(
-      as.integer(res_si$rel_position[[1L]]),
-      as.character(res_si$feature_names[[1L]])
-    )
+  result <- annotateSites(
+    obj,
+    features = features,
+    keep = "proximity",
+    window = 20L
+  )
+  res_si <- siteInfo(result)
+  rel_by_name <- stats::setNames(
+    as.integer(res_si$rel_position[[1L]]),
+    as.character(res_si$feature_names[[1L]])
+  )
 
-    expect_equal(rel_by_name[["plus_gene"]], -11L)
-    expect_equal(rel_by_name[["minus_gene"]], 11L)
-    expect_true(all(abs(rel_by_name) <= 20L))
-  }
-)
+  expect_equal(rel_by_name[["plus_gene"]], -11L)
+  expect_equal(rel_by_name[["minus_gene"]], 11L)
+  expect_true(all(abs(rel_by_name) <= 20L))
+})
 
-test_that(
-  "annotateSites wraps circular proximity windows near chromosome start",
-  {
-    beta <- matrix(0.8, nrow = 1L, ncol = 1L, dimnames = list(NULL, "s1"))
-    obj <- .make_commaData_fixture(
-      beta = beta,
-      sample_info = data.frame(
-        sample_name = "s1",
-        condition = "ctrl",
-        replicate = 1L,
-        stringsAsFactors = FALSE
-      ),
-      positions = 10L,
-      chrom = "chr_test",
-      seqlength = 1000L
-    )
-    rr <- rowRanges(obj)
-    si <- GenomeInfoDb::seqinfo(rr)
-    GenomeInfoDb::isCircular(si) <- TRUE
-    GenomeInfoDb::seqinfo(rr) <- si
-    rowRanges(obj) <- rr
+test_that("annotateSites wraps circular proximity windows near chromosome start", {
+  beta <- matrix(0.8, nrow = 1L, ncol = 1L, dimnames = list(NULL, "s1"))
+  obj <- .make_commaData_fixture(
+    beta = beta,
+    sample_info = data.frame(
+      sample_name = "s1",
+      condition = "ctrl",
+      replicate = 1L,
+      stringsAsFactors = FALSE
+    ),
+    positions = 10L,
+    chrom = "chr_test",
+    seqlength = 1000L
+  )
+  rr <- rowRanges(obj)
+  si <- GenomeInfoDb::seqinfo(rr)
+  GenomeInfoDb::isCircular(si) <- TRUE
+  GenomeInfoDb::seqinfo(rr) <- si
+  rowRanges(obj) <- rr
 
-    features <- GenomicRanges::GRanges(
-      seqnames = c("chr_test", "chr_test"),
-      ranges = IRanges::IRanges(start = c(950L, 950L), end = c(1000L, 1000L)),
-      strand = c("+", "-"),
-      feature_type = "gene",
-      name = c("plus_gene", "minus_gene")
-    )
-    GenomeInfoDb::seqinfo(features) <- GenomeInfoDb::seqinfo(rowRanges(obj))
+  features <- GenomicRanges::GRanges(
+    seqnames = c("chr_test", "chr_test"),
+    ranges = IRanges::IRanges(start = c(950L, 950L), end = c(1000L, 1000L)),
+    strand = c("+", "-"),
+    feature_type = "gene",
+    name = c("plus_gene", "minus_gene")
+  )
+  GenomeInfoDb::seqinfo(features) <- GenomeInfoDb::seqinfo(rowRanges(obj))
 
-    result <- annotateSites(obj,
-      features = features, keep = "proximity",
-      window = 20L
-    )
-    res_si <- siteInfo(result)
-    rel_by_name <- stats::setNames(
-      as.integer(res_si$rel_position[[1L]]),
-      as.character(res_si$feature_names[[1L]])
-    )
+  result <- annotateSites(
+    obj,
+    features = features,
+    keep = "proximity",
+    window = 20L
+  )
+  res_si <- siteInfo(result)
+  rel_by_name <- stats::setNames(
+    as.integer(res_si$rel_position[[1L]]),
+    as.character(res_si$feature_names[[1L]])
+  )
 
-    expect_equal(rel_by_name[["plus_gene"]], 10L)
-    expect_equal(rel_by_name[["minus_gene"]], -10L)
-    expect_true(all(abs(rel_by_name) <= 20L))
-  }
-)
+  expect_equal(rel_by_name[["plus_gene"]], 10L)
+  expect_equal(rel_by_name[["minus_gene"]], -10L)
+  expect_true(all(abs(rel_by_name) <= 20L))
+})
 
 # ── keep = "metagene" ─────────────────────────────────────────────────────────
 
@@ -562,30 +537,24 @@ test_that(
   }
 )
 
-test_that(
-  "annotateSites keep='metagene' all frac_position values are in [0,1]",
-  {
-    data(comma_example_data)
-    result <- annotateSites(comma_example_data, keep = "metagene")
-    si <- siteInfo(result)
-    all_fracs <- unlist(as.list(si$frac_position))
-    all_fracs <- all_fracs[!is.na(all_fracs)]
-    if (length(all_fracs) > 0L) {
-      expect_true(all(all_fracs >= 0 & all_fracs <= 1))
-    }
+test_that("annotateSites keep='metagene' all frac_position values are in [0,1]", {
+  data(comma_example_data)
+  result <- annotateSites(comma_example_data, keep = "metagene")
+  si <- siteInfo(result)
+  all_fracs <- unlist(as.list(si$frac_position))
+  all_fracs <- all_fracs[!is.na(all_fracs)]
+  if (length(all_fracs) > 0L) {
+    expect_true(all(all_fracs >= 0 & all_fracs <= 1))
   }
-)
+})
 
-test_that(
-  "annotateSites keep='metagene' non-overlapping sites get length-0 elements",
-  {
-    data(comma_example_data)
-    result <- annotateSites(comma_example_data, keep = "metagene")
-    si <- siteInfo(result)
-    expect_true(any(lengths(si$feature_types) == 0L))
-    expect_true(any(lengths(si$frac_position) == 0L))
-  }
-)
+test_that("annotateSites keep='metagene' non-overlapping sites get length-0 elements", {
+  data(comma_example_data)
+  result <- annotateSites(comma_example_data, keep = "metagene")
+  si <- siteInfo(result)
+  expect_true(any(lengths(si$feature_types) == 0L))
+  expect_true(any(lengths(si$frac_position) == 0L))
+})
 
 test_that(
   paste(
@@ -594,11 +563,11 @@ test_that(
   ),
   {
     features <- GenomicRanges::GRanges(
-      seqnames     = "chr_test",
-      ranges       = IRanges::IRanges(start = 1000L, end = 2000L),
-      strand       = "+",
+      seqnames = "chr_test",
+      ranges = IRanges::IRanges(start = 1000L, end = 2000L),
+      strand = "+",
       feature_type = "gene",
-      name         = "genePos"
+      name = "genePos"
     )
     sub_obj <- .make_annotateSites_fixture(1000L)
     result <- annotateSites(sub_obj, features = features, keep = "metagene")
@@ -610,25 +579,22 @@ test_that(
   }
 )
 
-test_that(
-  "annotateSites keep='metagene' - strand site near high coord → frac near 0",
-  {
-    features <- GenomicRanges::GRanges(
-      seqnames     = "chr_test",
-      ranges       = IRanges::IRanges(start = 1000L, end = 2000L),
-      strand       = "-",
-      feature_type = "gene",
-      name         = "geneMinus"
-    )
-    sub_obj <- .make_annotateSites_fixture(2000L)
-    result <- annotateSites(sub_obj, features = features, keep = "metagene")
-    res_si <- siteInfo(result)
-    frac_vals <- unlist(as.list(res_si$frac_position))
-    frac_vals <- frac_vals[!is.na(frac_vals)]
-    expect_true(length(frac_vals) > 0L)
-    expect_true(all(frac_vals < 0.1)) # near high coord = TSS on - strand
-  }
-)
+test_that("annotateSites keep='metagene' - strand site near high coord → frac near 0", {
+  features <- GenomicRanges::GRanges(
+    seqnames = "chr_test",
+    ranges = IRanges::IRanges(start = 1000L, end = 2000L),
+    strand = "-",
+    feature_type = "gene",
+    name = "geneMinus"
+  )
+  sub_obj <- .make_annotateSites_fixture(2000L)
+  result <- annotateSites(sub_obj, features = features, keep = "metagene")
+  res_si <- siteInfo(result)
+  frac_vals <- unlist(as.list(res_si$frac_position))
+  frac_vals <- frac_vals[!is.na(frac_vals)]
+  expect_true(length(frac_vals) > 0L)
+  expect_true(all(frac_vals < 0.1)) # near high coord = TSS on - strand
+})
 
 test_that(
   paste(
@@ -654,42 +620,40 @@ test_that(
   }
 )
 
-test_that(
-  "annotateSites keep='metagene' filters metadata_cols in parallel",
-  {
-    features <- GenomicRanges::GRanges(
-      seqnames = rep("chr_test", 3L),
-      ranges = IRanges::IRanges(
-        start = c(130L, 100L, 103L),
-        end = c(140L, 120L, 108L)
-      ),
-      strand = "+",
-      feature_type = c("operon", "gene", "TF_binding_site"),
-      name = c("near_operon", "geneA", "tfbsB"),
-      locus_tag = c("near-tag", "gene-tag", "tfbs-tag")
-    )
-    obj <- .make_annotateSites_fixture(105L)
+test_that("annotateSites keep='metagene' filters metadata_cols in parallel", {
+  features <- GenomicRanges::GRanges(
+    seqnames = rep("chr_test", 3L),
+    ranges = IRanges::IRanges(
+      start = c(130L, 100L, 103L),
+      end = c(140L, 120L, 108L)
+    ),
+    strand = "+",
+    feature_type = c("operon", "gene", "TF_binding_site"),
+    name = c("near_operon", "geneA", "tfbsB"),
+    locus_tag = c("near-tag", "gene-tag", "tfbs-tag")
+  )
+  obj <- .make_annotateSites_fixture(105L)
 
-    result <- annotateSites(obj,
-      features = features,
-      keep = "metagene",
-      window = 50L,
-      metadata_cols = "locus_tag"
-    )
-    si <- siteInfo(result)
+  result <- annotateSites(
+    obj,
+    features = features,
+    keep = "metagene",
+    window = 50L,
+    metadata_cols = "locus_tag"
+  )
+  si <- siteInfo(result)
 
-    expect_true(is(si$locus_tag_values, "CharacterList"))
-    expect_true(is(si$frac_position, "NumericList"))
-    expect_equal(as.character(si$feature_names[[1L]]), c("geneA", "tfbsB"))
-    expect_equal(
-      as.character(si$locus_tag_values[[1L]]),
-      c("gene-tag", "tfbs-tag")
-    )
-    expect_equal(length(si$frac_position[[1L]]), 2L)
-    expect_false("near-tag" %in% as.character(si$locus_tag_values[[1L]]))
-    expect_false("rel_position" %in% colnames(si))
-  }
-)
+  expect_true(is(si$locus_tag_values, "CharacterList"))
+  expect_true(is(si$frac_position, "NumericList"))
+  expect_equal(as.character(si$feature_names[[1L]]), c("geneA", "tfbsB"))
+  expect_equal(
+    as.character(si$locus_tag_values[[1L]]),
+    c("gene-tag", "tfbs-tag")
+  )
+  expect_equal(length(si$frac_position[[1L]]), 2L)
+  expect_false("near-tag" %in% as.character(si$locus_tag_values[[1L]]))
+  expect_false("rel_position" %in% colnames(si))
+})
 
 # ── error handling ────────────────────────────────────────────────────────────
 
@@ -702,22 +666,19 @@ test_that("annotateSites errors on invalid keep value", {
   expect_error(annotateSites(comma_example_data, keep = "badkeep"))
 })
 
-test_that(
-  "annotateSites errors when features NULL and annotation slot is empty",
-  {
-    data(comma_example_data)
-    obj_no_ann <- new(
-      "commaData",
-      as(comma_example_data, "RangedSummarizedExperiment")
-    )
-    # Clear annotation from metadata
-    S4Vectors::metadata(obj_no_ann)$annotation <- GenomicRanges::GRanges()
-    expect_error(
-      annotateSites(obj_no_ann, features = NULL),
-      "No features available"
-    )
-  }
-)
+test_that("annotateSites errors when features NULL and annotation slot is empty", {
+  data(comma_example_data)
+  obj_no_ann <- new(
+    "commaData",
+    as(comma_example_data, "RangedSummarizedExperiment")
+  )
+  # Clear annotation from metadata
+  S4Vectors::metadata(obj_no_ann)$annotation <- GenomicRanges::GRanges()
+  expect_error(
+    annotateSites(obj_no_ann, features = NULL),
+    "No features available"
+  )
+})
 
 test_that("annotateSites errors on missing feature_col", {
   data(comma_example_data)
@@ -736,7 +697,8 @@ test_that("annotateSites errors on metadata_cols not in mcols(features)", {
   data(comma_example_data)
   features <- annotation(comma_example_data)
   expect_error(
-    annotateSites(comma_example_data,
+    annotateSites(
+      comma_example_data,
       features = features,
       metadata_cols = "nonexistent_col"
     ),

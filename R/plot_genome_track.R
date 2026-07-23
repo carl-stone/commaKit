@@ -56,14 +56,16 @@ NULL
 #' @seealso \code{\link{annotateSites}}, \code{\link{plot_metagene}}
 #'
 #' @export
-plot_genome_track <- function(object,
-                              chromosome,
-                              start = NULL,
-                              end = NULL,
-                              mod_type = NULL,
-                              motif = NULL,
-                              mod_context = NULL,
-                              annotation = NULL) {
+plot_genome_track <- function(
+  object,
+  chromosome,
+  start = NULL,
+  end = NULL,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  annotation = NULL
+) {
   ## --- Input validation ---------------------------------------------------
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
@@ -72,15 +74,24 @@ plot_genome_track <- function(object,
     stop("'chromosome' must be a single character string.")
   }
   genome_info <- genomeSizes(object)
-  if (!is.null(genome_info) && length(genome_info) > 0L &&
-    !chromosome %in% names(genome_info)) {
+  if (
+    !is.null(genome_info) &&
+      length(genome_info) > 0L &&
+      !chromosome %in% names(genome_info)
+  ) {
     stop(
-      "'chromosome' = '", chromosome, "' not found in genomeSizes(object). ",
-      "Available chromosomes: ", paste(names(genome_info), collapse = ", "), "."
+      "'chromosome' = '",
+      chromosome,
+      "' not found in genomeSizes(object). ",
+      "Available chromosomes: ",
+      paste(names(genome_info), collapse = ", "),
+      "."
     )
   }
-  if (!is.null(start) &&
-    (!is.numeric(start) || length(start) != 1L || start < 1)) {
+  if (
+    !is.null(start) &&
+      (!is.numeric(start) || length(start) != 1L || start < 1)
+  ) {
     stop("'start' must be a single positive integer or NULL.")
   }
   if (!is.null(end) && (!is.numeric(end) || length(end) != 1L || end < 1)) {
@@ -128,7 +139,8 @@ plot_genome_track <- function(object,
   if (length(chr_idx) == 0L) {
     stop(
       "No methylation sites found in the specified region of '",
-      chromosome, "'."
+      chromosome,
+      "'."
     )
   }
 
@@ -190,19 +202,19 @@ plot_genome_track <- function(object,
   p_meth <- ggplot2::ggplot(
     df,
     ggplot2::aes(
-      x     = .data[["position"]],
-      y     = .data[["beta"]],
+      x = .data[["position"]],
+      y = .data[["beta"]],
       color = .data[["mod_type"]]
     )
   ) +
     ggplot2::geom_point(alpha = 0.7, size = 0.9) +
     ggplot2::scale_color_manual(
       values = mod_colors,
-      name   = "Mod type"
+      name = "Mod type"
     ) +
     ggplot2::scale_y_continuous(
       limits = c(0, 1),
-      name   = "Methylation (beta)"
+      name = "Methylation (beta)"
     ) +
     ggplot2::scale_x_continuous(
       limits = c(region_start, region_end),
@@ -210,7 +222,7 @@ plot_genome_track <- function(object,
     ) +
     ggplot2::facet_wrap("sample_name", ncol = 1L) +
     ggplot2::labs(
-      x     = paste0("Position on ", chromosome),
+      x = paste0("Position on ", chromosome),
       title = paste0("Genome track: ", chromosome)
     ) +
     ggplot2::theme_bw() +
@@ -262,32 +274,32 @@ plot_genome_track <- function(object,
     ) +
     ggplot2::scale_y_continuous(limits = c(0, 1), breaks = NULL) +
     ggplot2::labs(
-      x    = paste0("Position on ", chromosome),
-      y    = "Annotation",
+      x = paste0("Position on ", chromosome),
+      y = "Annotation",
       fill = "Feature type"
     ) +
     ggplot2::theme_bw() +
     ggplot2::theme(
-      axis.text.y  = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_blank(),
       axis.ticks.y = ggplot2::element_blank(),
-      panel.grid   = ggplot2::element_blank()
+      panel.grid = ggplot2::element_blank()
     )
 
   ## Combine tracks using patchwork if available; otherwise return meth plot
   ## with a message about annotation.
   if (requireNamespace("patchwork", quietly = TRUE)) {
-    combined <- patchwork::wrap_plots(
-      p_meth, p_annot,
+    patchwork::wrap_plots(
+      p_meth,
+      p_annot,
       ncol = 1L,
       heights = c(3, 1)
     )
-    return(combined)
   } else {
     message(
       "Install the 'patchwork' package to display the annotation track ",
       "below the methylation track. ",
       "Returning methylation track only."
     )
-    return(p_meth)
+    p_meth
   }
 }

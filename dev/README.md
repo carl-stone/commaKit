@@ -39,7 +39,8 @@ R 4.5 framework.
 The preferred low-drama VS Code setup is the repo devcontainer in
 `.devcontainer/`. It runs the package inside a Linux container based on the
 Bioconductor 3.22 image, which provides the matching R 4.5 runtime independent
-of the host machine's R framework.
+of the host machine's R framework. The container runs as the non-root `rstudio`
+user under Docker's standard isolation; it does not require privileged mode.
 
 From VS Code, use **Dev Containers: Reopen in Container**. On first create, the
 container runs:
@@ -49,8 +50,9 @@ Rscript --vanilla .devcontainer/setup.R
 ```
 
 That restores `renv.lock` and installs editor helper packages such as
-`languageserver`, `httpgd`, `lintr`, and `styler` into the container
-environment. After the container is ready, the normal development commands are:
+`languageserver`, `httpgd`, and `lintr` into the container environment. The
+container image also installs the Air formatter. After the container is ready,
+the normal development commands are:
 
 ```bash
 Rscript -e "devtools::load_all()"

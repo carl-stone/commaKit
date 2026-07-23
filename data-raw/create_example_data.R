@@ -22,12 +22,20 @@ set.seed(1312)
 GENOME_SIZE <- 100000L
 CHR_NAME <- "chr_sim"
 SAMPLES <- c(
-  "ctrl_1", "ctrl_2", "ctrl_3",
-  "treat_1", "treat_2", "treat_3"
+  "ctrl_1",
+  "ctrl_2",
+  "ctrl_3",
+  "treat_1",
+  "treat_2",
+  "treat_3"
 )
 CONDITIONS <- c(
-  "control", "control", "control",
-  "treatment", "treatment", "treatment"
+  "control",
+  "control",
+  "control",
+  "treatment",
+  "treatment",
+  "treatment"
 )
 REPLICATES <- c(1L, 2L, 3L, 1L, 2L, 3L)
 GATC_SPACING <- 512L
@@ -122,11 +130,19 @@ cov_5mc_treat3 <- sample(10L:150L, N_5MC_SITES, replace = TRUE)
 
 # ── Build site keys ───────────────────────────────────────────────────────────
 keys_6ma <- paste(
-  CHR_NAME, gatc_positions, gatc_strands, "6mA", MOTIF_6MA,
+  CHR_NAME,
+  gatc_positions,
+  gatc_strands,
+  "6mA",
+  MOTIF_6MA,
   sep = ":"
 )
 keys_5mc <- paste(
-  CHR_NAME, ccgg_positions, ccgg_strands, "5mC", MOTIF_5MC,
+  CHR_NAME,
+  ccgg_positions,
+  ccgg_strands,
+  "5mC",
+  MOTIF_5MC,
   sep = ":"
 )
 all_keys <- c(keys_6ma, keys_5mc)
@@ -142,7 +158,8 @@ methyl_mat <- matrix(
     c(beta_6ma_treat2, beta_5mc_treat2),
     c(beta_6ma_treat3, beta_5mc_treat3)
   ),
-  nrow = n_total, ncol = 6L,
+  nrow = n_total,
+  ncol = 6L,
   dimnames = list(NULL, SAMPLES)
 )
 
@@ -155,7 +172,8 @@ coverage_mat <- matrix(
     c(cov_6ma_treat2, cov_5mc_treat2),
     c(cov_6ma_treat3, cov_5mc_treat3)
   ),
-  nrow = n_total, ncol = 6L,
+  nrow = n_total,
+  ncol = 6L,
   dimnames = list(NULL, SAMPLES)
 )
 storage.mode(coverage_mat) <- "integer"
@@ -176,7 +194,8 @@ site_gr <- GenomicRanges::GRanges(
     width = 1L
   ),
   strand = c(gatc_strands, ccgg_strands),
-  mod_type = factor(c(rep("6mA", N_6MA_SITES), rep("5mC", N_5MC_SITES)),
+  mod_type = factor(
+    c(rep("6mA", N_6MA_SITES), rep("5mC", N_5MC_SITES)),
     levels = c("4mC", "5mC", "6mA")
   ),
   motif = c(rep(MOTIF_6MA, N_6MA_SITES), rep(MOTIF_5MC, N_5MC_SITES)),
@@ -193,9 +212,9 @@ GenomeInfoDb::seqinfo(site_gr) <- GenomeInfoDb::Seqinfo(
 # ── Build colData ─────────────────────────────────────────────────────────────
 col_df <- S4Vectors::DataFrame(
   sample_name = SAMPLES,
-  condition   = CONDITIONS,
-  replicate   = REPLICATES,
-  row.names   = SAMPLES
+  condition = CONDITIONS,
+  replicate = REPLICATES,
+  row.names = SAMPLES
 )
 
 # ── Build annotation GRanges ──────────────────────────────────────────────────
@@ -203,15 +222,23 @@ ann_gr <- GenomicRanges::GRanges(
   seqnames = rep(CHR_NAME, 5L),
   ranges = IRanges::IRanges(
     start = c(1L, 600L, 1400L, 2500L, 4000L),
-    end   = c(500L, 1200L, 2000L, 3500L, 5000L)
+    end = c(500L, 1200L, 2000L, 3500L, 5000L)
   ),
   strand = c("+", "+", "-", "+", "-")
 )
 GenomicRanges::mcols(ann_gr)$feature_type <- c(
-  "gene", "gene", "gene", "rRNA", "tRNA"
+  "gene",
+  "gene",
+  "gene",
+  "rRNA",
+  "tRNA"
 )
 GenomicRanges::mcols(ann_gr)$name <- c(
-  "geneA", "geneB", "geneC", "geneD", "geneE"
+  "geneA",
+  "geneB",
+  "geneC",
+  "geneD",
+  "geneE"
 )
 
 # ── Assemble commaData object ─────────────────────────────────────────────────
@@ -286,8 +313,13 @@ message(
   format(object.size(comma_example_data), units = "KB")
 )
 message(
-  "Sites: ", nrow(comma_example_data), " (", N_6MA_SITES, " 6mA + ",
-  N_5MC_SITES, " 5mC)"
+  "Sites: ",
+  nrow(comma_example_data),
+  " (",
+  N_6MA_SITES,
+  " 6mA + ",
+  N_5MC_SITES,
+  " 5mC)"
 )
 message("Samples: ", ncol(comma_example_data))
 message("Differentially methylated 6mA sites (ground truth): ", N_DIFF_SITES)

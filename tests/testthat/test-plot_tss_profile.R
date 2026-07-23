@@ -10,9 +10,18 @@
 
 .make_tss_data <- function() {
   positions <- c(
-    700L, 900L, 1000L, 1100L, 1300L,
-    4600L, 4800L, 5050L, 5200L,
-    8600L, 8900L, 9100L
+    700L,
+    900L,
+    1000L,
+    1100L,
+    1300L,
+    4600L,
+    4800L,
+    5050L,
+    5200L,
+    8600L,
+    8900L,
+    9100L
   )
   n_sites <- length(positions)
   set.seed(1L)
@@ -21,11 +30,14 @@
 
   methyl_mat <- matrix(
     c(beta_ctrl, beta_treat),
-    nrow = n_sites, ncol = 2,
+    nrow = n_sites,
+    ncol = 2,
     dimnames = list(NULL, c("ctrl_1", "treat_1"))
   )
-  cov_mat <- matrix(20L,
-    nrow = n_sites, ncol = 2,
+  cov_mat <- matrix(
+    20L,
+    nrow = n_sites,
+    ncol = 2,
     dimnames = list(NULL, c("ctrl_1", "treat_1"))
   )
 
@@ -43,15 +55,15 @@
   )
   cd <- S4Vectors::DataFrame(
     sample_name = c("ctrl_1", "treat_1"),
-    condition   = c("control", "treatment"),
-    replicate   = c(1L, 1L)
+    condition = c("control", "treatment"),
+    replicate = c(1L, 1L)
   )
   rownames(cd) <- c("ctrl_1", "treat_1")
 
   rse <- SummarizedExperiment::SummarizedExperiment(
-    assays     = list(methylation = methyl_mat, coverage = cov_mat),
-    rowRanges  = site_gr,
-    colData    = cd
+    assays = list(methylation = methyl_mat, coverage = cov_mat),
+    rowRanges = site_gr,
+    colData = cd
   )
 
   ## 3 genes (two + strand, one - strand)
@@ -59,7 +71,7 @@
     seqnames = "chr_sim",
     ranges = IRanges::IRanges(
       start = c(800L, 4500L, 8000L),
-      end   = c(2000L, 6000L, 9000L)
+      end = c(2000L, 6000L, 9000L)
     ),
     strand = c("+", "+", "-")
   )
@@ -80,21 +92,24 @@
   ## Two sigma_binding features overlapping some sites
   reg_gr <- GenomicRanges::GRanges(
     seqnames = "chr_sim",
-    ranges   = IRanges::IRanges(start = c(880L, 4750L), end = c(920L, 4810L)),
-    strand   = "+"
+    ranges = IRanges::IRanges(start = c(880L, 4750L), end = c(920L, 4810L)),
+    strand = "+"
   )
   reg_gr$feature_type <- c("sigma_binding", "sigma_binding")
   reg_gr$name <- c("sigma1", "sigma2")
 
   combined_gr <- c(annot_gr, reg_gr)
-  obj2 <- new("commaData", SummarizedExperiment::SummarizedExperiment(
-    assays = list(
-      methylation = methylation(obj),
-      coverage = siteCoverage(obj)
-    ),
-    rowRanges = rowRanges(obj),
-    colData = sampleInfo(obj)
-  ))
+  obj2 <- new(
+    "commaData",
+    SummarizedExperiment::SummarizedExperiment(
+      assays = list(
+        methylation = methylation(obj),
+        coverage = siteCoverage(obj)
+      ),
+      rowRanges = rowRanges(obj),
+      colData = sampleInfo(obj)
+    )
+  )
   S4Vectors::metadata(obj2) <- S4Vectors::metadata(obj)
   S4Vectors::metadata(obj2)$annotation <- combined_gr
   obj2
@@ -150,8 +165,10 @@ test_that("uses circular proximity distances for TSS profiles across origin", {
   annot_gr$name <- "origin_gene"
   S4Vectors::metadata(obj)$annotation <- annot_gr
 
-  p <- plot_tss_profile(obj,
-    feature_type = "gene", window = 20L,
+  p <- plot_tss_profile(
+    obj,
+    feature_type = "gene",
+    window = 20L,
     color_by = "none"
   )
 
@@ -195,7 +212,8 @@ test_that("color_by = 'mod_type' returns ggplot", {
 
 test_that("color_by = 'regulatory_element' with valid types returns ggplot", {
   obj <- .make_tss_data_with_regulatory()
-  p <- plot_tss_profile(obj,
+  p <- plot_tss_profile(
+    obj,
     feature_type = "gene",
     color_by = "regulatory_element",
     regulatory_feature_types = "sigma_binding"
@@ -207,21 +225,19 @@ test_that("color_by = 'regulatory_element' with valid types returns ggplot", {
   expect_true("colour" %in% names(p$mapping))
 })
 
-test_that(
-  "color_by = 'regulatory_element' with absent types falls back to sample",
-  {
-    obj <- .make_tss_data() # no regulatory features
-    expect_message(
-      p <- plot_tss_profile(obj,
-        feature_type = "gene",
-        color_by = "regulatory_element",
-        regulatory_feature_types = "not_a_real_type"
-      ),
-      "Falling back to color_by = 'sample'"
-    )
-    expect_s3_class(p, "ggplot")
-  }
-)
+test_that("color_by = 'regulatory_element' with absent types falls back to sample", {
+  obj <- .make_tss_data() # no regulatory features
+  expect_message(
+    p <- plot_tss_profile(
+      obj,
+      feature_type = "gene",
+      color_by = "regulatory_element",
+      regulatory_feature_types = "not_a_real_type"
+    ),
+    "Falling back to color_by = 'sample'"
+  )
+  expect_s3_class(p, "ggplot")
+})
 
 ## ── facet_by modes ───────────────────────────────────────────────────────────
 
@@ -244,9 +260,11 @@ test_that("facet_by = 'mod_type' produces FacetWrap layer", {
 test_that("show_smooth = TRUE adds a geom_line layer", {
   obj <- .make_tss_data()
   p <- suppressWarnings(
-    plot_tss_profile(obj,
+    plot_tss_profile(
+      obj,
       feature_type = "gene",
-      window = 500L, show_smooth = TRUE,
+      window = 500L,
+      show_smooth = TRUE,
       smooth_span = 0.5
     )
   )
@@ -258,9 +276,11 @@ test_that("show_smooth = TRUE adds a geom_line layer", {
 test_that("show_smooth = TRUE warns on numerically unstable LOESS fit", {
   obj <- .make_tss_data()
   expect_warning(
-    plot_tss_profile(obj,
+    plot_tss_profile(
+      obj,
       feature_type = "gene",
-      window = 500L, show_smooth = TRUE,
+      window = 500L,
+      show_smooth = TRUE,
       smooth_span = 0.5
     ),
     "LOESS.*numerical instability"
@@ -270,12 +290,15 @@ test_that("show_smooth = TRUE warns on numerically unstable LOESS fit", {
 test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
   ## Make object with very few sites so each sample group has < 10 points
   positions <- c(950L, 1050L)
-  beta_mat <- matrix(c(0.8, 0.9, 0.3, 0.2),
+  beta_mat <- matrix(
+    c(0.8, 0.9, 0.3, 0.2),
     nrow = 2,
     dimnames = list(NULL, c("ctrl_1", "treat_1"))
   )
-  cov_mat <- matrix(20L,
-    nrow = 2, ncol = 2,
+  cov_mat <- matrix(
+    20L,
+    nrow = 2,
+    ncol = 2,
     dimnames = list(NULL, c("ctrl_1", "treat_1"))
   )
   site_gr <- GenomicRanges::GRanges(
@@ -298,12 +321,13 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
   rownames(cd) <- c("ctrl_1", "treat_1")
   rse <- SummarizedExperiment::SummarizedExperiment(
     assays = list(methylation = beta_mat, coverage = cov_mat),
-    rowRanges = site_gr, colData = cd
+    rowRanges = site_gr,
+    colData = cd
   )
   annot_gr <- GenomicRanges::GRanges(
     seqnames = "chr_sim",
-    ranges   = IRanges::IRanges(start = 800L, end = 2000L),
-    strand   = "+"
+    ranges = IRanges::IRanges(start = 800L, end = 2000L),
+    strand = "+"
   )
   annot_gr$feature_type <- "gene"
   annot_gr$name <- "geneA"
@@ -312,9 +336,11 @@ test_that("show_smooth = TRUE with < 10 pts per group warns but still plots", {
   S4Vectors::metadata(tiny_obj)$motifSites <- GenomicRanges::GRanges()
 
   expect_warning(
-    p <- plot_tss_profile(tiny_obj,
+    p <- plot_tss_profile(
+      tiny_obj,
       feature_type = "gene",
-      window = 500L, show_smooth = TRUE
+      window = 500L,
+      show_smooth = TRUE
     ),
     "Fewer than 10 data points"
   )
@@ -330,31 +356,31 @@ test_that("color_by = 'none' returns ggplot with no colour aesthetic", {
   expect_false("colour" %in% global_aes_names)
 })
 
-test_that(
-  "color_by = 'none' + facet_by = 'mod_type' + show_smooth returns ggplot",
-  {
-    obj <- .make_tss_data()
-    p <- suppressWarnings(
-      plot_tss_profile(obj,
-        feature_type = "gene",
-        color_by = "none", facet_by = "mod_type",
-        show_smooth = TRUE, smooth_span = 0.5
-      )
+test_that("color_by = 'none' + facet_by = 'mod_type' + show_smooth returns ggplot", {
+  obj <- .make_tss_data()
+  p <- suppressWarnings(
+    plot_tss_profile(
+      obj,
+      feature_type = "gene",
+      color_by = "none",
+      facet_by = "mod_type",
+      show_smooth = TRUE,
+      smooth_span = 0.5
     )
-    expect_s3_class(p, "ggplot")
-    # Verify no colour aesthetic
-    expect_false("colour" %in% names(p$mapping))
-    # Verify faceted
-    expect_s3_class(p$facet, "FacetWrap")
-    # Verify smooth layer present
-    layer_classes <- vapply(
-      p$layers,
-      function(l) class(l$geom)[1],
-      character(1)
-    )
-    expect_true(any(layer_classes == "GeomLine"))
-  }
-)
+  )
+  expect_s3_class(p, "ggplot")
+  # Verify no colour aesthetic
+  expect_false("colour" %in% names(p$mapping))
+  # Verify faceted
+  expect_s3_class(p$facet, "FacetWrap")
+  # Verify smooth layer present
+  layer_classes <- vapply(
+    p$layers,
+    function(l) class(l$geom)[1],
+    character(1)
+  )
+  expect_true(any(layer_classes == "GeomLine"))
+})
 
 test_that(
   paste(
@@ -364,9 +390,11 @@ test_that(
   {
     obj <- .make_tss_data()
     p <- suppressWarnings(
-      plot_tss_profile(obj,
+      plot_tss_profile(
+        obj,
         feature_type = "gene",
-        facet_by = "sample", show_smooth = TRUE,
+        facet_by = "sample",
+        show_smooth = TRUE,
         smooth_span = 0.5
       )
     )
@@ -428,16 +456,13 @@ test_that("error on invalid mod_type", {
   )
 })
 
-test_that(
-  "error when color_by = 'regulatory_element' without regulatory_feature_types",
-  {
-    obj <- .make_tss_data()
-    expect_error(
-      plot_tss_profile(obj, color_by = "regulatory_element"),
-      "regulatory_feature_types"
-    )
-  }
-)
+test_that("error when color_by = 'regulatory_element' without regulatory_feature_types", {
+  obj <- .make_tss_data()
+  expect_error(
+    plot_tss_profile(obj, color_by = "regulatory_element"),
+    "regulatory_feature_types"
+  )
+})
 
 test_that("error when no sites fall within window", {
   obj <- .make_tss_data()
@@ -466,7 +491,8 @@ test_that("error on alpha outside (0, 1]", {
 
 test_that("works with comma_example_data, feature_type = 'gene'", {
   data(comma_example_data)
-  p <- plot_tss_profile(comma_example_data,
+  p <- plot_tss_profile(
+    comma_example_data,
     feature_type = "gene",
     window = 500L
   )

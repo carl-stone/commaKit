@@ -2,17 +2,24 @@
 
 # ─── Helper ───────────────────────────────────────────────────────────────────
 
-.make_mval_data <- function(n_sites = 10L, n_samples = 3L,
-                            seed = 99L, cov_val = 20L) {
+.make_mval_data <- function(
+  n_sites = 10L,
+  n_samples = 3L,
+  seed = 99L,
+  cov_val = 20L
+) {
   set.seed(seed)
   positions <- seq(1000L, by = 1000L, length.out = n_sites)
   betas <- matrix(
     runif(n_sites * n_samples, 0.05, 0.95),
-    nrow = n_sites, ncol = n_samples,
+    nrow = n_sites,
+    ncol = n_samples,
     dimnames = list(NULL, paste0("s", seq_len(n_samples)))
   )
-  cov_mat <- matrix(cov_val,
-    nrow = n_sites, ncol = n_samples,
+  cov_mat <- matrix(
+    cov_val,
+    nrow = n_sites,
+    ncol = n_samples,
     dimnames = dimnames(betas)
   )
   site_gr <- GenomicRanges::GRanges(
@@ -29,14 +36,14 @@
   )
   cd <- S4Vectors::DataFrame(
     sample_name = paste0("s", seq_len(n_samples)),
-    condition   = rep("ctrl", n_samples),
-    replicate   = seq_len(n_samples),
-    row.names   = paste0("s", seq_len(n_samples))
+    condition = rep("ctrl", n_samples),
+    replicate = seq_len(n_samples),
+    row.names = paste0("s", seq_len(n_samples))
   )
   rse <- SummarizedExperiment::SummarizedExperiment(
-    assays     = list(methylation = betas, coverage = cov_mat),
-    rowRanges  = site_gr,
-    colData    = cd
+    assays = list(methylation = betas, coverage = cov_mat),
+    rowRanges = site_gr,
+    colData = cd
   )
   new("commaData", rse)
 }
@@ -67,7 +74,7 @@ test_that("mValues: dimnames match methylation matrix", {
 test_that("mValues: formula is correct for known values", {
   # beta = 0.8, coverage = 10, alpha = 0.5
   # m_reads = round(0.8 * 10) = 8, u_reads = 2
-  # M = log2((8 + 0.5) / (2 + 0.5)) = log2(8.5 / 2.5)
+  # The expected value uses 8 modified and 2 unmodified reads.
   obj <- .make_mval_data(n_sites = 1L, n_samples = 1L, cov_val = 10L)
   # Override the beta to exactly 0.8
   SummarizedExperiment::assay(obj, "methylation")[1, 1] <- 0.8
@@ -216,12 +223,12 @@ test_that("mValues: smaller alpha produces more extreme M-values", {
 test_that("mValues: mod_type filter reduces rows to matching sites", {
   data(comma_example_data)
   m_all <- mValues(comma_example_data)
-  m_6mA <- mValues(comma_example_data, mod_type = "6mA")
-  n_6mA <- sum(
+  m_6ma <- mValues(comma_example_data, mod_type = "6mA")
+  n_6ma <- sum(
     SummarizedExperiment::rowData(comma_example_data)$mod_type == "6mA"
   )
-  expect_equal(nrow(m_6mA), n_6mA)
-  expect_true(nrow(m_6mA) < nrow(m_all))
+  expect_equal(nrow(m_6ma), n_6ma)
+  expect_true(nrow(m_6ma) < nrow(m_all))
 })
 
 test_that("mValues: invalid mod_type errors with informative message", {

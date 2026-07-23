@@ -70,17 +70,19 @@ NULL
 #'   }
 #'
 #' @keywords internal
-.runLimma <- function(methyl_mat,
-                      coverage_mat,
-                      site_df,
-                      coldata,
-                      formula,
-                      alpha = 0.5,
-                      ref_level = NULL,
-                      design_info = NULL,
-                      mod_counts_mat = NULL,
-                      canonical_counts_mat = NULL,
-                      other_mod_counts_mat = NULL) {
+.runLimma <- function(
+  methyl_mat,
+  coverage_mat,
+  site_df,
+  coldata,
+  formula,
+  alpha = 0.5,
+  ref_level = NULL,
+  design_info = NULL,
+  mod_counts_mat = NULL,
+  canonical_counts_mat = NULL,
+  other_mod_counts_mat = NULL
+) {
   # ── Dependency check ──────────────────────────────────────────────────────
   if (!requireNamespace("limma", quietly = TRUE)) {
     stop(
@@ -92,8 +94,7 @@ NULL
 
   # ── Validate alpha ────────────────────────────────────────────────────────
   if (
-    !is.numeric(alpha) || length(alpha) != 1L ||
-      !is.finite(alpha) || alpha <= 0
+    !is.numeric(alpha) || length(alpha) != 1L || !is.finite(alpha) || alpha <= 0
   ) {
     stop("'alpha' must be a single positive finite number.")
   }
@@ -166,9 +167,11 @@ NULL
   contrast_cols <- grep(primary_var, coef_names, value = TRUE)
   if (length(contrast_cols) == 0L) {
     stop(
-      "Could not find a coefficient for '", primary_var,
+      "Could not find a coefficient for '",
+      primary_var,
       "' in the design matrix. ",
-      "Available coefficients: ", paste(coef_names, collapse = ", ")
+      "Available coefficients: ",
+      paste(coef_names, collapse = ", ")
     )
   }
   # Take the last matching coefficient (mirrors .betaBinomialTest() behaviour)

@@ -3,7 +3,9 @@
 require_package <- function(package) {
   if (!requireNamespace(package, quietly = TRUE)) {
     message(
-      "Package '", package, "' is required for this pre-commit hook. ",
+      "Package '",
+      package,
+      "' is required for this pre-commit hook. ",
       "Install project development dependencies before retrying."
     )
     quit(status = 1, save = "no")
@@ -22,6 +24,14 @@ existing_r_files <- function(files) {
   files[file.exists(files) & vapply(files, is_r_file, logical(1))]
 }
 
+is_air_file <- function(path) {
+  grepl("\\.[Rr]$", path) || basename(path) == ".Rprofile"
+}
+
+existing_air_files <- function(files) {
+  files[file.exists(files) & vapply(files, is_air_file, logical(1))]
+}
+
 changed_lintr_config <- function(files) {
   any(file.exists(files) & vapply(files, is_lintr_file, logical(1)))
 }
@@ -32,31 +42,26 @@ lint_files <- function(files) {
 }
 
 check_style <- function(files) {
-  require_package("styler")
-
   requested_files <- files
-  files <- existing_r_files(files)
-  result <- tryCatch(
-    {
-      if (length(files) == 0 && length(requested_files) > 0L) {
-        message("No changed R files to style.")
-      } else if (length(files) == 0) {
-        styler::style_pkg(dry = "fail")
-      } else {
-        styler::style_file(files, dry = "fail")
-      }
-      TRUE
-    },
-    error = function(e) e
-  )
+  files <- existing_air_files(files)
+  if (length(files) == 0L && length(requested_files) > 0L) {
+    message("No changed R files to style.")
+    return(invisible(TRUE))
+  }
 
-  if (inherits(result, "error")) {
-    message("R style check failed.")
+  air <- Sys.which("air")
+  if (!nzchar(air)) {
+    message("Air is required for the style check.")
+    message("Install it from https://posit-dev.github.io/air/cli.html")
+    quit(status = 1, save = "no")
+  }
+
+  paths <- if (length(files) == 0L) "." else files
+  status <- system2(air, c("format", paths, "--check"))
+  if (!identical(status, 0L)) {
+    message("Air formatting check failed.")
     message("Run this command, stage the formatting changes, and retry:")
-    message("  Rscript -e 'styler::style_pkg()'")
-    message("")
-    message("Original styler error:")
-    message(conditionMessage(result))
+    message("  air format .")
     quit(status = 1, save = "no")
   }
 
@@ -294,7 +299,8 @@ if (length(args) < 1) {
 command <- args[[1]]
 files <- args[-1]
 
-switch(command,
+switch(
+  command,
   style = check_style(files),
   lint = check_lint(files),
   roxygen = check_roxygen_documented(files),

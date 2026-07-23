@@ -3,7 +3,7 @@
 commaKit should remain Bioconductor-package-first: `DESCRIPTION` is the
 authoritative installation and check contract for end users and package
 automation, not a catch-all development environment manifest. Developer-only
-tools such as `lintr`, `styler`, `devtools`, `roxygen2`, `pkgdown`,
+tools such as `lintr`, Air, `devtools`, `roxygen2`, `pkgdown`,
 `BiocCheck`, `languageserver`, and `httpgd` should stay out of `DESCRIPTION`
 unless package code, tests, examples, or vignettes actually require them.
 

@@ -7,13 +7,16 @@
   n_sites <- 15L
   methyl_mat <- matrix(
     c(rep(0.9, n_sites), rep(0.9, n_sites), rep(0.2, n_sites)),
-    nrow = n_sites, ncol = 3L,
+    nrow = n_sites,
+    ncol = 3L,
     dimnames = list(NULL, c("ctrl_1", "ctrl_2", "treat_1"))
   )
   # Make last 5 sites non-differential
   methyl_mat[(n_sites - 4L):n_sites, 3L] <- 0.9
-  cov_mat <- matrix(10L,
-    nrow = n_sites, ncol = 3L,
+  cov_mat <- matrix(
+    10L,
+    nrow = n_sites,
+    ncol = 3L,
     dimnames = dimnames(methyl_mat)
   )
   site_gr <- GenomicRanges::GRanges(
@@ -30,14 +33,14 @@
   )
   cd <- S4Vectors::DataFrame(
     sample_name = c("ctrl_1", "ctrl_2", "treat_1"),
-    condition   = c("control", "control", "treatment"),
-    replicate   = 1:3,
-    row.names   = c("ctrl_1", "ctrl_2", "treat_1")
+    condition = c("control", "control", "treatment"),
+    replicate = 1:3,
+    row.names = c("ctrl_1", "ctrl_2", "treat_1")
   )
   rse <- SummarizedExperiment::SummarizedExperiment(
-    assays     = list(methylation = methyl_mat, coverage = cov_mat),
-    rowRanges  = site_gr,
-    colData    = cd
+    assays = list(methylation = methyl_mat, coverage = cov_mat),
+    rowRanges = site_gr,
+    colData = cd
   )
   obj <- new("commaData", rse)
   diffMethyl(obj, formula = ~condition)
@@ -61,8 +64,13 @@ test_that("results: contains required columns", {
   dm <- .make_tested_object()
   res <- results(dm)
   required <- c(
-    "chrom", "position", "strand", "mod_type",
-    "dm_pvalue", "dm_padj", "dm_delta_beta"
+    "chrom",
+    "position",
+    "strand",
+    "mod_type",
+    "dm_pvalue",
+    "dm_padj",
+    "dm_delta_beta"
   )
   expect_true(all(required %in% colnames(res)))
 })
@@ -289,60 +297,58 @@ test_that("filterResults: non-finite or negative thresholds error", {
   expect_error(filterResults(dm, delta_beta = -0.1), "delta_beta")
 })
 
-test_that(
-  "results: data.frame and GRanges paths align for selected result layer",
-  {
-    skip_if_not_installed("limma")
-    obj <- .make_diff_methyl_fixture(n_sites = 12L, n_ctrl = 2L, n_treat = 2L)
-    dm <- diffMethyl(
-      obj,
-      formula = ~condition,
-      method = "quasi_f",
-      result_name = "quasi_f.loose",
-      min_coverage = 0L
-    )
-    dm <- diffMethyl(
-      dm,
-      formula = ~condition,
-      method = "quasi_f",
-      result_name = "quasi_f.empty",
-      min_coverage = 1000L
-    )
+test_that("results: data.frame and GRanges paths align for selected result layer", {
+  skip_if_not_installed("limma")
+  obj <- .make_diff_methyl_fixture(n_sites = 12L, n_ctrl = 2L, n_treat = 2L)
+  dm <- diffMethyl(
+    obj,
+    formula = ~condition,
+    method = "quasi_f",
+    result_name = "quasi_f.loose",
+    min_coverage = 0L
+  )
+  dm <- diffMethyl(
+    dm,
+    formula = ~condition,
+    method = "quasi_f",
+    result_name = "quasi_f.empty",
+    min_coverage = 1000L
+  )
 
-    df <- results(dm, name = "quasi_f.loose")
-    gr <- results(dm, name = "quasi_f.loose", as = "GRanges")
-    result_cols <- c("dm_pvalue", "dm_padj", "dm_delta_beta")
-    gr_result_data <- as.data.frame(GenomicRanges::mcols(gr)[, result_cols])
-    df_result_data <- df[, result_cols]
-    rownames(gr_result_data) <- NULL
-    rownames(df_result_data) <- NULL
+  df <- results(dm, name = "quasi_f.loose")
+  gr <- results(dm, name = "quasi_f.loose", as = "GRanges")
+  result_cols <- c("dm_pvalue", "dm_padj", "dm_delta_beta")
+  gr_result_data <- as.data.frame(GenomicRanges::mcols(gr)[, result_cols])
+  df_result_data <- df[, result_cols]
+  rownames(gr_result_data) <- NULL
+  rownames(df_result_data) <- NULL
 
-    expect_equal(as.character(GenomeInfoDb::seqnames(gr)), df$chrom)
-    expect_equal(GenomicRanges::start(gr), df$position)
-    expect_equal(as.character(GenomicRanges::strand(gr)), df$strand)
-    expect_equal(gr_result_data, df_result_data)
+  expect_equal(as.character(GenomeInfoDb::seqnames(gr)), df$chrom)
+  expect_equal(GenomicRanges::start(gr), df$position)
+  expect_equal(as.character(GenomicRanges::strand(gr)), df$strand)
+  expect_equal(gr_result_data, df_result_data)
 
-    sig <- filterResults(
-      dm,
-      padj = 1,
-      delta_beta = 0,
-      name = "quasi_f.loose"
-    )
-    keep <- !is.na(df$dm_padj) &
-      !is.na(df$dm_delta_beta) &
-      df$dm_padj <= 1 &
-      abs(df$dm_delta_beta) >= 0
-    expected <- df[
-      keep, ,
-      drop = FALSE
-    ]
+  sig <- filterResults(
+    dm,
+    padj = 1,
+    delta_beta = 0,
+    name = "quasi_f.loose"
+  )
+  keep <- !is.na(df$dm_padj) &
+    !is.na(df$dm_delta_beta) &
+    df$dm_padj <= 1 &
+    abs(df$dm_delta_beta) >= 0
+  expected <- df[
+    keep,
+    ,
+    drop = FALSE
+  ]
 
-    expect_gt(nrow(sig), 0L)
-    expect_equal(sig$position, expected$position)
-    sig_result_data <- sig[, result_cols]
-    expected_result_data <- expected[, result_cols]
-    rownames(sig_result_data) <- NULL
-    rownames(expected_result_data) <- NULL
-    expect_equal(sig_result_data, expected_result_data)
-  }
-)
+  expect_gt(nrow(sig), 0L)
+  expect_equal(sig$position, expected$position)
+  sig_result_data <- sig[, result_cols]
+  expected_result_data <- expected[, result_cols]
+  rownames(sig_result_data) <- NULL
+  rownames(expected_result_data) <- NULL
+  expect_equal(sig_result_data, expected_result_data)
+})

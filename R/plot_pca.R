@@ -74,13 +74,15 @@ NULL
 #' @seealso \code{\link{methylomeSummary}}, \code{\link{plot_methylation_distribution}}
 #'
 #' @export
-plot_pca <- function(object,
-                     mod_type = NULL,
-                     motif = NULL,
-                     mod_context = NULL,
-                     color_by = "condition",
-                     shape_by = NULL,
-                     return_data = FALSE) {
+plot_pca <- function(
+  object,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  color_by = "condition",
+  shape_by = NULL,
+  return_data = FALSE
+) {
   ## --- Input validation ---------------------------------------------------
   color_by_default <- missing(color_by)
   if (!is(object, "commaData")) {
@@ -99,12 +101,19 @@ plot_pca <- function(object,
   ## --- Validate color_by / shape_by ---------------------------------------
   si <- sampleInfo(object)
   si_cols <- colnames(si)
-  if (color_by_default && identical(color_by, "condition") &&
-    !"condition" %in% si_cols) {
+  if (
+    color_by_default &&
+      identical(color_by, "condition") &&
+      !"condition" %in% si_cols
+  ) {
     color_by <- "sample_name"
   }
-  if (!is.character(color_by) || length(color_by) != 1L ||
-    is.na(color_by) || !nzchar(color_by)) {
+  if (
+    !is.character(color_by) ||
+      length(color_by) != 1L ||
+      is.na(color_by) ||
+      !nzchar(color_by)
+  ) {
     stop(
       "'color_by' must be a single non-empty character string naming ",
       "a column in sampleInfo(object)."
@@ -112,13 +121,21 @@ plot_pca <- function(object,
   }
   if (!color_by %in% si_cols) {
     stop(
-      "'color_by' column '", color_by, "' not found in sampleInfo(object). ",
-      "Available columns: ", paste(si_cols, collapse = ", "), "."
+      "'color_by' column '",
+      color_by,
+      "' not found in sampleInfo(object). ",
+      "Available columns: ",
+      paste(si_cols, collapse = ", "),
+      "."
     )
   }
   if (!is.null(shape_by)) {
-    if (!is.character(shape_by) || length(shape_by) != 1L ||
-      is.na(shape_by) || !nzchar(shape_by)) {
+    if (
+      !is.character(shape_by) ||
+        length(shape_by) != 1L ||
+        is.na(shape_by) ||
+        !nzchar(shape_by)
+    ) {
       stop(
         "'shape_by' must be NULL or a single non-empty character ",
         "string naming a column in sampleInfo(object)."
@@ -126,8 +143,12 @@ plot_pca <- function(object,
     }
     if (!shape_by %in% si_cols) {
       stop(
-        "'shape_by' column '", shape_by, "' not found in sampleInfo(object). ",
-        "Available columns: ", paste(si_cols, collapse = ", "), "."
+        "'shape_by' column '",
+        shape_by,
+        "' not found in sampleInfo(object). ",
+        "Available columns: ",
+        paste(si_cols, collapse = ", "),
+        "."
       )
     }
   }
@@ -207,8 +228,8 @@ plot_pca <- function(object,
     p <- ggplot2::ggplot(
       plot_df,
       ggplot2::aes(
-        x     = .data[["PC1"]],
-        y     = .data[["PC2"]],
+        x = .data[["PC1"]],
+        y = .data[["PC2"]],
         color = .data[[color_by]],
         shape = .data[[shape_by]],
         label = .data[["sample_name"]]
@@ -220,8 +241,8 @@ plot_pca <- function(object,
     p <- ggplot2::ggplot(
       scores_df,
       ggplot2::aes(
-        x     = .data[["PC1"]],
-        y     = .data[["PC2"]],
+        x = .data[["PC1"]],
+        y = .data[["PC2"]],
         color = .data[[color_by]],
         label = .data[["sample_name"]]
       )
@@ -231,12 +252,13 @@ plot_pca <- function(object,
 
   p <- p +
     ggplot2::geom_text(
-      vjust = -0.9, size = 3,
+      vjust = -0.9,
+      size = 3,
       show.legend = FALSE
     ) +
     ggplot2::labs(
-      x     = x_label,
-      y     = y_label,
+      x = x_label,
+      y = y_label,
       title = "PCA of Methylation Profiles",
       color = color_by
     ) +

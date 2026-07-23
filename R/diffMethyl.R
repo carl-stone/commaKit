@@ -214,7 +214,7 @@ diffMethyl <- function(
 
   unnamed_result <- is.null(result_name)
   if (unnamed_result) {
-    result_name <- .DIFFMETHYL_DEFAULT_RESULT_NAME
+    result_name <- .DEFAULT_DIFFMETHYL_RESULT
   }
   .validateResultLayerName(result_name)
   if (is.null(overwrite)) {
@@ -231,7 +231,8 @@ diffMethyl <- function(
   }
   if (!isTRUE(overwrite) && result_name %in% .diffMethylResultNames(object)) {
     stop(
-      "Differential methylation result layer '", result_name,
+      "Differential methylation result layer '",
+      result_name,
       "' already exists. Use a new 'result_name' or set overwrite = TRUE."
     )
   }
@@ -277,7 +278,9 @@ diffMethyl <- function(
   needs_limma <- method %in% c("limma", "quasi_f")
   if (needs_limma && !requireNamespace("limma", quietly = TRUE)) {
     stop(
-      "Package 'limma' is required for method = \"", method, "\".\n",
+      "Package 'limma' is required for method = \"",
+      method,
+      "\".\n",
       "Install it with: BiocManager::install(\"limma\")"
     )
   }
@@ -305,7 +308,8 @@ diffMethyl <- function(
       stop(
         "mod_context value(s) not found in object: ",
         paste(bad_mc, collapse = ", "),
-        ". Available: ", paste(available_mc, collapse = ", ")
+        ". Available: ",
+        paste(available_mc, collapse = ", ")
       )
     }
     object <- filterSites(object, mod_context = mod_context)
@@ -321,7 +325,8 @@ diffMethyl <- function(
         stop(
           "motif value(s) not found in object: ",
           paste(bad_m, collapse = ", "),
-          ". Available: ", paste(available_m, collapse = ", ")
+          ". Available: ",
+          paste(available_m, collapse = ", ")
         )
       }
       object <- filterSites(object, motif = motif)
@@ -353,7 +358,8 @@ diffMethyl <- function(
     test_contexts <- all_mc[
       mc$mod_type[
         match(all_mc, computed_ctx)
-      ] %in% mod_type
+      ] %in%
+        mod_type
     ]
     test_contexts <- sort(unique(test_contexts))
   } else {
@@ -381,8 +387,13 @@ diffMethyl <- function(
 
   # -- Report comparison direction -------------------------------------------
   message(
-    "diffMethyl: testing '", primary_var, "' -- '",
-    treat_level_dm, "' vs '", ref_level, "' (reference)"
+    "diffMethyl: testing '",
+    primary_var,
+    "' -- '",
+    treat_level_dm,
+    "' vs '",
+    ref_level,
+    "' (reference)"
   )
 
   # -- Test each mod context independently -----------------------------------
@@ -390,7 +401,9 @@ diffMethyl <- function(
     # Compute mod_context on demand for site selection
     computed_ctx <- .computeModContext(rd_full$mod_type, rd_full$motif)
     site_idx <- which(computed_ctx == mc)
-    if (length(site_idx) == 0L) next
+    if (length(site_idx) == 0L) {
+      next
+    }
 
     methyl_sub <- methyl_full[site_idx, , drop = FALSE]
     cov_sub <- cov_full[site_idx, , drop = FALSE]
@@ -418,23 +431,41 @@ diffMethyl <- function(
     # Dispatch to statistical backend
     res_sub <- tryCatch(
       if (method == "limma") {
-        .runLimma(methyl_sub, cov_sub, site_sub, cd, formula,
+        .runLimma(
+          methyl_sub,
+          cov_sub,
+          site_sub,
+          cd,
+          formula,
           alpha = alpha,
-          ref_level = ref_level, design_info = design_info,
+          ref_level = ref_level,
+          design_info = design_info,
           mod_counts_mat = mod_counts_sub,
           canonical_counts_mat = canonical_counts_sub,
           other_mod_counts_mat = other_mod_counts_sub
         )
       } else if (method == "quasi_f") {
-        .runQuasiF(methyl_sub, cov_sub, site_sub, cd, formula,
-          ref_level = ref_level, design_info = design_info,
+        .runQuasiF(
+          methyl_sub,
+          cov_sub,
+          site_sub,
+          cd,
+          formula,
+          ref_level = ref_level,
+          design_info = design_info,
           mod_counts_mat = mod_counts_sub,
           canonical_counts_mat = canonical_counts_sub,
           other_mod_counts_mat = other_mod_counts_sub
         )
       } else {
-        .runMethylKit(methyl_sub, cov_sub, site_sub, cd, formula,
-          ref_level = ref_level, design_info = design_info,
+        .runMethylKit(
+          methyl_sub,
+          cov_sub,
+          site_sub,
+          cd,
+          formula,
+          ref_level = ref_level,
+          design_info = design_info,
           mod_counts_mat = mod_counts_sub,
           canonical_counts_mat = canonical_counts_sub,
           other_mod_counts_mat = other_mod_counts_sub
@@ -442,14 +473,19 @@ diffMethyl <- function(
       },
       error = function(e) {
         warning(
-          "diffMethyl() failed for mod_context = '", mc, "': ",
-          e$message, ". Skipping this context."
+          "diffMethyl() failed for mod_context = '",
+          mc,
+          "': ",
+          e$message,
+          ". Skipping this context."
         )
         NULL
       }
     )
 
-    if (is.null(res_sub)) next
+    if (is.null(res_sub)) {
+      next
+    }
 
     # Write back to full-object vectors
     pvalue_all[site_idx] <- res_sub$pvalue
@@ -473,7 +509,9 @@ diffMethyl <- function(
   padj_all <- stats::p.adjust(pvalue_all, method = p_adjust_method)
 
   result_cols <- c(
-    "dm_pvalue", "dm_padj", "dm_delta_beta",
+    "dm_pvalue",
+    "dm_padj",
+    "dm_delta_beta",
     names(mean_beta_cols)
   )
   if (!is.null(methylkit_qvalue_all)) {
@@ -496,19 +534,19 @@ diffMethyl <- function(
   }
 
   params <- list(
-    formula         = paste(deparse(formula), collapse = " "),
-    reference       = ref_level,
-    treatment       = treat_level_dm,
-    method          = method,
-    mod_context     = mod_context,
-    mod_type        = mod_type,
-    motif           = motif,
-    result_name     = result_name,
-    test_contexts   = test_contexts,
+    formula = paste(deparse(formula), collapse = " "),
+    reference = ref_level,
+    treatment = treat_level_dm,
+    method = method,
+    mod_context = mod_context,
+    mod_type = mod_type,
+    motif = motif,
+    result_name = result_name,
+    test_contexts = test_contexts,
     p_adjust_method = p_adjust_method,
-    min_coverage    = min_coverage,
-    alpha           = alpha,
-    timestamp       = Sys.time()
+    min_coverage = min_coverage,
+    alpha = alpha,
+    timestamp = Sys.time()
   )
 
   .addDiffMethylResultLayer(

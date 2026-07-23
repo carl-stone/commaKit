@@ -62,14 +62,20 @@
 #'   \code{\link{plot_pca}}
 #'
 #' @export
-mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
-                    mod_context = NULL) {
+mValues <- function(
+  object,
+  alpha = 0.5,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL
+) {
   ## --- Input validation ---------------------------------------------------
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
-  if (!is.numeric(alpha) || length(alpha) != 1L || !is.finite(alpha) ||
-    alpha <= 0) {
+  if (
+    !is.numeric(alpha) || length(alpha) != 1L || !is.finite(alpha) || alpha <= 0
+  ) {
     stop("'alpha' must be a single positive finite number.")
   }
 
@@ -110,6 +116,6 @@ mValues <- function(object, alpha = 0.5, mod_type = NULL, motif = NULL,
   m_reads[missing_value] <- NA_real_
   u_reads[missing_value] <- NA_real_
 
-  ## M-value = log2((M + alpha) / (U + alpha))
+  ## Compute the pseudocount-adjusted log ratio.
   log2((m_reads + alpha) / (u_reads + alpha))
 }

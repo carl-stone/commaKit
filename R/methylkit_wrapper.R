@@ -49,10 +49,18 @@ NULL
 #'   p-values. Row names are site keys.
 #'
 #' @keywords internal
-.runMethylKit <- function(methyl_mat, coverage_mat, site_df, coldata, formula,
-                          ref_level = NULL, design_info = NULL,
-                          mod_counts_mat = NULL, canonical_counts_mat = NULL,
-                          other_mod_counts_mat = NULL) {
+.runMethylKit <- function(
+  methyl_mat,
+  coverage_mat,
+  site_df,
+  coldata,
+  formula,
+  ref_level = NULL,
+  design_info = NULL,
+  mod_counts_mat = NULL,
+  canonical_counts_mat = NULL,
+  other_mod_counts_mat = NULL
+) {
   # ── Dependency check ──────────────────────────────────────────────────────
   if (!requireNamespace("methylKit", quietly = TRUE)) {
     stop(
@@ -86,8 +94,11 @@ NULL
   )
 
   message(
-    "methylKit: comparing '", treat_level, "' (treatment) vs '",
-    ref_level, "' (reference/control)"
+    "methylKit: comparing '",
+    treat_level,
+    "' (treatment) vs '",
+    ref_level,
+    "' (reference/control)"
   )
 
   # ── Get site positions from site_df ───────────────────────────────────────
@@ -112,7 +123,9 @@ NULL
 
   if (n_skipped > 0L) {
     message(
-      "methylKit: ", n_skipped, " site(s) with all samples at ",
+      "methylKit: ",
+      n_skipped,
+      " site(s) with all samples at ",
       "beta = 1 or beta = 0 excluded (zero within-group variance; ",
       "methylKit GLM cannot estimate). Assigned p = NA."
     )
@@ -165,16 +178,19 @@ NULL
       )
 
       # methylRaw extends data.frame; pass df as first positional arg
-      methods::new("methylRaw", df,
-        sample.id  = colnames(methyl_mat)[[j]],
-        assembly   = "custom",
-        context    = "none",
+      methods::new(
+        "methylRaw",
+        df,
+        sample.id = colnames(methyl_mat)[[j]],
+        assembly = "custom",
+        context = "none",
         resolution = "base"
       )
     })
 
-    mk_list <- methods::new("methylRawList",
-      .Data     = sample_list,
+    mk_list <- methods::new(
+      "methylRawList",
+      .Data = sample_list,
       treatment = as.integer(treatment)
     )
   }
@@ -201,13 +217,15 @@ NULL
     n_dropped <- nrow(united_df) - length(keep_united)
     if (n_dropped > 0L) {
       message(
-        "methylKit: ", n_dropped, " site(s) with zero total coverage across ",
+        "methylKit: ",
+        n_dropped,
+        " site(s) with zero total coverage across ",
         "all samples removed before testing (p = NA assigned)."
       )
       mk_united <- mk_united[keep_united, ]
     }
 
-    mk_warn_counts <- list()
+    mk_warn_counts <- new.env(parent = emptyenv())
     mk_diff <- tryCatch(
       withCallingHandlers(
         # suppress only the "group: 0/1" message we've replaced
@@ -217,7 +235,7 @@ NULL
         warning = function(w) {
           key <- trimws(conditionMessage(w))
           n_prev <- mk_warn_counts[[key]]
-          mk_warn_counts[[key]] <<- (if (is.null(n_prev)) 0L else n_prev) + 1L
+          mk_warn_counts[[key]] <- (if (is.null(n_prev)) 0L else n_prev) + 1L
           invokeRestart("muffleWarning")
         }
       ),
@@ -225,7 +243,7 @@ NULL
         stop("methylKit::calculateDiffMeth() failed: ", e$message)
       }
     )
-    .emitMethylKitWarnings(mk_warn_counts)
+    .emitMethylKitWarnings(as.list(mk_warn_counts))
   }
 
   # ── Extract results and standardise format ────────────────────────────────
@@ -279,7 +297,9 @@ NULL
     n <- warn_counts[[msg]]
     if (grepl("fitted probabilities numerically 0 or 1", msg)) {
       warning(
-        "methylKit: ", n, " site(s) had fitted probabilities at 0 or 1. ",
+        "methylKit: ",
+        n,
+        " site(s) had fitted probabilities at 0 or 1. ",
         "This typically occurs when methylation fractions are at boundary ",
         "values (fully methylated or unmethylated), common in 6mA datasets ",
         "with few replicates. GLM estimates may be unreliable for these ",
@@ -289,7 +309,9 @@ NULL
       )
     } else if (grepl("algorithm did not converge", msg)) {
       warning(
-        "methylKit: GLM failed to converge for ", n, " site(s). ",
+        "methylKit: GLM failed to converge for ",
+        n,
+        " site(s). ",
         "Results at these sites may be unreliable.",
         call. = FALSE
       )

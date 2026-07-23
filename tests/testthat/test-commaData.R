@@ -13,12 +13,16 @@ library(GenomicRanges)
 # ── Helper: build a minimal valid commaData without file I/O ──────────────────
 
 .make_minimal_commaData <- function(n_sites = 5L, n_samples = 2L) {
-  methyl <- matrix(runif(n_sites * n_samples, 0.1, 0.9),
-    nrow = n_sites, ncol = n_samples,
+  methyl <- matrix(
+    runif(n_sites * n_samples, 0.1, 0.9),
+    nrow = n_sites,
+    ncol = n_samples,
     dimnames = list(NULL, paste0("s", seq_len(n_samples)))
   )
-  cov <- matrix(as.integer(runif(n_sites * n_samples, 10, 50)),
-    nrow = n_sites, ncol = n_samples,
+  cov <- matrix(
+    as.integer(runif(n_sites * n_samples, 10, 50)),
+    nrow = n_sites,
+    ncol = n_samples,
     dimnames = list(NULL, paste0("s", seq_len(n_samples)))
   )
   sample_info <- data.frame(
@@ -35,25 +39,48 @@ library(GenomicRanges)
   )
 }
 
-.constructor_modkit_row <- function(start = 99L, mod_code = "a,GATC,1",
-                                    fraction_modified = 50, n_mod = 10L,
-                                    n_canonical = 7L, n_other_mod = 3L) {
+.constructor_modkit_row <- function(
+  start = 99L,
+  mod_code = "a,GATC,1",
+  fraction_modified = 50,
+  n_mod = 10L,
+  n_canonical = 7L,
+  n_other_mod = 3L
+) {
   data.frame(
-    chrom = "chr_sim", start = start, end = start + 1L,
-    mod_code = mod_code, score = 20L, strand = "+",
-    thickStart = start, thickEnd = start + 1L, itemRgb = "255,0,0",
-    Nvalid_cov = 20L, fraction_modified = fraction_modified,
-    Nmod = n_mod, Ncanonical = n_canonical, Nother_mod = n_other_mod,
-    Ndelete = 0L, Nfail = 0L, Ndiff = 0L, Nnocall = 0L,
+    chrom = "chr_sim",
+    start = start,
+    end = start + 1L,
+    mod_code = mod_code,
+    score = 20L,
+    strand = "+",
+    thickStart = start,
+    thickEnd = start + 1L,
+    itemRgb = "255,0,0",
+    Nvalid_cov = 20L,
+    fraction_modified = fraction_modified,
+    Nmod = n_mod,
+    Ncanonical = n_canonical,
+    Nother_mod = n_other_mod,
+    Ndelete = 0L,
+    Nfail = 0L,
+    Ndiff = 0L,
+    Nnocall = 0L,
     stringsAsFactors = FALSE
   )
 }
 
-.write_constructor_modkit_rows <- function(rows,
-                                           file = tempfile(fileext = ".bed")) {
-  write.table(rows,
-    file = file, sep = "\t", quote = FALSE,
-    row.names = FALSE, col.names = FALSE
+.write_constructor_modkit_rows <- function(
+  rows,
+  file = tempfile(fileext = ".bed")
+) {
+  write.table(
+    rows,
+    file = file,
+    sep = "\t",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = FALSE
   )
   file
 }
@@ -62,8 +89,11 @@ library(GenomicRanges)
   rows <- rbind(
     .constructor_modkit_row(),
     .constructor_modkit_row(
-      start = 199L, fraction_modified = 25,
-      n_mod = 5L, n_canonical = 14L, n_other_mod = 1L
+      start = 199L,
+      fraction_modified = 25,
+      n_mod = 5L,
+      n_canonical = 14L,
+      n_other_mod = 1L
     )
   )
   .write_constructor_modkit_rows(rows, file = file)
@@ -80,32 +110,29 @@ test_that("minimal commaData object is valid", {
   expect_no_error(validObject(obj))
 })
 
-test_that(
-  "commaData() preserves modkit canonical count assays and provenance",
-  {
-    bed_file <- .write_constructor_modkit()
-    obj <- suppressMessages(commaData(
-      files = c(s1 = bed_file),
-      colData = data.frame(sample_name = "s1", replicate = 1L),
-      genome = c(chr_sim = 1000L),
-      min_coverage = 1L
-    ))
+test_that("commaData() preserves modkit canonical count assays and provenance", {
+  bed_file <- .write_constructor_modkit()
+  obj <- suppressMessages(commaData(
+    files = c(s1 = bed_file),
+    colData = data.frame(sample_name = "s1", replicate = 1L),
+    genome = c(chr_sim = 1000L),
+    min_coverage = 1L
+  ))
 
-    expect_equal(as.integer(modCounts(obj)[, "s1"]), c(10L, 5L))
-    expect_equal(as.integer(canonicalCounts(obj)[, "s1"]), c(7L, 14L))
-    expect_equal(as.integer(otherModCounts(obj)[, "s1"]), c(3L, 1L))
-    expect_equal(
-      as.integer(modCounts(obj) + canonicalCounts(obj) + otherModCounts(obj)),
-      as.integer(siteCoverage(obj))
-    )
+  expect_equal(as.integer(modCounts(obj)[, "s1"]), c(10L, 5L))
+  expect_equal(as.integer(canonicalCounts(obj)[, "s1"]), c(7L, 14L))
+  expect_equal(as.integer(otherModCounts(obj)[, "s1"]), c(3L, 1L))
+  expect_equal(
+    as.integer(modCounts(obj) + canonicalCounts(obj) + otherModCounts(obj)),
+    as.integer(siteCoverage(obj))
+  )
 
-    provenance <- assayProvenance(obj)
-    expect_equal(provenance$mod_counts$type, "observed_counts")
-    expect_equal(provenance$canonical_counts$type, "observed_counts")
-    expect_equal(provenance$other_mod_counts$type, "observed_counts")
-    expect_equal(provenance$coverage$type, "observed_total_coverage")
-  }
-)
+  provenance <- assayProvenance(obj)
+  expect_equal(provenance$mod_counts$type, "observed_counts")
+  expect_equal(provenance$canonical_counts$type, "observed_counts")
+  expect_equal(provenance$other_mod_counts$type, "observed_counts")
+  expect_equal(provenance$coverage$type, "observed_total_coverage")
+})
 
 test_that("assay matrices have no rownames", {
   obj <- .make_minimal_commaData()
@@ -241,9 +268,9 @@ test_that("commaData() allows optional condition to be absent", {
 
   expect_s4_class(
     commaData(
-      files   = c(sample_1 = bed_file),
+      files = c(sample_1 = bed_file),
       colData = data.frame(sample_name = "sample_1", replicate = 1L),
-      genome  = c(chr_sim = 100000L)
+      genome = c(chr_sim = 100000L)
     ),
     "commaData"
   )
@@ -255,9 +282,9 @@ test_that("commaData() errors on colData missing required columns", {
 
   expect_error(
     commaData(
-      files   = c(s1 = bed_file),
+      files = c(s1 = bed_file),
       colData = data.frame(sample_name = "s1"),
-      genome  = c(chr_sim = 100000L)
+      genome = c(chr_sim = 100000L)
     ),
     regexp = "replicate"
   )
@@ -346,8 +373,10 @@ test_that("commaData() applies min_coverage filter correctly", {
   cd_high <- commaData(
     files = c(s1 = bed_file),
     colData = data.frame(
-      sample_name = "s1", condition = "ctrl",
-      replicate = 1L, stringsAsFactors = FALSE
+      sample_name = "s1",
+      condition = "ctrl",
+      replicate = 1L,
+      stringsAsFactors = FALSE
     ),
     genome = c(chr_sim = 100000L),
     min_coverage = 50L
@@ -357,50 +386,49 @@ test_that("commaData() applies min_coverage filter correctly", {
   expect_true(sum(is.na(m)) > 0)
 })
 
-test_that(
-  "commaData() masks only known values below the min_coverage threshold",
-  {
-    rows <- data.frame(
-      chrom = "chr_sim",
-      start = c(199L, 99L, 299L),
-      end = c(200L, 100L, 300L),
-      mod_code = "a,GATC,1",
-      score = c(20L, 20L, 20L),
-      strand = "+",
-      thickStart = c(199L, 99L, 299L),
-      thickEnd = c(200L, 100L, 300L),
-      itemRgb = "255,0,0",
-      Nvalid_cov = c(5L, 4L, 6L),
-      fraction_modified = c(40, 25, 50),
-      Nmod = c(2L, 1L, 3L),
-      Ncanonical = c(3L, 3L, 3L),
-      Nother_mod = 0L,
-      Ndelete = 0L,
-      Nfail = 0L,
-      Ndiff = 0L,
-      Nnocall = 0L,
+test_that("commaData() masks only known values below the min_coverage threshold", {
+  rows <- data.frame(
+    chrom = "chr_sim",
+    start = c(199L, 99L, 299L),
+    end = c(200L, 100L, 300L),
+    mod_code = "a,GATC,1",
+    score = c(20L, 20L, 20L),
+    strand = "+",
+    thickStart = c(199L, 99L, 299L),
+    thickEnd = c(200L, 100L, 300L),
+    itemRgb = "255,0,0",
+    Nvalid_cov = c(5L, 4L, 6L),
+    fraction_modified = c(40, 25, 50),
+    Nmod = c(2L, 1L, 3L),
+    Ncanonical = c(3L, 3L, 3L),
+    Nother_mod = 0L,
+    Ndelete = 0L,
+    Nfail = 0L,
+    Ndiff = 0L,
+    Nnocall = 0L,
+    stringsAsFactors = FALSE
+  )
+  bed_file <- .write_constructor_modkit_rows(rows)
+
+  cd <- suppressMessages(commaData(
+    files = c(s1 = bed_file),
+    colData = data.frame(
+      sample_name = "s1",
+      condition = "control",
+      replicate = 1L,
       stringsAsFactors = FALSE
-    )
-    bed_file <- .write_constructor_modkit_rows(rows)
+    ),
+    genome = c(chr_sim = 1000L),
+    min_coverage = 5L
+  ))
 
-    cd <- suppressMessages(commaData(
-      files = c(s1 = bed_file),
-      colData = data.frame(
-        sample_name = "s1", condition = "control", replicate = 1L,
-        stringsAsFactors = FALSE
-      ),
-      genome = c(chr_sim = 1000L),
-      min_coverage = 5L
-    ))
-
-    si <- siteInfo(cd)
-    expect_equal(si$position, c(100L, 200L, 300L))
-    expect_equal(as.integer(siteCoverage(cd)[, "s1"]), c(4L, 5L, 6L))
-    expect_equal(as.numeric(methylation(cd)[, "s1"]), c(NA, 0.4, 0.5))
-    expect_equal(as.integer(modCounts(cd)[, "s1"]), c(1L, 2L, 3L))
-    expect_equal(as.character(rowData(cd)$motif), rep("GATC", 3L))
-  }
-)
+  si <- siteInfo(cd)
+  expect_equal(si$position, c(100L, 200L, 300L))
+  expect_equal(as.integer(siteCoverage(cd)[, "s1"]), c(4L, 5L, 6L))
+  expect_equal(as.numeric(methylation(cd)[, "s1"]), c(NA, 0.4, 0.5))
+  expect_equal(as.integer(modCounts(cd)[, "s1"]), c(1L, 2L, 3L))
+  expect_equal(as.character(rowData(cd)$motif), rep("GATC", 3L))
+})
 
 test_that("commaData() rejects invalid min_coverage thresholds", {
   bed_file <- .write_constructor_modkit()
@@ -419,7 +447,9 @@ test_that("commaData() rejects invalid min_coverage thresholds", {
       commaData(
         files = c(s1 = bed_file),
         colData = data.frame(
-          sample_name = "s1", condition = "control", replicate = 1L,
+          sample_name = "s1",
+          condition = "control",
+          replicate = 1L,
           stringsAsFactors = FALSE
         ),
         genome = c(chr_sim = 1000L),
@@ -437,14 +467,14 @@ test_that("commaData() accepts a tibble as colData without warning", {
 
   tbl_cd <- tibble::tibble(
     sample_name = "s1",
-    condition   = "control",
-    replicate   = 1L
+    condition = "control",
+    replicate = 1L
   )
   expect_no_warning(
     commaData(
-      files   = c(s1 = bed_file),
+      files = c(s1 = bed_file),
       colData = tbl_cd,
-      genome  = c(chr_sim = 100000L)
+      genome = c(chr_sim = 100000L)
     )
   )
 })
@@ -456,16 +486,20 @@ test_that("commaData() mod_type filter reduces sites", {
   cd_all <- commaData(
     files = c(s1 = bed_file),
     colData = data.frame(
-      sample_name = "s1", condition = "ctrl",
-      replicate = 1L, stringsAsFactors = FALSE
+      sample_name = "s1",
+      condition = "ctrl",
+      replicate = 1L,
+      stringsAsFactors = FALSE
     ),
     genome = c(chr_sim = 100000L)
   )
   cd_6ma <- commaData(
     files = c(s1 = bed_file),
     colData = data.frame(
-      sample_name = "s1", condition = "ctrl",
-      replicate = 1L, stringsAsFactors = FALSE
+      sample_name = "s1",
+      condition = "ctrl",
+      replicate = 1L,
+      stringsAsFactors = FALSE
     ),
     genome = c(chr_sim = 100000L),
     mod_type = "6mA"
@@ -486,8 +520,10 @@ test_that("commaData: expected_mod_contexts filters to specified contexts", {
   cd_all <- commaData(
     files = c(s1 = bed_file),
     colData = data.frame(
-      sample_name = "s1", condition = "ctrl",
-      replicate = 1L, stringsAsFactors = FALSE
+      sample_name = "s1",
+      condition = "ctrl",
+      replicate = 1L,
+      stringsAsFactors = FALSE
     ),
     genome = c(chr_sim = 100000L)
   )
@@ -495,8 +531,10 @@ test_that("commaData: expected_mod_contexts filters to specified contexts", {
     cd_6ma <- commaData(
       files = c(s1 = bed_file),
       colData = data.frame(
-        sample_name = "s1", condition = "ctrl",
-        replicate = 1L, stringsAsFactors = FALSE
+        sample_name = "s1",
+        condition = "ctrl",
+        replicate = 1L,
+        stringsAsFactors = FALSE
       ),
       genome = c(chr_sim = 100000L),
       expected_mod_contexts = list("6mA" = "GATC")
@@ -516,8 +554,10 @@ test_that("commaData: expected_mod_contexts accepts multiple mod types", {
   cd <- commaData(
     files = c(s1 = bed_file),
     colData = data.frame(
-      sample_name = "s1", condition = "ctrl",
-      replicate = 1L, stringsAsFactors = FALSE
+      sample_name = "s1",
+      condition = "ctrl",
+      replicate = 1L,
+      stringsAsFactors = FALSE
     ),
     genome = c(chr_sim = 100000L),
     expected_mod_contexts = list("6mA" = "GATC", "5mC" = "CCWGG")
@@ -534,8 +574,10 @@ test_that("commaData: expected_mod_contexts stops if no sites remain", {
     commaData(
       files = c(s1 = bed_file),
       colData = data.frame(
-        sample_name = "s1", condition = "ctrl",
-        replicate = 1L, stringsAsFactors = FALSE
+        sample_name = "s1",
+        condition = "ctrl",
+        replicate = 1L,
+        stringsAsFactors = FALSE
       ),
       genome = c(chr_sim = 100000L),
       expected_mod_contexts = list("6mA" = "TTAA") # no TTAA motif in data
@@ -544,30 +586,29 @@ test_that("commaData: expected_mod_contexts stops if no sites remain", {
   )
 })
 
-test_that(
-  "commaData: expected_mod_contexts errors with unrecognized mod_type",
-  {
-    bed_file <- system.file(
-      "extdata",
-      "example_modkit.bed",
-      package = "commaKit"
-    )
-    skip_if(bed_file == "", message = "extdata not available")
+test_that("commaData: expected_mod_contexts errors with unrecognized mod_type", {
+  bed_file <- system.file(
+    "extdata",
+    "example_modkit.bed",
+    package = "commaKit"
+  )
+  skip_if(bed_file == "", message = "extdata not available")
 
-    expect_error(
-      commaData(
-        files = c(s1 = bed_file),
-        colData = data.frame(
-          sample_name = "s1", condition = "ctrl",
-          replicate = 1L, stringsAsFactors = FALSE
-        ),
-        genome = c(chr_sim = 100000L),
-        expected_mod_contexts = list("7mX" = "GATC")
+  expect_error(
+    commaData(
+      files = c(s1 = bed_file),
+      colData = data.frame(
+        sample_name = "s1",
+        condition = "ctrl",
+        replicate = 1L,
+        stringsAsFactors = FALSE
       ),
-      regexp = "Unrecognized"
-    )
-  }
-)
+      genome = c(chr_sim = 100000L),
+      expected_mod_contexts = list("7mX" = "GATC")
+    ),
+    regexp = "Unrecognized"
+  )
+})
 
 # ─────────────────────────────────────────────────────────────────────────────
 # mod_context is computed on demand (no longer stored in rowData)
@@ -639,16 +680,22 @@ test_that(
   {
     f <- tempfile(fileext = ".bed")
     row <- .constructor_modkit_row()
-    write.table(rbind(row, row),
-      file = f, sep = "\t", quote = FALSE,
-      row.names = FALSE, col.names = FALSE
+    write.table(
+      rbind(row, row),
+      file = f,
+      sep = "\t",
+      quote = FALSE,
+      row.names = FALSE,
+      col.names = FALSE
     )
 
     expect_error(
       commaData(
         files = c(s1 = f),
         colData = data.frame(
-          sample_name = "s1", condition = "control", replicate = 1L,
+          sample_name = "s1",
+          condition = "control",
+          replicate = 1L,
           stringsAsFactors = FALSE
         ),
         genome = c(chr_sim = 100000L)
@@ -691,7 +738,9 @@ test_that(
       suppressMessages(commaData(
         files = c(s1 = bed_file),
         colData = data.frame(
-          sample_name = "s1", condition = "control", replicate = 1L,
+          sample_name = "s1",
+          condition = "control",
+          replicate = 1L,
           stringsAsFactors = FALSE
         ),
         genome = c(chr_sim = 100000L)
@@ -707,15 +756,21 @@ test_that("commaData() treats missing and explicit motifs as distinct sites", {
     .constructor_modkit_row(mod_code = "a"),
     .constructor_modkit_row(mod_code = "a,GATC,1", fraction_modified = 25)
   )
-  write.table(rows,
-    file = f, sep = "\t", quote = FALSE,
-    row.names = FALSE, col.names = FALSE
+  write.table(
+    rows,
+    file = f,
+    sep = "\t",
+    quote = FALSE,
+    row.names = FALSE,
+    col.names = FALSE
   )
 
   obj <- suppressMessages(commaData(
     files = c(s1 = f),
     colData = data.frame(
-      sample_name = "s1", condition = "control", replicate = 1L,
+      sample_name = "s1",
+      condition = "control",
+      replicate = 1L,
       stringsAsFactors = FALSE
     ),
     genome = c(chr_sim = 100000L)
@@ -726,19 +781,16 @@ test_that("commaData() treats missing and explicit motifs as distinct sites", {
   expect_true(any(mcols(rowRanges(obj))$motif == "GATC", na.rm = TRUE))
 })
 
-test_that(
-  "commaData() errors clearly when data chromosomes are absent from genome",
-  {
-    bed_file <- .write_constructor_modkit()
+test_that("commaData() errors clearly when data chromosomes are absent from genome", {
+  bed_file <- .write_constructor_modkit()
 
-    expect_error(
-      suppressMessages(commaData(
-        files = c(s1 = bed_file),
-        colData = data.frame(sample_name = "s1", replicate = 1L),
-        genome = c(chr_other = 1000L),
-        min_coverage = 1L
-      )),
-      regexp = "genome is missing chromosome.*chr_sim"
-    )
-  }
-)
+  expect_error(
+    suppressMessages(commaData(
+      files = c(s1 = bed_file),
+      colData = data.frame(sample_name = "s1", replicate = 1L),
+      genome = c(chr_other = 1000L),
+      min_coverage = 1L
+    )),
+    regexp = "genome is missing chromosome.*chr_sim"
+  )
+})

@@ -3,9 +3,14 @@
 #' @importFrom S4Vectors metadata DataFrame
 NULL
 
-.siteFilterIndex <- function(object, mod_type = NULL, motif = NULL,
-                             mod_context = NULL, stop_on_empty = TRUE,
-                             caller = NULL) {
+.siteFilterIndex <- function(
+  object,
+  mod_type = NULL,
+  motif = NULL,
+  mod_context = NULL,
+  stop_on_empty = TRUE,
+  caller = NULL
+) {
   if (!is(object, "commaData")) {
     stop("'object' must be a commaData object.")
   }
@@ -84,104 +89,115 @@ NULL
 setGeneric("results", function(object, ...) standardGeneric("results"))
 
 #' @rdname results
-setMethod("results", "commaData", function(object,
-                                           mod_type = NULL,
-                                           motif = NULL,
-                                           mod_context = NULL,
-                                           result = NULL,
-                                           name = NULL,
-                                           result_name = NULL,
-                                           as = c("data.frame", "GRanges"),
-                                           ...) {
-  as <- match.arg(as)
-  # ── Check diffMethyl has been run ─────────────────────────────────────────
-  no_result_layers <- length(.diffMethylResultNames(object)) == 0L
-  no_legacy_results <- is.null(
-    S4Vectors::metadata(object)$diffMethyl_result_cols
-  )
-  if (no_result_layers && no_legacy_results) {
-    stop(
-      "No differential methylation results found in this commaData object.\n",
-      "run diffMethyl() first:\n",
-      "  dm <- diffMethyl(object, formula = ~ condition)"
-    )
-  }
-  provided_names <- list(
-    result = result,
-    name = name,
-    result_name = result_name
-  )
-  provided_names <- provided_names[
-    !vapply(provided_names, is.null, logical(1L))
-  ]
-  if (length(provided_names) > 1L) {
-    values <- unname(provided_names)
-    same <- all(vapply(values[-1L], identical, logical(1L), values[[1L]]))
-    if (!same) {
-      stop("Use only one of 'result', 'name', or 'result_name'.")
-    }
-  }
-  selected_result <- if (length(provided_names) == 0L) {
-    NULL
-  } else {
-    provided_names[[1L]]
-  }
-  selected_result <- .resolveDiffMethylResultName(object, selected_result)
-
-  idx <- .siteFilterIndex(
+setMethod(
+  "results",
+  "commaData",
+  function(
     object,
-    mod_type = mod_type,
-    motif = motif,
-    mod_context = mod_context,
-    caller = "results()"
-  )
-
-  result_data <- .diffMethylResultData(object, selected_result)
-  if (is.null(result_data)) {
-    stop(
-      "Differential methylation result layer '", selected_result,
-      "' is registered but has no aligned result table."
+    mod_type = NULL,
+    motif = NULL,
+    mod_context = NULL,
+    result = NULL,
+    name = NULL,
+    result_name = NULL,
+    as = c("data.frame", "GRanges"),
+    ...
+  ) {
+    as <- match.arg(as)
+    # ── Check diffMethyl has been run ─────────────────────────────────────────
+    no_result_layers <- length(.diffMethylResultNames(object)) == 0L
+    no_legacy_results <- is.null(
+      S4Vectors::metadata(object)$diffMethyl_result_cols
     )
-  }
-  if (nrow(result_data) != nrow(object)) {
-    stop(
-      "Differential methylation result layer '", selected_result,
-      "' is not aligned with this object."
-    )
-  }
-
-  site_df <- as.data.frame(siteInfo(object))
-  drop_cols <- intersect(.knownDiffMethylResultCols(object), colnames(site_df))
-  if (length(drop_cols) > 0L) {
-    site_df <- site_df[, setdiff(colnames(site_df), drop_cols), drop = FALSE]
-  }
-  result_data <- result_data[idx, , drop = FALSE]
-  if (identical(as, "GRanges")) {
-    gr <- SummarizedExperiment::rowRanges(object)[idx]
-    drop_cols_gr <- intersect(
-      .knownDiffMethylResultCols(object),
-      colnames(GenomicRanges::mcols(gr))
-    )
-    if (length(drop_cols_gr) > 0L) {
-      keep_cols <- setdiff(colnames(GenomicRanges::mcols(gr)), drop_cols_gr)
-      gr_mcols <- GenomicRanges::mcols(gr)
-      GenomicRanges::mcols(gr) <- gr_mcols[, keep_cols, drop = FALSE]
+    if (no_result_layers && no_legacy_results) {
+      stop(
+        "No differential methylation results found in this commaData object.\n",
+        "run diffMethyl() first:\n",
+        "  dm <- diffMethyl(object, formula = ~ condition)"
+      )
     }
-    GenomicRanges::mcols(gr) <- cbind(
-      GenomicRanges::mcols(gr),
-      S4Vectors::DataFrame(result_data)
+    provided_names <- list(
+      result = result,
+      name = name,
+      result_name = result_name
     )
-    return(gr)
-  }
+    provided_names <- provided_names[
+      !vapply(provided_names, is.null, logical(1L))
+    ]
+    if (length(provided_names) > 1L) {
+      values <- unname(provided_names)
+      same <- all(vapply(values[-1L], identical, logical(1L), values[[1L]]))
+      if (!same) {
+        stop("Use only one of 'result', 'name', or 'result_name'.")
+      }
+    }
+    selected_result <- if (length(provided_names) == 0L) {
+      NULL
+    } else {
+      provided_names[[1L]]
+    }
+    selected_result <- .resolveDiffMethylResultName(object, selected_result)
 
-  out <- cbind(
-    site_df,
-    as.data.frame(.diffMethylResultData(object, selected_result))
-  )
-  out <- out[idx, , drop = FALSE]
-  rownames(out) <- as.character(idx)
-  out
-})
+    idx <- .siteFilterIndex(
+      object,
+      mod_type = mod_type,
+      motif = motif,
+      mod_context = mod_context,
+      caller = "results()"
+    )
+
+    result_data <- .diffMethylResultData(object, selected_result)
+    if (is.null(result_data)) {
+      stop(
+        "Differential methylation result layer '",
+        selected_result,
+        "' is registered but has no aligned result table."
+      )
+    }
+    if (nrow(result_data) != nrow(object)) {
+      stop(
+        "Differential methylation result layer '",
+        selected_result,
+        "' is not aligned with this object."
+      )
+    }
+
+    site_df <- as.data.frame(siteInfo(object))
+    drop_cols <- intersect(
+      .knownDiffMethylResultCols(object),
+      colnames(site_df)
+    )
+    if (length(drop_cols) > 0L) {
+      site_df <- site_df[, setdiff(colnames(site_df), drop_cols), drop = FALSE]
+    }
+    result_data <- result_data[idx, , drop = FALSE]
+    if (identical(as, "GRanges")) {
+      gr <- SummarizedExperiment::rowRanges(object)[idx]
+      drop_cols_gr <- intersect(
+        .knownDiffMethylResultCols(object),
+        colnames(GenomicRanges::mcols(gr))
+      )
+      if (length(drop_cols_gr) > 0L) {
+        keep_cols <- setdiff(colnames(GenomicRanges::mcols(gr)), drop_cols_gr)
+        gr_mcols <- GenomicRanges::mcols(gr)
+        GenomicRanges::mcols(gr) <- gr_mcols[, keep_cols, drop = FALSE]
+      }
+      GenomicRanges::mcols(gr) <- cbind(
+        GenomicRanges::mcols(gr),
+        S4Vectors::DataFrame(result_data)
+      )
+      return(gr)
+    }
+
+    out <- cbind(
+      site_df,
+      as.data.frame(.diffMethylResultData(object, selected_result))
+    )
+    out <- out[idx, , drop = FALSE]
+    rownames(out) <- as.character(idx)
+    out
+  }
+)
 
 # ─── filterResults() ──────────────────────────────────────────────────────────
 
@@ -234,13 +250,27 @@ setGeneric(
 
 #' @rdname filterResults
 setMethod(
-  "filterResults", "commaData",
-  function(object, padj = 0.05, delta_beta = 0.1,
-           mod_type = NULL, motif = NULL, mod_context = NULL,
-           result = NULL, name = NULL, result_name = NULL, ...) {
-    res <- results(object,
-      mod_type = mod_type, motif = motif,
-      mod_context = mod_context, result = result, name = name,
+  "filterResults",
+  "commaData",
+  function(
+    object,
+    padj = 0.05,
+    delta_beta = 0.1,
+    mod_type = NULL,
+    motif = NULL,
+    mod_context = NULL,
+    result = NULL,
+    name = NULL,
+    result_name = NULL,
+    ...
+  ) {
+    res <- results(
+      object,
+      mod_type = mod_type,
+      motif = motif,
+      mod_context = mod_context,
+      result = result,
+      name = name,
       result_name = result_name
     )
 

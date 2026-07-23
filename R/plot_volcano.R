@@ -56,10 +56,12 @@ NULL
 #'   \code{\link{filterResults}}
 #'
 #' @export
-plot_volcano <- function(results,
-                         delta_beta_threshold = NULL,
-                         padj_threshold = 0.05,
-                         facet = TRUE) {
+plot_volcano <- function(
+  results,
+  delta_beta_threshold = NULL,
+  padj_threshold = 0.05,
+  facet = TRUE
+) {
   ## --- Input validation ---------------------------------------------------
   if (!is.data.frame(results)) {
     stop("'results' must be a data.frame returned by results().")
@@ -69,20 +71,29 @@ plot_volcano <- function(results,
   if (length(missing_cols) > 0) {
     stop(
       "'results' is missing required column(s): ",
-      paste(missing_cols, collapse = ", "), ". ",
+      paste(missing_cols, collapse = ", "),
+      ". ",
       "Ensure 'results' was produced by results() after diffMethyl()."
     )
   }
   if (!is.null(delta_beta_threshold)) {
-    if (!is.numeric(delta_beta_threshold) ||
-      length(delta_beta_threshold) != 1L ||
-      is.na(delta_beta_threshold) || delta_beta_threshold <= 0 ||
-      delta_beta_threshold >= 1) {
+    if (
+      !is.numeric(delta_beta_threshold) ||
+        length(delta_beta_threshold) != 1L ||
+        is.na(delta_beta_threshold) ||
+        delta_beta_threshold <= 0 ||
+        delta_beta_threshold >= 1
+    ) {
       stop("'delta_beta_threshold' must be a single numeric value in (0, 1).")
     }
   }
-  if (!is.numeric(padj_threshold) || length(padj_threshold) != 1L ||
-    is.na(padj_threshold) || padj_threshold <= 0 || padj_threshold >= 1) {
+  if (
+    !is.numeric(padj_threshold) ||
+      length(padj_threshold) != 1L ||
+      is.na(padj_threshold) ||
+      padj_threshold <= 0 ||
+      padj_threshold >= 1
+  ) {
     stop("'padj_threshold' must be a single numeric value in (0, 1).")
   }
   if (!is.logical(facet) || length(facet) != 1L || is.na(facet)) {
@@ -121,7 +132,8 @@ plot_volcano <- function(results,
   df$significance <- "Not significant"
   df$significance[is_sig_p & is_sig_db_pos] <- "Hypermethylated"
   df$significance[is_sig_p & is_sig_db_neg] <- "Hypomethylated"
-  df$significance <- factor(df$significance,
+  df$significance <- factor(
+    df$significance,
     levels = c(
       "Hypermethylated",
       "Hypomethylated",
@@ -132,7 +144,7 @@ plot_volcano <- function(results,
   ## --- Build ggplot -------------------------------------------------------
   sig_colors <- c(
     "Hypermethylated" = "#d73027",
-    "Hypomethylated"  = "#4575b4",
+    "Hypomethylated" = "#4575b4",
     "Not significant" = "grey60"
   )
 
@@ -150,15 +162,20 @@ plot_volcano <- function(results,
     p <- p +
       ggplot2::geom_vline(
         xintercept = -delta_beta_threshold,
-        linetype = "dashed", color = "grey40", linewidth = 0.5
+        linetype = "dashed",
+        color = "grey40",
+        linewidth = 0.5
       ) +
       ggplot2::geom_vline(
         xintercept = delta_beta_threshold,
-        linetype = "dashed", color = "grey40", linewidth = 0.5
+        linetype = "dashed",
+        color = "grey40",
+        linewidth = 0.5
       )
   }
 
-  has_multi_context <- "mod_context" %in% colnames(df) &&
+  has_multi_context <- "mod_context" %in%
+    colnames(df) &&
     length(unique(df$mod_context)) > 1L
 
   if (facet && has_multi_context) {
@@ -168,15 +185,17 @@ plot_volcano <- function(results,
   p <- p +
     ggplot2::geom_hline(
       yintercept = -log10(padj_threshold),
-      linetype = "dashed", color = "grey40", linewidth = 0.5
+      linetype = "dashed",
+      color = "grey40",
+      linewidth = 0.5
     ) +
     ggplot2::scale_color_manual(
       values = sig_colors,
       drop = FALSE
     ) +
     ggplot2::labs(
-      x     = "delta methylation (treatment - control)",
-      y     = "-log10(adjusted p-value)",
+      x = "delta methylation (treatment - control)",
+      y = "-log10(adjusted p-value)",
       title = "Differential Methylation Volcano Plot",
       color = NULL
     ) +
