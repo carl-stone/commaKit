@@ -8,7 +8,8 @@ for common commaData filters or `[` for index-based subsetting.
 ## Usage
 
 ``` r
-subset.commaData(
+# S3 method for class 'commaData'
+subset(
   x,
   mod_type = NULL,
   condition = NULL,

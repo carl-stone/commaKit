@@ -138,13 +138,13 @@ res_5mc <- results(dm_all, mod_type = "5mC")
 cat(
   "6mA: significant sites (padj < 0.05, |Δβ| ≥ 0.2):",
   sum(!is.na(res_6ma$dm_padj) & res_6ma$dm_padj < 0.05 &
-    abs(res_6ma$dm_delta_beta) >= 0.2, na.rm = TRUE), "\n"
+        abs(res_6ma$dm_delta_beta) >= 0.2, na.rm = TRUE), "\n"
 )
 #> 6mA: significant sites (padj < 0.05, |Δβ| ≥ 0.2): 31
 cat(
   "5mC: significant sites (padj < 0.05, |Δβ| ≥ 0.2):",
   sum(!is.na(res_5mc$dm_padj) & res_5mc$dm_padj < 0.05 &
-    abs(res_5mc$dm_delta_beta) >= 0.2, na.rm = TRUE), "\n"
+        abs(res_5mc$dm_delta_beta) >= 0.2, na.rm = TRUE), "\n"
 )
 #> 5mC: significant sites (padj < 0.05, |Δβ| ≥ 0.2): 11
 ```
