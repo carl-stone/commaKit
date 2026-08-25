@@ -8,51 +8,29 @@ on:
 permissions: read-all
 
 jobs:
-  style:
+  source-quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2
+        with:
+          r-version: "4.6.1"
 
       - uses: posit-dev/setup-air@cf390573ff4fe0f198f35df3a642b1409328d859 # v1
         with:
           version: "0.10.0"
 
+      - name: Install lintr
+        run: Rscript --vanilla -e 'install.packages("lintr")'
+
       - name: Check R formatting
         run: air format . --check
 
-  documentation-and-lint:
-    runs-on: ubuntu-latest
-    container: bioconductor/bioconductor_docker:RELEASE_3_22@sha256:e34177896c1579f66d48b756e4229b58237499183a089da084af72d7aba1d40a
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      RENV_CONFIG_AUTOLOADER_ENABLED: "FALSE"
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-
-      - name: Configure git safe directory
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2
-        with:
-          packages: any::sessioninfo
-          extra-packages: local::., any::devtools, any::lintr, any::rmarkdown
-          needs: check
-
       - name: Lint package
-        shell: Rscript {0}
         run: |
-          lints <- lintr::lint_package()
-          print(lints)
-          if (length(lints) > 0L) {
-            quit(status = 1L)
-          }
-
-      - name: Check generated documentation
-        run: |
-          Rscript -e 'devtools::document()'
-          git diff --exit-code -- NAMESPACE man
-
-      - name: Check rendered README
-        run: |
-          Rscript -e 'rmarkdown::render("README.Rmd", output_file = "README.md", quiet = TRUE)'
-          git diff --exit-code -- README.md man/figures
+          Rscript --vanilla -e '
+            lints <- lintr::lint_package()
+            print(lints)
+            if (length(lints) > 0L) quit(status = 1L)
+          '

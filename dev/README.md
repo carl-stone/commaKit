@@ -1,8 +1,7 @@
 # Developing commaKit
 
-commaKit targets R 4.5 and Bioconductor 3.22 in CI. Package dependencies are
-declared in `DESCRIPTION`; `renv.lock` records the current development
-environment.
+commaKit development and CI target R 4.6.1 and Bioconductor 3.23. Package
+dependencies are declared in `DESCRIPTION`.
 
 Common commands:
 
