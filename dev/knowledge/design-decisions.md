@@ -1,273 +1,55 @@
----
-type: Decision Record Collection
-title: Design Decisions
-description: Architectural and API decisions that explain why commaKit behaves the way it does.
-resource: dev/knowledge/design-decisions.md
-tags: [architecture, decisions, api, statistics, bioconductor]
-timestamp: 2026-06-15T00:00:00Z
-status: current
-owner: Carl Stone
----
+# Design Decisions
 
-# Design Decisions — Why We Made These Choices
+This file records rationale that is easy to lose by reading code alone.
 
-**Last updated:** 2026-07-05
-**Maintained by:** commaBot
+## Modification context defines the testing strata
 
-This document records significant architectural and API decisions. When you're tempted to change something, check here first to understand why it was designed this way.
+Modification types can occur in biologically distinct motifs. Differential
+methylation therefore operates by `mod_context`, not merely by `mod_type`.
+Multiple-testing correction still covers all sites tested in the call.
 
----
+## Effect sizes are reported on the beta scale
 
-## D-001: diffMethyl loops by mod_context, not mod_type
+Backends may fit transformed values internally, but `dm_delta_beta` represents
+the difference in methylation proportion. This keeps results interpretable as
+percentage-point changes.
 
-**Decision:** Differential methylation tests each `mod_context` (mod_type x motif combination) independently, not each `mod_type`.
+## Annotation preserves multiple associations
 
-**Rationale:** Different modification contexts are biologically distinct. 6mA at GATC (Dam methyltransferase) and 6mA at ACCACC (Cellulomonas-specific) are not the same signal. Pooling them would create spurious associations.
+Bacterial genomes are densely annotated. A methylation site may overlap a gene,
+promoter, binding site, and operon. `annotateSites()` therefore uses list-columns
+rather than selecting one association.
 
-**Example:**
-- `6mA_GATC` — 393 sites, tested separately
-- `5mC_CCWGG` — 195 sites, tested separately
-- A site that's `6mA_GATC` is NOT tested in the `5mC_CCWGG` model
+## Genomic ranges are authoritative
 
-**Consequence:** Multiple testing correction is genome-wide across all mod_contexts, not per-mod_type.
+`commaData` extends `RangedSummarizedExperiment`, genomic coordinates live in
+`rowRanges()`, and site matching uses genomic overlaps. Row names and formatted
+keys are not reliable alignment mechanisms.
 
-**Do not change without:** Understanding the statistical implications and consulting Carl.
+## Derived values are not duplicated unnecessarily
 
----
+`mod_context` and `site_key` are computed from authoritative fields. This avoids
+stale derived metadata when modification or motif information changes.
 
-## D-002: Effect sizes on beta scale (0-1), not M-value scale
+## Raw and derived analyses can coexist
 
-**Decision:** `dm_delta_beta` is always reported on the beta scale (0-1), even when the backend uses M-values internally (limma method).
+Raw assays remain stable. Derived assay layers and differential-methylation
+result layers are named and carry provenance so several transformations or
+analyses can coexist without overwriting the underlying observations.
 
-**Rationale:** Biologists think in methylation percentages. A delta_beta of 0.2 means "20 percentage points difference" — intuitive. M-values are log-odds and harder to interpret.
+## Adjusted p-values have one package-level meaning
 
-**Consequence:** Limma backend transforms back to beta scale after fitting on M-values.
+`dm_padj` is computed by commaKit over the complete testing family. Statistics
+whose definitions belong to a backend, such as methylKit q-values, remain in
+backend-specific columns.
 
-**Do not change:** User-facing results must always be on beta scale.
+## Enrichment distinguishes biological roles
 
----
+Target genes and regulator genes answer different biological questions and use
+different background universes. `enrichMethylation()` keeps those roles
+separate.
 
-## D-003: Multiple testing correction is genome-wide
+## Network-backed annotation should be bulk and cacheable
 
-**Decision:** All p-values from `diffMethyl()` are corrected together across all mod_contexts in a single call to `p.adjust()`.
-
-**Rationale:** Each site is a hypothesis test. The family of tests is all sites tested in that `diffMethyl()` call. Correcting per-mod_context would artificially lower the bar for rare modifications.
-
-**Consequence:** If you have 393 6mA sites and 195 5mC sites, all 588 p-values are corrected together.
-
-**Do not change without:** Statistical justification and consulting Carl.
-
----
-
-## D-004: annotateSites uses list-columns (CharacterList/IntegerList/NumericList)
-
-**Decision:** `annotateSites()` stores all overlapping/nearby features per site as list-columns, not a single match per site.
-
-**Rationale:** Bacterial genomes are densely annotated. A single site can overlap a gene, a promoter, a TF binding site, and an operon. Forcing a single match loses information.
-
-**Consequence:**
-- `feature_types`, `feature_names`, `rel_position`, `frac_position` are all list-columns
-- Intergenic sites have length-0 entries (test with `lengths(col) == 0`)
-- Never revert to `!duplicated()` or `distanceToNearest()` single-match
-
-**Do not change:** This is core to how annotation works. The test suite enforces list-column types.
-
----
-
-## D-005: enrichment supports gene_role = target/regulator/both
-
-**Decision:** `enrichMethylation()` distinguishes between target genes (where DM sites overlap gene bodies) and regulator genes (whose products bind near DM sites).
-
-**Rationale:** Methylation can affect gene expression (target) or protein binding (regulator). These are different biological questions with different background universes.
-
-**Consequence:**
-- `gene_role = "target"` — background is all genes in annotation
-- `gene_role = "regulator"` — background is only regulators of that type (e.g., sigma factors)
-- `gene_role = "both"` — runs both analyses separately
-
-**Do not change:** The semantics are intentional and documented.
-
----
-
-## D-006: KEGG uses offline path with 2 bulk API calls
-
-**Decision:** KEGG enrichment should use pre-built term-to-gene mappings via `buildKEGGTermGene()` and `buildKEGGGeneIDMap()`, not fire one HTTP request per pathway.
-
-**Rationale:** KEGG REST API has rate limits. A typical organism has 100+ pathways. One request per pathway exceeds limits and crashes the analysis.
-
-**Implementation:**
-1. `buildKEGGTermGene(organism)` — fires 2 API calls total, caches to RDS
-2. `buildKEGGGeneIDMap(organism)` — fires 1 API call, caches to RDS
-3. `enrichMethylation(kegg_term2gene = ...)` — uses offline mapping, no network
-
-**Do not change:** The offline path is the recommended approach. Online path exists but is fragile.
-
----
-
-## D-007: commaData extends RangedSummarizedExperiment
-
-**Decision:** The core data container is an S4 class extending `RangedSummarizedExperiment` (migrated from `SummarizedExperiment` in Schema v2, PR #100).
-
-**Rationale:** Idiomatic for Bioconductor. `RangedSummarizedExperiment` stores genomic positions as `GRanges` in `rowRanges()`, enabling native `findOverlaps()`-based operations. Users familiar with DESeq2, edgeR, or other Bioc packages will recognize the pattern.
-
-**Consequence:**
-- Genomic positions stored in `rowRanges()` as 1-bp `GRanges`
-- `methylation()` and `siteCoverage()` are assay accessors (`coverage()` is deprecated compatibility because of the Bioconductor generic)
-- `siteInfo()` provides backward-compatible flat DataFrame access
-- Genome info from `Seqinfo` (per `seqinfo(object)`)
-- Annotation and motif sites stored in `metadata()`
-
-**Do not change:** Core to the package architecture.
-
----
-
-## D-008: Modification-type agnostic by design
-
-**Decision:** Every function must work for 6mA, 5mC, 4mC, and any future modification type. No hardcoding for specific types.
-
-**Rationale:** The field is evolving. New modifications (e.g., phosphorothioate) may become relevant. The package should not assume a fixed set.
-
-**Consequence:**
-- No `if (mod_type == "6mA")` special cases in core logic
-- `modTypes(object)` returns what's present, not a fixed list
-- Statistical backends must handle any mod_type string
-
-**Do not change:** This is a core design principle.
-
----
-
-## D-009: Genome size from Seqinfo, never hardcoded
-
-**Decision:** Any function that needs chromosome length must get it from `seqinfo(object)` (via `seqlengths()`), never hardcode values.
-
-**Rationale:** Different organisms have different genomes. Hardcoding E. coli values would break for Helicobacter or Mycobacterium.
-
-**Consequence:**
-- `slidingWindow()` uses `seqlengths()` for boundary handling
-- `plot_genome_track()` uses `seqlengths()` for axis limits
-- Tests use synthetic 100 kb chromosome, not real values
-
-**Do not change:** This is a core design principle.
-
----
-
-## D-010: Parameter naming convention
-
-**Decision:**
-- Analysis functions: `verbNoun()` camelCase (e.g., `annotateSites`, `diffMethyl`)
-- Plot functions: `plot_noun()` snake_case (e.g., `plot_volcano`, `plot_pca`)
-- Arguments: snake_case (e.g., `mod_type`, `min_coverage`)
-- Internal functions: `.` prefix (e.g., `.parseBetaValues`)
-
-**Rationale:** Follows established R conventions. Analysis functions are actions, plots are nouns, arguments are descriptive.
-
-**Do not change:** Consistency matters for user experience.
-
----
-
-## D-011: mod_context derived on demand, not stored
-
-**Decision:** `mod_context` is computed from `mod_type` and `motif` columns via `modContexts()` accessor, not stored as a persistent column in `mcols(rowRanges())`.
-
-**Rationale:** Storing a derived column creates a denormalization risk — if `mod_type` or `motif` changes, the stored `mod_context` could become stale. Deriving on demand guarantees consistency.
-
-**Consequence:** Use `modContexts(object)` to get unique mod_context strings, not `mcols(rowRanges(object))$mod_context`.
-
-**Do not change without:** Understanding the Schema v2 migration rationale (issue #95).
-
----
-
-## D-012: Alignment by genomic position, not string keys
-
-**Decision:** All alignment between sites (e.g., merging per-sample data in the constructor) uses `findOverlaps()` on `GRanges` with `mod_type`/`motif` matching, not row names or string keys.
-
-**Rationale:** String-key alignment is fragile (separator collisions, formatting inconsistencies). `GRanges`-based alignment is mathematically correct and leverages Bioconductor infrastructure.
-
-**Consequence:** Assay matrices should not be used as the alignment authority. `site_key` is a computed display column only. Its display format is stable and always includes chromosome: `chrom:position:strand:mod_type:motif`.
-
-**Do not change without:** Understanding the no-rownames alignment design (PR #117, #105).
-
----
-
-## D-013: Assay layers are additive, named, and defaulted by role
-
-**Decision:** Assay layers are stored as named `SummarizedExperiment` assays, with a small registry in `metadata(object)$assay_provenance` and default role mapping in `metadata(object)$assay_defaults`.
-
-**Rationale:** This follows the spirit of DESeq2 and Seurat-style layered assays: raw observations stay present, derived layers are added under explicit names, and a role can point at the current/default layer without deleting older versions. This lets multiple transformations or analysis runs coexist for audit and comparison.
-
-**Consequence:**
-- Core raw assays (`methylation`, `coverage`, `mod_counts`, `canonical_counts`) remain stable.
-- Derived assays must use unique names unless overwrite is explicit.
-- `assayLayers()` is the public registry view for assay names, types, provenance, parent assays, and default roles.
-- Internal layer writers should use `.addAssayLayer()` instead of mutating assay metadata ad hoc.
-
-**Do not change without:** Preserving raw-layer immutability and multi-version derived-layer behavior.
-
----
-
-## D-014: diffMethyl results are named result layers with a compatibility mirror
-
-**Decision:** Each `diffMethyl()` run can be stored as a named result layer in
-`metadata(object)$diffMethyl_results`, with provenance in
-`metadata(object)$diffMethyl_result_layers` and the active/default run tracked
-by `metadata(object)$diffMethyl_default_result`.
-
-**Rationale:** Differential methylation outputs are site-level result tables,
-not site-by-sample assays. Keeping them as named result layers lets multiple
-methods, thresholds, or filters coexist without pretending p-values are assay
-matrices. The current/default result is still mirrored into bare `dm_*`
-columns in `rowData` so existing `results()`, plotting, enrichment, and
-downstream code keep working.
-
-**Consequence:**
-- Repeated unnamed `diffMethyl()` calls replace the compatibility
-  `"diffMethyl"` layer, matching historical overwrite behavior.
-- Explicitly named runs must use unique names unless `overwrite = TRUE`.
-- `resultLayers()` is the public registry view for available differential
-  methylation runs.
-- `results()` and `filterResults()` default to the active result layer, and can
-  retrieve older named layers through `result` or `result_name`.
-
-**Do not change without:** Preserving backward compatibility for bare `dm_*`
-columns and preserving named multi-run access.
-
----
-
-## D-015: dm_padj is commaKit's adjusted p-value, not a backend q-value
-
-**Decision:** `dm_padj` is the backend-independent adjusted p-value computed by
-commaKit for the full testing family in one `diffMethyl()` call. Backend
-adjusted statistics, such as methylKit q-values, may be preserved only under
-backend-specific result columns such as `dm_methylkit_qvalue`.
-
-**Rationale:** Users need `dm_padj` to mean the same statistical contract across
-backends and across all tested `mod_context`s. Reusing a backend q-value as
-`dm_padj` for only one backend would make result layers harder to compare and
-would obscure whether multiple-testing correction was applied over commaKit's
-full testing family.
-
-**Consequence:**
-- methylKit raw p-values feed `dm_pvalue`.
-- commaKit computes `dm_padj` from `dm_pvalue` with the requested
-  `p_adjust_method` over the whole `diffMethyl()` call.
-- methylKit q-values, when available, are stored as `dm_methylkit_qvalue` only
-  on methylKit result layers and are mirrored into `rowData` only when that
-  layer is active/default.
-- Non-methylKit result layers do not carry an all-`NA`
-  `dm_methylkit_qvalue` column.
-
-**Do not change without:** Statistical justification, user-facing documentation
-updates, and tests proving the public result-column contract.
-
----
-
-## How to Add New Decisions
-
-When making a significant design or API decision:
-
-1. Add an entry with format `D-NNN: Title`
-2. Include: Decision, Rationale, Consequence, "Do not change without"
-3. Cross-reference related decisions if applicable
-4. Update this document, not just code comments
-
-This document is the source of truth for "why did we do it this way."
+KEGG mappings are built with bulk requests and can be cached locally. Repeated
+per-pathway requests are slow and vulnerable to rate limits.

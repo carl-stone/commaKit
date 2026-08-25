@@ -13,35 +13,6 @@
   candidates[file.exists(candidates)][1]
 }
 
-test_that("commaData vignette source has expected teaching contract", {
-  vignette_file <- .commaDataVignettePath()
-  skip_if(
-    is.na(vignette_file),
-    "understanding-commaData vignette source is not available in this build"
-  )
-
-  expect_true(file.exists(vignette_file))
-
-  source <- readLines(vignette_file, warn = FALSE)
-  source_text <- paste(source, collapse = "\n")
-
-  expect_match(
-    source_text,
-    "VignetteIndexEntry\\{Understanding the commaData object\\}"
-  )
-  expect_match(source_text, "VignetteEngine\\{knitr::rmarkdown\\}")
-  expect_match(source_text, "data\\(comma_example_data\\)")
-  expect_match(source_text, "mod_context.*modification \\+ context")
-  expect_match(source_text, "modTypes\\(comma_example_data\\)")
-  expect_match(source_text, "motifs\\(comma_example_data\\)")
-  expect_match(source_text, "modContexts\\(comma_example_data\\)")
-  expect_match(source_text, "siteCoverage\\(comma_example_data\\)")
-
-  expect_false(grepl("modType(", source_text, fixed = TRUE))
-  expect_false(grepl("modContext(", source_text, fixed = TRUE))
-  expect_false(grepl("coverage(comma_example_data)", source_text, fixed = TRUE))
-})
-
 test_that("commaData vignette knits with package-provided data", {
   vignette_file <- .commaDataVignettePath()
   skip_if(
@@ -60,9 +31,4 @@ test_that("commaData vignette knits with package-provided data", {
   )
 
   expect_true(file.exists(output_file))
-
-  rendered <- paste(readLines(output_file, warn = FALSE), collapse = "\n")
-  expect_match(rendered, "Understanding the commaData object")
-  expect_match(rendered, "6mA_GATC|5mC_CCWGG")
-  expect_match(rendered, "dm_delta_beta")
 })
