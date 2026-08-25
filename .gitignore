@@ -13,8 +13,6 @@
 test-timing-report.csv
 test-timing-output.txt
 docs/*
-!docs/agents/
-!docs/agents/*.md
 !docs/adr/
 !docs/adr/*.md
 .claude/settings.local.json

@@ -88,8 +88,7 @@ BiocCheck::BiocCheck(".")
 ### Steps
 1. For each rename: `git mv tests/testthat/old.R tests/testthat/new.R`
 2. For the split: create `test-coverageDepth.R` with coverageDepth tests from `test-coverageAnalysis.R`, create `test-varianceByDepth.R` with varianceByDepth tests
-3. Update the test file table in `.claude/rules/testing.md`
-4. Run `devtools::test()` to verify all 938 tests still pass
+3. Run `devtools::test()` to verify all 938 tests still pass
 
 ### Validation
 ```bash
@@ -103,7 +102,6 @@ Rscript -e 'library(testthat); library(comma); test_dir("tests/testthat")'
 
 ### Context
 - `DESCRIPTION` says `Version: 0.8.0.9000`
-- `AGENTS.md` says `Version: 0.9.0.9000 dev`
 - `NEWS.md` has entries for 0.8.0 and 0.9.x features
 - The README roadmap stops at 0.5.0
 
@@ -114,13 +112,12 @@ The NEWS.md suggests v0.8.0 and v0.9.x features are already implemented (mod_con
 
 ### Steps (after Carl decides)
 1. Update `DESCRIPTION` Version field
-2. Update `AGENTS.md` version line
-3. Update `README.Rmd` roadmap table to include all versions through current
-4. Run `devtools::document()` to regenerate man pages
+2. Update `README.Rmd` roadmap table to include all versions through current
+3. Run `devtools::document()` to regenerate man pages
 
 ### Validation
 ```bash
-grep "^Version:" DESCRIPTION  # Should match AGENTS.md
+grep "^Version:" DESCRIPTION
 ```
 
 ---

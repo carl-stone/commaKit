@@ -44,12 +44,6 @@ repos:
         language: system
         pass_filenames: true
 
-      - id: readiness-agents-links
-        name: Validate AGENTS.md local links
-        entry: Rscript inst/scripts/readiness-checks.R agents-links
-        language: system
-        pass_filenames: true
-
       - id: readiness-code-quality
         name: Enforce repository code-quality budgets
         entry: Rscript inst/scripts/readiness-checks.R code-quality

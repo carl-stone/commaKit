@@ -2,7 +2,7 @@
 
 This directory holds project-management context, durable knowledge, and strategic documents for commaKit.
 
-**Audience:** Carl, Claire, future agents, and any human contributor
+**Audience:** Carl, Claire, and other contributors
 
 ---
 
@@ -97,7 +97,6 @@ Historical documents that are no longer active but should not be deleted. These 
 |------|-------------------|
 | `BACKLOG.md` | Pre-GitHub-Issues task tracking. Migrated to GitHub Issues 2026-05-15. |
 | `STATUS.md` | Pre-GitHub-Issues sprint board. Migrated to GitHub Issues 2026-05-15. |
-| `AGENT_BOOTSTRAP.md` | One-time agent setup instructions, no longer needed. |
 | `SPECS.md` | Resolved implementation spec. |
 
 ---

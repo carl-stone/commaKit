@@ -159,54 +159,6 @@ readiness_check_debt_markers <- function(
   invisible(TRUE)
 }
 
-readiness_markdown_links <- function(path) {
-  text <- paste(readLines(path, warn = FALSE), collapse = "\n")
-  matches <- gregexpr("\\[[^]]+\\]\\([^)[:space:]]+\\)", text, perl = TRUE)
-  captured <- regmatches(text, matches)[[1L]]
-  if (length(captured) == 0L || identical(captured, character(0))) {
-    return(character())
-  }
-  sub("^\\[[^]]+\\]\\(([^)[:space:]]+)\\)$", "\\1", captured)
-}
-
-readiness_is_local_link <- function(link) {
-  !grepl("^(#|https?://|mailto:)", link, ignore.case = TRUE)
-}
-
-readiness_check_agents_links <- function(
-  files = readiness_git_files(),
-  root = readiness_repo_root()
-) {
-  agents_files <- files[basename(files) == "AGENTS.md"]
-  missing <- character()
-  for (file in agents_files) {
-    path <- file.path(root, file)
-    links <- readiness_markdown_links(path)
-    links <- links[readiness_is_local_link(links)]
-    links <- sub("#.*$", "", links)
-    links <- links[nzchar(links)]
-    for (link in links) {
-      target <- normalizePath(
-        file.path(dirname(path), link),
-        winslash = "/",
-        mustWork = FALSE
-      )
-      if (!file.exists(target)) {
-        missing <- c(missing, paste0(file, " -> ", link))
-      }
-    }
-  }
-  if (length(missing) > 0L) {
-    stop(
-      "AGENTS.md contains missing local links:\n- ",
-      paste(missing, collapse = "\n- "),
-      call. = FALSE
-    )
-  }
-  message("AGENTS.md link check passed for ", length(agents_files), " files.")
-  invisible(TRUE)
-}
-
 readiness_r_quality_files <- function(files) {
   files[
     grepl("\\.[Rr]$", files) &
@@ -504,7 +456,6 @@ readiness_run <- function(checks, files = NULL, root = NULL) {
   available <- c(
     "large-files",
     "debt-markers",
-    "agents-links",
     "complexity",
     "dead-code",
     "duplicate-code",
@@ -514,7 +465,6 @@ readiness_run <- function(checks, files = NULL, root = NULL) {
     checks <- c(
       "large-files",
       "debt-markers",
-      "agents-links",
       "dead-code",
       "code-quality"
     )
@@ -536,7 +486,6 @@ readiness_run <- function(checks, files = NULL, root = NULL) {
       check,
       "large-files" = readiness_check_large_files(files = files, root = root),
       "debt-markers" = readiness_check_debt_markers(files = files, root = root),
-      "agents-links" = readiness_check_agents_links(files = files, root = root),
       "complexity" = readiness_check_complexity(files = files, root = root),
       "dead-code" = readiness_check_dead_code(files = files, root = root),
       "duplicate-code" = readiness_check_duplicate_code(

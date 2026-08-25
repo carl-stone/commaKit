@@ -34,5 +34,5 @@ A statistic produced by a differential methylation backend that commaKit may pre
 _Avoid_: commaKit result column, canonical adjusted p-value
 
 **durable knowledge**:
-Repository documentation that future agents or maintainers use as current project memory, including `dev/knowledge/`, `CONTEXT.md`, and ADRs. Durable knowledge should change in the same branch as code or behavior changes that make it stale.
+Repository documentation that future maintainers use as current project memory, including `dev/knowledge/`, `CONTEXT.md`, and ADRs. Durable knowledge should change in the same branch as code or behavior changes that make it stale.
 _Avoid_: stale project notes, separate cleanup later

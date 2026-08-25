@@ -3,7 +3,7 @@ type: Documentation Standard
 title: commaKit OKF Guidelines
 description: Local conventions for maintaining the dev/knowledge Open Knowledge Format bundle.
 resource: dev/knowledge
-tags: [agents, okf, documentation, progressive-disclosure]
+tags: [okf, documentation, progressive-disclosure]
 timestamp: 2026-06-15T00:00:00Z
 status: current
 owner: Carl Stone
@@ -11,7 +11,7 @@ owner: Carl Stone
 
 # Summary
 
-`dev/knowledge/` is the durable context library for coding agents. It is intentionally plain: markdown files with YAML frontmatter, ordinary links, and small index files that let agents browse one layer at a time.
+`dev/knowledge/` is the project's durable context library. It is intentionally plain: markdown files with YAML frontmatter, ordinary links, and small index files for navigation.
 
 # Local Conformance Rules
 
@@ -44,7 +44,7 @@ Reserved files:
 
 - Put one concept per file.
 - Use descriptive `type` values; consumers must tolerate unknown types, so clarity beats taxonomy cleverness.
-- Prefer absolute repo links or bundle-relative links that remain stable when read by agents.
+- Prefer absolute repo links or bundle-relative links that remain stable for readers.
 - Use headings, tables, and fenced code blocks where structure helps retrieval.
 - Include `# Citations` for externally sourced claims.
 - Do not store issue scratch notes here unless the lesson is durable.
@@ -63,4 +63,3 @@ rg "^# Citations" dev/knowledge
 [1] [Introducing the Open Knowledge Format](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing)
 
 [2] [Open Knowledge Format v0.1 draft spec](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
-

@@ -97,30 +97,6 @@ test_that("debt-marker readiness check requires issue references", {
   ))
 })
 
-test_that("AGENTS link readiness check validates local links", {
-  root <- tempfile("readiness-root-")
-  dir.create(file.path(root, "docs"), recursive = TRUE)
-  writeLines("ok", file.path(root, "docs", "guide.md"))
-  writeLines(
-    c("[Guide](docs/guide.md)", "[External](https://example.com/docs)"),
-    file.path(root, "AGENTS.md")
-  )
-
-  expect_true(readiness_env$readiness_check_agents_links(
-    files = "AGENTS.md",
-    root = root
-  ))
-
-  writeLines("[Missing](docs/missing.md)", file.path(root, "AGENTS.md"))
-  expect_error(
-    readiness_env$readiness_check_agents_links(
-      files = "AGENTS.md",
-      root = root
-    ),
-    "missing local links"
-  )
-})
-
 test_that("complexity readiness check enforces branch thresholds", {
   root <- tempfile("readiness-root-")
   dir.create(file.path(root, "R"), recursive = TRUE)
