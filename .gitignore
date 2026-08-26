@@ -11,3 +11,4 @@
 *.deb
 docs/*
 .vscode/
+.letta/settings.local.json
