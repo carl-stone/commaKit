@@ -22,7 +22,7 @@ jobs:
           version: "0.10.0"
 
       - name: Install lintr
-        run: Rscript --vanilla -e 'install.packages("lintr")'
+        run: Rscript --vanilla -e 'install.packages("lintr", repos = "https://cloud.r-project.org")'
 
       - name: Check R formatting
         run: air format . --check
