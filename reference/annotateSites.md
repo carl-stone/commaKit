@@ -58,23 +58,23 @@ annotateSites(
 
   `"all"`
 
-  :   (default) Return all four columns for all associations — including
-      sites within the window but not inside a feature.
+  : (default) Return all four columns for all associations — including
+    sites within the window but not inside a feature.
 
   `"overlap"`
 
-  :   Subset each site's associations to features where
-      `rel_position == 0` (inside the feature). Drop the `rel_position`
-      and `frac_position` columns.
+  : Subset each site's associations to features where
+    `rel_position == 0` (inside the feature). Drop the `rel_position`
+    and `frac_position` columns.
 
   `"proximity"`
 
-  :   Keep all associations. Drop the `frac_position` column.
+  : Keep all associations. Drop the `frac_position` column.
 
   `"metagene"`
 
-  :   Subset to `rel_position == 0`. Drop the `rel_position` column.
-      Retain `frac_position`.
+  : Subset to `rel_position == 0`. Drop the `rel_position` column.
+    Retain `frac_position`.
 
 - metadata_cols:
 

@@ -236,9 +236,9 @@ bodies.](reference/figures/README-plot-metagene-1.png)
 
 [`diffMethyl()`](https://carl-stone.github.io/commaKit/reference/diffMethyl.md)
 follows the familiar pattern used by many Bioconductor workflows: fit
-the model, then extract and filter a results table. For the current v1
-API, formulas must name one two-level comparison variable, such as
-`~ condition`. Multi-factor formulas are intentionally deferred.
+the model, then extract and filter a results table. In the current
+implementation, formulas must name one two-level comparison variable,
+such as `~ condition`. Multi-factor formulas are intentionally deferred.
 
 ``` r
 
@@ -490,20 +490,10 @@ Vignettes:
 | Package version | `0.2.0` development baseline |
 | Distribution | GitHub only; not yet submitted to Bioconductor |
 | Primary input | modkit pileup bedMethyl |
-| Differential methylation | One two-level design variable for v1 |
+| Differential methylation | One two-level design variable |
 | Example data | Synthetic, deterministic, useful for tests and tutorials |
 | Real-data validation | Planned; depends on selecting a redistributable bacterial dataset |
 | Performance evidence | Planned before broader release confidence |
-
-Roadmap:
-
-| Version | Phase | Status |
-|----|----|----|
-| 0.2.0 | Schema v2, commaKit rename, result layers, assay provenance | Done |
-| 0.2.x | Test quality, parser hardening, docs synchronization | In progress |
-| 0.x.y | Real-data examples, performance benchmarks, Bioconductor hardening | Planned |
-| 0.99.0 | Bioconductor submission version | Future |
-| 1.0.0 | Stable public release after external confidence | Future |
 
 ## Support
 

@@ -64,7 +64,6 @@ All other metadata columns from the source file are preserved.
 
 This function requires the `rtracklayer` package (Bioconductor):
 
-
       BiocManager::install("rtracklayer")
 
 Both NCBI-style GFF3 (with `gene_biotype`, `product` attributes) and

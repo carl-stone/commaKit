@@ -24,27 +24,27 @@ A `commaData` object with:
 
   `methylation`
 
-  :   Beta values (proportion methylated reads, 0–1). `NA` where
-      coverage \< 5.
+  : Beta values (proportion methylated reads, 0–1). `NA` where coverage
+    \< 5.
 
   `coverage`
 
-  :   Integer read depth (10–150 per site).
+  : Integer read depth (10–150 per site).
 
   `mod_counts`
 
-  :   Integer modified-read counts reconstructed from the simulated beta
-      and coverage values.
+  : Integer modified-read counts reconstructed from the simulated beta
+    and coverage values.
 
   `canonical_counts`
 
-  :   Integer canonical-read counts reconstructed from the simulated
-      beta and coverage values.
+  : Integer canonical-read counts reconstructed from the simulated beta
+    and coverage values.
 
   `other_mod_counts`
 
-  :   Not present in this legacy simulated dataset; newly constructed
-      modkit objects include this assay when `Nother_mod` is available.
+  : Not present in this legacy simulated dataset; newly constructed
+    modkit objects include this assay when `Nother_mod` is available.
 
 - **rowRanges**:
 

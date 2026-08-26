@@ -75,26 +75,26 @@ plot_tss_profile(
 
   `"sample"`
 
-  :   One colour per sample (default).
+  : One colour per sample (default).
 
   `"regulatory_element"`
 
-  :   Sites coloured by the first regulatory feature they overlap (from
-      `regulatory_feature_types`); sites with no overlap are labelled
-      `"None"` and shown in grey. Requires `regulatory_feature_types`.
+  : Sites coloured by the first regulatory feature they overlap (from
+    `regulatory_feature_types`); sites with no overlap are labelled
+    `"None"` and shown in grey. Requires `regulatory_feature_types`.
 
   `"mod_type"`
 
-  :   One colour per modification type.
+  : One colour per modification type.
 
   `"mod_context"`
 
-  :   One colour per modification context.
+  : One colour per modification context.
 
   `"none"`
 
-  :   No colour mapping; all points drawn in the default colour. Useful
-      when `facet_by` provides sufficient grouping.
+  : No colour mapping; all points drawn in the default colour. Useful
+    when `facet_by` provides sufficient grouping.
 
 - facet_by:
 

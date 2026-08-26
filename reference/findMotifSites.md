@@ -46,7 +46,6 @@ This function requires the `Biostrings` package (Bioconductor). If
 `genome` is a `BSgenome` object, `BSgenome` is also required. Both can
 be installed with:
 
-
       BiocManager::install(c("Biostrings", "BSgenome"))
 
 Palindromic motifs (e.g., GATC) will have both forward and reverse
