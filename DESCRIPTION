@@ -76,6 +76,7 @@ Collate:
     'sliding_window.R'
     'summarizeRegions.R'
     'writeBED.R'
+    'default_methods.R'
 Depends:
     R (>= 4.3.0)
 LazyData: false
@@ -92,4 +93,4 @@ Imports:
     methods,
     stats,
     utils
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0

@@ -36,17 +36,29 @@ test_that("accessor misuse fails actionably", {
     n_samples = integer_bounded(2L, 6L, len = c(1L, 1L)),
     property = function(n_sites, n_samples) {
       obj <- .qc_random_fixture(n_sites, n_samples)
-      # Accessors on non-commaData input must fail (never silently
-      # succeed). The error message is deliberately NOT pinned here:
-      # the current S4 dispatch error is known to be unfriendly, and
-      # pinning it would make the future friendly-error fix look like
-      # a regression. Once friendly errors land (see dev/todo.md),
-      # pin the actionable contract here.
-      expect_error(methylation(data.frame(x = 1)))
-      expect_error(siteCoverage(data.frame(x = 1)))
-      expect_error(modCounts(data.frame(x = 1)))
-      expect_error(sampleInfo(data.frame(x = 1)))
-      expect_error(siteInfo(data.frame(x = 1)))
+      # Accessors on non-commaData input fail with the friendly default
+      # method: the error names the function, the expected class, and
+      # the class actually received.
+      expect_error(
+        methylation(data.frame(x = 1)),
+        regexp = "methylation\\(\\) expects a commaData object, got data.frame"
+      )
+      expect_error(
+        siteCoverage(data.frame(x = 1)),
+        regexp = "siteCoverage\\(\\) expects a commaData object, got data.frame"
+      )
+      expect_error(
+        modCounts(data.frame(x = 1)),
+        regexp = "modCounts\\(\\) expects a commaData object, got data.frame"
+      )
+      expect_error(
+        sampleInfo(data.frame(x = 1)),
+        regexp = "sampleInfo\\(\\) expects a commaData object, got data.frame"
+      )
+      expect_error(
+        siteInfo(data.frame(x = 1)),
+        regexp = "siteInfo\\(\\) expects a commaData object, got data.frame"
+      )
       # valid object: accessors return correctly-shaped output
       beta <- methylation(obj)
       expect_identical(dim(beta), c(n_sites, n_samples))
@@ -101,9 +113,11 @@ test_that("results() misuse fails actionably", {
     n_samples = integer_bounded(2L, 6L, len = c(1L, 1L)),
     property = function(n_sites, n_samples) {
       obj <- .qc_random_fixture(n_sites, n_samples)
-      # Non-commaData input must fail; message not pinned (see note in
-      # the accessor test above — same unfriendly-dispatch-error issue).
-      expect_error(results(data.frame(x = 1)))
+      # Non-commaData input fails with the friendly default method
+      expect_error(
+        results(data.frame(x = 1)),
+        regexp = "results\\(\\) expects a commaData object, got data.frame"
+      )
       # calling results() before diffMethyl() must fail with an
       # actionable error that tells the user what to run
       expect_error(
