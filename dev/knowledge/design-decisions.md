@@ -1,6 +1,7 @@
-# Design Decisions
+# Provisional Design Decisions
 
-This file records rationale that is easy to lose by reading code alone.
+These decisions are provisional and must be reviewed before being treated as
+package contracts. Numbered files in `decisions/` are binding.
 
 ## Modification context defines the testing strata
 

@@ -21,12 +21,16 @@ air format .
 
 GitHub Issues track concrete work. The maintained developer notes are:
 
-- `knowledge/architecture.md`: non-obvious package contracts
-- `knowledge/design-decisions.md`: rationale behind important behavior
+- `dev/knowledge/architecture.md`: non-obvious package contracts
+- `dev/knowledge/design-decisions.md`: provisional design ideas that have not been confirmed
+- `dev/knowledge/decisions/`: numbered, binding package design decisions
+- `dev/todo.md`: concise bullet points for work identified during code audits. Entries should be simple, concise, and actionable. They should contain file paths and line numbers only if they are relevant.
 
 User documentation belongs in the README, vignettes, and roxygen comments.
 Generated `man/*.Rd` files and `NAMESPACE` should be updated with
 `devtools::document()` rather than edited directly.
+
+Don't duplicate documentation between README and vignettes.
 
 ## Maintain `NEWS.md` while you work
 
