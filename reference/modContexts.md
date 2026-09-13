@@ -14,6 +14,9 @@ modContexts(object)
 
 # S4 method for class 'commaData'
 modContexts(object)
+
+# S4 method for class 'ANY'
+modContexts(object)
 ```
 
 ## Arguments

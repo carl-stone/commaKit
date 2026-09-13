@@ -22,6 +22,9 @@ filterResults(
   result_name = NULL,
   ...
 )
+
+# S4 method for class 'ANY'
+filterResults(object, ...)
 ```
 
 ## Arguments

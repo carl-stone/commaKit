@@ -16,6 +16,9 @@ assayLayers(object)
 
 # S4 method for class 'commaData'
 assayLayers(object)
+
+# S4 method for class 'ANY'
+assayLayers(object)
 ```
 
 ## Arguments

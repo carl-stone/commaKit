@@ -11,6 +11,9 @@ modTypes(object)
 
 # S4 method for class 'commaData'
 modTypes(object)
+
+# S4 method for class 'ANY'
+modTypes(object)
 ```
 
 ## Arguments

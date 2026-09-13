@@ -10,6 +10,9 @@ motifs(object)
 
 # S4 method for class 'commaData'
 motifs(object)
+
+# S4 method for class 'ANY'
+motifs(object)
 ```
 
 ## Arguments

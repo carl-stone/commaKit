@@ -14,6 +14,9 @@ motifSites(object)
 
 # S4 method for class 'commaData'
 motifSites(object)
+
+# S4 method for class 'ANY'
+motifSites(object)
 ```
 
 ## Arguments

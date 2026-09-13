@@ -1,5 +1,18 @@
 # Changelog
 
+## commaKit 0.2.0.9000
+
+### Package improvements
+
+- **All package-defined S4 generics now fail with actionable errors**
+  when called on a non-`commaData` object
+  (e.g. `methylation(data.frame(...)`), previously an opaque S4 dispatch
+  error. The new default methods say what the function expects and what
+  it received:
+  `methylation() expects a commaData object, got data.frame.` This makes
+  copy-pasted or generated code fail self-correctably instead of
+  requiring knowledge of S4 method dispatch.
+
 ## commaKit 0.2.0
 
 ### Current package baseline

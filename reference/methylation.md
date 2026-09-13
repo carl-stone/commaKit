@@ -13,6 +13,9 @@ methylation(object)
 
 # S4 method for class 'commaData'
 methylation(object)
+
+# S4 method for class 'ANY'
+methylation(object)
 ```
 
 ## Arguments

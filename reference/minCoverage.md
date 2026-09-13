@@ -11,6 +11,9 @@ minCoverage(object)
 
 # S4 method for class 'commaData'
 minCoverage(object)
+
+# S4 method for class 'ANY'
+minCoverage(object)
 ```
 
 ## Arguments

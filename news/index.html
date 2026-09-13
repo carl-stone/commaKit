@@ -40,6 +40,14 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0.9000" id="commakit-0209000">commaKit 0.2.0.9000<a class="anchor" aria-label="anchor" href="#commakit-0209000"></a></h2>
+<div class="section level3">
+<h3 id="package-improvements-0-2-0-9000">Package improvements<a class="anchor" aria-label="anchor" href="#package-improvements-0-2-0-9000"></a></h3>
+<ul><li>
+<strong>All package-defined S4 generics now fail with actionable errors</strong> when called on a non-<code>commaData</code> object (e.g. <code>methylation(data.frame(...)</code>), previously an opaque S4 dispatch error. The new default methods say what the function expects and what it received: <code>methylation() expects a commaData object, got data.frame.</code> This makes copy-pasted or generated code fail self-correctably instead of requiring knowledge of S4 method dispatch.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="commakit-020">commaKit 0.2.0<a class="anchor" aria-label="anchor" href="#commakit-020"></a></h2>
 <div class="section level3">
 <h3 id="current-package-baseline-0-2-0">Current package baseline<a class="anchor" aria-label="anchor" href="#current-package-baseline-0-2-0"></a></h3>

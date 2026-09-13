@@ -15,6 +15,9 @@ genomeSizes(object)
 
 # S4 method for class 'commaData'
 genomeSizes(object)
+
+# S4 method for class 'ANY'
+genomeSizes(object)
 ```
 
 ## Arguments

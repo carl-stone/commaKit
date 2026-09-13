@@ -15,6 +15,9 @@ siteInfo(object)
 
 # S4 method for class 'commaData'
 siteInfo(object)
+
+# S4 method for class 'ANY'
+siteInfo(object)
 ```
 
 ## Arguments

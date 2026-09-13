@@ -12,6 +12,9 @@ sampleInfo(object)
 
 # S4 method for class 'commaData'
 sampleInfo(object)
+
+# S4 method for class 'ANY'
+sampleInfo(object)
 ```
 
 ## Arguments

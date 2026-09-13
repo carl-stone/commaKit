@@ -519,7 +519,7 @@ sessionInfo()
 #>  [11] stringr_1.6.0               pkgconfig_2.0.3            
 #>  [13] crayon_1.5.3                fastmap_1.2.0              
 #>  [15] XVector_0.52.0              labeling_0.4.3             
-#>  [17] Rsamtools_2.28.0            rmarkdown_2.31             
+#>  [17] Rsamtools_2.28.0            rmarkdown_2.32             
 #>  [19] UCSC.utils_1.8.0            ragg_1.5.2                 
 #>  [21] xfun_0.60                   cachem_1.1.0               
 #>  [23] cigarillo_1.2.1             GenomeInfoDb_1.48.0        
@@ -530,8 +530,8 @@ sessionInfo()
 #>  [33] limma_3.68.5                rtracklayer_1.72.0         
 #>  [35] GenomicRanges_1.64.0        jquerylib_0.1.4            
 #>  [37] numDeriv_2016.8-1.1         Rcpp_1.1.2                 
-#>  [39] Seqinfo_1.2.0               bookdown_0.47              
-#>  [41] SummarizedExperiment_1.42.0 knitr_1.51                 
+#>  [39] Seqinfo_1.2.0               bookdown_0.48              
+#>  [41] SummarizedExperiment_1.42.0 knitr_1.52                 
 #>  [43] zoo_1.9-0                   R.utils_2.13.0             
 #>  [45] IRanges_2.46.0              Matrix_1.7-6               
 #>  [47] splines_4.6.1               tidyselect_1.2.1           
@@ -542,7 +542,7 @@ sessionInfo()
 #>  [57] Biobase_2.72.0              withr_3.0.3                
 #>  [59] S7_0.2.2                    coda_0.19-4.1              
 #>  [61] evaluate_1.0.5              desc_1.4.3                 
-#>  [63] mclust_6.1.3                Biostrings_2.80.1          
+#>  [63] mclust_6.1.3                Biostrings_2.80.2          
 #>  [65] pillar_1.11.1               BiocManager_1.30.27        
 #>  [67] MatrixGenerics_1.24.0       stats4_4.6.1               
 #>  [69] generics_0.1.4              RCurl_1.98-1.20            
@@ -553,7 +553,7 @@ sessionInfo()
 #>  [79] data.table_1.18.6.1         GenomicAlignments_1.48.0   
 #>  [81] fs_2.1.0                    mvtnorm_1.4-2              
 #>  [83] XML_3.99-0.24               grid_4.6.1                 
-#>  [85] bbmle_1.0.25.1              bdsmatrix_1.3-7            
+#>  [85] bbmle_1.0.26                bdsmatrix_1.3-7            
 #>  [87] nlme_3.1-170                patchwork_1.3.2            
 #>  [89] restfulr_0.0.17             cli_3.6.6                  
 #>  [91] textshaping_1.0.5           fastseg_1.58.0             
@@ -565,6 +565,6 @@ sessionInfo()
 #> [103] htmlwidgets_1.6.4           farver_2.1.2               
 #> [105] htmltools_0.5.9             pkgdown_2.2.1              
 #> [107] R.oo_1.27.1                 lifecycle_1.0.5            
-#> [109] httr_1.4.8                  statmod_1.5.2              
+#> [109] httr_1.4.9                  statmod_1.5.2              
 #> [111] MASS_7.3-66
 ```

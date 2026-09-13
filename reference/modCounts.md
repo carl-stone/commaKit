@@ -10,6 +10,9 @@ modCounts(object)
 
 # S4 method for class 'commaData'
 modCounts(object)
+
+# S4 method for class 'ANY'
+modCounts(object)
 ```
 
 ## Arguments

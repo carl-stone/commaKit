@@ -12,6 +12,9 @@ canonicalCounts(object)
 
 # S4 method for class 'commaData'
 canonicalCounts(object)
+
+# S4 method for class 'ANY'
+canonicalCounts(object)
 ```
 
 ## Arguments

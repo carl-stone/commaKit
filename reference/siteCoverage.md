@@ -14,6 +14,9 @@ siteCoverage(object)
 
 # S4 method for class 'commaData'
 siteCoverage(object)
+
+# S4 method for class 'ANY'
+siteCoverage(object)
 ```
 
 ## Arguments

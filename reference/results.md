@@ -22,6 +22,9 @@ results(
   as = c("data.frame", "GRanges"),
   ...
 )
+
+# S4 method for class 'ANY'
+results(object, ...)
 ```
 
 ## Arguments

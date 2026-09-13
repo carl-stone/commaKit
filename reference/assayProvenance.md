@@ -11,6 +11,9 @@ assayProvenance(object)
 
 # S4 method for class 'commaData'
 assayProvenance(object)
+
+# S4 method for class 'ANY'
+assayProvenance(object)
 ```
 
 ## Arguments

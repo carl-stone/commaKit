@@ -313,7 +313,7 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-08-26 19:46:33 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-09-13 19:29:32 ..           0.2.0
 ```
 
 [`results()`](https://carl-stone.github.io/commaKit/reference/results.md)
@@ -399,16 +399,16 @@ sessionInfo()
 #> [33] DelayedArray_0.38.2         cachem_1.1.0               
 #> [35] limma_3.68.5                abind_1.4-8                
 #> [37] tidyselect_1.2.1            digest_0.6.39              
-#> [39] dplyr_1.2.1                 bookdown_0.47              
+#> [39] dplyr_1.2.1                 bookdown_0.48              
 #> [41] fastmap_1.2.0               grid_4.6.1                 
 #> [43] cli_3.6.6                   SparseArray_1.12.2         
 #> [45] magrittr_2.0.5              S4Arrays_1.12.0            
 #> [47] UCSC.utils_1.8.0            scales_1.4.0               
-#> [49] rmarkdown_2.31              XVector_0.52.0             
-#> [51] httr_1.4.8                  matrixStats_1.5.0          
+#> [49] rmarkdown_2.32              XVector_0.52.0             
+#> [51] httr_1.4.9                  matrixStats_1.5.0          
 #> [53] otel_0.2.0                  ragg_1.5.2                 
 #> [55] zoo_1.9-0                   evaluate_1.0.5             
-#> [57] knitr_1.51                  GenomicRanges_1.64.0       
+#> [57] knitr_1.52                  GenomicRanges_1.64.0       
 #> [59] IRanges_2.46.0              rlang_1.3.0                
 #> [61] glue_1.8.1                  BiocManager_1.30.27        
 #> [63] BiocGenerics_0.58.1         jsonlite_2.0.0             
