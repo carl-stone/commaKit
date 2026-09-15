@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git -C "$(dirname "$0")/.." rev-parse --show-toplevel)"
+CONTAINERFILE="$ROOT/dev/container/Containerfile"
+
+docker_command() {
+  if docker info >/dev/null 2>&1; then
+    printf '%s\n' docker
+  elif sudo -n docker info >/dev/null 2>&1; then
+    printf '%s\n' "sudo -n docker"
+  else
+    echo "Docker is installed but unavailable to this user." >&2
+    echo "Start Docker or grant access to /var/run/docker.sock." >&2
+    exit 1
+  fi
+}
+
+read -r -a DOCKER <<<"$(docker_command)"
+
+environment_hash() {
+  cat \
+    "$CONTAINERFILE" \
+    "$ROOT/dev/container/bootstrap.R" \
+    "$ROOT/dev/container/entrypoint.sh" \
+    "$ROOT/DESCRIPTION" \
+    "$ROOT/renv.lock" \
+    | sha256sum \
+    | cut -c1-16
+}
+
+IMAGE="commakit-dev:$(environment_hash)"
+
+build_image() {
+  "${DOCKER[@]}" build \
+    --file "$CONTAINERFILE" \
+    --tag "$IMAGE" \
+    "$ROOT"
+}
+
+if [[ "${1:-}" == "build" ]]; then
+  build_image
+  exit 0
+fi
+
+if [[ "${1:-}" == "image" ]]; then
+  printf '%s\n' "$IMAGE"
+  exit 0
+fi
+
+if ! "${DOCKER[@]}" image inspect "$IMAGE" >/dev/null 2>&1; then
+  build_image
+fi
+
+command_name="${1:-shell}"
+if [[ $# -gt 0 ]]; then
+  shift
+fi
+
+mkdir -p "$ROOT/.commakit/artifacts"
+
+mount_mode=rw
+network_mode=bridge
+case "$command_name" in
+  check)
+    mount_mode=ro
+    network_mode=none
+    ;;
+  validate)
+    mount_mode=ro
+    if [[ "${1:-pr}" != "release" ]]; then
+      network_mode=none
+    fi
+    ;;
+  test)
+    mount_mode=ro
+    network_mode=none
+    ;;
+esac
+
+run_args=(
+  run
+  --rm
+  --init
+  --user "$(id -u):$(id -g)"
+  --security-opt no-new-privileges
+  --cap-drop ALL
+  --network "$network_mode"
+  --env COMMAKIT_CONTAINER=1
+  --env COMMAKIT_IMAGE="$IMAGE"
+  --env HOME=/tmp/commakit-home
+  --env R_ENVIRON_USER=/dev/null
+  --env R_PROFILE_USER=/dev/null
+  --volume "$ROOT:/workspace/commaKit:$mount_mode"
+  --volume "$ROOT/.commakit/artifacts:/artifacts:rw"
+  --workdir /workspace/commaKit
+  "$IMAGE"
+)
+
+case "$command_name" in
+  shell)
+    exec "${DOCKER[@]}" "${run_args[@]}" bash "$@"
+    ;;
+  R)
+    exec "${DOCKER[@]}" "${run_args[@]}" R --vanilla "$@"
+    ;;
+  test)
+    exec "${DOCKER[@]}" "${run_args[@]}" \
+      /workspace/commaKit/dev/test "$@"
+    ;;
+  document)
+    exec "${DOCKER[@]}" "${run_args[@]}" \
+      Rscript --vanilla -e 'devtools::document()'
+    ;;
+  validate)
+    exec "${DOCKER[@]}" "${run_args[@]}" \
+      /workspace/commaKit/dev/validate "${1:-pr}"
+    ;;
+  check)
+    exec "${DOCKER[@]}" "${run_args[@]}" \
+      /workspace/commaKit/dev/validate pr
+    ;;
+  exec)
+    exec "${DOCKER[@]}" "${run_args[@]}" "$@"
+    ;;
+  *)
+    echo "Unknown command: $command_name" >&2
+    echo "Use: build, shell, R, test, document, validate, check, image, or exec." >&2
+    exit 2
+    ;;
+esac

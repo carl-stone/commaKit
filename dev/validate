@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+if [[ "${COMMAKIT_CONTAINER:-}" != "1" ]]; then
+  exec "$ROOT/dev/run" validate "${1:-pr}"
+fi
+
+PROFILE="${1:-pr}"
+case "$PROFILE" in
+  fast | pr | release) ;;
+  *)
+    echo "Unknown validation profile: $PROFILE" >&2
+    echo "Use fast, pr, or release." >&2
+    exit 2
+    ;;
+esac
+
+RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+ARTIFACT_DIR="/artifacts/$RUN_ID"
+SOURCE_DIR="$(mktemp -d)/commaKit"
+CURRENT_STEP=setup
+STATUS=fail
+BUILD_DIR=""
+
+mkdir -p "$ARTIFACT_DIR" "$SOURCE_DIR"
+
+finish() {
+  code=$?
+
+  if [[ -n "$BUILD_DIR" && -d "$BUILD_DIR" ]]; then
+    cp -a "$BUILD_DIR"/*.Rcheck "$ARTIFACT_DIR/" 2>/dev/null || true
+    cp -a "$BUILD_DIR"/*.BiocCheck "$ARTIFACT_DIR/" 2>/dev/null || true
+  fi
+
+  r_version="$(Rscript --vanilla -e 'cat(as.character(getRversion()))' 2>/dev/null || true)"
+  bioc_version="$(Rscript --vanilla -e 'cat(as.character(BiocManager::version()))' 2>/dev/null || true)"
+
+  cat >"$ARTIFACT_DIR/summary.json" <<EOF
+{
+  "status": "$STATUS",
+  "profile": "$PROFILE",
+  "last_step": "$CURRENT_STEP",
+  "image": "${COMMAKIT_IMAGE:-unknown}",
+  "r_version": "$r_version",
+  "bioconductor_version": "$bioc_version"
+}
+EOF
+
+  echo "Validation $STATUS: $ARTIFACT_DIR/summary.json"
+  exit "$code"
+}
+
+interrupted() {
+  CURRENT_STEP="$CURRENT_STEP-interrupted"
+  exit "$1"
+}
+
+trap finish EXIT
+trap 'interrupted 130' INT
+trap 'interrupted 143' HUP TERM
+
+tar \
+  --exclude=.git \
+  --exclude=.letta \
+  --exclude=.commakit \
+  --exclude='*.Rcheck' \
+  --exclude='*.tar.gz' \
+  -C "$ROOT" -cf - . \
+  | tar -C "$SOURCE_DIR" -xf -
+
+run_step() {
+  CURRENT_STEP="$1"
+  shift
+  echo "==> $CURRENT_STEP"
+  "$@" 2>&1 | tee "$ARTIFACT_DIR/$CURRENT_STEP.log"
+}
+
+run_step air bash -c "cd '$SOURCE_DIR' && air format . --check"
+run_step lintr bash -c \
+  "cd '$SOURCE_DIR' && Rscript --vanilla -e 'lints <- lintr::lint_package(); print(lints); if (length(lints)) quit(status = 1L)'"
+
+if [[ "$PROFILE" == "fast" ]]; then
+  run_step tests bash -c \
+    "COMMAKIT_SOURCE_DIR='$SOURCE_DIR' '$ROOT/dev/test'"
+  CURRENT_STEP=complete
+  STATUS=pass
+  exit 0
+fi
+
+run_step documentation bash -c "
+  cd '$SOURCE_DIR'
+  Rscript --vanilla -e 'devtools::document(quiet = TRUE)'
+  diff -u '$ROOT/NAMESPACE' NAMESPACE
+  diff -qr '$ROOT/man' man
+"
+
+BUILD_DIR="$(mktemp -d)"
+run_step build bash -c \
+  "cd '$BUILD_DIR' && R CMD build --compact-vignettes=gs+qpdf '$SOURCE_DIR'"
+
+TARBALL="$(find "$BUILD_DIR" -maxdepth 1 -name 'commaKit_*.tar.gz' -print -quit)"
+if [[ -z "$TARBALL" ]]; then
+  echo "R CMD build did not produce a source tarball." >&2
+  exit 1
+fi
+
+if [[ "$PROFILE" == "release" ]]; then
+  run_step check bash -c "cd '$BUILD_DIR' && R CMD check --as-cran '$TARBALL'"
+  run_step bioccheck Rscript --vanilla -e \
+    'args <- commandArgs(TRUE); BiocCheck::BiocCheck(args[1L], checkDir = args[2L], `quit-with-status` = TRUE)' \
+    "$TARBALL" "$BUILD_DIR"
+else
+  run_step check bash -c "cd '$BUILD_DIR' && R CMD check --no-manual '$TARBALL'"
+fi
+
+run_step session-info Rscript --vanilla -e 'sessioninfo::session_info()'
+
+CURRENT_STEP=complete
+STATUS=pass
+exit 0

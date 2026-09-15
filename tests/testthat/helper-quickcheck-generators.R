@@ -125,7 +125,7 @@
 
 # ── invalid commaData components ────────────────────────────────────────────
 
-.qc_invalid_coldata_missing_col <- function() {
+.qc_bad_coldata_missing_col <- function() {
   data.frame(
     not_sample_name = "s1",
     replicate = 1L,
@@ -137,7 +137,7 @@
   c("/tmp/does-not-exist-a.bed", "/tmp/does-not-exist-b.bed")
 }
 
-.qc_invalid_files_missing_sample <- function() {
+.qc_bad_files_missing_sample <- function() {
   stats::setNames(
     c("/tmp/does-not-exist-a.bed", "/tmp/does-not-exist-b.bed"),
     c("s1", "ghost")

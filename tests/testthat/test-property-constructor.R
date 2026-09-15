@@ -58,7 +58,7 @@ test_that("commaData() rejects colData missing required columns", {
         suppressMessages(
           commaData(
             files = stats::setNames("/tmp/x.bed", "s1"),
-            colData = .qc_invalid_coldata_missing_col()
+            colData = .qc_bad_coldata_missing_col()
           )
         ),
         regexp = "colData.*missing required columns"
@@ -95,7 +95,7 @@ test_that("commaData() rejects files/colData sample mismatches", {
       # file name not in colData
       expect_error(
         commaData(
-          files = .qc_invalid_files_missing_sample(),
+          files = .qc_bad_files_missing_sample(),
           colData = coldata
         ),
         regexp = "names\\(files\\).*not found in colData"
