@@ -1,0 +1,84 @@
+# syntax=docker/dockerfile:1
+FROM bioconductor/bioconductor_docker:RELEASE_3_23@sha256:821dbf9ac119eac41f177531c7ca8fc7084c99c04eb218a1aa7f52cb63bad5d9
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=UTC \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    RENV_CONFIG_SANDBOX_ENABLED=FALSE \
+    RENV_CONFIG_SYNCHRONIZED_CHECK=FALSE \
+    COMMAKIT_R_LIBRARY=/usr/local/lib/R/site-library
+
+USER root
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    ghostscript \
+    git \
+    libnode-dev \
+    qpdf \
+    texinfo \
+    texlive-fonts-extra \
+    texlive-fonts-recommended \
+    texlive-latex-base \
+    texlive-latex-recommended \
+    tidy \
+  && rm -r /var/lib/apt/lists/*
+
+ARG RENV_VERSION=1.2.4
+ARG RENV_SHA256=e63c637dc785d55848d9dbc6c9599378103803efd47c1f3f1f82057c00575e8c
+RUN set -eux; \
+  archive="/tmp/renv_${RENV_VERSION}.tar.gz"; \
+  current="https://cran.r-project.org/src/contrib/renv_${RENV_VERSION}.tar.gz"; \
+  archived="https://cran.r-project.org/src/contrib/Archive/renv/renv_${RENV_VERSION}.tar.gz"; \
+  curl --proto '=https' --tlsv1.2 -fsSL "$current" -o "$archive" \
+    || curl --proto '=https' --tlsv1.2 -fsSL "$archived" -o "$archive"; \
+  echo "${RENV_SHA256}  ${archive}" | sha256sum -c -; \
+  R CMD INSTALL "$archive"; \
+  rm "$archive"
+
+ARG AIR_VERSION=0.10.0
+ARG TARGETARCH
+RUN set -eux; \
+  case "${TARGETARCH}" in \
+    amd64) \
+      air_arch="x86_64"; \
+      air_sha256="abfb6db0f5f45701a17b9c49d5323eecde6586cba909bcd7392d938716821493" \
+      ;; \
+    arm64) \
+      air_arch="aarch64"; \
+      air_sha256="4873b28b29e242061d4604d5c6d004d0902cc7a0b59fa79e59b521bfc44b13e8" \
+      ;; \
+    *) \
+      echo "Unsupported architecture: ${TARGETARCH}" >&2; \
+      exit 1 \
+      ;; \
+  esac; \
+  archive="/tmp/air-${AIR_VERSION}.tar.gz"; \
+  curl --proto '=https' --tlsv1.2 -fsSL \
+    "https://github.com/posit-dev/air/releases/download/${AIR_VERSION}/air-${air_arch}-unknown-linux-gnu.tar.gz" \
+    -o "${archive}"; \
+  echo "${air_sha256}  ${archive}" | sha256sum -c -; \
+  tar -xzf "${archive}" --strip-components=1 -C /usr/local/bin \
+    "air-${air_arch}-unknown-linux-gnu/air"; \
+  chmod 0755 /usr/local/bin/air; \
+  rm "${archive}"; \
+  air --version
+
+COPY DESCRIPTION renv.lock /opt/commakit/project/
+COPY dev/container/bootstrap.R /opt/commakit/bootstrap.R
+
+RUN --mount=type=cache,id=commakit-renv,target=/root/.cache/R/renv \
+  Rscript --vanilla /opt/commakit/bootstrap.R \
+  && chmod -R a+rX /opt/commakit
+
+COPY dev/container/entrypoint.sh /usr/local/bin/commakit-entrypoint
+RUN chmod 0755 /usr/local/bin/commakit-entrypoint
+
+WORKDIR /workspace/commaKit
+ENTRYPOINT ["/usr/local/bin/commakit-entrypoint"]
+CMD ["bash"]

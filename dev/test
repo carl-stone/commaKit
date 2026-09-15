@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+if [[ "${COMMAKIT_CONTAINER:-}" != "1" ]]; then
+  exec "$ROOT/dev/run" test "$@"
+fi
+
+SOURCE_DIR="${COMMAKIT_SOURCE_DIR:-$ROOT}"
+TEST_LIBRARY="$(mktemp -d)"
+
+R CMD INSTALL \
+  --no-multiarch \
+  --with-keep.source \
+  --library="$TEST_LIBRARY" \
+  "$SOURCE_DIR"
+
+export R_LIBS="$TEST_LIBRARY${R_LIBS:+:$R_LIBS}"
+
+if [[ $# -eq 0 ]]; then
+  exec Rscript --vanilla -e \
+    'testthat::test_local(commandArgs(TRUE)[1L], reporter = "summary", stop_on_failure = TRUE)' \
+    "$SOURCE_DIR"
+fi
+
+exec Rscript --vanilla -e \
+  'testthat::test_file(commandArgs(TRUE)[1L], reporter = "summary", stop_on_failure = TRUE)' \
+  "$1"

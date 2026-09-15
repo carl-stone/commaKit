@@ -1,0 +1,7 @@
+*
+!DESCRIPTION
+!renv.lock
+!dev
+!dev/container
+!dev/container/bootstrap.R
+!dev/container/entrypoint.sh
