@@ -313,7 +313,7 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-09-24 16:38:29 ..      0.2.0.9000
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-09-24 18:06:58 ..      0.2.0.9000
 ```
 
 [`results()`](https://carl-stone.github.io/commaKit/reference/results.md)
