@@ -313,7 +313,7 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-09-24 15:52:59 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-09-24 16:38:29 ..      0.2.0.9000
 ```
 
 [`results()`](https://carl-stone.github.io/commaKit/reference/results.md)
@@ -377,7 +377,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] commaKit_0.2.0   BiocStyle_2.40.0
+#> [1] commaKit_0.2.0.9000 BiocStyle_2.40.0   
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] SummarizedExperiment_1.42.0 gtable_0.3.6               

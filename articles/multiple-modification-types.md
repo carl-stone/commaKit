@@ -286,7 +286,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] commaKit_0.2.0   BiocStyle_2.40.0
+#> [1] commaKit_0.2.0.9000 BiocStyle_2.40.0   
 #> 
 #> loaded via a namespace (and not attached):
 #>   [1] bitops_1.1-0                rlang_1.3.0                

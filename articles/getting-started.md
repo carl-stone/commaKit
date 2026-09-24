@@ -345,7 +345,7 @@ layers[, setdiff(colnames(layers), "timestamp")]
 #> 1             6mA                              BH            5       0.5
 #>                                 result_cols package_version
 #>                             <CharacterList>     <character>
-#> 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,...           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_methylkit_qvalue,...      0.2.0.9000
 res <- results(cd_dm)
 # Top sites by adjusted p-value
 head(res[
@@ -508,7 +508,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] commaKit_0.2.0   BiocStyle_2.40.0
+#> [1] commaKit_0.2.0.9000 BiocStyle_2.40.0   
 #> 
 #> loaded via a namespace (and not attached):
 #>   [1] bitops_1.1-0                rlang_1.3.0                
