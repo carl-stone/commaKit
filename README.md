@@ -462,7 +462,7 @@ Vignettes:
 
 | Area | Status |
 |----|----|
-| Package version | `0.2.0` development baseline |
+| Package version | `0.2.0.9000` development version |
 | Distribution | GitHub only; not yet submitted to Bioconductor |
 | Primary input | modkit pileup bedMethyl |
 | Differential methylation | One two-level design variable |

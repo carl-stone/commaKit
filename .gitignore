@@ -11,5 +11,5 @@
 *.deb
 docs/*
 .vscode/
-.letta/settings.local.json
+.letta/
 .commakit/
