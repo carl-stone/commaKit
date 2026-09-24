@@ -4,6 +4,26 @@ set -euo pipefail
 ROOT="$(git -C "$(dirname "$0")/.." rev-parse --show-toplevel)"
 CONTAINERFILE="$ROOT/dev/container/Containerfile"
 
+# Fast source-level tests use the host R installation. A filter matches test
+# filenames (e.g. ./dev/run test-native parsers). Keep this before any Docker
+# checks so everyday tests do not require the daemon or build an image.
+if [[ "${1:-}" == "test-native" ]]; then
+  shift
+  if [[ $# -gt 1 ]]; then
+    echo "Use: ./dev/run test-native [test filename regex]" >&2
+    exit 2
+  fi
+  cd "$ROOT"
+  exec Rscript --vanilla -e '
+    args <- commandArgs(TRUE)
+    devtools::test(
+      filter = if (length(args)) args[[1L]] else NULL,
+      reporter = "summary",
+      stop_on_failure = TRUE
+    )
+  ' "$@"
+fi
+
 docker_command() {
   if docker info >/dev/null 2>&1; then
     printf '%s\n' docker
@@ -20,10 +40,10 @@ read -r -a DOCKER <<<"$(docker_command)"
 
 environment_hash() {
   cat \
+    "$ROOT/.dockerignore" \
     "$CONTAINERFILE" \
     "$ROOT/dev/container/bootstrap.R" \
     "$ROOT/dev/container/entrypoint.sh" \
-    "$ROOT/DESCRIPTION" \
     "$ROOT/renv.lock" \
     | sha256sum \
     | cut -c1-16
@@ -125,7 +145,7 @@ case "$command_name" in
     ;;
   *)
     echo "Unknown command: $command_name" >&2
-    echo "Use: build, shell, R, test, document, validate, check, image, or exec." >&2
+    echo "Use: test-native, build, shell, R, test, document, validate, check, image, or exec." >&2
     exit 2
     ;;
 esac

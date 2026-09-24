@@ -8,7 +8,6 @@ library <- Sys.getenv(
   "/usr/local/lib/R/site-library"
 )
 lockfile <- "/opt/commakit/project/renv.lock"
-description <- "/opt/commakit/project/DESCRIPTION"
 
 dir.create(library, recursive = TRUE, showWarnings = FALSE)
 .libPaths(c(library, .libPaths()))
@@ -19,16 +18,6 @@ renv::restore(
   lockfile = lockfile,
   prompt = FALSE,
   clean = FALSE
-)
-
-dcf <- read.dcf(description)
-fields <- intersect(c("Depends", "Imports", "Suggests"), colnames(dcf))
-declared <- paste(dcf[1L, fields], collapse = ",")
-declared <- trimws(unlist(strsplit(gsub("\n", "", declared), ",")))
-declared <- sub(" \\(.*", "", declared)
-declared <- setdiff(
-  declared,
-  c("", "R", "grDevices", "methods", "stats", "utils")
 )
 
 development <- c(
@@ -42,9 +31,8 @@ development <- c(
   "V8"
 )
 
-required <- unique(c(declared, development))
-missing <- required[
-  !vapply(required, requireNamespace, logical(1L), quietly = TRUE)
+missing <- development[
+  !vapply(development, requireNamespace, logical(1L), quietly = TRUE)
 ]
 
 if (length(missing) > 0L) {

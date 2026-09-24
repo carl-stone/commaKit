@@ -2,20 +2,31 @@
 
 ## Developing commaKit
 
-commaKit development and CI target R 4.6.1 and Bioconductor 3.23. Package dependencies are declared in `DESCRIPTION`. Dependencies should only include packages needed for end users to run the package, not for development.
+commaKit development and CI target R 4.6.1 and Bioconductor 3.23. Declare
+required package dependencies in `DESCRIPTION` (`Imports`), and optional
+features, tests, and vignette dependencies in `Suggests`. Maintainer-only tools
+such as `devtools` do not belong in `Imports`.
 
-Run development commands in the repository container:
+Use native R for the fast edit/test loop (install dependencies as described in
+`dev/environment.md`):
 
 ```bash
-./dev/run R
-./dev/run test
-./dev/run document
+./dev/run test-native
+./dev/run test-native parsers  # only matching test files
+```
+
+In RStudio, use `devtools::load_all()` for interactive work and
+`devtools::document()` when documentation changes. The container is the
+reproducible built-package check (`fast` is an optional earlier gate; `pr`
+includes the same steps):
+
+```bash
 ./dev/run validate fast
 ./dev/run validate pr
 ```
 
-See `dev/environment.md` for environment and validation details. The `pr`
-profile is the required local check before opening a pull request.
+See `dev/environment.md` for environment and validation details. Run `pr`
+before opening a pull request.
 
 GitHub Issues track concrete work. The maintained developer notes are:
 
