@@ -521,7 +521,7 @@ sessionInfo()
 #>  [15] XVector_0.52.0              labeling_0.4.3             
 #>  [17] Rsamtools_2.28.0            rmarkdown_2.32             
 #>  [19] UCSC.utils_1.8.0            ragg_1.5.2                 
-#>  [21] xfun_0.60                   cachem_1.1.0               
+#>  [21] xfun_0.61                   cachem_1.1.0               
 #>  [23] cigarillo_1.2.1             GenomeInfoDb_1.48.0        
 #>  [25] jsonlite_2.0.0              DelayedArray_0.38.2        
 #>  [27] BiocParallel_1.46.0         parallel_4.6.1             
@@ -546,7 +546,7 @@ sessionInfo()
 #>  [65] pillar_1.11.1               BiocManager_1.30.27        
 #>  [67] MatrixGenerics_1.24.0       stats4_4.6.1               
 #>  [69] generics_0.1.4              RCurl_1.98-1.20            
-#>  [71] emdbook_1.3.14              S4Vectors_0.50.2           
+#>  [71] emdbook_1.3.14              S4Vectors_0.50.3           
 #>  [73] ggplot2_4.0.3               scales_1.4.0               
 #>  [75] gtools_3.9.5                glue_1.8.1                 
 #>  [77] tools_4.6.1                 BiocIO_1.22.0              

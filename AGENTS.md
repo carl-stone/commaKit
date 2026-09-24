@@ -7,21 +7,18 @@ Package dependencies are declared in `DESCRIPTION`. Dependencies should
 only include packages needed for end users to run the package, not for
 development.
 
-Common commands:
-
-``` r
-
-devtools::load_all()    # load package into R session
-devtools::test()        # run tests
-devtools::document()    # update documentation
-devtools::check()       # run checks
-```
-
-Format R code with Air:
+Run development commands in the repository container:
 
 ``` bash
-air format .
+./dev/run R
+./dev/run test
+./dev/run document
+./dev/run validate fast
+./dev/run validate pr
 ```
+
+See `dev/environment.md` for environment and validation details. The
+`pr` profile is the required local check before opening a pull request.
 
 GitHub Issues track concrete work. The maintained developer notes are:
 

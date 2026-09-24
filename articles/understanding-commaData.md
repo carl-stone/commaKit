@@ -313,7 +313,7 @@ resultLayers(dm)
 #> 1                                              BH            5       0.5
 #>                           result_cols              timestamp package_version
 #>                       <CharacterList>            <character>     <character>
-#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-09-13 21:07:11 ..           0.2.0
+#> 1 dm_pvalue,dm_padj,dm_delta_beta,... 2026-09-24 15:52:59 ..           0.2.0
 ```
 
 [`results()`](https://carl-stone.github.io/commaKit/reference/results.md)
@@ -381,7 +381,7 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] SummarizedExperiment_1.42.0 gtable_0.3.6               
-#>  [3] xfun_0.60                   bslib_0.12.0               
+#>  [3] xfun_0.61                   bslib_0.12.0               
 #>  [5] ggplot2_4.0.3               htmlwidgets_1.6.4          
 #>  [7] Biobase_2.72.0              lattice_0.22-9             
 #>  [9] vctrs_0.7.3                 tools_4.6.1                
@@ -389,7 +389,7 @@ sessionInfo()
 #> [13] tibble_3.3.1                pkgconfig_2.0.3            
 #> [15] Matrix_1.7-6                RColorBrewer_1.1-3         
 #> [17] S7_0.2.2                    desc_1.4.3                 
-#> [19] S4Vectors_0.50.2            lifecycle_1.0.5            
+#> [19] S4Vectors_0.50.3            lifecycle_1.0.5            
 #> [21] compiler_4.6.1              farver_2.1.2               
 #> [23] textshaping_1.0.5           statmod_1.5.2              
 #> [25] Seqinfo_1.2.0               GenomeInfoDb_1.48.0        

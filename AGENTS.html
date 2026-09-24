@@ -44,14 +44,13 @@
 <div class="section level2">
 <h2 id="developing-commakit">Developing commaKit<a class="anchor" aria-label="anchor" href="#developing-commakit"></a></h2>
 <p>commaKit development and CI target R 4.6.1 and Bioconductor 3.23. Package dependencies are declared in <code>DESCRIPTION</code>. Dependencies should only include packages needed for end users to run the package, not for development.</p>
-<p>Common commands:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/load_all.html" class="external-link">load_all</a></span><span class="op">(</span><span class="op">)</span>    <span class="co"># load package into R session</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span><span class="op">)</span>        <span class="co"># run tests</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">document</a></span><span class="op">(</span><span class="op">)</span>    <span class="co"># update documentation</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/check.html" class="external-link">check</a></span><span class="op">(</span><span class="op">)</span>       <span class="co"># run checks</span></span></code></pre></div>
-<p>Format R code with Air:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="ex">air</span> format .</span></code></pre></div>
+<p>Run development commands in the repository container:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="ex">./dev/run</span> R</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="ex">./dev/run</span> test</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="ex">./dev/run</span> document</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="ex">./dev/run</span> validate fast</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="ex">./dev/run</span> validate pr</span></code></pre></div>
+<p>See <code>dev/environment.md</code> for environment and validation details. The <code>pr</code> profile is the required local check before opening a pull request.</p>
 <p>GitHub Issues track concrete work. The maintained developer notes are:</p>
 <ul><li>
 <code>dev/knowledge/architecture.md</code>: non-obvious package contracts</li>
